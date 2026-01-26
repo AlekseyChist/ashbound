@@ -1,0 +1,17 @@
+# Godot 4.x cache
+.godot/
+
+# Exports
+*.apk
+*.aab
+*.exe
+*.dmg
+*.pck
+*.zip
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+*.swp
