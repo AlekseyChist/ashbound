@@ -8,6 +8,7 @@ signal game_paused(is_paused: bool)
 signal game_saved
 signal game_loaded
 signal time_of_day_changed(hour: int)
+signal hour_changed(hour: int)
 
 # Состояния игры
 enum GameState { MAIN_MENU, PLAYING, PAUSED, DIALOGUE, INVENTORY, CUTSCENE }
@@ -20,6 +21,8 @@ var previous_state: GameState = GameState.MAIN_MENU
 var game_time: float = 8.0  # Начинаем в 8 утра
 var time_scale: float = 60.0  # 1 реальная секунда = 1 игровая минута
 var current_day: int = 1
+var current_hour: int = 8
+var current_minute: float = 0.0
 
 # Ссылка на игрока
 var player: Node3D = null
@@ -40,16 +43,21 @@ func _process(delta: float) -> void:
 
 
 func _update_game_time(delta: float) -> void:
+	var old_hour = current_hour
 	game_time += delta * time_scale / 3600.0  # Конвертируем в часы
 
 	if game_time >= 24.0:
 		game_time -= 24.0
 		current_day += 1
 
-	# Оповещаем о смене времени суток каждый час
-	var current_hour = int(game_time)
-	if current_hour != int(game_time - delta * time_scale / 3600.0):
+	# Обновляем текущий час и минуту
+	current_hour = int(game_time)
+	current_minute = (game_time - current_hour) * 60.0
+
+	# Оповещаем о смене часа
+	if current_hour != old_hour:
 		time_of_day_changed.emit(current_hour)
+		hour_changed.emit(current_hour)
 
 
 # Управление состоянием игры
@@ -75,6 +83,8 @@ func start_new_game() -> void:
 	current_state = GameState.PLAYING
 	game_time = 8.0
 	current_day = 1
+	current_hour = 8
+	current_minute = 0.0
 	has_discovered_ancient_threat = false
 	main_quest_stage = 0
 	game_started.emit()

@@ -1,6 +1,9 @@
-[gd_scene load_steps=6 format=3 uid="uid://test_world_scene"]
+[gd_scene load_steps=10 format=3 uid="uid://test_world_scene"]
 
 [ext_resource type="PackedScene" uid="uid://player_scene" path="res://scenes/characters/player.tscn" id="1_player"]
+[ext_resource type="PackedScene" uid="uid://hud_scene" path="res://scenes/ui/hud.tscn" id="2_hud"]
+[ext_resource type="PackedScene" uid="uid://npc_scene" path="res://scenes/characters/npc.tscn" id="3_npc"]
+[ext_resource type="PackedScene" uid="uid://dialogue_ui_scene" path="res://scenes/ui/dialogue_ui.tscn" id="4_dialogue"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_1"]
 sky_top_color = Color(0.2, 0.15, 0.1, 1)
@@ -27,6 +30,12 @@ volumetric_fog_albedo = Color(0.25, 0.18, 0.12, 1)
 [sub_resource type="BoxShape3D" id="BoxShape3D_ground"]
 size = Vector3(100, 1, 100)
 
+[sub_resource type="BoxMesh" id="BoxMesh_ground"]
+size = Vector3(100, 1, 100)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ground"]
+albedo_color = Color(0.25, 0.2, 0.15, 1)
+
 [node name="TestWorld" type="Node3D"]
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
@@ -47,9 +56,22 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
 shape = SubResource("BoxShape3D_ground")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Ground"]
-mesh = ExtResource("BoxMesh_ground")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
+mesh = SubResource("BoxMesh_ground")
+surface_material_override/0 = SubResource("StandardMaterial3D_ground")
 
 [node name="Player" parent="." instance=ExtResource("1_player")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 
+[node name="HUD" parent="." instance=ExtResource("2_hud")]
+
 [node name="NavigationRegion3D" type="NavigationRegion3D" parent="."]
+
+[node name="TestNPC" parent="." instance=ExtResource("3_npc")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 1, -5)
+npc_name = "Старый Выживший"
+npc_id = "test_survivor"
+faction = "outcasts"
+can_talk = true
+
+[node name="DialogueUI" parent="." instance=ExtResource("4_dialogue")]
