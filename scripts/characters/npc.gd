@@ -256,7 +256,11 @@ func interact(interactor: Node) -> void:
 
 	# Начинаем диалог
 	if dialogue_data.is_empty():
-		dialogue_data = _get_default_dialogue()
+		# Используем пример диалога для тестового NPC
+		if npc_id == "test_survivor":
+			dialogue_data = DialogueSystem.create_example_dialogue()
+		else:
+			dialogue_data = _get_default_dialogue()
 
 	DialogueSystem.start_dialogue(self, dialogue_data)
 

@@ -48,6 +48,10 @@ func _ready() -> void:
 	# Регистрируем игрока в GameManager
 	GameManager.player = self
 
+	# Стартуем игру если еще не играем
+	if GameManager.current_state == GameManager.GameState.MAIN_MENU:
+		GameManager.start_new_game()
+
 	# Захват мыши
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
@@ -66,6 +70,10 @@ func _calculate_derived_stats() -> void:
 
 	current_health = max_health
 	current_stamina = max_stamina
+
+	# Испускаем сигналы для обновления UI
+	health_changed.emit(current_health, max_health)
+	stamina_changed.emit(current_stamina, max_stamina)
 
 
 func _input(event: InputEvent) -> void:
