@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://de8a4uq8cv20p"
 path.s3tc="res://.godot/imported/roof.png-1d99be488d84ed5752c30a9ff806513e.s3tc.ctex"
+path.etc2="res://.godot/imported/roof.png-1d99be488d84ed5752c30a9ff806513e.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/environment/medieval_kit/Textures/roof.png"
-dest_files=["res://.godot/imported/roof.png-1d99be488d84ed5752c30a9ff806513e.s3tc.ctex"]
+dest_files=["res://.godot/imported/roof.png-1d99be488d84ed5752c30a9ff806513e.s3tc.ctex", "res://.godot/imported/roof.png-1d99be488d84ed5752c30a9ff806513e.etc2.ctex"]
 
 [params]
 

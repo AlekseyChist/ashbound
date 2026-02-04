@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://b4ac7eyenmei7"
 path.s3tc="res://.godot/imported/water.png-011f6b1e7f607ad1ec99da6360ecbaff.s3tc.ctex"
+path.etc2="res://.godot/imported/water.png-011f6b1e7f607ad1ec99da6360ecbaff.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/environment/medieval_kit/Textures/water.png"
-dest_files=["res://.godot/imported/water.png-011f6b1e7f607ad1ec99da6360ecbaff.s3tc.ctex"]
+dest_files=["res://.godot/imported/water.png-011f6b1e7f607ad1ec99da6360ecbaff.s3tc.ctex", "res://.godot/imported/water.png-011f6b1e7f607ad1ec99da6360ecbaff.etc2.ctex"]
 
 [params]
 

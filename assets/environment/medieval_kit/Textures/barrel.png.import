@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://bcq1rg8mdcq5l"
 path.s3tc="res://.godot/imported/barrel.png-38953576c01d6bbe6bb11077a390e305.s3tc.ctex"
+path.etc2="res://.godot/imported/barrel.png-38953576c01d6bbe6bb11077a390e305.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/environment/medieval_kit/Textures/barrel.png"
-dest_files=["res://.godot/imported/barrel.png-38953576c01d6bbe6bb11077a390e305.s3tc.ctex"]
+dest_files=["res://.godot/imported/barrel.png-38953576c01d6bbe6bb11077a390e305.s3tc.ctex", "res://.godot/imported/barrel.png-38953576c01d6bbe6bb11077a390e305.etc2.ctex"]
 
 [params]
 

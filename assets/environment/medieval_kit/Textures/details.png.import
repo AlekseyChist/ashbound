@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://tyjut33xmovi"
 path.s3tc="res://.godot/imported/details.png-05a75e9852a1d3aeb285afaf30fdbe73.s3tc.ctex"
+path.etc2="res://.godot/imported/details.png-05a75e9852a1d3aeb285afaf30fdbe73.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/environment/medieval_kit/Textures/details.png"
-dest_files=["res://.godot/imported/details.png-05a75e9852a1d3aeb285afaf30fdbe73.s3tc.ctex"]
+dest_files=["res://.godot/imported/details.png-05a75e9852a1d3aeb285afaf30fdbe73.s3tc.ctex", "res://.godot/imported/details.png-05a75e9852a1d3aeb285afaf30fdbe73.etc2.ctex"]
 
 [params]
 
