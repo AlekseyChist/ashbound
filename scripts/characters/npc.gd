@@ -10,6 +10,7 @@ signal stopped_talking
 @export var npc_name: String = "Незнакомец"
 @export var npc_id: String = ""  # Уникальный ID для сохранений
 @export var faction: String = ""  # ID фракции
+@export var level: int = 1  # Уровень NPC (влияет на опыт за убийство)
 
 @export_group("Поведение")
 @export var is_hostile: bool = false
