@@ -1,9 +1,19 @@
-[gd_scene load_steps=10 format=3 uid="uid://test_world_scene"]
+[gd_scene load_steps=20 format=3 uid="uid://test_world_scene"]
 
 [ext_resource type="PackedScene" uid="uid://player_scene" path="res://scenes/characters/player.tscn" id="1_player"]
 [ext_resource type="PackedScene" uid="uid://hud_scene" path="res://scenes/ui/hud.tscn" id="2_hud"]
 [ext_resource type="PackedScene" uid="uid://npc_scene" path="res://scenes/characters/npc.tscn" id="3_npc"]
 [ext_resource type="PackedScene" uid="uid://dialogue_ui_scene" path="res://scenes/ui/dialogue_ui.tscn" id="4_dialogue"]
+[ext_resource type="Texture2D" uid="uid://cobble_tex" path="res://assets/environment/GLB format/Textures/cobblestone.png" id="5_ground_tex"]
+[ext_resource type="PackedScene" path="res://assets/environment/GLB format/floor.glb" id="6_floor"]
+[ext_resource type="PackedScene" path="res://assets/environment/GLB format/wall.glb" id="7_wall"]
+[ext_resource type="PackedScene" path="res://assets/environment/GLB format/wall-door.glb" id="8_wall_door"]
+[ext_resource type="PackedScene" path="res://assets/environment/GLB format/wall-window.glb" id="9_wall_window"]
+[ext_resource type="PackedScene" path="res://assets/environment/GLB format/roof.glb" id="10_roof"]
+[ext_resource type="PackedScene" path="res://assets/environment/GLB format/detail-barrel.glb" id="11_barrel"]
+[ext_resource type="PackedScene" path="res://assets/environment/GLB format/detail-crate.glb" id="12_crate"]
+[ext_resource type="PackedScene" path="res://assets/environment/GLB format/tree-large.glb" id="13_tree"]
+[ext_resource type="PackedScene" path="res://assets/environment/GLB format/fence.glb" id="14_fence"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_1"]
 sky_top_color = Color(0.2, 0.15, 0.1, 1)
@@ -30,11 +40,13 @@ volumetric_fog_albedo = Color(0.25, 0.18, 0.12, 1)
 [sub_resource type="BoxShape3D" id="BoxShape3D_ground"]
 size = Vector3(100, 1, 100)
 
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ground"]
+albedo_texture = ExtResource("5_ground_tex")
+uv1_scale = Vector3(25, 25, 25)
+
 [sub_resource type="BoxMesh" id="BoxMesh_ground"]
 size = Vector3(100, 1, 100)
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ground"]
-albedo_color = Color(0.25, 0.2, 0.15, 1)
+material = SubResource("StandardMaterial3D_ground")
 
 [node name="TestWorld" type="Node3D"]
 
@@ -58,7 +70,6 @@ shape = SubResource("BoxShape3D_ground")
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Ground"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
 mesh = SubResource("BoxMesh_ground")
-surface_material_override/0 = SubResource("StandardMaterial3D_ground")
 
 [node name="Player" parent="." instance=ExtResource("1_player")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
@@ -68,10 +79,86 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 [node name="NavigationRegion3D" type="NavigationRegion3D" parent="."]
 
 [node name="TestNPC" parent="." instance=ExtResource("3_npc")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 1, -5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, -8)
 npc_name = "Старый Выживший"
 npc_id = "test_survivor"
 faction = "outcasts"
 can_talk = true
 
 [node name="DialogueUI" parent="." instance=ExtResource("4_dialogue")]
+
+[node name="Buildings" type="Node3D" parent="."]
+
+[node name="House1" type="Node3D" parent="Buildings"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, -10)
+
+[node name="Floor1" parent="Buildings/House1" instance=ExtResource("6_floor")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+
+[node name="Floor2" parent="Buildings/House1" instance=ExtResource("6_floor")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 0)
+
+[node name="Floor3" parent="Buildings/House1" instance=ExtResource("6_floor")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -2)
+
+[node name="Floor4" parent="Buildings/House1" instance=ExtResource("6_floor")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, -2)
+
+[node name="WallBack1" parent="Buildings/House1" instance=ExtResource("7_wall")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -3)
+
+[node name="WallBack2" parent="Buildings/House1" instance=ExtResource("9_wall_window")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, -3)
+
+[node name="WallFront" parent="Buildings/House1" instance=ExtResource("8_wall_door")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 1, 0, 1)
+
+[node name="WallLeft" parent="Buildings/House1" instance=ExtResource("7_wall")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -1, 0, -1)
+
+[node name="WallRight" parent="Buildings/House1" instance=ExtResource("9_wall_window")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 3, 0, -1)
+
+[node name="Roof1" parent="Buildings/House1" instance=ExtResource("10_roof")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+
+[node name="Roof2" parent="Buildings/House1" instance=ExtResource("10_roof")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 2, 0)
+
+[node name="Roof3" parent="Buildings/House1" instance=ExtResource("10_roof")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, -2)
+
+[node name="Roof4" parent="Buildings/House1" instance=ExtResource("10_roof")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 2, -2)
+
+[node name="Props" type="Node3D" parent="."]
+
+[node name="Barrel1" parent="Props" instance=ExtResource("11_barrel")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, -5)
+
+[node name="Barrel2" parent="Props" instance=ExtResource("11_barrel")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.5, 0, -5.3)
+
+[node name="Crate1" parent="Props" instance=ExtResource("12_crate")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, -4)
+
+[node name="Crate2" parent="Props" instance=ExtResource("12_crate")]
+transform = Transform3D(0.9, 0, 0.4, 0, 1, 0, -0.4, 0, 0.9, 6.5, 0, -4.5)
+
+[node name="Tree1" parent="Props" instance=ExtResource("13_tree")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 0, -10)
+
+[node name="Tree2" parent="Props" instance=ExtResource("13_tree")]
+transform = Transform3D(1.2, 0, 0, 0, 1.2, 0, 0, 0, 1.2, -8, 0, -5)
+
+[node name="Tree3" parent="Props" instance=ExtResource("13_tree")]
+transform = Transform3D(0.8, 0, 0, 0, 0.8, 0, 0, 0, 0.8, 15, 0, -15)
+
+[node name="Fence1" parent="Props" instance=ExtResource("14_fence")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0, -3)
+
+[node name="Fence2" parent="Props" instance=ExtResource("14_fence")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, -3)
+
+[node name="Fence3" parent="Props" instance=ExtResource("14_fence")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 7, 0, -5)
