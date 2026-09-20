@@ -153,65 +153,126 @@ func _init_item_database() -> void:
 # === ИНВЕНТАРЬ ===
 
 func add_item(item_id: String, quantity: int = 1) -> bool:
+	if quantity <= 0:
+		return false
+
 	if not item_database.has(item_id):
 		push_error("[ASHBOUND] Предмет не найден: %s" % item_id)
 		return false
 
 	var template = item_database[item_id]
+	var stackable: bool = template.get("stackable", false)
+	var max_stack: int = 0
+	if stackable:
+		max_stack = int(template.get("max_stack", 0))
+		if max_stack <= 0:
+			push_error("[ASHBOUND] Некорректный max_stack для предмета: %s" % item_id)
+			return false
 
-	# Проверяем стакающиеся предметы
-	if template.get("stackable", false):
-		# Ищем существующий стак
+	# Свободные места в существующих стаках этого предмета
+	var free_in_stacks := 0
+	for item in items:
+		if item["id"] == item_id and stackable:
+			free_in_stacks += maxi(0, max_stack - int(item.get("quantity", 1)))
+
+	# Свободные записи инвентаря
+	var free_slots := maxi(0, max_capacity - items.size())
+
+	if stackable:
+		# Недостаток после существующих стопок
+		var remaining := quantity - free_in_stacks
+		if remaining > 0:
+			# Число необходимых новых стопок (без переполнения умножения)
+			var needed_new_stacks := (remaining - 1) / max_stack + 1
+			if needed_new_stacks > free_slots:
+				print("[ASHBOUND] Инвентарь полон!")
+				return false
+	else:
+		# Нестакуемые: каждый экземпляр — отдельная запись
+		if quantity > free_slots:
+			print("[ASHBOUND] Инвентарь полон!")
+			return false
+
+	var changed_items: Array = []
+
+	if stackable:
+		# 1) Добираем существующие стаки до max_stack
+		var remaining := quantity
 		for item in items:
+			if remaining <= 0:
+				break
 			if item["id"] == item_id:
-				var max_stack = template.get("max_stack", 99)
-				var can_add = mini(quantity, max_stack - item.get("quantity", 1))
-				if can_add > 0:
-					item["quantity"] = item.get("quantity", 1) + can_add
-					quantity -= can_add
-					item_added.emit(item)
+				var space = maxi(0, max_stack - int(item.get("quantity", 1)))
+				if space > 0:
+					var take = mini(space, remaining)
+					item["quantity"] = int(item.get("quantity", 1)) + take
+					remaining -= take
+					changed_items.append(item)
 
-				if quantity <= 0:
-					return true
+		# 2) Остаток — новые записи по max_stack шт.
+		while remaining > 0:
+			var new_item = template.duplicate(true)
+			new_item["quantity"] = mini(max_stack, remaining)
+			new_item["instance_id"] = _generate_instance_id()
+			items.append(new_item)
+			remaining -= int(new_item["quantity"])
+			changed_items.append(new_item)
+	else:
+		# Нестакуемые: каждый экземпляр — отдельная запись с quantity 1
+		for i in range(quantity):
+			var new_item = template.duplicate(true)
+			new_item["quantity"] = 1
+			new_item["instance_id"] = _generate_instance_id()
+			items.append(new_item)
+			changed_items.append(new_item)
 
-	# Проверяем место
-	if items.size() >= max_capacity:
-		print("[ASHBOUND] Инвентарь полон!")
-		return false
+	# Сигнал несёт реальные словари предметов из items
+	for item in changed_items:
+		item_added.emit(item)
 
-	# Создаём новый предмет
-	var new_item = template.duplicate(true)
-	new_item["quantity"] = quantity
-	new_item["instance_id"] = _generate_instance_id()
-
-	items.append(new_item)
-	item_added.emit(new_item)
-
-	print("[ASHBOUND] Получен предмет: %s x%d" % [new_item["name"], quantity])
+	print("[ASHBOUND] Получен предмет: %s x%d" % [template.get("name", item_id), quantity])
 	return true
 
 
 func remove_item(item_id: String, quantity: int = 1) -> bool:
+	if quantity <= 0:
+		return false
+
+	# Сначала проверяем общее количество
+	var total := 0
+	for item in items:
+		if item["id"] == item_id:
+			total += int(item.get("quantity", 1))
+
+	if total < quantity:
+		return false
+
+	# Списываем через несколько стаков/экземпляров
+	var remaining := quantity
 	for i in range(items.size() - 1, -1, -1):
+		if remaining <= 0:
+			break
 		var item = items[i]
 		if item["id"] == item_id:
-			if item.get("stackable", false):
-				item["quantity"] = item.get("quantity", 1) - quantity
-				if item["quantity"] <= 0:
-					items.remove_at(i)
-					item_removed.emit(item_id)
-			else:
+			var have := int(item.get("quantity", 1))
+			var take := mini(have, remaining)
+			item["quantity"] = have - take
+			remaining -= take
+			if item["quantity"] <= 0:
 				items.remove_at(i)
-				item_removed.emit(item_id)
-			return true
-	return false
+
+	item_removed.emit(item_id)
+	return true
 
 
 func has_item(item_id: String, quantity: int = 1) -> bool:
-	var total = 0
+	if quantity <= 0:
+		return false
+
+	var total := 0
 	for item in items:
 		if item["id"] == item_id:
-			total += item.get("quantity", 1)
+			total += int(item.get("quantity", 1))
 	return total >= quantity
 
 
