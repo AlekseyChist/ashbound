@@ -19,11 +19,14 @@
 
 ```powershell
 New-Item -ItemType Directory -Force -Path .tools/builds/windows,.tools/builds/android | Out-Null
+& '.tools/godot/Godot_v4.7.2-stable_win64_console.exe' --headless --editor --path . --import
 & '.tools/godot/Godot_v4.7.2-stable_win64_console.exe' --headless --path . --export-debug 'Windows Courtyard' '.tools/builds/windows/AshBound.exe'
 & '.tools/godot/Godot_v4.7.2-stable_win64_console.exe' --headless --path . --export-debug 'Android Courtyard' '.tools/builds/android/ashbound-courtyard.apk'
 ```
 
 Android-приложение прототипа имеет отдельный идентификатор `org.ashbound.courtyard`, ARM64. Установка и запуск проверяются на подключённом устройстве; успешный экспорт сам по себе не доказывает работоспособность на телефоне.
+
+После внешнего изменения сцен обновлять индекс редактора через `--import` до экспорта. Если экспорт завершился успешно, но в пакете отсутствуют зависимости, проверить локальный `.godot/editor/filesystem_cache10`: при подтверждённой проблеме сохранить его резервную копию за пределами `.godot`, пересоздать индекс полным импортом и повторить экспорт. Исходники и ассеты не удалять. Такой случай обнаружен и исправлен при сборке 0.3.0; результат проверен запуском обоих пакетов.
 
 ## Приёмка
 
@@ -31,4 +34,4 @@ Android-приложение прототипа имеет отдельный и
 
 Первый короткий запуск на OnePlus не заменяет проверку Samsung S23, двадцатиминутный тепловой тест и последующий выбор минимальных требований. Сохранение задания и сменная экипировка находятся в отдельных задачах плана.
 
-20 сентября исходная APK и обновлённая сборка установлены на OnePlus 13T; для одного из обновлений система телефона потребовала подтверждение, владелец его дал. Не отключать защиту установки ради автоматизации. Текущая версия Android: `0.2.0-third-person`, код 2, тот же пакет. Проверенные хэши и результаты новой камеры находятся в [THIRD_PERSON_CHECKS.md](THIRD_PERSON_CHECKS.md); исходного двора — в [COURTYARD_CHECKS.md](COURTYARD_CHECKS.md).
+20 сентября исходная APK и обновлённые сборки установлены на OnePlus 13T; для одного из обновлений система телефона потребовала подтверждение, владелец его дал. Не отключать защиту установки ради автоматизации. Текущая версия Android: `0.3.0-target-feedback`, код 3, тот же пакет. Проверенные хэши и результаты касаний/подсветки находятся в [TARGET_FEEDBACK_CHECKS.md](TARGET_FEEDBACK_CHECKS.md); новой камеры — в [THIRD_PERSON_CHECKS.md](THIRD_PERSON_CHECKS.md); исходного двора — в [COURTYARD_CHECKS.md](COURTYARD_CHECKS.md).

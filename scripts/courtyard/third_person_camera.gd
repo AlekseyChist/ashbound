@@ -137,6 +137,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 	elif event is InputEventMouseButton:
 		var mb := event as InputEventMouseButton
+		# Эмулированные клики (тачскрин -> мышь) не захватывают курсор.
+		if mb.device == InputEvent.DEVICE_ID_EMULATION:
+			return
 		if mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT \
 				and Input.mouse_mode == Input.MOUSE_MODE_VISIBLE \
 				and not _mouse_captured:
