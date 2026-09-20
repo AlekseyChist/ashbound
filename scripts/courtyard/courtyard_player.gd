@@ -7,15 +7,18 @@ signal interact_requested()
 signal strike_requested()
 
 @export var move_speed: float = 4.2
+@export var run_speed: float = 6.4
 @export var acceleration: float = 20.0
 @export var gravity: float = 22.0
 @export var walk_pose_fps: int = 15
+@export var run_pose_fps: int = 15
 
 var input_enabled: bool = true
 var facing_direction: Vector3 = Vector3(0, 0, -1)
 
 # Внутреннее состояние
 var _touch_move: Vector2 = Vector2.ZERO
+var _touch_run: bool = false
 var _attack_active: bool = false
 var _attack_time: float = 0.0
 var _strike_sent: bool = false
@@ -83,12 +86,19 @@ func _physics_process(delta: float) -> void:
 	if world_dir.length_squared() > 0.01:
 		facing_direction = world_dir.normalized()
 
+	# Бег: отдельный сенсорный запрос или удержание run (ПК), только при движении.
+	# Во время атаки бег подавляется прежним масштабом скорости.
+	var moving := world_dir.length_squared() > 0.01
+	var wants_running := input_enabled and not _attack_active and moving \
+		and (_touch_run or Input.is_action_pressed("run"))
+
 	# Скорость во время атаки снижена
 	var speed_scale := 1.0
 	if _attack_active:
 		speed_scale = ATTACK_SPEED_SCALE
 
-	var target_velocity := world_dir * move_speed * speed_scale
+	var base_speed := run_speed if wants_running else move_speed
+	var target_velocity := world_dir * base_speed * speed_scale
 	var accel := acceleration * delta
 	if velocity.x != target_velocity.x or velocity.z != target_velocity.z:
 		velocity.x = move_toward(velocity.x, target_velocity.x, accel)
@@ -116,8 +126,37 @@ func set_move_input(value: Vector2) -> void:
 	_touch_move = value.limit_length(1.0)
 
 
+## Сенсорный запрос бега (отдельно от клавиатуры; на ПК — удержание run).
+## Сброс (false) разрешён даже при выключенном вводе; установка true — нет.
+func set_run_input(value: bool) -> void:
+	if not input_enabled and value:
+		return
+	_touch_run = value
+
+
+## Идёт ли бег в данный момент: актуальный запрос движения (клавиатура + тач),
+## реальная горизонтальная скорость, включённый ввод, отсутствие атаки и
+## запрос бега. Замедление после отпускания движения бегом не считается.
+func is_running() -> bool:
+	if not input_enabled or _attack_active:
+		return false
+	var wants_running := _touch_run or (input_enabled and Input.is_action_pressed("run"))
+	if not wants_running:
+		return false
+	var move_input := Vector2.ZERO
+	if input_enabled:
+		move_input = Input.get_vector("move_left", "move_right", "move_forward", "move_back")
+		move_input += _touch_move
+		move_input = move_input.limit_length(1.0)
+	if move_input.length_squared() <= 0.01:
+		return false
+	var real_velocity := get_real_velocity()
+	return absf(real_velocity.x) > 0.01 or absf(real_velocity.z) > 0.01
+
+
 func stop_input() -> void:
 	_touch_move = Vector2.ZERO
+	_touch_run = false
 	velocity.x = 0.0
 	velocity.z = 0.0
 	_attack_active = false
@@ -152,6 +191,9 @@ func get_visual_direction() -> StringName:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_APPLICATION_FOCUS_OUT:
 		_touch_move = Vector2.ZERO
+		# Потеря фокуса очищает сенсорный бег; клавиатурный run сам
+		# перестаёт нажиматься, застрявшего режима не остаётся.
+		_touch_run = false
 
 
 # --- Визуальная презентация (idle/walk/attack x front/back/left/right) ---
@@ -161,11 +203,15 @@ func _update_visual() -> void:
 	if visual == null:
 		return
 
-	# Текущее действие (отдельно от имени клипа)
+	# Текущее действие (отдельно от имени клипа).
+	# Бег — только при фактическом горизонтальном движении (get_real_velocity
+	# учитывает упор в стену; на первом кадре он равен нулю, что корректно).
 	var new_action := &"idle"
 	if _attack_active:
 		new_action = &"attack"
+	elif is_running():
+		new_action = &"run"
 	elif velocity.x != 0.0 or velocity.z != 0.0:
 		new_action = &"walk"
 
-	visual.update_visual(new_action, facing_direction, walk_pose_fps)
+	visual.update_visual(new_action, facing_direction, walk_pose_fps, run_pose_fps)

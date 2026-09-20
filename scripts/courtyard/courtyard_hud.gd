@@ -7,6 +7,7 @@ signal move_changed(value: Vector2)
 signal interact_pressed()
 signal attack_pressed()
 signal restart_pressed()
+signal run_changed(enabled: bool)
 
 const MIN_SIZE := Vector2(960, 540)
 const ROOT_RES := Vector2(1920, 1080)
@@ -17,8 +18,10 @@ enum Dir { NONE, UP, DOWN, LEFT, RIGHT }
 
 var _held_dir: int = Dir.NONE
 var _attack_held := false
+var _run_enabled := false
 var _touch_move_index := -1
 var _touch_attack_index := -1
+var _touch_run_index := -1
 var _suppress_mouse_until_ms := 0
 var _message_visible := true
 
@@ -35,6 +38,7 @@ var _dpad_left: Button
 var _dpad_right: Button
 var _btn_interact: Button
 var _btn_attack: Button
+var _btn_run: Button
 var _btn_restart: Button
 
 # Отслеживаемые тач-индексы (движение, удар, интеракт, рестарт, сообщение).
@@ -54,9 +58,11 @@ func _ready() -> void:
 	_dpad_right = $RootControl/BottomLeft/DpadGrid/Right
 	_btn_interact = $RootControl/BottomRight/VBox/InteractButton
 	_btn_attack = $RootControl/BottomRight/VBox/AttackButton
+	_btn_run = $RootControl/BottomRight/VBox/RunButton
 	_btn_restart = $RootControl/TopRightPanel/RestartButton
 
 	_btn_interact.text = "Действие"
+	_set_run_mode(false, false)
 
 	var touch_mode := OS.has_feature("android") or force_touch_controls
 	$RootControl/BottomLeft/DpadGrid.visible = touch_mode
@@ -68,7 +74,7 @@ func _ready() -> void:
 		legend.position = Vector2(legend.position.x, legend.position.y - 68)
 	else:
 		var legend := $RootControl/BottomLeft/LegendLabel
-		legend.text = "WASD — движение · мышь — обзор\nE — действие · ЛКМ — удар · Esc — курсор"
+		legend.text = "WASD — движение · мышь — обзор\nShift — бег · E — действие · ЛКМ — удар · Esc — курсор"
 		legend.size = Vector2(1100, 64)
 		legend.position = Vector2(0, 320)
 
@@ -88,7 +94,7 @@ func _ready() -> void:
 
 
 func _all_buttons() -> Array[Button]:
-	return [_dpad_up, _dpad_down, _dpad_left, _dpad_right, _btn_interact, _btn_attack, _btn_restart]
+	return [_dpad_up, _dpad_down, _dpad_left, _dpad_right, _btn_interact, _btn_attack, _btn_run, _btn_restart]
 
 
 func _apply_styles() -> void:
@@ -195,6 +201,7 @@ func reset_controls() -> void:
 	_attack_held = false
 	_touch_move_index = -1
 	_touch_attack_index = -1
+	_touch_run_index = -1
 	_tracked_touches.clear()
 	# Рестарт синхронно очищает трек-состояние — не даём тачу рестарта
 	# породить дублирующий эмулированный клик мышью.
@@ -204,6 +211,7 @@ func reset_controls() -> void:
 	_set_dpad_pressed(false)
 	if _btn_attack:
 		_btn_attack.button_pressed = false
+	_set_run_mode(false, true)
 	_emit_move()
 
 
@@ -255,7 +263,8 @@ func _to_root_position(local_pos: Vector2) -> Vector2:
 
 
 func _is_tracked(index: int) -> bool:
-	return index == _touch_move_index or index == _touch_attack_index or _tracked_touches.has(index)
+	return index == _touch_move_index or index == _touch_attack_index \
+		or index == _touch_run_index or _tracked_touches.has(index)
 
 
 func _track(index: int) -> void:
@@ -283,6 +292,10 @@ func _point_in_dpad(p: Vector2) -> int:
 
 func _point_in_attack(p: Vector2) -> bool:
 	return _btn_attack.is_visible_in_tree() and _btn_attack.get_global_rect().has_point(p)
+
+
+func _point_in_run(p: Vector2) -> bool:
+	return _btn_run.is_visible_in_tree() and _btn_run.get_global_rect().has_point(p)
 
 
 func _point_in_owned_control(p: Vector2) -> bool:
@@ -314,6 +327,13 @@ func _on_touch_down(pos: Vector2, index: int) -> void:
 		_btn_attack.button_pressed = true
 		attack_pressed.emit()
 		return
+	if _point_in_run(pos) and _touch_run_index == -1:
+		# Кнопка владеет своим тачем: камера не вращается от неё,
+		# а режим переключается ровно один раз на press.
+		_touch_run_index = index
+		_track(index)
+		_toggle_run_mode()
+		return
 	if _btn_interact.is_visible_in_tree() and _btn_interact.get_global_rect().has_point(pos):
 		_track(index)
 		interact_pressed.emit()
@@ -335,6 +355,9 @@ func _on_touch_up(index: int) -> void:
 		_emit_move()
 	elif index == _touch_attack_index:
 		_release_attack()
+	elif index == _touch_run_index:
+		# Отпускание только снимает владение тачем — режим не отключается.
+		_touch_run_index = -1
 	_untrack(index)
 
 
@@ -358,7 +381,7 @@ func _nearest_dpad_dir(p: Vector2) -> int:
 	var best := -1.0
 	var result := Dir.NONE
 	for b in _all_buttons():
-		if b == _btn_interact or b == _btn_attack or b == _btn_restart:
+		if b == _btn_interact or b == _btn_attack or b == _btn_run or b == _btn_restart:
 			continue
 		if not b.is_visible_in_tree():
 			continue
@@ -385,7 +408,7 @@ func _dir_of_button(b: Button) -> int:
 
 func _set_dpad_pressed(pressed: bool, dir: int = -1) -> void:
 	for b in _all_buttons():
-		if b == _btn_interact or b == _btn_attack or b == _btn_restart:
+		if b == _btn_interact or b == _btn_attack or b == _btn_run or b == _btn_restart:
 			continue
 		b.button_pressed = pressed and (dir == -1 or _dir_of_button(b) == dir)
 
@@ -419,6 +442,11 @@ func _on_button_down(b: Button) -> void:
 			interact_pressed.emit()
 		_btn_attack:
 			attack_pressed.emit()
+		_btn_run:
+			# Единственная точка переключения режима: эмулированные
+			# мышиные события не должны переключать его второй раз.
+			if _touch_run_index == -1:
+				_toggle_run_mode()
 		_btn_restart:
 			restart_pressed.emit()
 
@@ -433,6 +461,23 @@ func _on_button_up(b: Button) -> void:
 			_held_dir = Dir.NONE
 			_set_dpad_pressed(false)
 			_emit_move()
+
+
+# ---------------------------------------------------------------- Режим бега
+
+func _toggle_run_mode() -> void:
+	_set_run_mode(not _run_enabled, true)
+
+
+func _set_run_mode(enabled: bool, emit_change: bool) -> void:
+	if _run_enabled == enabled and not emit_change:
+		return
+	_run_enabled = enabled
+	if is_node_ready() and _btn_run:
+		_btn_run.text = "Бег" if enabled else "Ходьба"
+		_btn_run.button_pressed = enabled
+	if emit_change:
+		run_changed.emit(enabled)
 
 
 func _on_message_gui_input(event: InputEvent) -> void:
