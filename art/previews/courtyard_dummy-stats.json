@@ -1,0 +1,26 @@
+{
+  "slug": "courtyard_dummy",
+  "triangles": 484,
+  "vertices": 264,
+  "mesh_objects": 3,
+  "materials": [
+    "DummyRed",
+    "DummyStraw",
+    "DummyWood"
+  ],
+  "bbox_min": [
+    -0.6073,
+    -0.45,
+    0.0
+  ],
+  "bbox_max": [
+    0.6073,
+    0.45,
+    1.8
+  ],
+  "dimensions": [
+    1.2146,
+    0.9,
+    1.8
+  ]
+}

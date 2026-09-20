@@ -17,10 +17,13 @@ const { values } = parseArgs({ options: {
   'blender-scripts': { type: 'boolean', default: false },
   image: { type: 'string', multiple: true },
   'max-turns': { type: 'string', default: '12' },
+  'max-writes': { type: 'string', default: '0' },
   context: { type: 'string', default: '8192' },
   'output-tokens': { type: 'string', default: '4096' },
   think: { type: 'boolean', default: false },
   'files-only': { type: 'boolean', default: false },
+  'create-only': { type: 'boolean', default: false },
+  'allow-file': { type: 'string', multiple: true },
   help: { type: 'boolean', default: false },
 } });
 if (values.help) {
@@ -34,16 +37,23 @@ if (values.help) {
     '  --blender-scripts  Allow Python source under art/blender with --write',
     '  --image FILE       Project-relative PNG/JPEG reference (repeatable)',
     '  --files-only       File tools only; skip launching Godot MCP',
+    '  --create-only      Only create new files; requires --write --files-only',
+    '  --allow-file FILE  Restrict file reads/writes to these paths (repeatable; files-only)',
     '  --think            Enable optional local-model reasoning (off by default)',
     '  --max-turns N      Limit model/tool round trips (default: 12)',
+    '  --max-writes N     Return for review after N successful full-file writes (0: unlimited)',
     'Read-only by default. No shell, Git, cloud, or package-install tools.',
   ].join('\n'));
   process.exit(0);
 }
 if (Boolean(values.task) === Boolean(values['task-file'])) throw new Error('Specify exactly one of --task or --task-file.');
+if (values['create-only'] && (!values.write || !values['files-only'])) throw new Error('--create-only requires --write --files-only.');
+if (values['allow-file']?.length && !values['files-only']) throw new Error('--allow-file requires --files-only.');
 const task = values.task ?? await fs.readFile(path.resolve(values['task-file']), 'utf8');
 const maxTurns = Number(values['max-turns']);
 if (!Number.isInteger(maxTurns) || maxTurns < 1 || maxTurns > 30) throw new Error('--max-turns must be 1..30.');
+const maxWrites = Number(values['max-writes']);
+if (!Number.isInteger(maxWrites) || maxWrites < 0 || maxWrites > 30 || (maxWrites > 0 && !values.write)) throw new Error('--max-writes must be 0..30 and requires --write when nonzero.');
 const context = Number(values.context);
 if (!Number.isInteger(context) || context < 4096 || context > 24576) throw new Error('--context must be 4096..24576.');
 const outputTokens = Number(values['output-tokens']);
@@ -54,6 +64,8 @@ const within = (base, target) => {
 };
 const root = await fs.realpath(path.resolve(values.project));
 if (!within(await fs.realpath(workspace), root)) throw new Error('Project must be inside AshBound.');
+const allowedFiles = new Set((values['allow-file'] || []).map(relative => path.resolve(root, relative.replace(/^res:\/\//, '')).toLowerCase()));
+if ([...allowedFiles].some(target => !within(root.toLowerCase(), target))) throw new Error('--allow-file must stay inside the project.');
 const runId = new Date().toISOString().replace(/[:.]/g, '-');
 const runDir = path.join(workspace, '.tools', 'ollama-godot', 'runs', runId);
 await fs.mkdir(runDir, { recursive: true });
@@ -99,6 +111,7 @@ async function safePath(relative, { write = false, directory = false } = {}) {
   if (parts.some(part => part.startsWith('.') || ['node_modules'].includes(part) || /[<>"|?*]/.test(part))) throw new Error('Hidden, parent, or reserved paths are not accessible.');
   const target = path.resolve(root, ...parts);
   if (!within(root, target)) throw new Error('Path escapes project.');
+  if (allowedFiles.size && !allowedFiles.has(target.toLowerCase())) throw new Error('Outside this task file scope. Use only: ' + [...allowedFiles].map(file => path.relative(root, file)).join(', '));
   let parent = target;
   while (true) {
     try {
@@ -139,14 +152,14 @@ const schema = (name, description, properties, required = []) => ({ type: 'funct
   name, description, parameters: { type: 'object', properties, required, additionalProperties: false },
 } });
 const str = { type: 'string' };
-const fileTools = [
-  schema('list_files', 'List project file names, including 3D and image assets. Hidden folders, node_modules, addons and tools are excluded. read_file accepts text only.', { directory: str }),
+const fileTools = values['create-only'] ? [] : [
+  ...(!allowedFiles.size ? [schema('list_files', 'List project file names, including 3D and image assets. Hidden folders, node_modules, addons and tools are excluded. read_file accepts text only.', { directory: str })] : []),
   schema('read_file', 'Read a chunk of a UTF-8 project text file. Use end_line + 1 as start_line to read the next chunk.', { path: str, start_line: { type: 'integer', minimum: 1 }, max_lines: { type: 'integer', minimum: 1, maximum: 200 } }, ['path']),
 ];
 if (values.write) fileTools.push(
   schema('write_file', 'Write game code or a scene. Existing files require overwrite=true and are backed up.', { path: str, content: str, overwrite: { type: 'boolean' } }, ['path', 'content']),
-  schema('replace_text', 'Replace exactly one occurrence in an existing game file, with backup.', { path: str, old_text: str, new_text: str }, ['path', 'old_text', 'new_text']),
 );
+if (values.write && !values['create-only']) fileTools.push(schema('replace_text', 'Replace exactly one occurrence in an existing game file, with backup.', { path: str, old_text: str, new_text: str }, ['path', 'old_text', 'new_text']));
 async function fileTool(name, args) {
   if (name === 'read_file') {
     const target = await safePath(args.path);
@@ -180,7 +193,9 @@ async function fileTool(name, args) {
     await walk(start);
     return { files, truncated: files.length >= 400 };
   }
-  if (name === 'write_file') return save(args.path, args.content, args.overwrite === true);
+  if (name === 'write_file') {
+    return save(args.path, args.content, !values['create-only'] && args.overwrite === true);
+  }
   if (name === 'replace_text') {
     if (typeof args.old_text !== 'string' || !args.old_text || typeof args.new_text !== 'string') throw new Error('Provide nonempty old_text and string new_text.');
     const target = await safePath(args.path, { write: true });
@@ -234,7 +249,8 @@ try {
   await log('start', { model: values.model, endpoint: 'http://127.0.0.1:11434', project: root, write: values.write, blenderScripts: values['blender-scripts'], images: values.image || [], context, outputTokens, think: values.think, task, tools: [...toolNames] });
   console.error(`Ollama ${values.model}; project ${root}; writes ${values.write}; log ${runDir}`);
   let finished = false;
-  for (let turn = 0; turn < maxTurns; turn++) {
+  let fullFileWrites = 0;
+  modelLoop: for (let turn = 0; turn < maxTurns; turn++) {
     const answer = await api('chat', { model: values.model, messages, tools, stream: false, think: values.think,
       keep_alive: '10m', options: { num_ctx: context, num_predict: outputTokens, temperature: 0.1 } });
     const message = answer.message;
@@ -283,6 +299,12 @@ try {
       } catch (error) { result = { error: error.message }; }
       await log('tool_result', { name, result });
       messages.push({ role: 'tool', tool_name: name, content: JSON.stringify(result) });
+      if (name === 'write_file' && result.saved && maxWrites > 0 && ++fullFileWrites >= maxWrites) {
+        await log('write_limit', { fullFileWrites, maxWrites });
+        console.log('Write limit reached. Files saved for coordinator review; validation is still required.');
+        finished = true;
+        break modelLoop;
+      }
     }
   }
   if (!finished) throw new Error(`Stopped after ${maxTurns} turns. Inspect logs before continuing.`);
