@@ -1,53 +1,54 @@
 extends SceneTree
 ## Headless tool: rebuilds ONLY the run_back / run_front / run_side clips in
 ## res://assets/characters/courtyard/traveler_frames.tres from the measured
-## alpha regions of the run atlases. All other clips and metadata are preserved.
-## Idempotent: safe to re-run.
+## alpha regions of the v3 run atlases. All other clips and metadata are
+## preserved. Idempotent: safe to re-run.
 ## Run: godot --headless --script res://scripts/tools/build_courtyard_run_frames.gd
 
 const FRAMES_PATH := "res://assets/characters/courtyard/traveler_frames.tres"
-const RUN_BACK_FRONT_TEX_PATH := "res://assets/characters/courtyard/traveler-run-v1.png"
-const RUN_SIDE_TEX_PATH := "res://assets/characters/courtyard/traveler-run-spaced-v2.png"
+const RUN_SIDE_TEX_PATH := "res://assets/characters/courtyard/traveler-run-side-v3.png"
+const RUN_BACK_TEX_PATH := "res://assets/characters/courtyard/traveler-run-back-v3.png"
+const RUN_FRONT_TEX_PATH := "res://assets/characters/courtyard/traveler-run-front-v3.png"
 
 const CANVAS_W := 384.0
 const CANVAS_H := 384.0
 const FEET_BASELINE := 374.0
+const METADATA_OFFSET := 182.0
 const RUN_FPS := 15.0
 
-# Measured alpha bounding boxes: [x, y, width, height, anchorX].
-# BACK + FRONT come from traveler-run-v1.png; SIDE (bottom two rows) from
-# traveler-run-spaced-v2.png.
+# Measured alpha bounding boxes (top 8 frames (two rows) only; bottom control
+# rows are NOT used): [x, y, width, height, anchorX].
+const RUN_SIDE_RECTS: Array = [
+	[39, 29, 216, 279, 146.5],
+	[424, 34, 158, 274, 502.5],
+	[669, 25, 219, 282, 778],
+	[989, 11, 216, 290, 1096.5],
+	[39, 339, 228, 285, 152.5],
+	[403, 349, 196, 275, 500.5],
+	[676, 337, 220, 286, 785.5],
+	[988, 325, 211, 285, 1093],
+]
+
 const RUN_BACK_RECTS: Array = [
-	[93, 16, 139, 264, 162],
-	[327, 17, 139, 263, 396],
-	[562, 16, 138, 264, 630.5],
-	[799, 17, 135, 260, 866],
-	[99, 291, 140, 262, 168.5],
-	[335, 291, 140, 262, 404.5],
-	[563, 291, 140, 261, 632.5],
-	[802, 292, 137, 258, 870],
+	[111, 39, 145, 287, 183],
+	[403, 46, 154, 284, 479.5],
+	[695, 49, 151, 271, 770],
+	[1009, 43, 151, 284, 1084],
+	[112, 351, 148, 278, 185.5],
+	[420, 353, 145, 276, 492],
+	[703, 354, 153, 255, 779],
+	[1017, 353, 150, 276, 1091.5],
 ]
 
 const RUN_FRONT_RECTS: Array = [
-	[94, 556, 146, 259, 166.5],
-	[334, 560, 142, 259, 404.5],
-	[565, 557, 143, 262, 636],
-	[803, 558, 139, 257, 872],
-	[90, 819, 143, 260, 161],
-	[322, 821, 146, 259, 394.5],
-	[559, 823, 144, 260, 630.5],
-	[794, 823, 141, 256, 864],
-]
-
-const RUN_SIDE_RECTS: Array = [
-	[54, 913, 176, 241, 141.5],
-	[309, 913, 155, 238, 386],
-	[538, 914, 175, 243, 625],
-	[775, 913, 180, 244, 864.5],
-	[49, 1205, 181, 244, 139],
-	[299, 1203, 172, 241, 384.5],
-	[529, 1204, 187, 245, 622],
-	[774, 1203, 174, 246, 860.5],
+	[118, 16, 147, 309, 191],
+	[405, 26, 151, 297, 480],
+	[703, 26, 157, 299, 781],
+	[1002, 15, 156, 279, 1079.5],
+	[105, 340, 151, 300, 180],
+	[401, 348, 154, 292, 477.5],
+	[694, 345, 154, 295, 770.5],
+	[1004, 335, 152, 278, 1079.5],
 ]
 
 
@@ -70,16 +71,21 @@ func _build() -> bool:
 	if frames_res == null or not (frames_res is SpriteFrames):
 		push_error("Failed to load SpriteFrames resource: " + FRAMES_PATH)
 		return false
-	var frames := frames_res as SpriteFrames
-
-	var back_front_tex: Texture2D = load(RUN_BACK_FRONT_TEX_PATH) as Texture2D
-	if back_front_tex == null:
-		push_error("Failed to load run back/front atlas: " + RUN_BACK_FRONT_TEX_PATH)
-		return false
+	var frames := frames_res.duplicate(true) as SpriteFrames
 
 	var side_tex: Texture2D = load(RUN_SIDE_TEX_PATH) as Texture2D
 	if side_tex == null:
 		push_error("Failed to load run side atlas: " + RUN_SIDE_TEX_PATH)
+		return false
+
+	var back_tex: Texture2D = load(RUN_BACK_TEX_PATH) as Texture2D
+	if back_tex == null:
+		push_error("Failed to load run back atlas: " + RUN_BACK_TEX_PATH)
+		return false
+
+	var front_tex: Texture2D = load(RUN_FRONT_TEX_PATH) as Texture2D
+	if front_tex == null:
+		push_error("Failed to load run front atlas: " + RUN_FRONT_TEX_PATH)
 		return false
 
 	# Rebuild only the three run clips; everything else stays untouched.
@@ -87,16 +93,20 @@ func _build() -> bool:
 		if frames.has_animation(anim_name):
 			frames.remove_animation(anim_name)
 
-	var back_ok := _add_run_clip(frames, "run_back", back_front_tex, RUN_BACK_RECTS)
-	var front_ok := _add_run_clip(frames, "run_front", back_front_tex, RUN_FRONT_RECTS)
+	var back_ok := _add_run_clip(frames, "run_back", back_tex, RUN_BACK_RECTS)
+	var front_ok := _add_run_clip(frames, "run_front", front_tex, RUN_FRONT_RECTS)
 	var side_ok := _add_run_clip(frames, "run_side", side_tex, RUN_SIDE_RECTS)
 	if not (back_ok and front_ok and side_ok):
 		return false
 
-	# Per-view run scale: 1.8 m tall against the measured frame heights.
-	frames.set_meta(StringName("pixel_size_run_back"), 1.8 / 264.0)
-	frames.set_meta(StringName("pixel_size_run_front"), 1.8 / 265.0)
-	frames.set_meta(StringName("pixel_size_run_side"), 1.8 / 246.0)
+	# Visual calibration of head/torso size against the reference idle, judged
+	# by eye in Godot with a fixed camera (not an automatic measurement and not
+	# a silhouette normalization to standing height). The 0.90 factors were
+	# chosen because side/front at 0.90 matched the original anatomy while back
+	# at 1.00 still showed an enlarged head and torso.
+	frames.set_meta(StringName("pixel_size_run_back"), (1.8 / 300.5) * 0.90)
+	frames.set_meta(StringName("pixel_size_run_front"), (1.8 / 311.5) * 0.90)
+	frames.set_meta(StringName("pixel_size_run_side"), (1.8 / 303.5) * 0.90)
 
 	var err := ResourceSaver.save(frames, FRAMES_PATH)
 	if err != OK:

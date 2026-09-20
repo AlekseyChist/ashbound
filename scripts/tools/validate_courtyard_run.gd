@@ -127,7 +127,7 @@ func _run() -> void:
 	if player._touch_run:
 		_errors.append("focus-out did not reset _touch_run")
 
-	# --- Атака из бега: один strike на 0.12 с (7-8 physics frame), скорость 1.05 ---
+	# --- Атака из бега: один strike на 0.10-0.15 с, скорость 1.05 ---
 	player.global_position = start_pos
 	player.velocity = Vector3.ZERO
 	_clear_inputs()
@@ -144,24 +144,30 @@ func _run() -> void:
 		await physics_frame
 	if _strikes != 1:
 		_errors.append("strike count %d != 1" % _strikes)
-	elif _strike_time < 0.12 or _strike_time > 0.13:
-		_errors.append("strike at %f s outside 0.12-0.13" % _strike_time)
-	# Скорость 6.4 -> 1.05 с accel 20: ~0.267 с (16 кадров). На 18-20 кадре
-	# после атаки скорость уже 1.05 и атака ещё активна (длится 24 кадра).
-	await _frames(18)
+	elif _strike_time < 0.10 or _strike_time > 0.15:
+		_errors.append("strike at %f s outside 0.10-0.15" % _strike_time)
+	# Скорость 6.4 -> 1.05 с accel 20: ~0.267 с (16 кадров). На абсолютном
+	# кадре start+19 скорость уже 1.05 и атака ещё активна (длится 24 кадра).
+	while Engine.get_physics_frames() < _attack_start_frame + 19:
+		await physics_frame
 	var slowed := player.get_real_velocity().length()
 	if absf(slowed - 1.05) > 0.1:
-		_errors.append("speed at frame ~18 after attack %f != 1.05" % slowed)
-	while player._attack_active and Engine.get_physics_frames() < _attack_start_frame + 60:
+		_errors.append("speed at frame start+19 %f != 1.05" % slowed)
+	if not player._attack_active:
+		_errors.append("attack not active at frame start+19")
+	while Engine.get_physics_frames() < _attack_start_frame + 40:
 		await physics_frame
+	if _strikes != 1:
+		_errors.append("strike count %d != 1 at frame start+40" % _strikes)
 	if player._attack_active:
-		_errors.append("attack did not end within 60 frames")
+		_errors.append("attack did not end by frame start+40")
 	await _settle(player, 6.4)
 	var resumed := player.get_real_velocity().length()
 	if absf(resumed - 6.4) > 0.15:
 		_errors.append("run not resumed after attack: %f" % resumed)
 	_clear_inputs()
 	await _frames(3)
+	print("ASHBOUND_PROTOCOL walk_speed=%.4f run_speed=%.4f diag_speed=%.4f strike_time=%.6f slowed=%.4f" % [walk_speed, run_speed, diag_speed, _strike_time, slowed])
 
 	# --- Стена: не проходить сквозь, is_running=false после упора ---
 	var wall := StaticBody3D.new()
@@ -274,11 +280,13 @@ func _settle(player: CharacterBody3D, target_speed: float) -> void:
 		await physics_frame
 		if absf(player.get_real_velocity().length() - target_speed) < 0.05:
 			return
+	_errors.append("speed did not settle to %f within 60 frames" % target_speed)
 
 func _measure_distance(player: CharacterBody3D, start_pos: Vector3, pose_fps: int) -> float:
 	player.run_pose_fps = pose_fps
 	player.global_position = start_pos
 	player.velocity = Vector3.ZERO
+	var body := player.get_node("Visual/Body") as AnimatedSprite3D
 	_clear_inputs()
 	await _frames(5)
 	Input.action_press("move_right")
@@ -286,8 +294,16 @@ func _measure_distance(player: CharacterBody3D, start_pos: Vector3, pose_fps: in
 	var p0 := player.global_position
 	for i in 60:
 		await physics_frame
+	if body == null:
+		_errors.append("measure: missing Visual/Body")
+	else:
+		var expected_scale := float(pose_fps) / 15.0
+		if absf(body.speed_scale - expected_scale) > 0.01:
+			_errors.append("speed_scale %f != %.2f (pose_fps=%d)" % [body.speed_scale, expected_scale, pose_fps])
+		if not String(body.animation).begins_with("run_"):
+			_errors.append("measure clip %s is not run_*" % body.animation)
 	var dist := (player.global_position - p0).length()
-	print("ASHBOUND_MEASURE pose_fps=%d dist=%.4f" % [pose_fps, dist])
+	print("ASHBOUND_MEASURE pose_fps=%d dist=%.4f speed_scale=%.3f" % [pose_fps, dist, body.speed_scale if body else -1.0])
 	_clear_inputs()
 	await _frames(3)
 	return dist

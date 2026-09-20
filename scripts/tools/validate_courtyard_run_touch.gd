@@ -33,7 +33,7 @@ func _run() -> void:
 	var yaw0: float = rig.rotation.y
 	drag(1, run_center + Vector2(40, 0), Vector2(40, 0))
 	await _frames(2)
-	if is_equal_approx(rig.rotation.y, yaw0):
+	if not is_equal_approx(rig.rotation.y, yaw0):
 		_errors.append("run drag rotated camera")
 	touch(1, run_center, false)
 	await _frames(2)
@@ -59,9 +59,9 @@ func _run() -> void:
 		_errors.append("move not RIGHT")
 	if not player.is_running():
 		_errors.append("not running after 25 frames")
-	var vel: Vector3 = player.velocity
-	if absf(vel.x - 6.4) > 0.15:
-		_errors.append("speed %f not ~6.4" % vel.x)
+	var h_speed: float = player.get_real_velocity().length()
+	if absf(h_speed - 6.4) > 0.15:
+		_errors.append("speed %f not ~6.4" % h_speed)
 	touch(10, right_center, false)
 	await _frames(25)
 	if player._touch_move != Vector2.ZERO:
@@ -72,8 +72,13 @@ func _run() -> void:
 		_errors.append("_run_enabled lost after release")
 
 	# --- 3. mouse emulation on run button must not re-toggle or attack ---
+	touch(12, run_center, true)
+	await _frames(1)
+	touch(12, run_center, false)
+	await _frames(1)
+	var run_before_mouse: bool = hud._run_enabled
 	var mb := InputEventMouseButton.new()
-	mb.device = Input.DEVICE_ID_EMULATION
+	mb.device = InputEvent.DEVICE_ID_EMULATION
 	mb.position = run_center
 	mb.button_index = MOUSE_BUTTON_LEFT
 	mb.pressed = true
@@ -82,7 +87,7 @@ func _run() -> void:
 	mb.pressed = false
 	root.push_input(mb, true)
 	await _frames(2)
-	if hud._run_enabled:
+	if hud._run_enabled != run_before_mouse:
 		_errors.append("mouse click toggled run")
 	if player._attack_active:
 		_errors.append("mouse click started attack")
@@ -93,8 +98,11 @@ func _run() -> void:
 	var free_pos := Vector2(1100, 400)
 	touch(12, free_pos, true)
 	await _frames(1)
+	var yaw_free0: float = rig.rotation.y
 	drag(12, free_pos + Vector2(70, 0), Vector2(70, 0))
 	await _frames(2)
+	if is_equal_approx(rig.rotation.y, yaw_free0):
+		_errors.append("free drag did not rotate camera")
 	if player._touch_move != Vector2.RIGHT:
 		_errors.append("move lost during look drag")
 	touch(13, atk_center, true)
@@ -104,7 +112,7 @@ func _run() -> void:
 	var yaw_atk: float = rig.rotation.y
 	drag(13, atk_center + Vector2(30, 0), Vector2(30, 0))
 	await _frames(2)
-	if is_equal_approx(rig.rotation.y, yaw_atk):
+	if not is_equal_approx(rig.rotation.y, yaw_atk):
 		_errors.append("attack drag rotated camera")
 	touch(13, atk_center, false)
 	touch(12, free_pos + Vector2(70, 0), false)
@@ -116,6 +124,8 @@ func _run() -> void:
 		_errors.append("stuck move")
 	if not is_equal_approx(rig.rotation.y, yaw_atk):
 		_errors.append("camera stuck rotating")
+	if rig._touch_index != -1:
+		_errors.append("rig _touch_index %d != -1 after release" % rig._touch_index)
 
 	# --- 5. reset_lesson + focus out ---
 	scene.reset_lesson()
@@ -134,6 +144,10 @@ func _run() -> void:
 	player.notification(MainLoop.NOTIFICATION_APPLICATION_FOCUS_OUT)
 	rig.notification(MainLoop.NOTIFICATION_APPLICATION_FOCUS_OUT)
 	await _frames(2)
+	if hud._run_enabled:
+		_errors.append("focus out: _run_enabled true")
+	if str(run_btn.text) != "Ходьба":
+		_errors.append("focus out: text not Ходьба")
 	if player._touch_run:
 		_errors.append("focus out: run stuck")
 	if player._touch_move != Vector2.ZERO:
@@ -152,8 +166,7 @@ func _run() -> void:
 func _setup(player: Node, rig: Node) -> void:
 	player.global_position = Vector3(-6.0, 0.1, 10.0)
 	rig.reset_view()
-	if player.has_signal("strike"):
-		player.connect("strike", _on_strike)
+	player.strike_requested.connect(_on_strike)
 
 func _on_strike() -> void:
 	_strikes += 1

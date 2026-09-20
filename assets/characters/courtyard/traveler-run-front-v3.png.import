@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bf8yd0e3bysat"
-path="res://.godot/imported/traveler-run-spaced-v2.png-61b8cdd22d0ea36ea35c5cf86209cdc8.ctex"
+uid="uid://b7tu35k1dkvvd"
+path="res://.godot/imported/traveler-run-front-v3.png-a0226d9c4ba9084c899d1f82a1298fc7.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/characters/courtyard/traveler-run-spaced-v2.png"
-dest_files=["res://.godot/imported/traveler-run-spaced-v2.png-61b8cdd22d0ea36ea35c5cf86209cdc8.ctex"]
+source_file="res://assets/characters/courtyard/traveler-run-front-v3.png"
+dest_files=["res://.godot/imported/traveler-run-front-v3.png-a0226d9c4ba9084c899d1f82a1298fc7.ctex"]
 
 [params]
 
