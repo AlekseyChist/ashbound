@@ -50,6 +50,7 @@ func _run() -> void:
 	root.size = Vector2i(1920, 1080)
 	var packed: PackedScene = load("res://scenes/courtyard/courtyard_hud.tscn")
 	hud = packed.instantiate()
+	hud.force_touch_controls = true
 	root.add_child(hud)
 	await process_frame
 	await process_frame
