@@ -100,8 +100,8 @@ const api = (route, body) => new Promise((resolve, reject) => {
   deadline = setTimeout(() => request.destroy(new Error('Ollama request exceeded 15 minutes.')), 900000);
   request.end(payload);
 });
-const textExtensions = new Set(['.gd', '.tscn', '.tres', '.godot', '.cfg', '.md', '.json', '.gdshader', '.cs', '.txt']);
-const writableExtensions = new Set(['.gd', '.tscn', '.tres', '.gdshader', '.cs']);
+const textExtensions = new Set(['.gd', '.tscn', '.tres', '.godot', '.cfg', '.md', '.json', '.gdshader', '.cs', '.txt', '.po', '.pot']);
+const writableExtensions = new Set(['.gd', '.tscn', '.tres', '.gdshader', '.cs', '.po', '.pot']);
 if (values['blender-scripts']) textExtensions.add('.py');
 async function safePath(relative, { write = false, directory = false } = {}) {
   if (typeof relative !== 'string') throw new Error('Path must be text.');
@@ -129,7 +129,8 @@ async function safePath(relative, { write = false, directory = false } = {}) {
   if (write) {
     if (!values.write) throw new Error('This run is read-only.');
     const blenderScript = values['blender-scripts'] && path.extname(target).toLowerCase() === '.py' && within(path.join(root, 'art', 'blender'), target);
-    if (!blenderScript && !writableExtensions.has(path.extname(target).toLowerCase()) && target !== path.join(root, 'project.godot')) throw new Error('Only game code, scenes, resources, project.godot, and explicitly enabled art/blender/*.py can be written.');
+    const projectConfig = target === path.join(root, 'project.godot') || target === path.join(root, 'export_presets.cfg');
+    if (!blenderScript && !writableExtensions.has(path.extname(target).toLowerCase()) && !projectConfig) throw new Error('Only game code, scenes, resources, PO/POT catalogs, project.godot, export_presets.cfg, and explicitly enabled art/blender/*.py can be written.');
   }
   return target;
 }
