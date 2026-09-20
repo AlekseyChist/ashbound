@@ -291,53 +291,114 @@ func _generate_instance_id() -> String:
 # === ЭКИПИРОВКА ===
 
 func equip_item(item: Dictionary) -> bool:
-	var slot = item.get("slot", "")
-	if slot == "":
+	# item — это HANDLE: используем только instance_id, остальное игнорируем
+	var instance_id = _get_handle_instance_id(item)
+	if instance_id == "":
 		return false
 
-	# Проверяем требования
-	if item.has("faction_requirement"):
-		if FactionManager.player_faction != item["faction_requirement"]:
+	# Ищем каноническую запись в items (отклоняем неоднозначные дубликаты)
+	var carried: Dictionary = {}
+	var found := false
+	for entry in items:
+		if not (entry is Dictionary):
+			continue
+		var entry_id = entry.get("instance_id", "")
+		if entry_id is String and entry_id == instance_id:
+			if found:
+				return false
+			carried = entry
+			found = true
+	if not found:
+		return false
+
+	# Предметы, только что экипированные, не являются инвентарём и не могут быть экипированы повторно
+	for slot in equipped:
+		if equipped[slot] == carried:
+			return false
+
+	# Валидация канонических данных
+	var type = carried.get("type", -1)
+	if type != ItemType.WEAPON and type != ItemType.ARMOR:
+		return false
+
+	var slot = carried.get("slot", "")
+	if not (slot is String) or not equipped.has(slot):
+		return false
+
+	var raw_quantity = carried.get("quantity", 0)
+	if not (raw_quantity is int) or raw_quantity != 1:
+		return false
+
+	if bool(carried.get("stackable", false)):
+		return false
+
+	# Требование фракции из канонического объекта
+	if carried.has("faction_requirement"):
+		if FactionManager.player_faction != carried["faction_requirement"]:
 			print("[ASHBOUND] Требуется членство в фракции!")
 			return false
 
-	# Снимаем текущий предмет
-	if equipped[slot] != null:
-		unequip_slot(slot)
+	# Проверяем, что текущее содержимое слота корректно (чтобы не потерять данные)
+	var old_item = equipped[slot]
+	if old_item != null and not (old_item is Dictionary):
+		push_error("[ASHBOUND] Некорректный предмет в слоте: %s" % slot)
+		return false
 
-	# Экипируем
-	equipped[slot] = item
-	items.erase(item)
+	# Проверяем, что после замены инвентарь не переполнится:
+	# входящий предмет уходит из items, а старый возвращается в items
+	var final_size := items.size() - 1
+	if old_item != null:
+		final_size += 1
+	if final_size > max_capacity:
+		print("[ASHBOUND] Нет места в инвентаре!")
+		return false
 
-	# Применяем статы
+	# Применяем изменения: снимаем старый предмет (если есть) и экипируем новый
+	var removed_old := false
+	if old_item != null:
+		items.append(old_item)
+		equipped[slot] = null
+		removed_old = true
+
+	items.erase(carried)
+	equipped[slot] = carried
+
+	# Применяем статы ДО отправки событий
 	_apply_equipment_stats()
 
-	item_equipped.emit(item, slot)
-	print("[ASHBOUND] Экипировано: %s" % item["name"])
+	# События: сначала снятие (если было), затем экипирование
+	if removed_old:
+		item_unequipped.emit(slot)
+	item_equipped.emit(carried, slot)
+
+	print("[ASHBOUND] Экипировано: %s" % _safe_name(carried))
 	return true
 
 
 func unequip_slot(slot: String) -> bool:
-	if equipped[slot] == null:
+	if not equipped.has(slot):
+		return false
+
+	var item = equipped[slot]
+	if item == null:
 		return false
 
 	if items.size() >= max_capacity:
 		print("[ASHBOUND] Нет места в инвентаре!")
 		return false
 
-	var item = equipped[slot]
 	items.append(item)
 	equipped[slot] = null
 
 	_apply_equipment_stats()
 
 	item_unequipped.emit(slot)
-	print("[ASHBOUND] Снято: %s" % item["name"])
+	print("[ASHBOUND] Снято: %s" % _safe_name(item))
 	return true
 
 
 func _apply_equipment_stats() -> void:
-	if not GameManager.player:
+	if not is_instance_valid(GameManager.player):
 		return
 
 	var player = GameManager.player
@@ -361,34 +422,110 @@ func _apply_equipment_stats() -> void:
 
 
 func get_equipped(slot: String) -> Dictionary:
-	return equipped.get(slot, {})
+	if not equipped.has(slot):
+		return {}
+	var item = equipped[slot]
+	if item == null or not (item is Dictionary):
+		return {}
+	return item
 
 
 # === ИСПОЛЬЗОВАНИЕ ПРЕДМЕТОВ ===
 
 func use_item(item: Dictionary) -> bool:
-	if item["type"] != ItemType.CONSUMABLE:
+	# item — это HANDLE: используем только instance_id, остальное игнорируем
+	var instance_id = _get_handle_instance_id(item)
+	if instance_id == "":
 		return false
 
-	if not GameManager.player:
+	# Ищем каноническую запись в items (отклоняем неоднозначные дубликаты)
+	var carried: Dictionary = {}
+	var found := false
+	for entry in items:
+		if not (entry is Dictionary):
+			continue
+		var entry_id = entry.get("instance_id", "")
+		if entry_id is String and entry_id == instance_id:
+			if found:
+				return false
+			carried = entry
+			found = true
+	if not found:
 		return false
 
-	var effect = item.get("effect", {})
+	# Валидация канонических данных
+	if carried.get("type", -1) != ItemType.CONSUMABLE:
+		return false
 
+	var raw_quantity = carried.get("quantity", 0)
+	if not (raw_quantity is int) or raw_quantity <= 0:
+		return false
+	var quantity: int = raw_quantity
+
+	# Проверяем, что игрок существует
+	if not is_instance_valid(GameManager.player):
+		return false
+
+	var player = GameManager.player
+
+	# Проверяем эффект и возможности игрока ДО удаления предмета
+	var effect = carried.get("effect", {})
+	if not (effect is Dictionary):
+		return false
+
+	var has_heal := false
+	var has_stamina := false
 	if effect.has("heal"):
-		GameManager.player.heal(effect["heal"])
-
+		has_heal = true
+		if not player.has_method("heal"):
+			return false
 	if effect.has("stamina"):
-		GameManager.player.current_stamina = minf(
-			GameManager.player.current_stamina + effect["stamina"],
-			GameManager.player.max_stamina
-		)
+		has_stamina = true
+		if not ("current_stamina" in player and "max_stamina" in player):
+			return false
 
-	# Удаляем использованный предмет
-	remove_item(item["id"], 1)
+	if not has_heal and not has_stamina:
+		return false
 
-	print("[ASHBOUND] Использовано: %s" % item["name"])
+	# Снимаем снимок информации об эффекте
+	var heal_value = 0
+	var stamina_value = 0
+	if has_heal:
+		heal_value = int(effect.get("heal", 0))
+	if has_stamina:
+		stamina_value = int(effect.get("stamina", 0))
+
+	# Удаляем ровно ОДИН предмет из выбранного стака
+	carried["quantity"] = quantity - 1
+	if carried["quantity"] <= 0:
+		items.erase(carried)
+
+	# Применяем эффект
+	if has_heal:
+		player.heal(heal_value)
+	if has_stamina:
+		player.current_stamina = minf(player.current_stamina + stamina_value, player.max_stamina)
+
+	# Отправляем сигнал item_removed один раз после успешного применения эффекта
+	item_removed.emit(str(carried.get("id", "")))
+
+	print("[ASHBOUND] Использовано: %s" % _safe_name(carried))
 	return true
+
+
+func _get_handle_instance_id(handle: Dictionary) -> String:
+	if not (handle is Dictionary):
+		return ""
+	var id = handle.get("instance_id", "")
+	if not (id is String):
+		return ""
+	return id
+
+
+func _safe_name(item: Dictionary) -> String:
+	if item is Dictionary:
+		return str(item.get("name", "неизвестный предмет"))
+	return "неизвестный предмет"
 
 
 # === ЗОЛОТО ===
