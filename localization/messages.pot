@@ -1,0 +1,45 @@
+# AshBound source messages (POT).
+msgid ""
+msgstr ""
+"Project-Id-Version: AshBound\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+# Settings menu: language selection label.
+msgid "UI_LANGUAGE"
+msgstr ""
+
+# Settings menu: option to follow the device/system language.
+msgid "UI_LANGUAGE_AUTO"
+msgstr ""
+
+# Generic close action (menus, dialogs).
+msgid "UI_CLOSE"
+msgstr ""
+
+# Player interaction prompt/action.
+msgid "UI_ACTION_INTERACT"
+msgstr ""
+
+# Player attack action.
+msgid "UI_ACTION_ATTACK"
+msgstr ""
+
+# Player run action.
+msgid "UI_ACTION_RUN"
+msgstr ""
+
+# Player walk action.
+msgid "UI_ACTION_WALK"
+msgstr ""
+
+# Greeting to a character; {name} is the character name.
+msgid "UI_GREETING"
+msgstr ""
+
+# Inventory item count; plural key UI_ITEM_COUNTS.
+msgid "UI_ITEM_COUNT"
+msgid_plural "UI_ITEM_COUNTS"
+msgstr[0] ""
+msgstr[1] ""

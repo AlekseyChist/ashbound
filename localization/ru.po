@@ -1,0 +1,48 @@
+# AshBound Russian catalog.
+msgid ""
+msgstr ""
+"Project-Id-Version: AshBound\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : (n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2));\n"
+
+# Settings menu: language selection label.
+msgid "UI_LANGUAGE"
+msgstr "Язык"
+
+# Settings menu: option to follow the device/system language.
+msgid "UI_LANGUAGE_AUTO"
+msgstr "Язык устройства"
+
+# Generic close action (menus, dialogs).
+msgid "UI_CLOSE"
+msgstr "Закрыть"
+
+# Player interaction prompt/action.
+msgid "UI_ACTION_INTERACT"
+msgstr "Действие"
+
+# Player attack action.
+msgid "UI_ACTION_ATTACK"
+msgstr "Удар"
+
+# Player run action.
+msgid "UI_ACTION_RUN"
+msgstr "Бег"
+
+# Player walk action.
+msgid "UI_ACTION_WALK"
+msgstr "Ходьба"
+
+# Greeting to a character; {name} is the character name.
+msgid "UI_GREETING"
+msgstr "Привет, {name}."
+
+# Inventory item count; plural key UI_ITEM_COUNTS.
+msgid "UI_ITEM_COUNT"
+msgid_plural "UI_ITEM_COUNTS"
+msgstr[0] "{count} предмет"
+msgstr[1] "{count} предмета"
+msgstr[2] "{count} предметов"

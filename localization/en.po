@@ -1,0 +1,47 @@
+# AshBound English catalog (source language).
+msgid ""
+msgstr ""
+"Project-Id-Version: AshBound\n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+# Settings menu: language selection label.
+msgid "UI_LANGUAGE"
+msgstr "Language"
+
+# Settings menu: option to follow the device/system language.
+msgid "UI_LANGUAGE_AUTO"
+msgstr "System language"
+
+# Generic close action (menus, dialogs).
+msgid "UI_CLOSE"
+msgstr "Close"
+
+# Player interaction prompt/action.
+msgid "UI_ACTION_INTERACT"
+msgstr "Interact"
+
+# Player attack action.
+msgid "UI_ACTION_ATTACK"
+msgstr "Attack"
+
+# Player run action.
+msgid "UI_ACTION_RUN"
+msgstr "Run"
+
+# Player walk action.
+msgid "UI_ACTION_WALK"
+msgstr "Walk"
+
+# Greeting to a character; {name} is the character name.
+msgid "UI_GREETING"
+msgstr "Hello, {name}."
+
+# Inventory item count; plural key UI_ITEM_COUNTS.
+msgid "UI_ITEM_COUNT"
+msgid_plural "UI_ITEM_COUNTS"
+msgstr[0] "{count} item"
+msgstr[1] "{count} items"
