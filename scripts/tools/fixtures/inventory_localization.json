@@ -1,0 +1,107 @@
+[
+  {
+    "key": "INV_OPEN",
+    "en": "Inventory",
+    "ru": "Вещи"
+  },
+  {
+    "key": "INV_OPEN_DESKTOP",
+    "en": "Inventory · I / Tab",
+    "ru": "Вещи · I / Tab"
+  },
+  {
+    "key": "INV_TITLE",
+    "en": "Carried items",
+    "ru": "При себе"
+  },
+  {
+    "key": "INV_SOURCE_POCKET",
+    "en": "Clothing pocket",
+    "ru": "Карман одежды"
+  },
+  {
+    "key": "INV_EMPTY",
+    "en": "Nothing here yet.",
+    "ru": "Пока ничего нет."
+  },
+  {
+    "key": "INV_GOLD",
+    "en": "Coins: {amount}",
+    "ru": "Монеты: {amount}"
+  },
+  {
+    "key": "INV_ROW",
+    "en": "{name} × {count}",
+    "ru": "{name} × {count}"
+  },
+  {
+    "key": "INV_EQUIPPED_ROW",
+    "en": "{name} · equipped",
+    "ru": "{name} · надето"
+  },
+  {
+    "key": "INV_UNKNOWN_ITEM",
+    "en": "Unknown item",
+    "ru": "Неизвестный предмет"
+  },
+  {
+    "key": "INV_SETTINGS_FAILURE",
+    "en": "Could not save the language preference.",
+    "ru": "Не удалось сохранить выбор языка."
+  },
+  {
+    "key": "LOC_LANGUAGE_ENGLISH",
+    "en": "English",
+    "ru": "English"
+  },
+  {
+    "key": "LOC_LANGUAGE_RUSSIAN",
+    "en": "Русский",
+    "ru": "Русский"
+  },
+  {
+    "key": "ITEM_RUSTY_SWORD_NAME",
+    "en": "Rusty sword",
+    "ru": "Ржавый меч"
+  },
+  {
+    "key": "ITEM_IRON_SWORD_NAME",
+    "en": "Iron sword",
+    "ru": "Железный меч"
+  },
+  {
+    "key": "ITEM_CULTIST_BLADE_NAME",
+    "en": "Cultist's blade",
+    "ru": "Клинок культиста"
+  },
+  {
+    "key": "ITEM_LEATHER_ARMOR_NAME",
+    "en": "Leather armor",
+    "ru": "Кожаная броня"
+  },
+  {
+    "key": "ITEM_CHAIN_MAIL_NAME",
+    "en": "Chain mail",
+    "ru": "Кольчуга"
+  },
+  {
+    "key": "ITEM_HEALTH_POTION_NAME",
+    "en": "Health potion",
+    "ru": "Зелье здоровья"
+  },
+  {
+    "key": "ITEM_STAMINA_POTION_NAME",
+    "en": "Stamina potion",
+    "ru": "Зелье выносливости"
+  },
+  {
+    "key": "ITEM_BREAD_NAME",
+    "en": "Bread",
+    "ru": "Хлеб"
+  },
+  {
+    "key": "ITEM_SACRED_ASH_NAME",
+    "en": "Sacred ash",
+    "ru": "Священный пепел"
+  }
+]

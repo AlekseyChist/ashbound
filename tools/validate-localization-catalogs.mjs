@@ -4,7 +4,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const courtyardFixture = JSON.parse(fs.readFileSync(path.join(root, 'scripts/tools/fixtures/courtyard_localization.json'), 'utf8'));
+const courtyardFixture = ['courtyard_localization.json', 'inventory_localization.json'].flatMap(file =>
+  JSON.parse(fs.readFileSync(path.join(root, 'scripts/tools/fixtures', file), 'utf8')));
 const expected = [
   'UI_LANGUAGE', 'UI_LANGUAGE_AUTO', 'UI_CLOSE', 'UI_ACTION_INTERACT',
   'UI_ACTION_ATTACK', 'UI_ACTION_RUN', 'UI_ACTION_WALK', 'UI_GREETING', 'UI_ITEM_COUNT',
@@ -84,7 +85,7 @@ for (const directory of ['scripts/courtyard', 'scenes/courtyard']) {
   for (const file of fs.readdirSync(path.join(root, directory)).filter(name => /\.(gd|tscn)$/.test(name))) {
     const relative = `${directory}/${file}`;
     const source = fs.readFileSync(path.join(root, relative), 'utf8');
-    for (const match of source.matchAll(/"((?:COURTYARD|UI)_[A-Z_]+)"/g)) {
+    for (const match of source.matchAll(/"((?:COURTYARD|UI|INV|ITEM|LOC)_[A-Z_]+)"/g)) {
       check(expected.includes(match[1]), `${relative}: unregistered runtime key ${match[1]}`);
     }
     source.split(/\r?\n/).forEach((line, i) => {
