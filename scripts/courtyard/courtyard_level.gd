@@ -43,6 +43,7 @@ func _ready() -> void:
 		if visual != null:
 			_dummy_base_scale = visual.scale
 	_connect_signals()
+	Localization.language_changed.connect(_on_language_changed)
 	_hud.set_prompt("")
 	_camera_rig.set_target(_player)
 	_snap_camera_to_player()
@@ -165,21 +166,26 @@ func _set_focus_prompt() -> void:
 	var touch_mode: bool = OS.has_feature("android") or _hud.force_touch_controls
 	var lines: PackedStringArray = PackedStringArray()
 	if _current_target != null:
-		var name: String = str(_current_target.get("display_name"))
-		var prompt: String = str(_current_target.get("prompt"))
-		if touch_mode:
-			lines.append("Действие · %s — %s" % [prompt, name])
-		else:
-			lines.append("E · %s — %s" % [prompt, name])
+		var name: String = _current_target.get_display_name()
+		var action: String = _current_target.get_prompt()
+		var key: String = "COURTYARD_FOCUS_INTERACT_TOUCH" if touch_mode else "COURTYARD_FOCUS_INTERACT_DESKTOP"
+		lines.append(Localization.text(key, {"name": name, "action": action}))
 	if _current_attack_target != null:
-		if touch_mode:
-			lines.append("Удар — Мишень")
-		else:
-			lines.append("ЛКМ · Удар — Мишень")
+		var dummy_name: String = Localization.text("COURTYARD_NAME_DUMMY")
+		var key: String = "COURTYARD_FOCUS_ATTACK_TOUCH" if touch_mode else "COURTYARD_FOCUS_ATTACK_DESKTOP"
+		lines.append(Localization.text(key, {"name": dummy_name}))
 	var text: String = "\n".join(lines)
 	if text != _last_focus_prompt:
 		_last_focus_prompt = text
 		_hud.set_prompt(text)
+
+
+func _on_language_changed(_language: String) -> void:
+	# Только обновление переведённых подписей; никаких игровых действий.
+	if not is_node_ready():
+		return
+	_refresh_objective()
+	_set_focus_prompt()
 
 
 func get_interaction_target() -> Node:
@@ -240,7 +246,7 @@ func _on_strike_requested() -> void:
 		return
 	dummy_hits = mini(dummy_hits + 1, MAX_DUMMY_HITS)
 	_flash_dummy()
-	_hud.set_objective("Покажи три точных удара по соломенной мишени. (%d/%d)" % [dummy_hits, MAX_DUMMY_HITS])
+	_refresh_objective()
 	print("courtyard: strike hit %d/3" % dummy_hits)
 	if dummy_hits >= MAX_DUMMY_HITS:
 		_apply_state(State.REPORT)
@@ -302,66 +308,70 @@ func _update_dummy_flash(delta: float) -> void:
 
 func _apply_state(s: int) -> void:
 	state = s
-	match s:
+	_refresh_objective()
+
+
+func _refresh_objective() -> void:
+	match state:
 		State.MEET_HOST:
-			_hud.set_objective("Поговори с хозяйкой у дома.")
+			_hud.set_objective("COURTYARD_OBJECTIVE_MEET_HOST")
 		State.FETCH_WOOD:
-			_hud.set_objective("Принеси дрова от поленницы.")
+			_hud.set_objective("COURTYARD_OBJECTIVE_FETCH_WOOD")
 		State.RETURN_WOOD:
-			_hud.set_objective("Отнеси дрова хозяйке.")
+			_hud.set_objective("COURTYARD_OBJECTIVE_RETURN_WOOD")
 		State.MEET_GUARD:
-			_hud.set_objective("Поговори со сторожем.")
+			_hud.set_objective("COURTYARD_OBJECTIVE_MEET_GUARD")
 		State.PRACTICE:
-			_hud.set_objective("Покажи три точных удара по соломенной мишени. (0/%d)" % MAX_DUMMY_HITS)
+			_hud.set_objective("COURTYARD_OBJECTIVE_PRACTICE", {"hits": dummy_hits, "total": MAX_DUMMY_HITS})
 		State.REPORT:
-			_hud.set_objective("Отчитайся перед сторожем.")
+			_hud.set_objective("COURTYARD_OBJECTIVE_REPORT")
 		State.DONE:
-			_hud.set_objective("На сегодня ты устроился. Двор остаётся открытым для исследования.")
+			_hud.set_objective("COURTYARD_OBJECTIVE_DONE")
 
 
 func _on_innkeeper_interact() -> void:
 	match state:
 		State.MEET_HOST:
-			_hud.show_message("Хозяйка", "Ищешь ночлег? Принеси дрова от поленницы. За работу найдётся место у очага.")
+			_hud.show_message("COURTYARD_NAME_INNKEEPER", "COURTYARD_DIALOGUE_HOST_JOB")
 			_apply_state(State.FETCH_WOOD)
 		State.RETURN_WOOD:
 			if not reward_claimed:
 				reward_claimed = true
-				_hud.show_message("Хозяйка", "Спасибо. На эту ночь место твоё. А прежде чем выходить на дорогу, поговори со сторожем — он покажет, как постоять за себя.")
+				_hud.show_message("COURTYARD_NAME_INNKEEPER", "COURTYARD_DIALOGUE_HOST_REWARD")
 				_apply_state(State.MEET_GUARD)
 			else:
-				_hud.show_message("Хозяйка", "Дрова уже приняты. Иди к сторожу.")
+				_hud.show_message("COURTYARD_NAME_INNKEEPER", "COURTYARD_DIALOGUE_HOST_ACCEPTED")
 		State.FETCH_WOOD:
-			_hud.show_message("Хозяйка", "Сначала возьми дрова у поленницы.")
+			_hud.show_message("COURTYARD_NAME_INNKEEPER", "COURTYARD_DIALOGUE_HOST_REMIND")
 		_:
-			_hud.show_message("Хозяйка", "Место у очага твоё. Двор открыт для осмотра.")
+			_hud.show_message("COURTYARD_NAME_INNKEEPER", "COURTYARD_DIALOGUE_HOST_AFTER")
 
 
 func _on_woodpile_interact() -> void:
 	match state:
 		State.FETCH_WOOD:
-			_hud.show_message("", "Ты подобрал вязанку сухих дров. Отнеси её хозяйке.")
+			_hud.show_message("", "COURTYARD_DIALOGUE_WOOD_TAKEN")
 			if _woodpile.has_node("Label3D"):
 				_woodpile.get_node("Label3D").visible = false
 			_apply_state(State.RETURN_WOOD)
 		State.MEET_HOST:
-			_hud.show_message("", "Сначала поговори с хозяйкой.")
+			_hud.show_message("", "COURTYARD_DIALOGUE_WOOD_BEFORE")
 		_:
-			_hud.show_message("", "Дрова уже взяты.")
+			_hud.show_message("", "COURTYARD_DIALOGUE_WOOD_ALREADY")
 
 
 func _on_watchman_interact() -> void:
 	match state:
 		State.MEET_GUARD:
-			_hud.show_message("Сторож", "Держи дистанцию и не суетись. Покажи три точных удара по соломенной мишени.")
+			_hud.show_message("COURTYARD_NAME_WATCHMAN", "COURTYARD_DIALOGUE_GUARD_LESSON")
 			_apply_state(State.PRACTICE)
 		State.REPORT:
-			_hud.show_message("Сторож", "Для первого раза сойдёт. На дороге сначала смотри по сторонам, потом лезь в драку.")
+			_hud.show_message("COURTYARD_NAME_WATCHMAN", "COURTYARD_DIALOGUE_GUARD_REPORT")
 			_apply_state(State.DONE)
 		State.PRACTICE:
-			_hud.show_message("Сторож", "Покажи три точных удара по мишени.")
+			_hud.show_message("COURTYARD_NAME_WATCHMAN", "COURTYARD_DIALOGUE_GUARD_REMIND")
 		_:
-			_hud.show_message("Сторож", "Двор открыт. Можешь осмотреться.")
+			_hud.show_message("COURTYARD_NAME_WATCHMAN", "COURTYARD_DIALOGUE_GUARD_OTHER")
 
 
 # --- Сброс ----------------------------------------------------------------

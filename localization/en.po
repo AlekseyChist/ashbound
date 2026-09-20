@@ -45,3 +45,135 @@ msgid "UI_ITEM_COUNT"
 msgid_plural "UI_ITEM_COUNTS"
 msgstr[0] "{count} item"
 msgstr[1] "{count} items"
+
+# Courtyard scene: restart button.
+msgid "UI_RESTART"
+msgstr "Start over"
+
+# Courtyard scene: title.
+msgid "COURTYARD_TITLE"
+msgstr "Inn courtyard"
+
+# Courtyard scene: desktop controls legend.
+msgid "COURTYARD_LEGEND_DESKTOP"
+msgstr "WASD — move · mouse — look\nShift — run · E — interact · LMB — attack · Esc — cursor"
+
+# Courtyard scene: touch controls legend.
+msgid "COURTYARD_LEGEND_TOUCH"
+msgstr "Arrows — move · drag on the right — look\nTap the dialogue to close it"
+
+# Courtyard scene: innkeeper name.
+msgid "COURTYARD_NAME_INNKEEPER"
+msgstr "Innkeeper"
+
+# Courtyard scene: watchman name.
+msgid "COURTYARD_NAME_WATCHMAN"
+msgstr "Watchman"
+
+# Courtyard scene: woodpile name.
+msgid "COURTYARD_NAME_WOODPILE"
+msgstr "Woodpile"
+
+# Courtyard scene: training dummy name.
+msgid "COURTYARD_NAME_DUMMY"
+msgstr "Training dummy"
+
+# Courtyard scene: talk action label.
+msgid "COURTYARD_ACTION_TALK"
+msgstr "Talk"
+
+# Courtyard scene: take firewood action label.
+msgid "COURTYARD_ACTION_TAKE_WOOD"
+msgstr "Take firewood"
+
+# Courtyard scene: desktop interact focus prompt; {action} and {name} are placeholders.
+msgid "COURTYARD_FOCUS_INTERACT_DESKTOP"
+msgstr "E · {action} — {name}"
+
+# Courtyard scene: touch interact focus prompt; {action} and {name} are placeholders.
+msgid "COURTYARD_FOCUS_INTERACT_TOUCH"
+msgstr "Interact · {action} — {name}"
+
+# Courtyard scene: desktop attack focus prompt; {name} is a placeholder.
+msgid "COURTYARD_FOCUS_ATTACK_DESKTOP"
+msgstr "LMB · Attack — {name}"
+
+# Courtyard scene: touch attack focus prompt; {name} is a placeholder.
+msgid "COURTYARD_FOCUS_ATTACK_TOUCH"
+msgstr "Attack — {name}"
+
+# Courtyard objective: meet the innkeeper.
+msgid "COURTYARD_OBJECTIVE_MEET_HOST"
+msgstr "Talk to the innkeeper by the house."
+
+# Courtyard objective: fetch firewood from the woodpile.
+msgid "COURTYARD_OBJECTIVE_FETCH_WOOD"
+msgstr "Fetch firewood from the woodpile."
+
+# Courtyard objective: bring the firewood to the innkeeper.
+msgid "COURTYARD_OBJECTIVE_RETURN_WOOD"
+msgstr "Bring the firewood to the innkeeper."
+
+# Courtyard objective: talk to the watchman.
+msgid "COURTYARD_OBJECTIVE_MEET_GUARD"
+msgstr "Talk to the watchman."
+
+# Courtyard objective: practice hits on the dummy; {hits} and {total} are placeholders.
+msgid "COURTYARD_OBJECTIVE_PRACTICE"
+msgstr "Land three clean hits on the straw dummy. ({hits}/{total})"
+
+# Courtyard objective: report back to the watchman.
+msgid "COURTYARD_OBJECTIVE_REPORT"
+msgstr "Report back to the watchman."
+
+# Courtyard objective: all tasks completed.
+msgid "COURTYARD_OBJECTIVE_DONE"
+msgstr "You are settled for today. You can keep exploring the courtyard."
+
+# Courtyard dialogue: innkeeper offers work in exchange for a place to sleep.
+msgid "COURTYARD_DIALOGUE_HOST_JOB"
+msgstr "Need a place to sleep? Bring some firewood from the woodpile. Do that, and you can spend the night by the hearth."
+
+# Courtyard dialogue: innkeeper thanks the player after receiving the firewood.
+msgid "COURTYARD_DIALOGUE_HOST_REWARD"
+msgstr "Thank you. You have a place for tonight. Before you head out on the road, talk to the watchman. He will show you how to defend yourself."
+
+# Courtyard dialogue: innkeeper confirms the firewood was already taken.
+msgid "COURTYARD_DIALOGUE_HOST_ACCEPTED"
+msgstr "I already have the firewood. Go and talk to the watchman."
+
+# Courtyard dialogue: innkeeper reminds the player to fetch firewood first.
+msgid "COURTYARD_DIALOGUE_HOST_REMIND"
+msgstr "First, fetch some firewood from the woodpile."
+
+# Courtyard dialogue: innkeeper after the quest is done.
+msgid "COURTYARD_DIALOGUE_HOST_AFTER"
+msgstr "Your place by the hearth is ready. Feel free to look around the courtyard."
+
+# Courtyard dialogue: player picks up firewood at the woodpile.
+msgid "COURTYARD_DIALOGUE_WOOD_TAKEN"
+msgstr "You picked up a bundle of dry firewood. Bring it to the innkeeper."
+
+# Courtyard dialogue: woodpile before talking to the innkeeper.
+msgid "COURTYARD_DIALOGUE_WOOD_BEFORE"
+msgstr "Talk to the innkeeper first."
+
+# Courtyard dialogue: woodpile when the firewood is already taken.
+msgid "COURTYARD_DIALOGUE_WOOD_ALREADY"
+msgstr "You have already collected the firewood."
+
+# Courtyard dialogue: watchman explains the training task.
+msgid "COURTYARD_DIALOGUE_GUARD_LESSON"
+msgstr "Keep your distance and stay calm. Land three clean hits on the straw dummy."
+
+# Courtyard dialogue: watchman after the player completes the training.
+msgid "COURTYARD_DIALOGUE_GUARD_REPORT"
+msgstr "Not bad for a first try. Out on the road, look around before you pick a fight."
+
+# Courtyard dialogue: watchman reminds about the training task.
+msgid "COURTYARD_DIALOGUE_GUARD_REMIND"
+msgstr "Land three clean hits on the dummy."
+
+# Courtyard dialogue: watchman generic reply.
+msgid "COURTYARD_DIALOGUE_GUARD_OTHER"
+msgstr "The courtyard is open. Have a look around."

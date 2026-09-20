@@ -13,6 +13,8 @@ func _init() -> void:
 	_run.call_deferred()
 
 func _run() -> void:
+	var language := "en" if OS.get_cmdline_user_args().has("--locale=en") else "ru"
+	root.get_node("Localization").load_preferences("res://.tools/courtyard-route-qa.cfg", language)
 	await _load_scene()
 	if level == null or player == null:
 		_check(false, "scene load failed")
