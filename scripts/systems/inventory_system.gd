@@ -7,6 +7,7 @@ signal item_removed(item_id: String)
 signal item_equipped(item: Dictionary, slot: String)
 signal item_unequipped(slot: String)
 signal gold_changed(amount: int)
+signal inventory_restored()
 
 # Слоты экипировки
 const SLOT_WEAPON = "weapon"
@@ -724,20 +725,233 @@ func buy_item(item_id: String, price: int) -> bool:
 
 func get_save_data() -> Dictionary:
 	return {
-		"items": items,
-		"equipped": equipped,
+		"schema_version": 1,
+		"items": _deep_copy(items),
+		"equipped": _deep_copy(equipped),
 		"gold": gold,
 	}
 
 
-func load_save_data(data: Dictionary) -> void:
-	items = data.get("items", [])
-	equipped = data.get("equipped", {
-		SLOT_WEAPON: null,
-		SLOT_ARMOR: null,
-		SLOT_HELMET: null,
-		SLOT_RING: null,
-		SLOT_AMULET: null,
-	})
-	gold = data.get("gold", 0)
+func load_save_data(data: Dictionary) -> bool:
+	if _trade_guard:
+		return false
+
+	var validated := _validate_save_data(data)
+	if validated.is_empty():
+		return false
+
+	# Все проверки пройдены: фиксируем состояние атомарно
+	_trade_guard = true
+	items = validated["items"]
+	equipped = validated["equipped"]
+	gold = validated["gold"]
 	_apply_equipment_stats()
+	inventory_restored.emit()
+	gold_changed.emit(gold)
+	_trade_guard = false
+	return true
+
+
+func _validate_save_data(data: Dictionary) -> Dictionary:
+	if not data.has("schema_version") or not data.has("items") or not data.has("equipped") or not data.has("gold"):
+		return {}
+
+	var version = data["schema_version"]
+	if not (version is int) or version != 1:
+		return {}
+
+	var raw_items = data["items"]
+	if not (raw_items is Array):
+		return {}
+
+	var raw_equipped = data["equipped"]
+	if not (raw_equipped is Dictionary):
+		return {}
+
+	var raw_gold = data["gold"]
+	if not (raw_gold is int) or raw_gold < 0:
+		return {}
+
+	# Проверяем количество записей до обработки каждой записи
+	if raw_items.size() > max_capacity:
+		return {}
+
+	var expected_slots := [SLOT_WEAPON, SLOT_ARMOR, SLOT_HELMET, SLOT_RING, SLOT_AMULET]
+	for slot in expected_slots:
+		if not raw_equipped.has(slot):
+			return {}
+	if raw_equipped.size() != expected_slots.size():
+		return {}
+
+	var seen_ids := {}
+	var new_items: Array = []
+	for entry in raw_items:
+		var validated_entry := _validate_save_item(entry, seen_ids)
+		if validated_entry.is_empty():
+			return {}
+		new_items.append(validated_entry)
+
+	var new_equipped := {}
+	for slot in expected_slots:
+		var value = raw_equipped[slot]
+		if value == null:
+			new_equipped[slot] = null
+			continue
+		var validated_entry := _validate_save_item(value, seen_ids)
+		if validated_entry.is_empty():
+			return {}
+		# Экипировать можно только оружие/броню, нестакующуюся, quantity 1
+		var eq_type = validated_entry.get("type", -1)
+		if eq_type != ItemType.WEAPON and eq_type != ItemType.ARMOR:
+			return {}
+		if validated_entry.get("stackable", true):
+			return {}
+		if validated_entry.get("quantity", 0) != 1:
+			return {}
+		# Слот записи обязан совпадать со слотом назначения
+		if validated_entry.get("slot", "") != slot:
+			return {}
+		new_equipped[slot] = validated_entry
+
+	return {
+		"items": new_items,
+		"equipped": new_equipped,
+		"gold": raw_gold,
+	}
+
+
+func _validate_save_item(entry: Variant, seen_ids: Dictionary) -> Dictionary:
+	if not (entry is Dictionary):
+		return {}
+
+	var item_id = entry.get("id", "")
+	if not (item_id is String) or item_id == "" or not item_database.has(item_id):
+		return {}
+
+	var template = item_database[item_id]
+	if not (template is Dictionary):
+		return {}
+
+	var instance_id = entry.get("instance_id", "")
+	if not (instance_id is String) or instance_id == "":
+		return {}
+	if seen_ids.has(instance_id):
+		return {}
+	seen_ids[instance_id] = true
+
+	if not entry.has("quantity") or not entry.has("value") or not entry.has("type") or not entry.has("stackable"):
+		return {}
+
+	var quantity = entry["quantity"]
+	if not (quantity is int) or quantity <= 0:
+		return {}
+
+	var value = entry["value"]
+	if not (value is int) or value < 0:
+		return {}
+
+	var type = entry["type"]
+	if not (type is int) or type < 0 or type >= ItemType.size():
+		return {}
+	if type != template.get("type", -1):
+		return {}
+
+	var stackable = entry["stackable"]
+	if not (stackable is bool):
+		return {}
+	if stackable != template.get("stackable", false):
+		return {}
+
+	if stackable:
+		# max_stack обязателен в entry, строго int > 0 и равен каталогу
+		if not entry.has("max_stack"):
+			return {}
+		var max_stack = entry["max_stack"]
+		if not (max_stack is int) or max_stack <= 0:
+			return {}
+		if max_stack != template.get("max_stack", -1):
+			return {}
+		if quantity > max_stack:
+			return {}
+	else:
+		if quantity != 1:
+			return {}
+
+	var slot = entry.get("slot", "")
+	if type == ItemType.WEAPON or type == ItemType.ARMOR:
+		if stackable or quantity != 1:
+			return {}
+		if not (slot is String) or not equipped.has(slot):
+			return {}
+		if slot != template.get("slot", ""):
+			return {}
+
+	# stats/effect: при явно присутствующем ключе с null — отклоняем;
+	# проверяем наличие ключа, а не ненулевое значение
+	if entry.has("stats"):
+		var stats = entry["stats"]
+		if not (stats is Dictionary):
+			return {}
+		for key in stats:
+			var stat_value = stats[key]
+			if not _is_finite_number(stat_value) or stat_value < 0:
+				return {}
+
+	if entry.has("effect"):
+		var effect = entry["effect"]
+		if not (effect is Dictionary):
+			return {}
+		for key in effect:
+			var effect_value = effect[key]
+			if not _is_finite_number(effect_value) or effect_value < 0:
+				return {}
+
+	for string_key in ["name", "description", "icon", "quest_id", "faction_requirement"]:
+		if entry.has(string_key) and not (entry[string_key] is String):
+			return {}
+
+	var result: Variant = _deep_copy(entry)
+	if result == null or not (result is Dictionary):
+		return {}
+	result["quantity"] = quantity
+	result["value"] = value
+	result["type"] = type
+	result["stackable"] = stackable
+	return result
+
+
+func _is_finite_number(value: Variant) -> bool:
+	if value is int:
+		return true
+	if value is float:
+		return is_finite(value)
+	return false
+
+
+func _deep_copy(value: Variant, depth: int = 0) -> Variant:
+	# Отказ без ошибок движка: вход и runtime неизменны
+	if depth > 32:
+		return null
+	if value is Dictionary:
+		var result := {}
+		for key in value:
+			# Только значимые неизменяемые scalar-ключи; Array/Dictionary/Object/Callable/RID отклоняем
+			var key_is_scalar := (key is String) or (key is StringName) or (key is int) or (key is float) or (key is bool)
+			if not key_is_scalar:
+				return null
+			var copied_value = _deep_copy(value[key], depth + 1)
+			if copied_value == null and value[key] != null:
+				return null
+			result[key] = copied_value
+		return result
+	if value is Array:
+		var result: Array = []
+		for element in value:
+			var copied_element = _deep_copy(element, depth + 1)
+			if copied_element == null and element != null:
+				return null
+			result.append(copied_element)
+		return result
+	if value is Object or value is Callable or value is RID:
+		return null
+	return value
