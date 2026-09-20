@@ -9,8 +9,6 @@ const MAX_DUMMY_HITS := 3
 
 @export var interact_radius: float = 2.2
 @export var strike_range: float = 1.8
-@export var camera_lerp_speed: float = 6.0
-
 var state: int = State.MEET_HOST
 var dummy_hits: int = 0
 var reward_claimed: bool = false
@@ -20,7 +18,7 @@ var reward_claimed: bool = false
 @onready var _watchman: Node3D = $Actors/Watchman
 @onready var _woodpile: Node3D = $Interactions/Woodpile
 @onready var _camera_rig: Node3D = $CameraRig
-@onready var _camera: Camera3D = $CameraRig/Camera3D
+@onready var _camera: Camera3D = $CameraRig/SpringArm3D/Camera3D
 @onready var _hud: Node = $HUD
 
 var _player_spawn: Vector3 = Vector3.ZERO
@@ -42,6 +40,7 @@ func _ready() -> void:
 			_dummy_base_scale = visual.scale
 	_connect_signals()
 	_hud.set_prompt("")
+	_camera_rig.set_target(_player)
 	_snap_camera_to_player()
 	_apply_state(State.MEET_HOST)
 	print("ASHBOUND_COURTYARD_READY")
@@ -75,7 +74,6 @@ func _physics_process(_delta: float) -> void:
 
 
 func _process(delta: float) -> void:
-	_follow_camera(delta)
 	_update_dummy_flash(delta)
 	if _capture_path != "" and not _capture_started:
 		if DisplayServer.get_name() == "headless":
@@ -92,13 +90,7 @@ func _process(delta: float) -> void:
 # --- Камера ---------------------------------------------------------------
 
 func _snap_camera_to_player() -> void:
-	_camera_rig.global_position = _player.global_position + Vector3(0.0, 0.7, 0.0)
-
-
-func _follow_camera(delta: float) -> void:
-	var target: Vector3 = _player.global_position + Vector3(0.0, 0.7, 0.0)
-	if _camera_rig.global_position.distance_squared_to(target) > 0.0001:
-		_camera_rig.global_position = _camera_rig.global_position.lerp(target, 1.0 - exp(-camera_lerp_speed * delta))
+	_camera_rig.reset_view()
 
 
 # --- Взаимодействие -------------------------------------------------------
@@ -330,6 +322,8 @@ func reset_lesson() -> void:
 		_player.velocity = Vector3.ZERO
 		_player.input_enabled = true
 		_player.global_position = _player_spawn
+		_player.facing_direction = Vector3.FORWARD
+	_camera_rig.stop_look()
 	_snap_camera_to_player()
 	_hud.reset_controls()
 	_hud.clear_message()

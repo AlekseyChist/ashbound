@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://scripts/courtyard/courtyard_level.gd" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/courtyard/courtyard_environment.tscn" id="2"]
@@ -7,6 +7,7 @@
 [ext_resource type="PackedScene" path="res://scenes/courtyard/courtyard_hud.tscn" id="5"]
 [ext_resource type="Script" path="res://scripts/courtyard/interaction_point.gd" id="6"]
 [ext_resource type="SpriteFrames" path="res://assets/characters/courtyard/watchman_frames.tres" id="7"]
+[ext_resource type="PackedScene" path="res://scenes/courtyard/third_person_camera.tscn" id="8"]
 
 [node name="FirstCourtyard" type="Node3D"]
 script = ExtResource("1")
@@ -48,16 +49,7 @@ text = "Поленница"
 font_size = 32
 outline_size = 8
 
-[node name="CameraRig" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 0.8, 7)
-
-[node name="Camera3D" type="Camera3D" parent="CameraRig"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 14, 18)
-rotation = Vector3(-0.661043, 0, 0)
-projection = 1
-size = 20
-near = 0.1
-far = 100
-current = true
+[node name="CameraRig" parent="." instance=ExtResource("8")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 1.55, 7)
 
 [node name="HUD" parent="." instance=ExtResource("5")]

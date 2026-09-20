@@ -215,8 +215,18 @@ func _make_environment() -> bool:
 	env_node.name = "Environment"
 	var world_env := WorldEnvironment.new()
 	var env := Environment.new()
-	env.background_mode = Environment.BG_COLOR
-	env.background_color = Color(0.16, 0.18, 0.22)
+	# Overcast procedural sky (replaces flat background color).
+	var sky_mat := ProceduralSkyMaterial.new()
+	sky_mat.sky_top_color = Color(0.10, 0.13, 0.18)
+	sky_mat.sky_horizon_color = Color(0.36, 0.39, 0.42)
+	sky_mat.ground_bottom_color = Color(0.10, 0.12, 0.11)
+	sky_mat.ground_horizon_color = Color(0.36, 0.39, 0.42)
+	sky_mat.sky_curve = 0.2
+	sky_mat.sun_angle_max = 4.0
+	var sky := Sky.new()
+	sky.sky_material = sky_mat
+	env.background_mode = Environment.BG_SKY
+	env.sky = sky
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	env.ambient_light_color = Color(0.45, 0.5, 0.6)
 	env.ambient_light_energy = 0.6
@@ -231,6 +241,9 @@ func _make_environment() -> bool:
 	env_node.add_child(world_env)
 	lighting.add_child(env_node)
 	root.add_child(lighting)
+
+	# --- Backdrop: decorative depth ring, no gameplay/collisions ------------
+	root.add_child(_make_backdrop())
 
 	# --- Markers (empty Node3D for future gameplay actors) ------------------
 	var markers := Node3D.new()
@@ -334,6 +347,56 @@ func _make_pine(pos: Vector3) -> Node3D:
 	cone2.material_override = _pine_foliage_material()
 	pine.add_child(cone2)
 	return pine
+
+
+## Decorative depth backdrop for the eye-level third-person camera.
+## Purely visual: no colliders, no gameplay. Deterministic (sin/cos only).
+func _make_backdrop() -> Node3D:
+	var backdrop := Node3D.new()
+	backdrop.name = "Backdrop"
+
+	# Large ground plane extending beyond the courtyard boundary.
+	var ground_mi := MeshInstance3D.new()
+	ground_mi.name = "BackdropGround"
+	var plane := PlaneMesh.new()
+	plane.size = Vector2(240.0, 240.0)
+	ground_mi.mesh = plane
+	ground_mi.position = Vector3(0.0, -0.08, 0.0)
+	var soil := _soil_material()
+	soil.uv1_scale = Vector3(70.0, 70.0, 70.0)
+	ground_mi.material_override = soil
+	backdrop.add_child(ground_mi)
+
+	# Ring of ~32 existing pine nodes at deterministic radius 32..45.
+	var tree_count := 32
+	for i in tree_count:
+		var angle := TAU * float(i) / float(tree_count)
+		var radius := 32.0 + 13.0 * (0.5 + 0.5 * sin(float(i) * 12.9898))
+		var pos := Vector3(cos(angle) * radius, 0.0, sin(angle) * radius)
+		var pine := _make_pine(pos)
+		pine.name = "BackdropPine%d" % i
+		var scale := 2.0 + 1.5 * (0.5 + 0.5 * sin(float(i) * 78.233))
+		pine.scale = Vector3(scale, scale, scale)
+		backdrop.add_child(pine)
+
+	# Disable shadows on all backdrop trees (modest render cost).
+	for child in backdrop.get_children():
+		if not (child is Node3D):
+			continue
+		var node := child as Node3D
+		for mesh_node in _iter_mesh_instances(node):
+			mesh_node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	return backdrop
+
+
+func _iter_mesh_instances(node: Node) -> Array[MeshInstance3D]:
+	var result: Array[MeshInstance3D] = []
+	if node is MeshInstance3D:
+		result.append(node as MeshInstance3D)
+	for child in node.get_children():
+		if child is Node:
+			result.append_array(_iter_mesh_instances(child))
+	return result
 
 
 func _make_marker(marker_name: String, pos: Vector3) -> Marker3D:

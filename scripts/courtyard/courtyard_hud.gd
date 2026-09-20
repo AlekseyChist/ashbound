@@ -11,6 +11,8 @@ signal restart_pressed()
 const MIN_SIZE := Vector2(960, 540)
 const ROOT_RES := Vector2(1920, 1080)
 
+@export var force_touch_controls: bool = false
+
 enum Dir { NONE, UP, DOWN, LEFT, RIGHT }
 
 var _held_dir: int = Dir.NONE
@@ -55,8 +57,20 @@ func _ready() -> void:
 	_btn_restart = $RootControl/TopRightPanel/RestartButton
 
 	_btn_interact.text = "Действие"
-	if OS.has_feature("android"):
-		$RootControl/BottomLeft/LegendLabel.text = "Стрелки — движение · коснись реплики, чтобы закрыть"
+
+	var touch_mode := OS.has_feature("android") or force_touch_controls
+	$RootControl/BottomLeft/DpadGrid.visible = touch_mode
+	$RootControl/BottomRight.visible = touch_mode
+	if touch_mode:
+		var legend := $RootControl/BottomLeft/LegendLabel
+		legend.text = "Стрелки — движение · справа — обзор\nКоснись реплики, чтобы закрыть"
+		legend.size = Vector2(900, 60)
+		legend.position = Vector2(legend.position.x, legend.position.y - 68)
+	else:
+		var legend := $RootControl/BottomLeft/LegendLabel
+		legend.text = "WASD — движение · мышь — обзор\nE — действие · ЛКМ — удар · Esc — курсор"
+		legend.size = Vector2(1100, 64)
+		legend.position = Vector2(0, 320)
 
 	_apply_styles()
 
@@ -256,19 +270,19 @@ func _untrack(index: int) -> void:
 
 
 func _point_in_dpad(p: Vector2) -> int:
-	if _dpad_up.get_global_rect().has_point(p):
+	if _dpad_up.is_visible_in_tree() and _dpad_up.get_global_rect().has_point(p):
 		return Dir.UP
-	if _dpad_down.get_global_rect().has_point(p):
+	if _dpad_down.is_visible_in_tree() and _dpad_down.get_global_rect().has_point(p):
 		return Dir.DOWN
-	if _dpad_left.get_global_rect().has_point(p):
+	if _dpad_left.is_visible_in_tree() and _dpad_left.get_global_rect().has_point(p):
 		return Dir.LEFT
-	if _dpad_right.get_global_rect().has_point(p):
+	if _dpad_right.is_visible_in_tree() and _dpad_right.get_global_rect().has_point(p):
 		return Dir.RIGHT
 	return Dir.NONE
 
 
 func _point_in_attack(p: Vector2) -> bool:
-	return _btn_attack.get_global_rect().has_point(p)
+	return _btn_attack.is_visible_in_tree() and _btn_attack.get_global_rect().has_point(p)
 
 
 func _point_in_owned_control(p: Vector2) -> bool:
@@ -277,7 +291,7 @@ func _point_in_owned_control(p: Vector2) -> bool:
 	if not is_node_ready():
 		return false
 	for b in _all_buttons():
-		if b and b.get_global_rect().has_point(p):
+		if b and b.is_visible_in_tree() and b.get_global_rect().has_point(p):
 			return true
 	if _message_visible and _message_panel and _message_panel.get_global_rect().has_point(p):
 		return true
@@ -300,11 +314,11 @@ func _on_touch_down(pos: Vector2, index: int) -> void:
 		_btn_attack.button_pressed = true
 		attack_pressed.emit()
 		return
-	if _btn_interact.get_global_rect().has_point(pos):
+	if _btn_interact.is_visible_in_tree() and _btn_interact.get_global_rect().has_point(pos):
 		_track(index)
 		interact_pressed.emit()
 		return
-	if _btn_restart.get_global_rect().has_point(pos):
+	if _btn_restart.is_visible_in_tree() and _btn_restart.get_global_rect().has_point(pos):
 		_track(index)
 		restart_pressed.emit()
 		return
@@ -345,6 +359,8 @@ func _nearest_dpad_dir(p: Vector2) -> int:
 	var result := Dir.NONE
 	for b in _all_buttons():
 		if b == _btn_interact or b == _btn_attack or b == _btn_restart:
+			continue
+		if not b.is_visible_in_tree():
 			continue
 		var r := b.get_global_rect()
 		if r.grow(40).has_point(p):
