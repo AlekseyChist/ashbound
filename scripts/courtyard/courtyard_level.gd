@@ -59,6 +59,7 @@ func _connect_signals() -> void:
 	_hud.move_changed.connect(_player.set_move_input)
 	_hud.interact_pressed.connect(_on_hud_interact)
 	_hud.attack_pressed.connect(_on_hud_attack)
+	_hud.run_changed.connect(_player.set_run_input)
 	_hud.restart_pressed.connect(_on_restart_pressed)
 	_player.interact_requested.connect(_on_interact_requested)
 	_player.strike_requested.connect(_on_strike_requested)

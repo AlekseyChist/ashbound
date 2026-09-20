@@ -9,14 +9,14 @@ var _current_action: StringName = &""
 var _current_view: StringName = &"back"
 
 
-## Обновить визуал: действие (idle/walk/attack), направление взгляда, частота walk-позы.
-func update_visual(action: StringName, facing_direction: Vector3, walk_pose_fps: int = 15) -> void:
+## Обновить визуал: действие (idle/walk/run/attack), направление взгляда, частота walk/run-позы.
+func update_visual(action: StringName, facing_direction: Vector3, walk_pose_fps: int = 15, run_pose_fps: int = 15) -> void:
 	var body: AnimatedSprite3D = $Body
 	if body == null or body.sprite_frames == null:
 		return
 
 	var new_action := action
-	var moving := new_action == &"walk"
+	var moving := new_action == &"walk" or new_action == &"run"
 
 	var new_view := _resolve_view(facing_direction)
 
@@ -24,7 +24,7 @@ func update_visual(action: StringName, facing_direction: Vector3, walk_pose_fps:
 	var view_changed := new_view != _current_view
 
 	if action_changed or view_changed:
-		# Сохраняем фазу, чтобы смена вида не сбрасывала walk/attack
+		# Сохраняем фазу, чтобы смена вида не сбрасывала walk/run/attack
 		var old_frame := body.frame
 		var old_progress: float = body.frame_progress
 		var was_playing := body.is_playing()
@@ -32,14 +32,7 @@ func update_visual(action: StringName, facing_direction: Vector3, walk_pose_fps:
 
 		_current_action = new_action
 		_current_view = new_view
-		var clip_name := StringName(new_action + "_" + new_view)
-		if not body.sprite_frames.has_animation(clip_name):
-			# Запасные алиасы, пока новые клипы импортируются
-			if new_view == &"left" or new_view == &"right":
-				clip_name = StringName(new_action + "_side")
-			if not body.sprite_frames.has_animation(clip_name):
-				clip_name = new_action
-		body.animation = clip_name
+		body.animation = _resolve_clip_name(body.sprite_frames, new_action, new_view)
 
 		if action_changed:
 			# Нормальная смена действия — старт с первого кадра
@@ -48,14 +41,17 @@ func update_visual(action: StringName, facing_direction: Vector3, walk_pose_fps:
 			body.play()
 		else:
 			# Только смена вида — сохраняем фазу старого клипа
-			var frame_count := body.sprite_frames.get_frame_count(clip_name)
+			var frame_count := body.sprite_frames.get_frame_count(body.animation)
 			var clamped_frame: int = clampi(old_frame, 0, maxi(frame_count - 1, 0))
 			body.set_frame_and_progress(clamped_frame, old_progress)
 			if old_paused:
 				body.pause()
 
-	# Частота кадров: walk — walk_pose_fps, иначе 1.0
-	var target_scale := float(walk_pose_fps) / 15.0 if moving else 1.0
+	# Частота кадров: walk — walk_pose_fps, run — run_pose_fps, иначе 1.0
+	var pose_fps := walk_pose_fps
+	if new_action == &"run":
+		pose_fps = run_pose_fps
+	var target_scale := float(pose_fps) / 15.0 if moving else 1.0
 	body.speed_scale = target_scale
 
 	# Переворот спрайта: только для боковых видов (LEFT — flip_h)
@@ -95,13 +91,8 @@ func set_appearance_frames(new_frames: SpriteFrames) -> bool:
 
 	body.sprite_frames = new_frames
 
-	# Текущее действие/вид сохраняем; имя клипа — с теми же запасными алиасами.
-	var clip_name := StringName(action_for_clip + "_" + _current_view)
-	if not new_frames.has_animation(clip_name):
-		if _current_view == &"left" or _current_view == &"right":
-			clip_name = StringName(action_for_clip + "_side")
-		if not new_frames.has_animation(clip_name):
-			clip_name = action_for_clip
+	# Текущее действие/вид сохраняем; имя клипа — через общий helper.
+	var clip_name := _resolve_clip_name(new_frames, action_for_clip, _current_view)
 	body.animation = clip_name
 
 	var frame_count := new_frames.get_frame_count(clip_name)
@@ -130,22 +121,60 @@ func set_appearance_frames(new_frames: SpriteFrames) -> bool:
 func _validate_frames(frames: SpriteFrames) -> bool:
 	if frames == null:
 		return false
+	# 9 базовых клипов обязательны: idle/walk/attack x back/front/side.
 	for action in [&"idle", &"walk", &"attack"]:
 		for view in [&"back", &"front", &"side"]:
-			var clip_name := StringName(action + "_" + view)
-			if not frames.has_animation(clip_name):
+			if not _clip_is_valid(frames, StringName(action + "_" + view)):
 				return false
-			var frame_count := frames.get_frame_count(clip_name)
-			if frame_count <= 0:
-				return false
-			for i in frame_count:
-				var texture: Texture2D = frames.get_frame_texture(clip_name, i)
-				if texture == null:
-					return false
-			var fps := frames.get_animation_speed(clip_name)
-			if fps <= 0.0:
+	# run опционален для старых наборов, но если есть любой из трёх — все три
+	# обязаны быть валидными (кадры, текстуры, fps).
+	var has_any_run := false
+	for view in [&"back", &"front", &"side"]:
+		if frames.has_animation(StringName("run_" + view)):
+			has_any_run = true
+			break
+	if has_any_run:
+		for view in [&"back", &"front", &"side"]:
+			if not _clip_is_valid(frames, StringName("run_" + view)):
 				return false
 	return true
+
+
+## Клип валиден: существует, >0 кадров, все текстуры ненулевые, fps > 0.
+func _clip_is_valid(frames: SpriteFrames, clip_name: StringName) -> bool:
+	if not frames.has_animation(clip_name):
+		return false
+	var frame_count := frames.get_frame_count(clip_name)
+	if frame_count <= 0:
+		return false
+	for i in frame_count:
+		var texture: Texture2D = frames.get_frame_texture(clip_name, i)
+		if texture == null:
+			return false
+	var fps := frames.get_animation_speed(clip_name)
+	if fps <= 0.0:
+		return false
+	return true
+
+
+## Точное имя клипа для действия/вида с запасными алиасами:
+## action_view -> action_side (для left/right) -> run -> walk (для run) -> action.
+func _resolve_clip_name(frames: SpriteFrames, action: StringName, view: StringName) -> StringName:
+	var clip_name := StringName(action + "_" + view)
+	if frames.has_animation(clip_name):
+		return clip_name
+	if view == &"left" or view == &"right":
+		var side_name := StringName(action + "_side")
+		if frames.has_animation(side_name):
+			return side_name
+	if action == &"run":
+		var walk_name := StringName("walk_" + view)
+		if frames.has_animation(walk_name):
+			return walk_name
+		var walk_side := StringName("walk_side")
+		if (view == &"left" or view == &"right") and frames.has_animation(walk_side):
+			return walk_side
+	return action
 
 
 func _resolve_view(facing_direction: Vector3) -> StringName:
@@ -192,14 +221,21 @@ func _apply_sprite_scale(body: AnimatedSprite3D) -> void:
 	if frames == null:
 		return
 
-	var key := "pixel_size_side"
+	# Вид определяет базовый ключ; для run дополнительно пробуем
+	# pixel_size_run_<view> с fallback на обычный pixel_size_<view>.
+	var view_key := "side"
 	match _current_view:
 		&"back":
-			key = "pixel_size_back"
+			view_key = "back"
 		&"front":
-			key = "pixel_size_front"
+			view_key = "front"
 
-	var pixel_size: float = frames.get_meta(key, 0.006)
+	var run_action := body.animation.begins_with("run")
+	var pixel_size: float = 0.0
+	if run_action:
+		pixel_size = frames.get_meta("pixel_size_run_" + view_key, -1.0)
+	if pixel_size <= 0.0:
+		pixel_size = frames.get_meta("pixel_size_" + view_key, 0.006)
 	if pixel_size <= 0.0:
 		pixel_size = 0.006
 	body.pixel_size = pixel_size
