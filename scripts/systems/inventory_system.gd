@@ -34,6 +34,9 @@ var equipped: Dictionary = {
 # Золото
 var gold: int = 0
 
+# Защита от повторного входа в денежные/торговые операции
+var _trade_guard := false
+
 # База предметов
 var item_database: Dictionary = {}
 
@@ -531,46 +534,190 @@ func _safe_name(item: Dictionary) -> String:
 # === ЗОЛОТО ===
 
 func add_gold(amount: int) -> void:
+	if _trade_guard or amount <= 0 or gold < 0:
+		return
+	if gold > 9223372036854775807 - amount:
+		return
 	gold += amount
 	gold_changed.emit(gold)
 	print("[ASHBOUND] Получено золота: %d (всего: %d)" % [amount, gold])
 
 
 func remove_gold(amount: int) -> bool:
+	if _trade_guard or amount <= 0 or gold < 0:
+		return false
 	if gold < amount:
 		return false
-
 	gold -= amount
 	gold_changed.emit(gold)
 	return true
 
 
 func has_gold(amount: int) -> bool:
+	if gold < 0 or amount < 0:
+		return false
 	return gold >= amount
 
 
 # === ТОРГОВЛЯ ===
 
 func sell_item(item: Dictionary) -> bool:
-	var value = item.get("value", 0)
-	if value <= 0:
+	if _trade_guard:
 		return false
 
-	if remove_item(item["id"], 1):
-		add_gold(value)
-		return true
-	return false
+	var instance_id = _get_handle_instance_id(item)
+	if instance_id == "":
+		return false
+
+	# Ищем единственную каноническую запись в items
+	var carried: Dictionary = {}
+	var found := false
+	for entry in items:
+		if not (entry is Dictionary):
+			continue
+		var entry_id = entry.get("instance_id", "")
+		if entry_id is String and entry_id == instance_id:
+			if found:
+				return false
+			carried = entry
+			found = true
+	if not found:
+		return false
+
+	# Предмет, присутствующий в equipped, продавать нельзя.
+	# Конфликт identity определяется по корректному непустому instance_id,
+	# а не сравнением словарей целиком (поддельное имя не делает дубликат другой вещью).
+	for slot in equipped:
+		var eq = equipped[slot]
+		if not (eq is Dictionary):
+			continue
+		var eq_id = eq.get("instance_id", "")
+		if eq_id is String and eq_id != "" and eq_id == instance_id:
+			return false
+
+	# Валидация канонических данных
+	var item_id = carried.get("id", "")
+	if not (item_id is String) or item_id == "":
+		return false
+
+	var raw_quantity = carried.get("quantity", 0)
+	if not (raw_quantity is int) or raw_quantity <= 0:
+		return false
+
+	# Нестакуемый предмет нельзя продать с quantity != 1
+	var stackable = carried.get("stackable", false)
+	if not (stackable is bool) or not stackable:
+		if raw_quantity != 1:
+			return false
+
+	var raw_value = carried.get("value", 0)
+	if not (raw_value is int) or raw_value <= 0:
+		return false
+
+	# Проверяем переполнение баланса до списания
+	if gold < 0 or gold > 9223372036854775807 - raw_value:
+		return false
+
+	# Блокируем реентерабельные вызовы на время commit + обоих сигналов
+	_trade_guard = true
+
+	# Применяем изменения атомарно
+	carried["quantity"] = raw_quantity - 1
+	if carried["quantity"] <= 0:
+		items.erase(carried)
+
+	gold += raw_value
+
+	# Сигналы: сначала item_removed, затем gold_changed
+	item_removed.emit(item_id)
+	gold_changed.emit(gold)
+
+	_trade_guard = false
+
+	print("[ASHBOUND] Продано: %s (получено: %d)" % [item_id, raw_value])
+	return true
 
 
 func buy_item(item_id: String, price: int) -> bool:
-	if not has_gold(price):
+	if _trade_guard:
+		return false
+
+	if not (item_id is String) or item_id == "":
+		return false
+	if price <= 0:
+		return false
+	if gold < 0 or gold < price:
 		print("[ASHBOUND] Недостаточно золота!")
 		return false
 
-	if add_item(item_id):
-		remove_gold(price)
-		return true
-	return false
+	if not item_database.has(item_id):
+		# Неизвестный id — тихий отказ без push_error и без изменений
+		return false
+
+	var template = item_database[item_id]
+	if not (template is Dictionary):
+		return false
+	var stackable: bool = template.get("stackable", false)
+	var max_stack: int = 0
+	if stackable:
+		max_stack = int(template.get("max_stack", 0))
+		if max_stack <= 0:
+			return false
+
+	# Проверяем место
+	var free_in_stacks := 0
+	for item in items:
+		if item["id"] == item_id and stackable:
+			free_in_stacks += maxi(0, max_stack - int(item.get("quantity", 1)))
+
+	var free_slots := maxi(0, max_capacity - items.size())
+
+	if stackable:
+		if free_in_stacks < 1 and free_slots < 1:
+			print("[ASHBOUND] Инвентарь полон!")
+			return false
+	else:
+		if free_slots < 1:
+			print("[ASHBOUND] Инвентарь полон!")
+			return false
+
+	# Блокируем реентерабельные вызовы на время commit + обоих сигналов
+	_trade_guard = true
+
+	# Применяем изменения атомарно; фиксируем реально изменённую запись
+	var changed_entry: Dictionary = {}
+	if stackable:
+		# Пробуем добавить в первый неполный стек
+		for item in items:
+			if item["id"] == item_id:
+				var space = maxi(0, max_stack - int(item.get("quantity", 1)))
+				if space > 0:
+					item["quantity"] = int(item.get("quantity", 1)) + 1
+					changed_entry = item
+					break
+		if changed_entry.is_empty():
+			var new_item = template.duplicate(true)
+			new_item["quantity"] = 1
+			new_item["instance_id"] = _generate_instance_id()
+			items.append(new_item)
+			changed_entry = new_item
+	else:
+		var new_item = template.duplicate(true)
+		new_item["quantity"] = 1
+		new_item["instance_id"] = _generate_instance_id()
+		items.append(new_item)
+		changed_entry = new_item
+
+	gold -= price
+
+	# Сигналы: сначала item_added (с реальной записью, без копии), затем gold_changed
+	item_added.emit(changed_entry)
+	gold_changed.emit(gold)
+
+	_trade_guard = false
+
+	print("[ASHBOUND] Куплено: %s (потрачено: %d)" % [template.get("name", item_id), price])
+	return true
 
 
 # === СОХРАНЕНИЕ/ЗАГРУЗКА ===
