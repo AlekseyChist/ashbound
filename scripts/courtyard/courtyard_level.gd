@@ -20,9 +20,13 @@ var reward_claimed: bool = false
 @onready var _camera_rig: Node3D = $CameraRig
 @onready var _camera: Camera3D = $CameraRig/SpringArm3D/Camera3D
 @onready var _hud: Node = $HUD
+@onready var _interaction_feedback: Node3D = $InteractionFocus
+@onready var _attack_feedback: Node3D = $AttackFocus
 
 var _player_spawn: Vector3 = Vector3.ZERO
 var _current_target: Node = null
+var _current_attack_target: Node3D = null
+var _last_focus_prompt: String = ""
 var _capture_path: String = ""
 var _capture_started: bool = false
 var _capture_frames: int = 0
@@ -127,10 +131,62 @@ func _update_interaction_prompt() -> void:
 	var t: Node = _nearest_interactable()
 	if t != _current_target:
 		_current_target = t
-		if t == null:
-			_hud.set_prompt("")
+		_apply_interaction_feedback(t)
+	var at: Node3D = _eligible_attack_target()
+	if at != _current_attack_target:
+		_current_attack_target = at
+		_apply_attack_feedback(at)
+	_set_focus_prompt()
+
+
+func _apply_interaction_feedback(t: Node) -> void:
+	if t == null:
+		_interaction_feedback.clear_target()
+		return
+	if t == _woodpile:
+		var visual: Node3D = get_node_or_null("Environment/Props/Woodpile")
+		if visual != null:
+			_interaction_feedback.set_target(visual, &"interact", 0.85)
 		else:
-			_hud.set_prompt(t.get("prompt"))
+			_interaction_feedback.set_target(t, &"interact", 0.85)
+	else:
+		_interaction_feedback.set_target(t, &"interact", 0.48)
+
+
+func _apply_attack_feedback(at: Node3D) -> void:
+	if at == null:
+		_attack_feedback.clear_target()
+		return
+	_attack_feedback.set_target(at, &"attack", 0.65)
+
+
+func _set_focus_prompt() -> void:
+	var touch_mode: bool = OS.has_feature("android") or _hud.force_touch_controls
+	var lines: PackedStringArray = PackedStringArray()
+	if _current_target != null:
+		var name: String = str(_current_target.get("display_name"))
+		var prompt: String = str(_current_target.get("prompt"))
+		if touch_mode:
+			lines.append("Действие · %s — %s" % [prompt, name])
+		else:
+			lines.append("E · %s — %s" % [prompt, name])
+	if _current_attack_target != null:
+		if touch_mode:
+			lines.append("Удар — Мишень")
+		else:
+			lines.append("ЛКМ · Удар — Мишень")
+	var text: String = "\n".join(lines)
+	if text != _last_focus_prompt:
+		_last_focus_prompt = text
+		_hud.set_prompt(text)
+
+
+func get_interaction_target() -> Node:
+	return _current_target
+
+
+func get_attack_target() -> Node3D:
+	return _current_attack_target
 
 
 func _on_hud_interact() -> void:
@@ -158,22 +214,28 @@ func _on_hud_attack() -> void:
 	_player.request_attack()
 
 
-func _on_strike_requested() -> void:
+func _eligible_attack_target() -> Node3D:
 	if state != State.PRACTICE:
-		return
+		return null
 	var dummy: Node3D = _get_dummy()
 	if dummy == null:
-		return
+		return null
 	var p: Vector3 = _player.global_position
 	var dpos: Vector3 = dummy.global_position
 	if _planar_distance(p, dpos) > strike_range:
-		return
+		return null
 	var to_dummy: Vector2 = (Vector2(dpos.x, dpos.z) - Vector2(p.x, p.z)).normalized()
 	var facing: Vector2 = Vector2(_player.facing_direction.x, _player.facing_direction.z).normalized()
 	if facing.dot(to_dummy) < FACING_DOT_MIN:
-		return
+		return null
 	if not _strike_line_clear(p, dummy):
-		print("courtyard: strike blocked")
+		return null
+	return dummy
+
+
+func _on_strike_requested() -> void:
+	var dummy: Node3D = _eligible_attack_target()
+	if dummy == null:
 		return
 	dummy_hits = mini(dummy_hits + 1, MAX_DUMMY_HITS)
 	_flash_dummy()
@@ -308,6 +370,7 @@ func reset_lesson() -> void:
 	dummy_hits = 0
 	reward_claimed = false
 	_current_target = null
+	_current_attack_target = null
 	_pending_interact = false
 	_dummy_flash_t = 0.0
 	var dummy: Node3D = _get_dummy()
@@ -327,6 +390,9 @@ func reset_lesson() -> void:
 	_snap_camera_to_player()
 	_hud.reset_controls()
 	_hud.clear_message()
+	_interaction_feedback.clear_target()
+	_attack_feedback.clear_target()
+	_last_focus_prompt = ""
 	_hud.set_prompt("")
 	_apply_state(State.MEET_HOST)
 

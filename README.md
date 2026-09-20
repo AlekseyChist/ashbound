@@ -22,6 +22,8 @@
 
 ![Камера за спиной — Windows-сборка](art/previews/courtyard-third-person-windows.png)
 
+Доступная цель взаимодействия выделяется золотистым, цель тренировочного удара — красноватым. Подсказка называет получателя действия. Обычное касание свободной области экрана не атакует; намеренный удар отдельной кнопкой возможен и без цели. [Подсветка целей](docs/levels/TARGET_FEEDBACK.md), [пример собеседника](art/previews/courtyard-target-interact.png).
+
 [Устройство сцены и места для правок](docs/levels/FIRST_COURTYARD.md) · [Сборки Windows и Android](docs/production/BUILDS.md).
 
 ## Посмотреть здания
