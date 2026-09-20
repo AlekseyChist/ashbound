@@ -1,0 +1,26 @@
+{
+  "slug": "courtyard_well",
+  "triangles": 1980,
+  "vertices": 1080,
+  "mesh_objects": 3,
+  "materials": [
+    "WellIron",
+    "WellStone",
+    "WellWood"
+  ],
+  "bbox_min": [
+    -1.36,
+    -1.262,
+    0.0
+  ],
+  "bbox_max": [
+    1.36,
+    1.262,
+    3.06
+  ],
+  "dimensions": [
+    2.72,
+    2.524,
+    3.06
+  ]
+}

@@ -1,0 +1,28 @@
+# First courtyard — concept and sprite prompts
+
+## residents-v1.png
+
+Saved as `assets/characters/courtyard/residents-v1.png`. Built-in image_gen, transparent atlas. Top row innkeeper, bottom row watchman, four idle poses each.
+
+Use case: stylized-concept. Asset type: game NPC idle sprite atlas on genuinely TRANSPARENT background with alpha. Wide image aspect ratio2:1. Exactly FOUR equal columns and TWO equal rows: eight square cells. No background, checkerboard, floor, cast shadows, lettering or grid lines.
+Top row: FOUR subtle idle breathing poses of the SAME middle-aged innkeeper woman: realistic proportions, weathered kind face, brown hair in a practical bun, faded charcoal dress with long sleeves, linen beige apron, brown boots. Hands at waist or casually folded. Fixed front three-quarter pose looking slightly screen left. Calm, capable ordinary person.
+Bottom row: FOUR subtle idle breathing poses of the SAME older male village watchman: realistic proportions, short grey beard, battered brown leather vest over faded green tunic, dark trousers, boots, no helmet, simple belt. Arms casually resting on belt, no weapon. Fixed front three-quarter pose looking slightly screen left.
+Both full body in every cell with all head and feet visible, identical camera, scale and foot baseline between frames, centered in each cell, safe transparent padding all around. Dark medieval fantasy 2D hand-painted animation cels with clean dark outlines and restrained cel shading, muted grey/brown/olive palette. Slightly elevated viewpoint suitable for 2D sprites standing in a3D courtyard. Human, grounded, not chibi, not pixel art, not3D renders. Consistent shape and clothes in every pose. Different breathing held poses but minimal foot movement.
+
+## traveler-v1.png
+
+Saved as `assets/characters/courtyard/traveler-v1.png`. Built-in image_gen, transparent atlas. Prototype single facing; not production-ready directional animation or equipment.
+
+Use case: stylized-concept. Asset type: actual game sprite animation atlas, NOT a concept board.
+Generate a square image on a genuinely transparent background with alpha, exactly FOUR evenly spaced columns and FOUR evenly spaced rows (16 equal square cells). No painted background, no checkerboard, no floor, no cast shadow, no text, no dividers.
+Every cell contains the SAME full-body adult ordinary male traveler: slim realistic human proportions, dark tousled hair, short beard, worn brown knee-length sleeveless leather jerkin over a grey linen shirt, dark trousers, old brown boots. No cape, no backpack, no armor, no headgear. Hand-painted dark medieval fantasy animation cel, restrained warm desaturated colors, clean strong dark outline and cel shading, natural face, no pixel art, not chibi. Camera is a fixed three-quarter view, slightly elevated, character faces SCREEN RIGHT in EVERY frame. The feet stay at the same baseline, 90 percent down in each cell; head roughly 18 percent down. Identical size, identity, palette and camera in all cells, plenty of transparent space around the character, no cell overlaps.
+Rows1 and2 in reading order: EIGHT consecutive frames of one seamless walking cycle, alternating foot contacts, passing positions and slight weight shifts; arms swinging, no weapon. Row3: FOUR subtle idle breathing poses, hands relaxed, knees slightly bent, feet planted. Row4: FOUR consecutive barehanded training strikes: wind-up fist, forward punch, follow-through, recovery. Clear distinct held poses, no motion blur or speed lines. A practical animation sheet ready to be split into 16 sprites. Art should fit a grim but inhabited medieval timber-and-stone world. Prioritize grid alignment and consistent feet above decorative detail.
+
+Built-in image_gen; 20 September 2026. Reference: `art/reference/ashbound-art-direction.png`.
+This is an environment direction, not a screenshot or a promise of final asset quality.
+
+## courtyard-v1.png
+
+Use case: stylized-concept. Asset type: first playable location environment concept for AshBound, a dark fantasy RPG with a 3D environment and hand-painted 2D characters. Input image is STYLE AND MATERIAL REFERENCE ONLY.
+Draw a new 16:9 wide landscape production concept, one unified scene, NO text, NO panels, NO UI. A small humble inhabited inn courtyard, approximately 32 by 28 meters, seen from a fixed elevated three-quarter gameplay camera. Weathered timber-framed stone inn at rear left with a warmly lit doorway; small watchtower rear right; plain open timber entrance in the far rear center leading to a short woodland road. In the foreground/right a modest training yard with a straw training dummy and weapon rack. Near the inn a woodpile, simple carrying crate, well and low wooden fences. Clear walkable packed-earth lanes form a loop between inn entrance, woodpile, well and practice yard; props are restrained so character silhouettes remain legible. Two small human figures, an ordinary traveler and an innkeeper, painted as slightly stylized 2D cel illustrations integrated into the 3D environment. No plate-armored hero.
+Match the reference's Gothic dark medieval atmosphere, aged shingles, soot-dark oak, grey stone, moss and muted ochre. Overcast early morning with restrained warm window light. Detailed but buildable modular game environment, readable midtones, strong silhouettes, no bloom, not photoreal marketing panorama. Background limited to low pine-covered hills, no giant castle, no ancient ruins or magical threat, no fantasy glowing portal. The purpose is learning everyday life and simple work. A welcoming pocket of ordinary human life in a difficult world.

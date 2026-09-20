@@ -1,0 +1,24 @@
+{
+  "slug": "courtyard_crate",
+  "triangles": 1232,
+  "vertices": 672,
+  "mesh_objects": 1,
+  "materials": [
+    "CrateWood"
+  ],
+  "bbox_min": [
+    -0.41,
+    -0.41,
+    0.0
+  ],
+  "bbox_max": [
+    0.41,
+    0.41,
+    0.8
+  ],
+  "dimensions": [
+    0.82,
+    0.82,
+    0.8
+  ]
+}
