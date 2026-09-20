@@ -31,6 +31,9 @@ const VIEW_HYSTERESIS := 0.08
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	# Тач-события принадлежат HUD/камере — игрок их не обрабатывает.
+	if event is InputEventScreenTouch or event is InputEventScreenDrag:
+		return
 	if event.is_echo():
 		return
 	if not input_enabled:
@@ -38,9 +41,15 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("interact"):
 		request_interaction()
 	elif event.is_action_pressed("attack"):
-		# LMB-атака только при захваченной мыши; эмулированные клики Android игнорируем.
+		# На Android атака — только явный HUD-запрос request_attack().
+		if OS.has_feature("android"):
+			return
+		# Эмулированные клики (тачскрин -> мышь) игнорируем на всех платформах.
 		var is_mouse := event is InputEventMouseButton
-		if is_mouse and (Input.mouse_mode != Input.MOUSE_MODE_CAPTURED or OS.has_feature("android")):
+		if is_mouse and event.device == InputEvent.DEVICE_ID_EMULATION:
+			return
+		# LMB-атака только при захваченной мыши.
+		if is_mouse and Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
 			return
 		request_attack()
 
