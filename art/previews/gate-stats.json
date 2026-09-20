@@ -1,0 +1,28 @@
+{
+  "slug": "gate",
+  "triangles": 6028,
+  "vertices": 3288,
+  "mesh_objects": 5,
+  "materials": [
+    "GateIron",
+    "GateStone",
+    "GateStoneDark",
+    "GateTimber",
+    "GateTimberDark"
+  ],
+  "bbox_min": [
+    -3.8,
+    -0.835,
+    0.0
+  ],
+  "bbox_max": [
+    3.8,
+    0.835,
+    5.11
+  ],
+  "dimensions": [
+    7.6,
+    1.67,
+    5.11
+  ]
+}

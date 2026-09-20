@@ -1,0 +1,18 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/buildings/ashbound/watchtower.glb" id="1_tower"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_base"]
+size = Vector3(3.2, 2.5, 3.2)
+
+[node name="Watchtower" type="Node3D"]
+
+[node name="WatchtowerMesh" parent="." instance=ExtResource("1_tower")]
+
+[node name="Collision" type="StaticBody3D" parent="."]
+collision_layer = 1
+collision_mask = 0
+
+[node name="BaseShape" type="CollisionShape3D" parent="Collision"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.25, 0)
+shape = SubResource("BoxShape3D_base")

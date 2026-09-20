@@ -1,2 +1,5 @@
 # Normalize EOL for all files that Git considers text files.
 * text=auto eol=lf
+
+# Preserve the owner's original lore attachment byte-for-byte.
+docs/narrative/LORE_ORIGINAL.txt -text whitespace=-blank-at-eol,cr-at-eol

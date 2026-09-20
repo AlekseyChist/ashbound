@@ -2,5 +2,14 @@
 .godot/
 /android/
 
+# Machine-local runtimes, model logs, dependencies and editor temporary copies
+/.tools/
+node_modules/
+/addons/godot-git-plugin/windows/~*
+
 # UID cache files
 *.uid
+
+# Local Blender cache and automatic save backups
+art/blender/__pycache__/
+art/blender/output/*.blend[0-9]

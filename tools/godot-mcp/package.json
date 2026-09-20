@@ -1,0 +1,8 @@
+{
+  "name": "ashbound-godot-connection",
+  "private": true,
+  "description": "Local Godot MCP connection for Codex",
+  "dependencies": {
+    "@coding-solo/godot-mcp": "0.1.1"
+  }
+}
