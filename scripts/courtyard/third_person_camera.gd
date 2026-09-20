@@ -3,7 +3,7 @@ extends Node3D
 ## Модульная камера от третьего лица (вид сзади, в духе Gothic).
 ## Целевой объект (игрок) внедряется уровнем через set_target() — без путей между сценами.
 
-@export var distance: float = 4.2
+@export var distance: float = 3.0
 @export var follow_height: float = 1.45
 @export var mouse_sensitivity: float = 0.003
 @export var touch_sensitivity: float = 0.004

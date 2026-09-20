@@ -32,7 +32,8 @@ func _run() -> void:
 	# 1. Camera and sprites
 	check(camera.projection == Camera3D.PROJECTION_PERSPECTIVE, "projection not perspective")
 	check(camera.current, "camera not current")
-	check(camera.global_position.z > player.global_position.z + 3.0, "camera behind player")
+	check(camera.global_position.z > player.global_position.z, "camera not behind player")
+	check(absf((camera.global_position.z - player.global_position.z) - float(rig.distance) * cos(arm.rotation.x)) < 0.05, "camera z offset not distance*cos(pitch)")
 	check(body.animation == "idle_back", "body not idle_back")
 	check(body.billboard == 2, "hero billboard off")
 	var innkeeper: AnimatedSprite3D = level.get_node("Actors/Innkeeper/Body")
@@ -115,7 +116,7 @@ func _run() -> void:
 	var house_shape: CollisionShape3D = level.get_node("Environment/Buildings/House/Collision/MainBodyShape")
 	var wall_front: float = house_shape.global_position.z + (house_shape.shape as BoxShape3D).size.z / 2.0
 	print("camera=", camera.global_position, " arm_hit=", arm.get_hit_length(), " wall_front=", wall_front)
-	check(arm.get_hit_length() < 3.5, "arm too long near wall")
+	check(arm.get_hit_length() < float(rig.distance) - 0.1, "arm not shortened near wall")
 	check(camera.global_position.z > wall_front + 0.05, "camera inside wall")
 	var sphere := SphereShape3D.new()
 	sphere.radius = 0.08
@@ -126,7 +127,7 @@ func _run() -> void:
 	check(player.get_world_3d().direct_space_state.intersect_shape(query).is_empty(), "camera intersects collider")
 	level.reset_lesson()
 	await frames(12)
-	check(arm.get_hit_length() > 4.0, "arm not at rest length")
+	check(absf(arm.get_hit_length() - rig.distance) < 0.05, "arm not at rest length")
 
 	# 6. Pitch limits (custom exported values must work)
 	rig.pitch_min_degrees = -25.0
