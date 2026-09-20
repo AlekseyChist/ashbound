@@ -4,9 +4,11 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const courtyardFixture = JSON.parse(fs.readFileSync(path.join(root, 'scripts/tools/fixtures/courtyard_localization.json'), 'utf8'));
 const expected = [
   'UI_LANGUAGE', 'UI_LANGUAGE_AUTO', 'UI_CLOSE', 'UI_ACTION_INTERACT',
   'UI_ACTION_ATTACK', 'UI_ACTION_RUN', 'UI_ACTION_WALK', 'UI_GREETING', 'UI_ITEM_COUNT',
+  ...courtyardFixture.map(entry => entry.key),
 ];
 const failures = [];
 const check = (ok, message) => { if (!ok) failures.push(message); };
@@ -57,7 +59,7 @@ for (const [file, locale, forms] of [['en.po', 'en', 2], ['ru.po', 'ru', 3], ['m
     check(header.includes(`nplurals=${forms};`), `${file}: plural count header`);
   }
   const messages = [...entries.values()].filter(entry => entry.msgid !== '');
-  check(JSON.stringify(messages.map(e => e.msgid).sort()) === JSON.stringify([...expected].sort()), `${file}: complete nine-key registry`);
+  check(JSON.stringify(messages.map(e => e.msgid).sort()) === JSON.stringify([...expected].sort()), `${file}: complete ${expected.length}-key registry`);
   for (const entry of messages) {
     check(!entry.msgctxt, `${file}: unexpected context for ${entry.msgid}`);
     const plural = entry.msgid === 'UI_ITEM_COUNT';
@@ -70,15 +72,30 @@ for (const [file, locale, forms] of [['en.po', 'en', 2], ['ru.po', 'ru', 3], ['m
       if (typeof text !== 'string') continue;
       check(locale ? text.trim().length > 0 : text === '', `${file}: ${locale ? 'empty translation' : 'nonempty template'} ${entry.msgid}`);
       if (locale) {
-        const wanted = plural ? ['count'] : entry.msgid === 'UI_GREETING' ? ['name'] : [];
+        const fixture = courtyardFixture.find(item => item.key === entry.msgid);
+        const wanted = fixture ? placeholders(fixture.en) : plural ? ['count'] : entry.msgid === 'UI_GREETING' ? ['name'] : [];
         check(JSON.stringify(placeholders(text)) === JSON.stringify(wanted), `${file}: placeholders ${entry.msgid}/${field}`);
+        if (fixture) check(text === fixture[locale], `${file}: reviewed wording ${entry.msgid}`);
       }
     }
+  }
+}
+for (const directory of ['scripts/courtyard', 'scenes/courtyard']) {
+  for (const file of fs.readdirSync(path.join(root, directory)).filter(name => /\.(gd|tscn)$/.test(name))) {
+    const relative = `${directory}/${file}`;
+    const source = fs.readFileSync(path.join(root, relative), 'utf8');
+    for (const match of source.matchAll(/"((?:COURTYARD|UI)_[A-Z_]+)"/g)) {
+      check(expected.includes(match[1]), `${relative}: unregistered runtime key ${match[1]}`);
+    }
+    source.split(/\r?\n/).forEach((line, i) => {
+      if (line.trimStart().startsWith('#')) return;
+      check(!/"[^"\n]*[А-Яа-яЁё][^"\n]*"/.test(line), `${relative}:${i + 1}: Russian string outside catalog`);
+    });
   }
 }
 if (failures.length) {
   failures.forEach(failure => console.error(`CATALOG_FAIL: ${failure}`));
   process.exitCode = 1;
 } else {
-  console.log('ASHBOUND_LOCALIZATION_CATALOGS_OK keys=9 locales=2');
+  console.log(`ASHBOUND_LOCALIZATION_CATALOGS_OK keys=${expected.length} locales=2`);
 }

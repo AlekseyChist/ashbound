@@ -1,0 +1,167 @@
+[
+  {
+    "key": "UI_RESTART",
+    "ru": "Начать заново",
+    "en": "Start over"
+  },
+  {
+    "key": "COURTYARD_TITLE",
+    "ru": "Двор постоялого дома",
+    "en": "Inn courtyard"
+  },
+  {
+    "key": "COURTYARD_LEGEND_DESKTOP",
+    "ru": "WASD — движение · мышь — обзор\nShift — бег · E — действие · ЛКМ — удар · Esc — курсор",
+    "en": "WASD — move · mouse — look\nShift — run · E — interact · LMB — attack · Esc — cursor"
+  },
+  {
+    "key": "COURTYARD_LEGEND_TOUCH",
+    "ru": "Стрелки — движение · справа — обзор\nКоснись реплики, чтобы закрыть",
+    "en": "Arrows — move · drag on the right — look\nTap the dialogue to close it"
+  },
+  {
+    "key": "COURTYARD_NAME_INNKEEPER",
+    "ru": "Хозяйка",
+    "en": "Innkeeper"
+  },
+  {
+    "key": "COURTYARD_NAME_WATCHMAN",
+    "ru": "Сторож",
+    "en": "Watchman"
+  },
+  {
+    "key": "COURTYARD_NAME_WOODPILE",
+    "ru": "Поленница",
+    "en": "Woodpile"
+  },
+  {
+    "key": "COURTYARD_NAME_DUMMY",
+    "ru": "Мишень",
+    "en": "Training dummy"
+  },
+  {
+    "key": "COURTYARD_ACTION_TALK",
+    "ru": "Поговорить",
+    "en": "Talk"
+  },
+  {
+    "key": "COURTYARD_ACTION_TAKE_WOOD",
+    "ru": "Взять дрова",
+    "en": "Take firewood"
+  },
+  {
+    "key": "COURTYARD_FOCUS_INTERACT_DESKTOP",
+    "ru": "E · {action} — {name}",
+    "en": "E · {action} — {name}"
+  },
+  {
+    "key": "COURTYARD_FOCUS_INTERACT_TOUCH",
+    "ru": "Действие · {action} — {name}",
+    "en": "Interact · {action} — {name}"
+  },
+  {
+    "key": "COURTYARD_FOCUS_ATTACK_DESKTOP",
+    "ru": "ЛКМ · Удар — {name}",
+    "en": "LMB · Attack — {name}"
+  },
+  {
+    "key": "COURTYARD_FOCUS_ATTACK_TOUCH",
+    "ru": "Удар — {name}",
+    "en": "Attack — {name}"
+  },
+  {
+    "key": "COURTYARD_OBJECTIVE_MEET_HOST",
+    "ru": "Поговори с хозяйкой у дома.",
+    "en": "Talk to the innkeeper by the house."
+  },
+  {
+    "key": "COURTYARD_OBJECTIVE_FETCH_WOOD",
+    "ru": "Принеси дрова от поленницы.",
+    "en": "Fetch firewood from the woodpile."
+  },
+  {
+    "key": "COURTYARD_OBJECTIVE_RETURN_WOOD",
+    "ru": "Отнеси дрова хозяйке.",
+    "en": "Bring the firewood to the innkeeper."
+  },
+  {
+    "key": "COURTYARD_OBJECTIVE_MEET_GUARD",
+    "ru": "Поговори со сторожем.",
+    "en": "Talk to the watchman."
+  },
+  {
+    "key": "COURTYARD_OBJECTIVE_PRACTICE",
+    "ru": "Покажи три точных удара по соломенной мишени. ({hits}/{total})",
+    "en": "Land three clean hits on the straw dummy. ({hits}/{total})"
+  },
+  {
+    "key": "COURTYARD_OBJECTIVE_REPORT",
+    "ru": "Отчитайся перед сторожем.",
+    "en": "Report back to the watchman."
+  },
+  {
+    "key": "COURTYARD_OBJECTIVE_DONE",
+    "ru": "На сегодня ты устроился. Двор остаётся открытым для исследования.",
+    "en": "You are settled for today. You can keep exploring the courtyard."
+  },
+  {
+    "key": "COURTYARD_DIALOGUE_HOST_JOB",
+    "ru": "Ищешь ночлег? Принеси дрова от поленницы. За работу найдётся место у очага.",
+    "en": "Need a place to sleep? Bring some firewood from the woodpile. Do that, and you can spend the night by the hearth."
+  },
+  {
+    "key": "COURTYARD_DIALOGUE_HOST_REWARD",
+    "ru": "Спасибо. На эту ночь место твоё. А прежде чем выходить на дорогу, поговори со сторожем — он покажет, как постоять за себя.",
+    "en": "Thank you. You have a place for tonight. Before you head out on the road, talk to the watchman. He will show you how to defend yourself."
+  },
+  {
+    "key": "COURTYARD_DIALOGUE_HOST_ACCEPTED",
+    "ru": "Дрова уже приняты. Иди к сторожу.",
+    "en": "I already have the firewood. Go and talk to the watchman."
+  },
+  {
+    "key": "COURTYARD_DIALOGUE_HOST_REMIND",
+    "ru": "Сначала возьми дрова у поленницы.",
+    "en": "First, fetch some firewood from the woodpile."
+  },
+  {
+    "key": "COURTYARD_DIALOGUE_HOST_AFTER",
+    "ru": "Место у очага твоё. Двор открыт для осмотра.",
+    "en": "Your place by the hearth is ready. Feel free to look around the courtyard."
+  },
+  {
+    "key": "COURTYARD_DIALOGUE_WOOD_TAKEN",
+    "ru": "Ты подобрал вязанку сухих дров. Отнеси её хозяйке.",
+    "en": "You picked up a bundle of dry firewood. Bring it to the innkeeper."
+  },
+  {
+    "key": "COURTYARD_DIALOGUE_WOOD_BEFORE",
+    "ru": "Сначала поговори с хозяйкой.",
+    "en": "Talk to the innkeeper first."
+  },
+  {
+    "key": "COURTYARD_DIALOGUE_WOOD_ALREADY",
+    "ru": "Дрова уже взяты.",
+    "en": "You have already collected the firewood."
+  },
+  {
+    "key": "COURTYARD_DIALOGUE_GUARD_LESSON",
+    "ru": "Держи дистанцию и не суетись. Покажи три точных удара по соломенной мишени.",
+    "en": "Keep your distance and stay calm. Land three clean hits on the straw dummy."
+  },
+  {
+    "key": "COURTYARD_DIALOGUE_GUARD_REPORT",
+    "ru": "Для первого раза сойдёт. На дороге сначала смотри по сторонам, потом лезь в драку.",
+    "en": "Not bad for a first try. Out on the road, look around before you pick a fight."
+  },
+  {
+    "key": "COURTYARD_DIALOGUE_GUARD_REMIND",
+    "ru": "Покажи три точных удара по мишени.",
+    "en": "Land three clean hits on the dummy."
+  },
+  {
+    "key": "COURTYARD_DIALOGUE_GUARD_OTHER",
+    "ru": "Двор открыт. Можешь осмотреться.",
+    "en": "The courtyard is open. Have a look around."
+  }
+]

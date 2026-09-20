@@ -23,14 +23,14 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 0.1, 7)
 [node name="Innkeeper" parent="Actors" instance=ExtResource("4")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 0, -3.5)
 interaction_id = "innkeeper"
-display_name = "Хозяйка"
-prompt = "Поговорить"
+display_name = "COURTYARD_NAME_INNKEEPER"
+prompt = "COURTYARD_ACTION_TALK"
 
 [node name="Watchman" parent="Actors" instance=ExtResource("4")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 0)
 interaction_id = "watchman"
-display_name = "Сторож"
-prompt = "Поговорить"
+display_name = "COURTYARD_NAME_WATCHMAN"
+prompt = "COURTYARD_ACTION_TALK"
 appearance = ExtResource("7")
 
 [node name="Interactions" type="Node3D" parent="."]
@@ -39,14 +39,14 @@ appearance = ExtResource("7")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 0, 1.05)
 script = ExtResource("6")
 interaction_id = "woodpile"
-display_name = "Поленница"
-prompt = "Взять дрова"
+display_name = "COURTYARD_NAME_WOODPILE"
+prompt = "COURTYARD_ACTION_TAKE_WOOD"
 
 [node name="Label3D" type="Label3D" parent="Interactions/Woodpile"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.4, 0)
 billboard = 1
 pixel_size = 0.006
-text = "Поленница"
+text = "COURTYARD_NAME_WOODPILE"
 font_size = 32
 outline_size = 8
 

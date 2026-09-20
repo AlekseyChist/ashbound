@@ -46,3 +46,135 @@ msgid_plural "UI_ITEM_COUNTS"
 msgstr[0] "{count} предмет"
 msgstr[1] "{count} предмета"
 msgstr[2] "{count} предметов"
+
+# Courtyard scene: restart button.
+msgid "UI_RESTART"
+msgstr "Начать заново"
+
+# Courtyard scene: title.
+msgid "COURTYARD_TITLE"
+msgstr "Двор постоялого дома"
+
+# Courtyard scene: desktop controls legend.
+msgid "COURTYARD_LEGEND_DESKTOP"
+msgstr "WASD — движение · мышь — обзор\nShift — бег · E — действие · ЛКМ — удар · Esc — курсор"
+
+# Courtyard scene: touch controls legend.
+msgid "COURTYARD_LEGEND_TOUCH"
+msgstr "Стрелки — движение · справа — обзор\nКоснись реплики, чтобы закрыть"
+
+# Courtyard scene: innkeeper name.
+msgid "COURTYARD_NAME_INNKEEPER"
+msgstr "Хозяйка"
+
+# Courtyard scene: watchman name.
+msgid "COURTYARD_NAME_WATCHMAN"
+msgstr "Сторож"
+
+# Courtyard scene: woodpile name.
+msgid "COURTYARD_NAME_WOODPILE"
+msgstr "Поленница"
+
+# Courtyard scene: training dummy name.
+msgid "COURTYARD_NAME_DUMMY"
+msgstr "Мишень"
+
+# Courtyard scene: talk action label.
+msgid "COURTYARD_ACTION_TALK"
+msgstr "Поговорить"
+
+# Courtyard scene: take firewood action label.
+msgid "COURTYARD_ACTION_TAKE_WOOD"
+msgstr "Взять дрова"
+
+# Courtyard scene: desktop interact focus prompt; {action} and {name} are placeholders.
+msgid "COURTYARD_FOCUS_INTERACT_DESKTOP"
+msgstr "E · {action} — {name}"
+
+# Courtyard scene: touch interact focus prompt; {action} and {name} are placeholders.
+msgid "COURTYARD_FOCUS_INTERACT_TOUCH"
+msgstr "Действие · {action} — {name}"
+
+# Courtyard scene: desktop attack focus prompt; {name} is a placeholder.
+msgid "COURTYARD_FOCUS_ATTACK_DESKTOP"
+msgstr "ЛКМ · Удар — {name}"
+
+# Courtyard scene: touch attack focus prompt; {name} is a placeholder.
+msgid "COURTYARD_FOCUS_ATTACK_TOUCH"
+msgstr "Удар — {name}"
+
+# Courtyard objective: meet the innkeeper.
+msgid "COURTYARD_OBJECTIVE_MEET_HOST"
+msgstr "Поговори с хозяйкой у дома."
+
+# Courtyard objective: fetch firewood from the woodpile.
+msgid "COURTYARD_OBJECTIVE_FETCH_WOOD"
+msgstr "Принеси дрова от поленницы."
+
+# Courtyard objective: bring the firewood to the innkeeper.
+msgid "COURTYARD_OBJECTIVE_RETURN_WOOD"
+msgstr "Отнеси дрова хозяйке."
+
+# Courtyard objective: talk to the watchman.
+msgid "COURTYARD_OBJECTIVE_MEET_GUARD"
+msgstr "Поговори со сторожем."
+
+# Courtyard objective: practice hits on the dummy; {hits} and {total} are placeholders.
+msgid "COURTYARD_OBJECTIVE_PRACTICE"
+msgstr "Покажи три точных удара по соломенной мишени. ({hits}/{total})"
+
+# Courtyard objective: report back to the watchman.
+msgid "COURTYARD_OBJECTIVE_REPORT"
+msgstr "Отчитайся перед сторожем."
+
+# Courtyard objective: all tasks completed.
+msgid "COURTYARD_OBJECTIVE_DONE"
+msgstr "На сегодня ты устроился. Двор остаётся открытым для исследования."
+
+# Courtyard dialogue: innkeeper offers work in exchange for a place to sleep.
+msgid "COURTYARD_DIALOGUE_HOST_JOB"
+msgstr "Ищешь ночлег? Принеси дрова от поленницы. За работу найдётся место у очага."
+
+# Courtyard dialogue: innkeeper thanks the player after receiving the firewood.
+msgid "COURTYARD_DIALOGUE_HOST_REWARD"
+msgstr "Спасибо. На эту ночь место твоё. А прежде чем выходить на дорогу, поговори со сторожем — он покажет, как постоять за себя."
+
+# Courtyard dialogue: innkeeper confirms the firewood was already taken.
+msgid "COURTYARD_DIALOGUE_HOST_ACCEPTED"
+msgstr "Дрова уже приняты. Иди к сторожу."
+
+# Courtyard dialogue: innkeeper reminds the player to fetch firewood first.
+msgid "COURTYARD_DIALOGUE_HOST_REMIND"
+msgstr "Сначала возьми дрова у поленницы."
+
+# Courtyard dialogue: innkeeper after the quest is done.
+msgid "COURTYARD_DIALOGUE_HOST_AFTER"
+msgstr "Место у очага твоё. Двор открыт для осмотра."
+
+# Courtyard dialogue: player picks up firewood at the woodpile.
+msgid "COURTYARD_DIALOGUE_WOOD_TAKEN"
+msgstr "Ты подобрал вязанку сухих дров. Отнеси её хозяйке."
+
+# Courtyard dialogue: woodpile before talking to the innkeeper.
+msgid "COURTYARD_DIALOGUE_WOOD_BEFORE"
+msgstr "Сначала поговори с хозяйкой."
+
+# Courtyard dialogue: woodpile when the firewood is already taken.
+msgid "COURTYARD_DIALOGUE_WOOD_ALREADY"
+msgstr "Дрова уже взяты."
+
+# Courtyard dialogue: watchman explains the training task.
+msgid "COURTYARD_DIALOGUE_GUARD_LESSON"
+msgstr "Держи дистанцию и не суетись. Покажи три точных удара по соломенной мишени."
+
+# Courtyard dialogue: watchman after the player completes the training.
+msgid "COURTYARD_DIALOGUE_GUARD_REPORT"
+msgstr "Для первого раза сойдёт. На дороге сначала смотри по сторонам, потом лезь в драку."
+
+# Courtyard dialogue: watchman reminds about the training task.
+msgid "COURTYARD_DIALOGUE_GUARD_REMIND"
+msgstr "Покажи три точных удара по мишени."
+
+# Courtyard dialogue: watchman generic reply.
+msgid "COURTYARD_DIALOGUE_GUARD_OTHER"
+msgstr "Двор открыт. Можешь осмотреться."

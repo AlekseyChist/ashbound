@@ -28,6 +28,8 @@ var _message_visible := true
 # --- Ссылки на дочерние узлы (заполняются в _ready) ---
 var _root: Control
 var _objective_label: Label
+var _subtitle_label: Label
+var _legend_label: Label
 var _prompt_label: Label
 var _speaker_label: Label
 var _message_text: Label
@@ -44,10 +46,19 @@ var _btn_restart: Button
 # Отслеживаемые тач-индексы (движение, удар, интеракт, рестарт, сообщение).
 var _tracked_touches: Array[int] = []
 
+# Ключи/параметры локализуемых элементов — для обновления при language_changed.
+var _objective_key := ""
+var _objective_params: Dictionary = {}
+var _speaker_key := ""
+var _message_key := ""
+var _message_params: Dictionary = {}
+
 
 func _ready() -> void:
 	_root = $RootControl
 	_objective_label = $RootControl/TopLeftPanel/VBox/ObjectiveLabel
+	_subtitle_label = $RootControl/TopLeftPanel/VBox/SubtitleLabel
+	_legend_label = $RootControl/BottomLeft/LegendLabel
 	_prompt_label = $RootControl/PromptLabel
 	_speaker_label = $RootControl/MessagePanel/VBox/SpeakerLabel
 	_message_text = $RootControl/MessagePanel/VBox/MessageText
@@ -61,22 +72,26 @@ func _ready() -> void:
 	_btn_run = $RootControl/BottomRight/VBox/RunButton
 	_btn_restart = $RootControl/TopRightPanel/RestartButton
 
-	_btn_interact.text = "Действие"
+	# Текст, который получает из Localization, не должен повторно
+	# автопереводиться (иначе ключ превратится в «перевод» самого себя).
+	for n in [_objective_label, _subtitle_label, _legend_label, _prompt_label,
+			_speaker_label, _message_text,
+			_btn_interact, _btn_attack, _btn_run, _btn_restart]:
+		n.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+
+	_refresh_localized_texts()
+
 	_set_run_mode(false, false)
 
 	var touch_mode := OS.has_feature("android") or force_touch_controls
 	$RootControl/BottomLeft/DpadGrid.visible = touch_mode
 	$RootControl/BottomRight.visible = touch_mode
 	if touch_mode:
-		var legend := $RootControl/BottomLeft/LegendLabel
-		legend.text = "Стрелки — движение · справа — обзор\nКоснись реплики, чтобы закрыть"
-		legend.size = Vector2(900, 60)
-		legend.position = Vector2(legend.position.x, legend.position.y - 68)
+		_legend_label.size = Vector2(900, 60)
+		_legend_label.position = Vector2(_legend_label.position.x, _legend_label.position.y - 68)
 	else:
-		var legend := $RootControl/BottomLeft/LegendLabel
-		legend.text = "WASD — движение · мышь — обзор\nShift — бег · E — действие · ЛКМ — удар · Esc — курсор"
-		legend.size = Vector2(1100, 64)
-		legend.position = Vector2(0, 320)
+		_legend_label.size = Vector2(1100, 64)
+		_legend_label.position = Vector2(0, 320)
 
 	_apply_styles()
 
@@ -89,8 +104,13 @@ func _ready() -> void:
 
 	_message_panel.gui_input.connect(_on_message_gui_input)
 
-	set_objective("Хозяйка у дома может найти тебе работу.")
+	set_objective("COURTYARD_OBJECTIVE_MEET_HOST")
 	clear_message()
+
+	# Язык мог установиться до _ready — обновим отображение, не трогая
+	# видимость/ввод. Сигнал может прийти и раньше ready: обработчик
+	# сам проверяет is_node_ready().
+	Localization.language_changed.connect(_on_language_changed)
 
 
 func _all_buttons() -> Array[Button]:
@@ -170,9 +190,11 @@ func _apply_styles() -> void:
 
 # ---------------------------------------------------------------- Публичный API
 
-func set_objective(text: String) -> void:
+func set_objective(key: String, parameters: Dictionary = {}) -> void:
+	_objective_key = key
+	_objective_params = _deep_copy_dict(parameters)
 	if _objective_label:
-		_objective_label.text = text
+		_objective_label.text = Localization.text(key, _objective_params)
 
 
 func set_prompt(text: String) -> void:
@@ -181,11 +203,14 @@ func set_prompt(text: String) -> void:
 		_prompt_label.visible = not text.is_empty()
 
 
-func show_message(speaker: String, text: String) -> void:
+func show_message(speaker_key: String, key: String, parameters: Dictionary = {}) -> void:
 	if not _message_panel:
 		return
-	_speaker_label.text = speaker
-	_message_text.text = text
+	_speaker_key = speaker_key
+	_message_key = key
+	_message_params = _deep_copy_dict(parameters)
+	_speaker_label.text = Localization.text(speaker_key) if not speaker_key.is_empty() else ""
+	_message_text.text = Localization.text(key, _message_params)
 	_message_visible = true
 	_message_panel.visible = true
 
@@ -213,6 +238,43 @@ func reset_controls() -> void:
 		_btn_attack.button_pressed = false
 	_set_run_mode(false, true)
 	_emit_move()
+
+
+# ---------------------------------------------------------------- Локализация
+
+func _on_language_changed(_language: String) -> void:
+	# Язык может установиться раньше _ready — тогда просто ничего не делаем.
+	if not is_node_ready():
+		return
+	_refresh_localized_texts()
+
+
+func _refresh_localized_texts() -> void:
+	if _objective_label:
+		_objective_label.text = Localization.text(_objective_key, _objective_params)
+	if _subtitle_label:
+		_subtitle_label.text = Localization.text("COURTYARD_TITLE")
+	if _legend_label:
+		var legend_touch := OS.has_feature("android") or force_touch_controls
+		_legend_label.text = Localization.text(
+			"COURTYARD_LEGEND_TOUCH" if legend_touch else "COURTYARD_LEGEND_DESKTOP")
+	if _btn_interact:
+		_btn_interact.text = Localization.text("UI_ACTION_INTERACT")
+	if _btn_attack:
+		_btn_attack.text = Localization.text("UI_ACTION_ATTACK")
+	if _btn_restart:
+		_btn_restart.text = Localization.text("UI_RESTART")
+	if _btn_run:
+		_btn_run.text = Localization.text("UI_ACTION_RUN" if _run_enabled else "UI_ACTION_WALK")
+	if _speaker_label:
+		_speaker_label.text = Localization.text(_speaker_key) if not _speaker_key.is_empty() else ""
+	# Обновляем текст открытого сообщения; закрытое не открываем.
+	if _message_visible and _message_text:
+		_message_text.text = Localization.text(_message_key, _message_params)
+
+
+func _deep_copy_dict(d: Dictionary) -> Dictionary:
+	return d.duplicate(true)
 
 
 # ---------------------------------------------------------------- Ввод
@@ -474,7 +536,7 @@ func _set_run_mode(enabled: bool, emit_change: bool) -> void:
 		return
 	_run_enabled = enabled
 	if is_node_ready() and _btn_run:
-		_btn_run.text = "Бег" if enabled else "Ходьба"
+		_btn_run.text = Localization.text("UI_ACTION_RUN" if enabled else "UI_ACTION_WALK")
 		_btn_run.button_pressed = enabled
 	if emit_change:
 		run_changed.emit(enabled)

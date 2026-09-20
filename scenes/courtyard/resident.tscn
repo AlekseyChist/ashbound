@@ -10,8 +10,8 @@ height = 1.7
 [node name="Resident" type="Node3D"]
 script = ExtResource("1_point")
 interaction_id = &"innkeeper"
-display_name = "Хозяйка"
-prompt = "Поговорить"
+display_name = "COURTYARD_NAME_INNKEEPER"
+prompt = "COURTYARD_ACTION_TALK"
 appearance = ExtResource("2_frames")
 
 [node name="Body" type="AnimatedSprite3D" parent="."]
@@ -37,7 +37,7 @@ shape = SubResource("CapsuleShape3D_1")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.15, 0)
 billboard = 1
 pixel_size = 0.006
-text = "Хозяйка"
+text = "COURTYARD_NAME_INNKEEPER"
 font_size = 40
 outline_size = 8
 modulate = Color(1, 0.96, 0.88, 1)
