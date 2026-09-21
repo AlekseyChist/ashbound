@@ -4,8 +4,10 @@ extends PanelContainer
 ## Four equipment slots: armor (complete outfit), weapon, backpack, pouch.
 
 const GestureScript = preload("res://scripts/courtyard/inventory_touch_gesture.gd")
+const MenuSections = preload("res://scripts/courtyard/courtyard_menu_sections.gd")
 
 var _gesture_handler: RefCounted = null
+var _sections: RefCounted = null
 
 signal close_requested()
 
@@ -150,6 +152,7 @@ func _ready() -> void:
 	_gesture_handler = GestureScript.new(self)
 	_ghost.set_as_top_level(true)
 	_ghost.size = Vector2(140, 140)
+	_sections = MenuSections.new(self)
 	refresh_contents()
 	visible = false
 
@@ -158,6 +161,8 @@ func open_panel() -> void:
 	_reset_gesture()
 	_selected_item_id = ""
 	_settings_error.visible = false
+	if _sections:
+		_sections.select_section("items")
 	refresh_contents()
 	visible = true
 
@@ -332,6 +337,8 @@ func _refresh_labels() -> void:
 	_quick_label.text = _text("TOUCH_QUICK_LABEL")
 	_hint.text = _text("TOUCH_DRAG_HINT")
 	_empty_label.text = _text("INV_EMPTY")
+	if _sections:
+		_sections.refresh()
 
 
 func _on_language_changed(_language: String) -> void:

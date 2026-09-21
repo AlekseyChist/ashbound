@@ -2,6 +2,8 @@ extends Node3D
 ## FirstCourtyard — локальный уровень-упражнение «бытовой двор».
 ## Все состояния эфемерны и живут только внутри сцены.
 
+signal journal_changed()
+
 enum State { MEET_HOST, FETCH_WOOD, RETURN_WOOD, MEET_GUARD, PRACTICE, REPORT, DONE }
 
 const FACING_DOT_MIN := 0.2
@@ -311,22 +313,41 @@ func _apply_state(s: int) -> void:
 	_refresh_objective()
 
 
-func _refresh_objective() -> void:
+func get_journal_entry() -> Dictionary:
+	var entry := {
+		"id": "courtyard_lesson",
+		"title_key": "MENU_JOURNAL_COURTYARD",
+		"objective_key": "",
+		"params": {},
+		"completed": false,
+	}
 	match state:
 		State.MEET_HOST:
-			_hud.set_objective("COURTYARD_OBJECTIVE_MEET_HOST")
+			entry.objective_key = "COURTYARD_OBJECTIVE_MEET_HOST"
 		State.FETCH_WOOD:
-			_hud.set_objective("COURTYARD_OBJECTIVE_FETCH_WOOD")
+			entry.objective_key = "COURTYARD_OBJECTIVE_FETCH_WOOD"
 		State.RETURN_WOOD:
-			_hud.set_objective("COURTYARD_OBJECTIVE_RETURN_WOOD")
+			entry.objective_key = "COURTYARD_OBJECTIVE_RETURN_WOOD"
 		State.MEET_GUARD:
-			_hud.set_objective("COURTYARD_OBJECTIVE_MEET_GUARD")
+			entry.objective_key = "COURTYARD_OBJECTIVE_MEET_GUARD"
 		State.PRACTICE:
-			_hud.set_objective("COURTYARD_OBJECTIVE_PRACTICE", {"hits": dummy_hits, "total": MAX_DUMMY_HITS})
+			entry.objective_key = "COURTYARD_OBJECTIVE_PRACTICE"
+			entry.params = {"hits": dummy_hits, "total": MAX_DUMMY_HITS}
 		State.REPORT:
-			_hud.set_objective("COURTYARD_OBJECTIVE_REPORT")
+			entry.objective_key = "COURTYARD_OBJECTIVE_REPORT"
 		State.DONE:
-			_hud.set_objective("COURTYARD_OBJECTIVE_DONE")
+			entry.objective_key = "COURTYARD_OBJECTIVE_DONE"
+			entry.completed = true
+		_:
+			return {}
+	return entry
+
+func _refresh_objective() -> void:
+	var entry := get_journal_entry()
+	if entry.is_empty():
+		return
+	_hud.set_objective(entry.objective_key, entry.params)
+	journal_changed.emit()
 
 
 func _on_innkeeper_interact() -> void:
