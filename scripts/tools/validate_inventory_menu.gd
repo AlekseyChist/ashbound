@@ -135,9 +135,10 @@ func _run() -> void:
 	check(not menu.request_open() and not player.input_enabled, "external player lock preserved")
 	player.input_enabled = true
 	var message: Control = hud.get_node("RootControl/MessagePanel")
-	message.show()
-	check(not menu.request_open(), "dialogue prevents opening")
-	message.hide()
+	hud.show_message("COURTYARD_NAME_INNKEEPER", "COURTYARD_DIALOGUE_HOST_JOB")
+	check(menu.request_open() and not message.visible, "informational reply yields to deliberate menu opening")
+	menu.close_menu()
+	assert_closed("reply transition")
 	player.request_attack()
 	check(player.is_attacking() and not menu.request_open(), "active strike prevents opening")
 	await frames(50)
