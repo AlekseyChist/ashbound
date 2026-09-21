@@ -1,5 +1,5 @@
 param(
-  [string[]]$Cases = @('settings_menu','courtyard_restart_dialogue','item_behavior','item_actions','wearable_storage','touch_inventory','backpack_visual','inventory_menu','inventory_back','inventory_storage_layout','inventory_storage','inventory_snapshot','inventory_snapshot_edges','inventory_trade','inventory_trade_edges','inventory_ownership','inventory_ownership_edges','localization','courtyard_localization','courtyard','inventory_gesture','courtyard_input_order','menu_journal','character_progress','character_sheet','quest_menu_access','physical_map','courtyard_save_store','courtyard_save'),
+  [string[]]$Cases = @('hero_projection','settings_menu','courtyard_restart_dialogue','item_behavior','item_actions','wearable_storage','touch_inventory','backpack_visual','inventory_menu','inventory_back','inventory_storage_layout','inventory_storage','inventory_snapshot','inventory_snapshot_edges','inventory_trade','inventory_trade_edges','inventory_ownership','inventory_ownership_edges','localization','courtyard_localization','courtyard','inventory_gesture','courtyard_input_order','menu_journal','character_progress','character_sheet','quest_menu_access','physical_map','courtyard_save_store','courtyard_save'),
   [switch]$Render
 )
 $ErrorActionPreference = 'Stop'
@@ -12,6 +12,8 @@ foreach ($case in $Cases) {
   $errorPath = Join-Path $projectRoot ".tools/touch-qa-$case-stderr.txt"
   $engineArgs = @('--path','.', '--script',"res://scripts/tools/validate_$case.gd",'--log-file',".tools/touch-qa-$case.log")
   if (-not $Render) { $engineArgs = @('--headless') + $engineArgs }
+  # Graphical QA renders off-screen; reserve visible game windows for owner testing.
+  if ($Render) { $engineArgs = @('--windowed','--position','-10000,-10000') + $engineArgs }
   $proc = Start-Process -FilePath $engine -WorkingDirectory $projectRoot -ArgumentList $engineArgs -PassThru -WindowStyle Hidden -RedirectStandardOutput $outputPath -RedirectStandardError $errorPath
   if (-not $proc.WaitForExit(45000)) {
     Stop-Process -Id $proc.Id
