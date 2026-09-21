@@ -7,6 +7,7 @@ const COLOR_TEXT := Color(0.88, 0.85, 0.77)
 
 const CharacterSheetView := preload("res://scripts/courtyard/character_sheet_view.gd")
 const MapView := preload("res://scripts/courtyard/courtyard_map_view.gd")
+const SettingsView := preload("res://scripts/courtyard/settings_menu_view.gd")
 
 var owner: Control
 var current_section: String = "items"
@@ -19,6 +20,8 @@ var _character_tab: Button = null
 var _character_view: RefCounted = null
 var _map_view: RefCounted = null
 var _map_tab: Button = null
+var _settings_tab: Button = null
+var _settings_view: RefCounted = null
 var _quest_page: VBoxContainer = null
 var _quest_title: Label = null
 var _quest_status: Label = null
@@ -41,10 +44,12 @@ func select_section(id: String) -> void:
 	elif id == "map":
 		if not is_instance_valid(_map_view) or not _map_view.has_map():
 			return
-	elif id != "items" and id != "quests":
+	elif id != "items" and id != "quests" and id != "settings":
 		return
 	current_section = id
 	owner._reset_gesture()
+	if is_instance_valid(owner._settings_error):
+		owner._settings_error.visible = false
 	_apply_section_visibility()
 	_refresh_tabs()
 	refresh()
@@ -61,13 +66,23 @@ func refresh() -> void:
 		_character_view.refresh()
 	if is_instance_valid(_map_view):
 		_map_view.refresh()
+	if is_instance_valid(_settings_view):
+		_settings_view.refresh()
+
+func choose_language(code: String) -> void:
+	if current_section == "settings" and is_instance_valid(_settings_view):
+		_settings_view.choose_language(code)
 
 
 func hit_test(pos: Vector2) -> Dictionary:
-	for button: Button in [_items_tab, _map_tab, _quests_tab, _character_tab]:
+	for button: Button in [_items_tab, _map_tab, _quests_tab, _character_tab, _settings_tab]:
 		if is_instance_valid(button) and button.is_visible_in_tree() and not button.disabled:
 			if button.get_global_rect().has_point(pos):
 				return {"kind": "section", "id": _tab_id(button), "control": button}
+	if current_section == "settings" and is_instance_valid(_settings_view):
+		var settings_hit: Dictionary = _settings_view.hit_test(pos)
+		if not settings_hit.is_empty():
+			return settings_hit
 	return {}
 
 
@@ -90,10 +105,12 @@ func _build_ui() -> void:
 	_map_tab = _make_tab_button("MapTab", "MENU_SECTION_MAP")
 	_quests_tab = _make_tab_button("QuestsTab", "MENU_SECTION_QUESTS")
 	_character_tab = _make_tab_button("CharacterTab", "MENU_SECTION_CHARACTER")
+	_settings_tab = _make_tab_button("SettingsTab", "MENU_SECTION_SETTINGS")
 	_tabs.add_child(_items_tab)
 	_tabs.add_child(_map_tab)
 	_tabs.add_child(_quests_tab)
 	_tabs.add_child(_character_tab)
+	_tabs.add_child(_settings_tab)
 
 	var root_vbox: VBoxContainer = owner.get_node("Margin/RootVBox")
 	_quest_page = VBoxContainer.new()
@@ -114,6 +131,7 @@ func _build_ui() -> void:
 
 	_character_view = CharacterSheetView.new(owner)
 	_map_view = MapView.new(owner)
+	_settings_view = SettingsView.new(owner)
 
 	_apply_section_visibility()
 	_refresh_tabs()
@@ -173,6 +191,12 @@ func _apply_section_visibility() -> void:
 		character_page.visible = current_section == "character"
 	if is_instance_valid(_map_view):
 		_map_view.page.visible = current_section == "map" and _map_view.has_map()
+	var settings_page: Control = _settings_view.page if is_instance_valid(_settings_view) else null
+	if is_instance_valid(settings_page):
+		settings_page.visible = current_section == "settings"
+	var footer: HBoxContainer = owner.get_node("Margin/RootVBox/Footer") as HBoxContainer
+	if is_instance_valid(footer):
+		footer.visible = is_items
 
 
 func _refresh_tabs() -> void:
@@ -180,6 +204,7 @@ func _refresh_tabs() -> void:
 	_map_tab.text = owner._text("MENU_SECTION_MAP")
 	_quests_tab.text = owner._text("MENU_SECTION_QUESTS")
 	_character_tab.text = owner._text("MENU_SECTION_CHARACTER")
+	_settings_tab.text = owner._text("MENU_SECTION_SETTINGS")
 	var has_profile: bool = is_instance_valid(_character_view) and _character_view.has_profile()
 	_character_tab.disabled = not has_profile
 	var has_map: bool = is_instance_valid(_map_view) and _map_view.has_map()
@@ -194,6 +219,7 @@ func _refresh_tabs() -> void:
 		_map_tab.add_theme_color_override("border_color", COLOR_BRONZE.darkened(0.45))
 	_style_tab(_quests_tab, current_section == "quests")
 	_style_tab(_character_tab, current_section == "character")
+	_style_tab(_settings_tab, current_section == "settings")
 
 
 func _style_tab(button: Button, active: bool) -> void:
@@ -256,4 +282,6 @@ func _tab_id(button: Button) -> String:
 		return "quests"
 	if button == _character_tab:
 		return "character"
+	if button == _settings_tab:
+		return "settings"
 	return ""

@@ -442,3 +442,12 @@ msgstr ""
 
 msgid "DROP_STORAGE_FULL"
 msgstr ""
+
+msgid "MENU_SECTION_SETTINGS"
+msgstr ""
+
+msgid "SETTINGS_LANGUAGE_TITLE"
+msgstr ""
+
+msgid "SETTINGS_LANGUAGE_HINT"
+msgstr ""

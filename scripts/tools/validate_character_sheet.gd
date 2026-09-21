@@ -77,7 +77,7 @@ func capture(name: String) -> void:
 func layout(language: String) -> void:
 	var bounds := panel.get_global_rect()
 	check(root.get_visible_rect().grow(1).encloses(bounds), "full panel fits " + language)
-	for control in [tab("ItemsTab"), tab("QuestsTab"), tab("CharacterTab"), panel.get_node("%CloseButton"), panel.get_node("%LanguageChoice")]:
+	for control in [tab("ItemsTab"), tab("QuestsTab"), tab("CharacterTab"), panel.get_node("%CloseButton"), tab("SettingsTab")]:
 		check(bounds.grow(1).encloses(control.get_global_rect()), "control fits " + control.name)
 		check(control.size.y >= 90, "finger target " + control.name)
 		check(control.get_theme_font("font").get_string_size(control.text, HORIZONTAL_ALIGNMENT_LEFT, -1, control.get_theme_font_size("font_size")).x < control.size.x - 12, "button text fits " + language + control.name)
@@ -108,13 +108,13 @@ func _run() -> void:
 	check(progress.get_character_data() == {"learning_points":0,"unarmed_mastery":"novice","guard_practice_completed":false}, "fresh actual hero")
 	await open_menu()
 	var before := snapshot()
-	var footer: Rect2 = panel.get_node("%LanguageChoice").get_global_rect()
+	var footer: Rect2 = tab("SettingsTab").get_global_rect()
 	await tap_tab("CharacterTab")
 	check(sections.current_section == "character", "native tap selects character")
 	check(panel.get_node("Margin/RootVBox/CharacterPage").is_visible_in_tree(), "character visible")
 	for node in ["%Body", "%Hint", "%QuickSlots", "Margin/RootVBox/QuestPage"]:
 		check(not panel.get_node(node).is_visible_in_tree(), "other content hidden " + node)
-	check(panel.get_node("%LanguageChoice").get_global_rect() == footer, "footer stable")
+	check(tab("SettingsTab").get_global_rect() == footer, "settings tab stable")
 	check(label("LearningPoints").text == "Learning points: 0", "no invented initial points")
 	check(snapshot() == before, "opening page read-only")
 	var portrait: TextureRect = panel.get_node("Margin/RootVBox/CharacterPage/Portrait")

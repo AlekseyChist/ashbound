@@ -444,3 +444,12 @@ msgstr "Pick up"
 
 msgid "DROP_STORAGE_FULL"
 msgstr "There is no room in your storage."
+
+msgid "MENU_SECTION_SETTINGS"
+msgstr "Settings"
+
+msgid "SETTINGS_LANGUAGE_TITLE"
+msgstr "Language"
+
+msgid "SETTINGS_LANGUAGE_HINT"
+msgstr "Changes apply immediately and are saved."

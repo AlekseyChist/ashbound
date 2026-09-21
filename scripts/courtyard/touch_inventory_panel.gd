@@ -67,7 +67,6 @@ var _empty_label: Label
 var _quick_label: Label
 var _quick_slots: HBoxContainer
 var _hint: Label
-var _language_choice: OptionButton
 var _settings_error: Label
 var _drop_button: Button
 
@@ -120,14 +119,12 @@ func _ready() -> void:
 	_quick_label = $Margin/RootVBox/QuickLabel
 	_quick_slots = $Margin/RootVBox/QuickSlots
 	_hint = $Margin/RootVBox/Footer/Hint
-	_language_choice = $Margin/RootVBox/Footer/LanguageChoice
 	_settings_error = %SettingsError
 
 	_apply_styles()
 	_setup_character_preview()
 	_setup_equipment_slots()
 	_setup_quick_slots()
-	_setup_language_choice()
 	_setup_drop_action()
 	_refresh_labels()
 
@@ -288,46 +285,10 @@ func _setup_quick_slots() -> void:
 		_quick_cells.append(btn)
 
 
-func _setup_language_choice() -> void:
-	_language_choice.clear()
-	_language_choice.add_item(_text("UI_LANGUAGE_AUTO"), 0)
-	_language_choice.add_item(_text("LOC_LANGUAGE_ENGLISH"), 1)
-	_language_choice.add_item(_text("LOC_LANGUAGE_RUSSIAN"), 2)
-	if _localization and _localization.has_method("get_preference"):
-		var pref: String = _localization.get_preference()
-		match pref:
-			"en": _language_choice.select(1)
-			"ru": _language_choice.select(2)
-			_: _language_choice.select(0)
-	if not _language_choice.item_selected.is_connected(_on_language_selected):
-		_language_choice.item_selected.connect(_on_language_selected)
-
-
-func _on_language_selected(index: int) -> void:
-	if not _localization or not _localization.has_method("set_language"):
-		return
-	var code := ""
-	match index:
-		1: code = "en"
-		2: code = "ru"
-		_: code = "auto"
-	var result: Error = _localization.set_language(code)
-	if result != OK:
-		_settings_error.text = _text("INV_SETTINGS_FAILURE")
-		_settings_error.visible = true
-	else:
-		_settings_error.visible = false
-
-
-# ---------------------------------------------------------------------------
-# Labels / localization
-# ---------------------------------------------------------------------------
-
 func _text(key: String, params: Dictionary = {}) -> String:
 	if _localization and _localization.has_method("text"):
 		return _localization.text(key, params)
 	return key
-
 
 func _setup_drop_action() -> void:
 	_drop_button = Button.new()
@@ -375,9 +336,7 @@ func _setup_drop_action() -> void:
 	_drop_button.add_theme_color_override("font_disabled_color", COLOR_MUTED)
 
 	var footer: Node = $Margin/RootVBox/Footer
-	var lang_index := footer.get_node_or_null("LanguageChoice").get_index()
 	footer.add_child(_drop_button)
-	footer.move_child(_drop_button, lang_index)
 
 
 func _world_items() -> Node:
@@ -454,7 +413,6 @@ func _refresh_labels() -> void:
 
 func _on_language_changed(_language: String) -> void:
 	_reset_gesture()
-	_setup_language_choice()
 	refresh_contents()
 
 

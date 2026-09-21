@@ -221,12 +221,6 @@ theme_override_font_sizes/font_size = 28
 autowrap_mode = 2
 text = "Tap an item to inspect it. Tap a slot to equip or store."
 
-[node name="LanguageChoice" type="OptionButton" parent="Margin/RootVBox/Footer"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(300, 90)
-layout_mode = 2
-theme_override_font_sizes/font_size = 30
-
 [node name="SettingsError" type="Label" parent="Margin/RootVBox"]
 unique_name_in_owner = true
 visible = false
