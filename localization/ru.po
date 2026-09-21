@@ -418,3 +418,15 @@ msgstr "Схемы нет"
 
 msgid "COURTYARD_MAP_FULL"
 msgstr "Для схемы нет свободного места."
+
+msgid "SAVE_STATUS_TITLE"
+msgstr "Сохранение"
+
+msgid "SAVE_LOAD_FAILED"
+msgstr "Не удалось прочитать сохранение. Автосохранение приостановлено, чтобы не потерять прогресс."
+
+msgid "SAVE_RECOVERED"
+msgstr "Восстановлена предыдущая резервная копия."
+
+msgid "SAVE_WRITE_FAILED"
+msgstr "Не удалось сохранить прогресс. Проверь свободное место."

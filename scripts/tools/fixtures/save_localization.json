@@ -1,0 +1,6 @@
+[
+  {"key":"SAVE_STATUS_TITLE","en":"Saved progress","ru":"Сохранение"},
+  {"key":"SAVE_LOAD_FAILED","en":"The save could not be read. Autosaving is paused to protect your progress.","ru":"Не удалось прочитать сохранение. Автосохранение приостановлено, чтобы не потерять прогресс."},
+  {"key":"SAVE_RECOVERED","en":"The previous backup was restored.","ru":"Восстановлена предыдущая резервная копия."},
+  {"key":"SAVE_WRITE_FAILED","en":"Progress could not be saved. Check available storage.","ru":"Не удалось сохранить прогресс. Проверь свободное место."}
+]

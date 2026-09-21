@@ -4,7 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const courtyardFixture = ['courtyard_localization.json', 'inventory_localization.json', 'menu_localization.json', 'character_localization.json', 'map_localization.json'].flatMap(file =>
+const courtyardFixture = ['courtyard_localization.json', 'inventory_localization.json', 'menu_localization.json', 'character_localization.json', 'map_localization.json', 'save_localization.json'].flatMap(file =>
   JSON.parse(fs.readFileSync(path.join(root, 'scripts/tools/fixtures', file), 'utf8')));
 const expected = [
   'UI_LANGUAGE', 'UI_LANGUAGE_AUTO', 'UI_CLOSE', 'UI_ACTION_INTERACT',

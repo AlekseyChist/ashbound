@@ -1,6 +1,6 @@
 extends Node3D
 ## FirstCourtyard — локальный уровень-упражнение «бытовой двор».
-## Все состояния эфемерны и живут только внутри сцены.
+## Persistence сохраняет снимок двора (courtyard snapshot).
 
 signal journal_changed()
 
@@ -8,6 +8,7 @@ enum State { MEET_HOST, FETCH_WOOD, RETURN_WOOD, MEET_GUARD, PRACTICE, REPORT, D
 
 const FACING_DOT_MIN := 0.2
 const MAX_DUMMY_HITS := 3
+const PersistenceScript = preload("res://scripts/courtyard/courtyard_persistence.gd")
 
 @export var interact_radius: float = 2.2
 @export var strike_range: float = 1.8
@@ -50,6 +51,7 @@ func _ready() -> void:
 	_camera_rig.set_target(_player)
 	_snap_camera_to_player()
 	_apply_state(State.MEET_HOST)
+	call_deferred("_start_persistence")
 	print("ASHBOUND_COURTYARD_READY")
 	# Скриншот-хук только при явном аргументе запуска.
 	var args: PackedStringArray = OS.get_cmdline_user_args()
@@ -57,6 +59,25 @@ func _ready() -> void:
 		if a.begins_with("--capture-courtyard="):
 			_capture_path = a.substr("--capture-courtyard=".length())
 
+
+func _start_persistence() -> void:
+	if get_tree().current_scene != self:
+		return
+	for child in get_children():
+		if child.name == "Persistence":
+			return
+	if OS.get_cmdline_args().has("--script"):
+		return
+	var user_args: PackedStringArray = OS.get_cmdline_user_args()
+	if user_args.has("--no-courtyard-save"):
+		return
+	for a in user_args:
+		if a.begins_with("--capture-courtyard="):
+			return
+	var persistence: Node = PersistenceScript.new()
+	persistence.name = "Persistence"
+	add_child(persistence)
+	persistence.initialize(self)
 
 func _connect_signals() -> void:
 	_hud.move_changed.connect(_player.set_move_input)
