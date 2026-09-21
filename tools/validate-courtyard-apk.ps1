@@ -36,7 +36,14 @@ try {
         'assets/ui/inventory/pocket-v1.png',
         'assets/ui/inventory/backpack-v1.png',
         'assets/ui/inventory/pouch-v1.png',
-        'assets/characters/courtyard/traveler-backpack-layer-v1.png'
+        'assets/characters/courtyard/painted-backpack/traveler-side-pack.png',
+        'assets/characters/courtyard/painted-backpack/traveler-back-pack.png',
+        'assets/characters/courtyard/painted-backpack/traveler-front-pack.png',
+        'assets/characters/courtyard/painted-backpack/traveler-front-idle-correction.png',
+        'assets/characters/courtyard/painted-backpack/traveler-run-side-pack.png',
+        'assets/characters/courtyard/painted-backpack/traveler-run-back-pack.png',
+        'assets/characters/courtyard/painted-backpack/traveler-run-front-pack.png',
+        'assets/characters/courtyard/painted-backpack/traveler-pocket-pack.png'
     )
     foreach ($relative in $inventoryArt) {
         $descriptor = $archive.GetEntry('assets/' + $relative + '.import')
@@ -49,6 +56,10 @@ try {
             if (-not $files.Contains('assets/' + $match.Groups[1].Value)) { throw "Missing imported inventory image: $($match.Groups[1].Value)" }
         }
     }
+    foreach ($relative in @('assets/characters/courtyard/traveler_backpack_frames.tres','assets/characters/courtyard/traveler_backpack_pocket_frames.tres')) {
+        if (-not $files.Contains('assets/' + $relative) -and -not $files.Contains('assets/' + $relative + '.remap')) { throw "Missing painted frame resource: $relative" }
+    }
+    if ($files.Contains('assets/assets/characters/courtyard/traveler-backpack-layer-v1.png.import')) { throw 'Rejected accessory overlay still exported' }
     $diagnostics = @($files | Where-Object { $_ -match '^assets/scripts/tools/|back_probe\.tscn' })
     if ($diagnostics.Count -gt 0) { throw ('QA-only files included: ' + ($diagnostics -join ', ')) }
     Write-Output "ASHBOUND_APK_DEPENDENCIES_OK autoload_scripts=$($scripts.Count) inventory_images=$($inventoryArt.Count) qa_files=0"

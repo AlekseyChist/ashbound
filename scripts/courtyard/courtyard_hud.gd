@@ -285,6 +285,14 @@ func _notification(what: int) -> void:
 
 
 func _input(event: InputEvent) -> void:
+	# S23: эмулированные мышиные события (device=-1) дублируют тачи.
+	# Если точка попадает в собственную кнопку HUD, глотаем и press, и release,
+	# чтобы GUI button_down не переключал состояние раньше/позже тача.
+	if event is InputEventMouseButton:
+		var mb := event as InputEventMouseButton
+		if mb.device == InputEvent.DEVICE_ID_EMULATION and _point_in_owned_control(_to_root_position(mb.position)):
+			get_viewport().set_input_as_handled()
+			return
 	if event is InputEventScreenTouch:
 		var t := event as InputEventScreenTouch
 		var pos := _to_root_position(t.position)
