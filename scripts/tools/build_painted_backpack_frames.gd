@@ -327,4 +327,3 @@ func _measure_alpha_bbox(image: Image, original_region: Rect2, expand_search: bo
 	if best_count == 0:
 		return Rect2()
 	return Rect2(Vector2(float(best_bbox.position.x), float(best_bbox.position.y)), Vector2(float(best_bbox.size.x), float(best_bbox.size.y)))
-
