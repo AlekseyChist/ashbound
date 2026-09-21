@@ -16,13 +16,14 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 
 config/name="ASHBOUND"
 config/description="Dark fantasy RPG in the style of Gothic 1-2"
-config/version="0.1.0"
-run/main_scene="res://scenes/environments/test_world.tscn"
+config/version="0.9.1-character-sheet"
+run/main_scene="res://scenes/courtyard/first_courtyard.tscn"
 config/features=PackedStringArray("4.7", "Mobile")
 config/icon="res://icon.svg"
 
 [autoload]
 
+Localization="*res://scripts/core/localization.gd"
 GameManager="*res://scripts/core/game_manager.gd"
 FactionManager="*res://scripts/core/faction_manager.gd"
 QuestManager="*res://scripts/core/quest_manager.gd"
@@ -104,6 +105,10 @@ journal={
 "events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":0,"physical_keycode":74,"key_label":0,"unicode":106,"location":0,"echo":false,"script":null)
 ]
 }
+
+[internationalization]
+
+locale/translations=PackedStringArray("res://localization/en.po", "res://localization/ru.po")
 
 [layer_names]
 

@@ -1,0 +1,43 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/courtyard/courtyard_resident.gd" id="1_point"]
+[ext_resource type="SpriteFrames" path="res://assets/characters/courtyard/innkeeper_frames.tres" id="2_frames"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_1"]
+radius = 0.3
+height = 1.7
+
+[node name="Resident" type="Node3D"]
+script = ExtResource("1_point")
+interaction_id = &"innkeeper"
+display_name = "COURTYARD_NAME_INNKEEPER"
+prompt = "COURTYARD_ACTION_TALK"
+appearance = ExtResource("2_frames")
+
+[node name="Body" type="AnimatedSprite3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.895, 0)
+billboard = 2
+sprite_frames = ExtResource("2_frames")
+animation = &"idle"
+autoplay = "idle"
+pixel_size = 0.00418
+shaded = false
+alpha_cut = 1
+alpha_scissor_threshold = 0.25
+
+[node name="BodyCollision" type="StaticBody3D" parent="."]
+collision_layer = 4
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="BodyCollision"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.85, 0)
+shape = SubResource("CapsuleShape3D_1")
+
+[node name="NameLabel" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.15, 0)
+billboard = 1
+pixel_size = 0.006
+text = "COURTYARD_NAME_INNKEEPER"
+font_size = 40
+outline_size = 8
+modulate = Color(1, 0.96, 0.88, 1)

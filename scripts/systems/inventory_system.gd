@@ -7,6 +7,8 @@ signal item_removed(item_id: String)
 signal item_equipped(item: Dictionary, slot: String)
 signal item_unequipped(slot: String)
 signal gold_changed(amount: int)
+signal inventory_restored()
+signal storage_changed()
 
 # Слоты экипировки
 const SLOT_WEAPON = "weapon"
@@ -34,8 +36,46 @@ var equipped: Dictionary = {
 # Золото
 var gold: int = 0
 
+# Защита от повторного входа в денежные/торговые операции
+var _trade_guard := false
+
+# Явный preload раскладки хранилища (INV-01B): не зависит от глобального class cache
+const InventoryStorageLayoutScript := preload("res://scripts/systems/inventory_storage_layout.gd")
+
+# Физическая раскладка хранилища (INV-01B); null = legacy без конфигурации
+var _storage_layout: RefCounted = null
+# Защита от реентерабельных мутаций раскладки во время commit + сигналов
+var _storage_guard := false
+
+# Явный preload носимого хранилища (INV-01C): не зависит от глобального class cache
+const InventoryWearableStorageScript = preload("res://scripts/systems/inventory_wearable_storage.gd")
+
+# Носимое хранилище: рюкзак/мешок, которые можно надеть
+var worn_storage: Dictionary = {"backpack": null, "pouch": null}
+# Защита от реентерабельных операций с носимым хранилищем
+var _wearable_guard: bool = false
+
 # База предметов
 var item_database: Dictionary = {}
+
+
+func get_worn_storage(kind: String) -> Dictionary:
+	var entry = worn_storage.get(kind)
+	if typeof(entry) == TYPE_DICTIONARY:
+		return entry.duplicate(true)
+	return {}
+
+
+func equip_storage_item(handle: Dictionary) -> bool:
+	return InventoryWearableStorageScript.equip(self, handle)
+
+
+func unequip_storage_item(kind: String, dest: String) -> bool:
+	return InventoryWearableStorageScript.unequip(self, kind, dest)
+
+
+func unequip_to_storage(slot: String, dest: String) -> bool:
+	return InventoryWearableStorageScript.unequip_equipment(self, slot, dest)
 
 
 func _ready() -> void:
@@ -44,6 +84,24 @@ func _ready() -> void:
 
 
 func _init_item_database() -> void:
+	item_database["traveler_backpack"] = {
+		"id": "traveler_backpack",
+		"type": ItemType.MISC,
+		"name": "Дорожный рюкзак",
+		"description": "",
+		"value": 30,
+		"stackable": false,
+		"icon": "res://assets/ui/inventory/backpack-v1.png"
+	}
+	item_database["belt_pouch"] = {
+		"id": "belt_pouch",
+		"type": ItemType.MISC,
+		"name": "Поясной мешочек",
+		"description": "",
+		"value": 10,
+		"stackable": false,
+		"icon": "res://assets/ui/inventory/pouch-v1.png"
+	}
 	# Оружие
 	item_database["rusty_sword"] = {
 		"id": "rusty_sword",
@@ -153,65 +211,138 @@ func _init_item_database() -> void:
 # === ИНВЕНТАРЬ ===
 
 func add_item(item_id: String, quantity: int = 1) -> bool:
+	if _wearable_guard:
+		return false
+	if quantity <= 0:
+		return false
+
 	if not item_database.has(item_id):
 		push_error("[ASHBOUND] Предмет не найден: %s" % item_id)
 		return false
 
 	var template = item_database[item_id]
+	var stackable: bool = template.get("stackable", false)
+	var max_stack: int = 0
+	if stackable:
+		max_stack = int(template.get("max_stack", 0))
+		if max_stack <= 0:
+			push_error("[ASHBOUND] Некорректный max_stack для предмета: %s" % item_id)
+			return false
 
-	# Проверяем стакающиеся предметы
-	if template.get("stackable", false):
-		# Ищем существующий стак
+	# Свободные места в существующих стаках этого предмета
+	var free_in_stacks := 0
+	for item in items:
+		if item["id"] == item_id and stackable:
+			free_in_stacks += maxi(0, max_stack - int(item.get("quantity", 1)))
+
+	# Свободные записи инвентаря
+	var free_slots := maxi(0, get_effective_capacity() - items.size())
+
+	if stackable:
+		# Недостаток после существующих стопок
+		var remaining := quantity - free_in_stacks
+		if remaining > 0:
+			# Число необходимых новых стопок (без переполнения умножения)
+			var needed_new_stacks := (remaining - 1) / max_stack + 1
+			if needed_new_stacks > free_slots:
+				print("[ASHBOUND] Инвентарь полон!")
+				return false
+	else:
+		# Нестакуемые: каждый экземпляр — отдельная запись
+		if quantity > free_slots:
+			print("[ASHBOUND] Инвентарь полон!")
+			return false
+
+	var changed_items: Array = []
+
+	if stackable:
+		# 1) Добираем существующие стаки до max_stack
+		var remaining := quantity
 		for item in items:
+			if remaining <= 0:
+				break
 			if item["id"] == item_id:
-				var max_stack = template.get("max_stack", 99)
-				var can_add = mini(quantity, max_stack - item.get("quantity", 1))
-				if can_add > 0:
-					item["quantity"] = item.get("quantity", 1) + can_add
-					quantity -= can_add
-					item_added.emit(item)
+				var space = maxi(0, max_stack - int(item.get("quantity", 1)))
+				if space > 0:
+					var take = mini(space, remaining)
+					item["quantity"] = int(item.get("quantity", 1)) + take
+					remaining -= take
+					changed_items.append(item)
 
-				if quantity <= 0:
-					return true
+		# 2) Остаток — новые записи по max_stack шт.
+		while remaining > 0:
+			var new_item = template.duplicate(true)
+			new_item["quantity"] = mini(max_stack, remaining)
+			new_item["instance_id"] = _generate_instance_id()
+			items.append(new_item)
+			remaining -= int(new_item["quantity"])
+			changed_items.append(new_item)
+	else:
+		# Нестакуемые: каждый экземпляр — отдельная запись с quantity 1
+		for i in range(quantity):
+			var new_item = template.duplicate(true)
+			new_item["quantity"] = 1
+			new_item["instance_id"] = _generate_instance_id()
+			items.append(new_item)
+			changed_items.append(new_item)
 
-	# Проверяем место
-	if items.size() >= max_capacity:
-		print("[ASHBOUND] Инвентарь полон!")
-		return false
+	# Синхронизируем раскладку ДО любых наблюдаемых сигналов
+	if not _sync_storage_layout():
+		push_error("[ASHBOUND] Не удалось синхронизировать раскладку хранилища")
 
-	# Создаём новый предмет
-	var new_item = template.duplicate(true)
-	new_item["quantity"] = quantity
-	new_item["instance_id"] = _generate_instance_id()
+	# Сигнал несёт реальные словари предметов из items
+	for item in changed_items:
+		item_added.emit(item)
 
-	items.append(new_item)
-	item_added.emit(new_item)
-
-	print("[ASHBOUND] Получен предмет: %s x%d" % [new_item["name"], quantity])
+	print("[ASHBOUND] Получен предмет: %s x%d" % [template.get("name", item_id), quantity])
 	return true
 
 
 func remove_item(item_id: String, quantity: int = 1) -> bool:
+	if _wearable_guard:
+		return false
+	if quantity <= 0:
+		return false
+
+	# Сначала проверяем общее количество
+	var total := 0
+	for item in items:
+		if item["id"] == item_id:
+			total += int(item.get("quantity", 1))
+
+	if total < quantity:
+		return false
+
+	# Списываем через несколько стаков/экземпляров
+	var remaining := quantity
 	for i in range(items.size() - 1, -1, -1):
+		if remaining <= 0:
+			break
 		var item = items[i]
 		if item["id"] == item_id:
-			if item.get("stackable", false):
-				item["quantity"] = item.get("quantity", 1) - quantity
-				if item["quantity"] <= 0:
-					items.remove_at(i)
-					item_removed.emit(item_id)
-			else:
+			var have := int(item.get("quantity", 1))
+			var take := mini(have, remaining)
+			item["quantity"] = have - take
+			remaining -= take
+			if item["quantity"] <= 0:
 				items.remove_at(i)
-				item_removed.emit(item_id)
-			return true
-	return false
+
+	# Синхронизируем раскладку ДО наблюдаемого сигнала
+	if not _sync_storage_layout():
+		push_error("[ASHBOUND] Не удалось синхронизировать раскладку хранилища")
+
+	item_removed.emit(item_id)
+	return true
 
 
 func has_item(item_id: String, quantity: int = 1) -> bool:
-	var total = 0
+	if quantity <= 0:
+		return false
+
+	var total := 0
 	for item in items:
 		if item["id"] == item_id:
-			total += item.get("quantity", 1)
+			total += int(item.get("quantity", 1))
 	return total >= quantity
 
 
@@ -230,53 +361,126 @@ func _generate_instance_id() -> String:
 # === ЭКИПИРОВКА ===
 
 func equip_item(item: Dictionary) -> bool:
-	var slot = item.get("slot", "")
-	if slot == "":
+	if _wearable_guard:
+		return false
+	# item — это HANDLE: используем только instance_id, остальное игнорируем
+	var instance_id = _get_handle_instance_id(item)
+	if instance_id == "":
 		return false
 
-	# Проверяем требования
-	if item.has("faction_requirement"):
-		if FactionManager.player_faction != item["faction_requirement"]:
+	# Ищем каноническую запись в items (отклоняем неоднозначные дубликаты)
+	var carried: Dictionary = {}
+	var found := false
+	for entry in items:
+		if not (entry is Dictionary):
+			continue
+		var entry_id = entry.get("instance_id", "")
+		if entry_id is String and entry_id == instance_id:
+			if found:
+				return false
+			carried = entry
+			found = true
+	if not found:
+		return false
+
+	# Предметы, только что экипированные, не являются инвентарём и не могут быть экипированы повторно
+	for slot in equipped:
+		if equipped[slot] == carried:
+			return false
+
+	# Валидация канонических данных
+	var type = carried.get("type", -1)
+	if type != ItemType.WEAPON and type != ItemType.ARMOR:
+		return false
+
+	var slot = carried.get("slot", "")
+	if not (slot is String) or not equipped.has(slot):
+		return false
+
+	var raw_quantity = carried.get("quantity", 0)
+	if not (raw_quantity is int) or raw_quantity != 1:
+		return false
+
+	if bool(carried.get("stackable", false)):
+		return false
+
+	# Требование фракции из канонического объекта
+	if carried.has("faction_requirement"):
+		if FactionManager.player_faction != carried["faction_requirement"]:
 			print("[ASHBOUND] Требуется членство в фракции!")
 			return false
 
-	# Снимаем текущий предмет
-	if equipped[slot] != null:
-		unequip_slot(slot)
+	# Проверяем, что текущее содержимое слота корректно (чтобы не потерять данные)
+	var old_item = equipped[slot]
+	if old_item != null and not (old_item is Dictionary):
+		push_error("[ASHBOUND] Некорректный предмет в слоте: %s" % slot)
+		return false
 
-	# Экипируем
-	equipped[slot] = item
-	items.erase(item)
+	# Проверяем, что после замены инвентарь не переполнится:
+	# входящий предмет уходит из items, а старый возвращается в items
+	var final_size := items.size() - 1
+	if old_item != null:
+		final_size += 1
+	if final_size > get_effective_capacity():
+		print("[ASHBOUND] Нет места в инвентаре!")
+		return false
 
-	# Применяем статы
+	# Применяем изменения: снимаем старый предмет (если есть) и экипируем новый
+	var removed_old := false
+	if old_item != null:
+		items.append(old_item)
+		equipped[slot] = null
+		removed_old = true
+
+	items.erase(carried)
+	equipped[slot] = carried
+
+	# Синхронизируем раскладку ДО любых наблюдаемых сигналов
+	if not _sync_storage_layout():
+		push_error("[ASHBOUND] Не удалось синхронизировать раскладку хранилища")
+
+	# Применяем статы ДО отправки событий
 	_apply_equipment_stats()
 
-	item_equipped.emit(item, slot)
-	print("[ASHBOUND] Экипировано: %s" % item["name"])
+	# События: сначала снятие (если было), затем экипирование
+	if removed_old:
+		item_unequipped.emit(slot)
+	item_equipped.emit(carried, slot)
+
+	print("[ASHBOUND] Экипировано: %s" % _safe_name(carried))
 	return true
 
 
 func unequip_slot(slot: String) -> bool:
-	if equipped[slot] == null:
+	if _wearable_guard:
 		return false
-
-	if items.size() >= max_capacity:
-		print("[ASHBOUND] Нет места в инвентаре!")
+	if not equipped.has(slot):
 		return false
 
 	var item = equipped[slot]
+	if item == null:
+		return false
+
+	if items.size() >= get_effective_capacity():
+		print("[ASHBOUND] Нет места в инвентаре!")
+		return false
+
 	items.append(item)
 	equipped[slot] = null
+
+	# Синхронизируем раскладку ДО наблюдаемого сигнала
+	if not _sync_storage_layout():
+		push_error("[ASHBOUND] Не удалось синхронизировать раскладку хранилища")
 
 	_apply_equipment_stats()
 
 	item_unequipped.emit(slot)
-	print("[ASHBOUND] Снято: %s" % item["name"])
+	print("[ASHBOUND] Снято: %s" % _safe_name(item))
 	return true
 
 
 func _apply_equipment_stats() -> void:
-	if not GameManager.player:
+	if not is_instance_valid(GameManager.player):
 		return
 
 	var player = GameManager.player
@@ -300,99 +504,744 @@ func _apply_equipment_stats() -> void:
 
 
 func get_equipped(slot: String) -> Dictionary:
-	return equipped.get(slot, {})
+	if not equipped.has(slot):
+		return {}
+	var item = equipped[slot]
+	if item == null or not (item is Dictionary):
+		return {}
+	return item
 
 
 # === ИСПОЛЬЗОВАНИЕ ПРЕДМЕТОВ ===
 
 func use_item(item: Dictionary) -> bool:
-	if item["type"] != ItemType.CONSUMABLE:
+	if _wearable_guard:
+		return false
+	# item — это HANDLE: используем только instance_id, остальное игнорируем
+	var instance_id = _get_handle_instance_id(item)
+	if instance_id == "":
 		return false
 
-	if not GameManager.player:
+	# Ищем каноническую запись в items (отклоняем неоднозначные дубликаты)
+	var carried: Dictionary = {}
+	var found := false
+	for entry in items:
+		if not (entry is Dictionary):
+			continue
+		var entry_id = entry.get("instance_id", "")
+		if entry_id is String and entry_id == instance_id:
+			if found:
+				return false
+			carried = entry
+			found = true
+	if not found:
 		return false
 
-	var effect = item.get("effect", {})
+	# Валидация канонических данных
+	if carried.get("type", -1) != ItemType.CONSUMABLE:
+		return false
 
+	var raw_quantity = carried.get("quantity", 0)
+	if not (raw_quantity is int) or raw_quantity <= 0:
+		return false
+	var quantity: int = raw_quantity
+
+	# Проверяем, что игрок существует
+	if not is_instance_valid(GameManager.player):
+		return false
+
+	var player = GameManager.player
+
+	# Проверяем эффект и возможности игрока ДО удаления предмета
+	var effect = carried.get("effect", {})
+	if not (effect is Dictionary):
+		return false
+
+	var has_heal := false
+	var has_stamina := false
 	if effect.has("heal"):
-		GameManager.player.heal(effect["heal"])
-
+		has_heal = true
+		if not player.has_method("heal"):
+			return false
 	if effect.has("stamina"):
-		GameManager.player.current_stamina = minf(
-			GameManager.player.current_stamina + effect["stamina"],
-			GameManager.player.max_stamina
-		)
+		has_stamina = true
+		if not ("current_stamina" in player and "max_stamina" in player):
+			return false
 
-	# Удаляем использованный предмет
-	remove_item(item["id"], 1)
+	if not has_heal and not has_stamina:
+		return false
 
-	print("[ASHBOUND] Использовано: %s" % item["name"])
+	# Снимаем снимок информации об эффекте
+	var heal_value = 0
+	var stamina_value = 0
+	if has_heal:
+		heal_value = int(effect.get("heal", 0))
+	if has_stamina:
+		stamina_value = int(effect.get("stamina", 0))
+
+	# Удаляем ровно ОДИН предмет из выбранного стака
+	carried["quantity"] = quantity - 1
+	var consumed := false
+	if carried["quantity"] <= 0:
+		items.erase(carried)
+		consumed = true
+
+	# Синхронизируем раскладку ДО наблюдаемого сигнала
+	if consumed and not _sync_storage_layout():
+		push_error("[ASHBOUND] Не удалось синхронизировать раскладку хранилища")
+
+	# Применяем эффект
+	if has_heal:
+		player.heal(heal_value)
+	if has_stamina:
+		player.current_stamina = minf(player.current_stamina + stamina_value, player.max_stamina)
+
+	# Отправляем сигнал item_removed один раз после успешного применения эффекта
+	item_removed.emit(str(carried.get("id", "")))
+
+	print("[ASHBOUND] Использовано: %s" % _safe_name(carried))
 	return true
+
+
+func _get_handle_instance_id(handle: Dictionary) -> String:
+	if not (handle is Dictionary):
+		return ""
+	var id = handle.get("instance_id", "")
+	if not (id is String):
+		return ""
+	return id
+
+
+func _safe_name(item: Dictionary) -> String:
+	if item is Dictionary:
+		return str(item.get("name", "неизвестный предмет"))
+	return "неизвестный предмет"
 
 
 # === ЗОЛОТО ===
 
 func add_gold(amount: int) -> void:
+	if _wearable_guard:
+		return
+	if _trade_guard or amount <= 0 or gold < 0:
+		return
+	if gold > 9223372036854775807 - amount:
+		return
 	gold += amount
 	gold_changed.emit(gold)
 	print("[ASHBOUND] Получено золота: %d (всего: %d)" % [amount, gold])
 
 
 func remove_gold(amount: int) -> bool:
+	if _wearable_guard:
+		return false
+	if _trade_guard or amount <= 0 or gold < 0:
+		return false
 	if gold < amount:
 		return false
-
 	gold -= amount
 	gold_changed.emit(gold)
 	return true
 
 
 func has_gold(amount: int) -> bool:
+	if gold < 0 or amount < 0:
+		return false
 	return gold >= amount
 
 
 # === ТОРГОВЛЯ ===
 
 func sell_item(item: Dictionary) -> bool:
-	var value = item.get("value", 0)
-	if value <= 0:
+	if _wearable_guard:
+		return false
+	if _trade_guard:
 		return false
 
-	if remove_item(item["id"], 1):
-		add_gold(value)
-		return true
-	return false
+	var instance_id = _get_handle_instance_id(item)
+	if instance_id == "":
+		return false
+
+	# Ищем единственную каноническую запись в items
+	var carried: Dictionary = {}
+	var found := false
+	for entry in items:
+		if not (entry is Dictionary):
+			continue
+		var entry_id = entry.get("instance_id", "")
+		if entry_id is String and entry_id == instance_id:
+			if found:
+				return false
+			carried = entry
+			found = true
+	if not found:
+		return false
+
+	# Предмет, присутствующий в equipped, продавать нельзя.
+	# Конфликт identity определяется по корректному непустому instance_id,
+	# а не сравнением словарей целиком (поддельное имя не делает дубликат другой вещью).
+	for slot in equipped:
+		var eq = equipped[slot]
+		if not (eq is Dictionary):
+			continue
+		var eq_id = eq.get("instance_id", "")
+		if eq_id is String and eq_id != "" and eq_id == instance_id:
+			return false
+
+	# Валидация канонических данных
+	var item_id = carried.get("id", "")
+	if not (item_id is String) or item_id == "":
+		return false
+
+	var raw_quantity = carried.get("quantity", 0)
+	if not (raw_quantity is int) or raw_quantity <= 0:
+		return false
+
+	# Нестакуемый предмет нельзя продать с quantity != 1
+	var stackable = carried.get("stackable", false)
+	if not (stackable is bool) or not stackable:
+		if raw_quantity != 1:
+			return false
+
+	var raw_value = carried.get("value", 0)
+	if not (raw_value is int) or raw_value <= 0:
+		return false
+
+	# Проверяем переполнение баланса до списания
+	if gold < 0 or gold > 9223372036854775807 - raw_value:
+		return false
+
+	# Блокируем реентерабельные вызовы на время commit + обоих сигналов
+	_trade_guard = true
+
+	# Применяем изменения атомарно
+	carried["quantity"] = raw_quantity - 1
+	var sold := false
+	if carried["quantity"] <= 0:
+		items.erase(carried)
+		sold = true
+
+	gold += raw_value
+
+	# Синхронизируем раскладку ДО наблюдаемых сигналов
+	if sold and not _sync_storage_layout():
+		push_error("[ASHBOUND] Не удалось синхронизировать раскладку хранилища")
+
+	# Сигналы: сначала item_removed, затем gold_changed
+	item_removed.emit(item_id)
+	gold_changed.emit(gold)
+
+	_trade_guard = false
+
+	print("[ASHBOUND] Продано: %s (получено: %d)" % [item_id, raw_value])
+	return true
 
 
 func buy_item(item_id: String, price: int) -> bool:
-	if not has_gold(price):
+	if _wearable_guard:
+		return false
+	if _trade_guard:
+		return false
+
+	if not (item_id is String) or item_id == "":
+		return false
+	if price <= 0:
+		return false
+	if gold < 0 or gold < price:
 		print("[ASHBOUND] Недостаточно золота!")
 		return false
 
-	if add_item(item_id):
-		remove_gold(price)
+	if not item_database.has(item_id):
+		# Неизвестный id — тихий отказ без push_error и без изменений
+		return false
+
+	var template = item_database[item_id]
+	if not (template is Dictionary):
+		return false
+	var stackable: bool = template.get("stackable", false)
+	var max_stack: int = 0
+	if stackable:
+		max_stack = int(template.get("max_stack", 0))
+		if max_stack <= 0:
+			return false
+
+	# Проверяем место
+	var free_in_stacks := 0
+	for item in items:
+		if item["id"] == item_id and stackable:
+			free_in_stacks += maxi(0, max_stack - int(item.get("quantity", 1)))
+
+	var free_slots := maxi(0, get_effective_capacity() - items.size())
+
+	if stackable:
+		if free_in_stacks < 1 and free_slots < 1:
+			print("[ASHBOUND] Инвентарь полон!")
+			return false
+	else:
+		if free_slots < 1:
+			print("[ASHBOUND] Инвентарь полон!")
+			return false
+
+	# Блокируем реентерабельные вызовы на время commit + обоих сигналов
+	_trade_guard = true
+
+	# Применяем изменения атомарно; фиксируем реально изменённую запись
+	var changed_entry: Dictionary = {}
+	if stackable:
+		# Пробуем добавить в первый неполный стек
+		for item in items:
+			if item["id"] == item_id:
+				var space = maxi(0, max_stack - int(item.get("quantity", 1)))
+				if space > 0:
+					item["quantity"] = int(item.get("quantity", 1)) + 1
+					changed_entry = item
+					break
+		if changed_entry.is_empty():
+			var new_item = template.duplicate(true)
+			new_item["quantity"] = 1
+			new_item["instance_id"] = _generate_instance_id()
+			items.append(new_item)
+			changed_entry = new_item
+	else:
+		var new_item = template.duplicate(true)
+		new_item["quantity"] = 1
+		new_item["instance_id"] = _generate_instance_id()
+		items.append(new_item)
+		changed_entry = new_item
+
+	gold -= price
+
+	# Синхронизируем раскладку ДО наблюдаемых сигналов
+	if not _sync_storage_layout():
+		push_error("[ASHBOUND] Не удалось синхронизировать раскладку хранилища")
+
+	# Сигналы: сначала item_added (с реальной записью, без копии), затем gold_changed
+	item_added.emit(changed_entry)
+	gold_changed.emit(gold)
+
+	_trade_guard = false
+
+	print("[ASHBOUND] Куплено: %s (потрачено: %d)" % [template.get("name", item_id), price])
+	return true
+
+
+# === ХРАНИЛИЩЕ (INV-01B) ===
+
+func is_storage_configured() -> bool:
+	return _storage_layout != null
+
+
+func get_storage_containers() -> Array:
+	if not is_storage_configured():
+		return []
+	# Синхронизируем канонические items (legacy-фикстуры могут менять массив напрямую)
+	# БЕЗ сигнала storage_changed; при неудаче — отказ, а не ложный снимок.
+	if not _sync_storage_layout():
+		push_error("[ASHBOUND] Не удалось синхронизировать раскладку хранилища")
+		return []
+	var containers = _storage_layout.get_containers()
+	if not (containers is Array):
+		return []
+	return containers
+
+
+func get_item_storage(instance_id: String) -> String:
+	if not is_storage_configured() or not (instance_id is String):
+		return ""
+	if not _sync_storage_layout():
+		push_error("[ASHBOUND] Не удалось синхронизировать раскладку хранилища")
+		return ""
+	var container_id = _storage_layout.get_container_id(instance_id)
+	if not (container_id is String):
+		return ""
+	return container_id
+
+
+func get_effective_capacity() -> int:
+	if not is_storage_configured():
+		return max_capacity
+	return mini(max_capacity, _storage_layout.get_capacity())
+
+
+func configure_storage(definitions: Array) -> bool:
+	if _wearable_guard:
+		return false
+	if _trade_guard or _storage_guard:
+		return false
+	if not (definitions is Array):
+		return false
+
+	var previous: RefCounted = _storage_layout
+
+	# Кандидат строится ДО установки и никогда не устанавливается временно
+	# ради валидации. При наличии старой раскладки её размещения переносятся
+	# на новую, поэтому повторная конфигурация не меняет местоположения предметов.
+	var candidate: RefCounted = InventoryStorageLayoutScript.new()
+	if previous != null:
+		# 1) Кандидат из СТАРЫХ определений — чтобы старые размещения были легальны
+		if not candidate.configure(previous.get_containers(), items):
+			return false
+		# 2) Переносим старые placements (валидация точных id и вместимости)
+		var previous_save: Variant = previous.get_save_data()
+		if not (previous_save is Dictionary):
+			return false
+		if not candidate.load_placements(previous_save, items):
+			return false
+
+	# 3) Применяем НОВЫЕ определения, сохраняя перенесённые размещения;
+	#    занятые контейнеры, которых нет в новых определениях, отклоняются.
+	if not candidate.configure(definitions, items):
+		return false
+
+	# 4) Валидация эффективного лимита ДО установки
+	if items.size() > mini(max_capacity, int(candidate.get_capacity())):
+		return false
+
+	# Атомарная установка: при неудаче старое состояние не затрагивается
+	_storage_guard = true
+	_storage_layout = candidate
+	_storage_guard = false
+
+	_emit_storage_changed_guarded()
+	return true
+
+
+func move_item_to_storage(item: Dictionary, destination_id: String) -> bool:
+	if _wearable_guard:
+		return false
+	if _trade_guard or _storage_guard:
+		return false
+	if not is_storage_configured():
+		return false
+	if not (destination_id is String) or destination_id == "":
+		return false
+
+	var instance_id := _get_handle_instance_id(item)
+	if instance_id == "":
+		return false
+
+	# Каноническая запись в items; экипированные предметы не имеют хранилища
+	var found := false
+	for entry in items:
+		if not (entry is Dictionary):
+			continue
+		var entry_id = entry.get("instance_id", "")
+		if entry_id is String and entry_id == instance_id:
+			found = true
+			break
+	if not found:
+		return false
+	for slot in equipped:
+		var eq = equipped[slot]
+		if not (eq is Dictionary):
+			continue
+		var eq_id = eq.get("instance_id", "")
+		if eq_id is String and eq_id == instance_id:
+			return false
+
+	# Идемпотентность: предмет уже в целевом контейнере
+	if _storage_layout.get_container_id(instance_id) == destination_id:
 		return true
-	return false
+
+	_storage_guard = true
+	var moved: bool = _storage_layout.move(instance_id, destination_id, items)
+	_storage_guard = false
+	if not moved:
+		return false
+
+	_emit_storage_changed_guarded()
+	return true
+
+
+func _sync_storage_layout() -> bool:
+	if not is_storage_configured():
+		return true
+	# Reconcile без сигналов: прямой доступ к items (legacy-совместимость)
+	return _storage_layout.reconcile(items)
+
+
+func _emit_storage_changed_guarded() -> void:
+	_storage_guard = true
+	storage_changed.emit()
+	_storage_guard = false
 
 
 # === СОХРАНЕНИЕ/ЗАГРУЗКА ===
 
 func get_save_data() -> Dictionary:
-	return {
-		"items": items,
-		"equipped": equipped,
+	# Синхронизируем канонические items БЕЗ сигнала; при неудаче — отказ,
+	# а не ложно валидный снимок.
+	if is_storage_configured() and not _sync_storage_layout():
+		push_error("[ASHBOUND] Не удалось синхронизировать раскладку хранилища")
+		return {}
+	var data := {
+		"schema_version": 1,
+		"items": _deep_copy(items),
+		"equipped": _deep_copy(equipped),
 		"gold": gold,
 	}
+	if is_storage_configured():
+		data["storage"] = _deep_copy(_storage_layout.get_save_data())
+	# worn_storage добавляем только если есть носимые слоты (не legacy-пустое)
+	if worn_storage.get("backpack") != null or worn_storage.get("pouch") != null:
+		data["worn_storage"] = _deep_copy(worn_storage)
+	return data
 
 
-func load_save_data(data: Dictionary) -> void:
-	items = data.get("items", [])
-	equipped = data.get("equipped", {
-		SLOT_WEAPON: null,
-		SLOT_ARMOR: null,
-		SLOT_HELMET: null,
-		SLOT_RING: null,
-		SLOT_AMULET: null,
-	})
-	gold = data.get("gold", 0)
+func load_save_data(data: Dictionary) -> bool:
+	if _wearable_guard:
+		return false
+	if _trade_guard:
+		return false
+
+	var validated := _validate_save_data(data)
+	if validated.is_empty():
+		return false
+
+	# Все проверки пройдены: фиксируем состояние атомарно
+	_trade_guard = true
+	items = validated["items"]
+	equipped = validated["equipped"]
+	gold = validated["gold"]
+	worn_storage = validated["worn_storage"]
+	var candidate_layout: RefCounted = validated.get("storage_layout", null)
+	if candidate_layout != null:
+		_storage_layout = candidate_layout
 	_apply_equipment_stats()
+	inventory_restored.emit()
+	gold_changed.emit(gold)
+	if candidate_layout != null:
+		_emit_storage_changed_guarded()
+	_trade_guard = false
+	return true
+
+
+func _validate_save_data(data: Dictionary) -> Dictionary:
+	if not data.has("schema_version") or not data.has("items") or not data.has("equipped") or not data.has("gold"):
+		return {}
+
+	var version = data["schema_version"]
+	if not (version is int) or version != 1:
+		return {}
+
+	var raw_items = data["items"]
+	if not (raw_items is Array):
+		return {}
+
+	var raw_equipped = data["equipped"]
+	if not (raw_equipped is Dictionary):
+		return {}
+
+	var raw_gold = data["gold"]
+	if not (raw_gold is int) or raw_gold < 0:
+		return {}
+
+	# Проверяем количество записей до обработки каждой записи.
+	# Используем max_capacity, а не get_effective_capacity(): входящий сохранённый
+	# надетый рюкзак может восстановить больше вместимости, чем runtime-карман.
+	if raw_items.size() > max_capacity:
+		return {}
+
+	var expected_slots := [SLOT_WEAPON, SLOT_ARMOR, SLOT_HELMET, SLOT_RING, SLOT_AMULET]
+	for slot in expected_slots:
+		if not raw_equipped.has(slot):
+			return {}
+	if raw_equipped.size() != expected_slots.size():
+		return {}
+
+	var seen_ids := {}
+	var new_items: Array = []
+	for entry in raw_items:
+		var validated_entry := _validate_save_item(entry, seen_ids)
+		if validated_entry.is_empty():
+			return {}
+		new_items.append(validated_entry)
+
+	var new_equipped := {}
+	for slot in expected_slots:
+		var value = raw_equipped[slot]
+		if value == null:
+			new_equipped[slot] = null
+			continue
+		var validated_entry := _validate_save_item(value, seen_ids)
+		if validated_entry.is_empty():
+			return {}
+		# Экипировать можно только оружие/броню, нестакующуюся, quantity 1
+		var eq_type = validated_entry.get("type", -1)
+		if eq_type != ItemType.WEAPON and eq_type != ItemType.ARMOR:
+			return {}
+		if validated_entry.get("stackable", true):
+			return {}
+		if validated_entry.get("quantity", 0) != 1:
+			return {}
+		# Слот записи обязан совпадать со слотом назначения
+		if validated_entry.get("slot", "") != slot:
+			return {}
+		new_equipped[slot] = validated_entry
+
+	var result := {
+		"items": new_items,
+		"equipped": new_equipped,
+		"gold": raw_gold,
+	}
+
+	# Надетое хранилище: те же seen_ids, что и для items/equipped. null — невалидно.
+	var parsed_worn: Variant = InventoryWearableStorageScript.parse_saved(self, data.get("worn_storage", null), seen_ids)
+	if parsed_worn == null:
+		return {}
+	result["worn_storage"] = parsed_worn
+
+	# Раскладка хранилища: текущие определения — доверенная runtime-конфигурация,
+	# из сохранения восстанавливаются только placements.
+	var has_storage := data.has("storage")
+	if is_storage_configured():
+		# Кандидат строится по runtime-базовым определениям плюс фактические
+		# входящие надетые предметы, никогда — по сохранённой вместимости.
+		var candidate: RefCounted = InventoryWearableStorageScript.plan_layout(self, new_items, parsed_worn, false)
+		if candidate == null:
+			return {}
+		if has_storage:
+			if not candidate.load_placements(data["storage"], new_items):
+				return {}
+		result["storage_layout"] = candidate
+	elif has_storage or parsed_worn.get("backpack") != null or parsed_worn.get("pouch") != null:
+		# Неизвестные физические владельцы — отказ, даже для пустого storage
+		return {}
+	return result
+
+
+func _validate_save_item(entry: Variant, seen_ids: Dictionary) -> Dictionary:
+	if not (entry is Dictionary):
+		return {}
+
+	var item_id = entry.get("id", "")
+	if not (item_id is String) or item_id == "" or not item_database.has(item_id):
+		return {}
+
+	var template = item_database[item_id]
+	if not (template is Dictionary):
+		return {}
+
+	var instance_id = entry.get("instance_id", "")
+	if not (instance_id is String) or instance_id == "":
+		return {}
+	if seen_ids.has(instance_id):
+		return {}
+	seen_ids[instance_id] = true
+
+	if not entry.has("quantity") or not entry.has("value") or not entry.has("type") or not entry.has("stackable"):
+		return {}
+
+	var quantity = entry["quantity"]
+	if not (quantity is int) or quantity <= 0:
+		return {}
+
+	var value = entry["value"]
+	if not (value is int) or value < 0:
+		return {}
+
+	var type = entry["type"]
+	if not (type is int) or type < 0 or type >= ItemType.size():
+		return {}
+	if type != template.get("type", -1):
+		return {}
+
+	var stackable = entry["stackable"]
+	if not (stackable is bool):
+		return {}
+	if stackable != template.get("stackable", false):
+		return {}
+
+	if stackable:
+		# max_stack обязателен в entry, строго int > 0 и равен каталогу
+		if not entry.has("max_stack"):
+			return {}
+		var max_stack = entry["max_stack"]
+		if not (max_stack is int) or max_stack <= 0:
+			return {}
+		if max_stack != template.get("max_stack", -1):
+			return {}
+		if quantity > max_stack:
+			return {}
+	else:
+		if quantity != 1:
+			return {}
+
+	var slot = entry.get("slot", "")
+	if type == ItemType.WEAPON or type == ItemType.ARMOR:
+		if stackable or quantity != 1:
+			return {}
+		if not (slot is String) or not equipped.has(slot):
+			return {}
+		if slot != template.get("slot", ""):
+			return {}
+
+	# stats/effect: при явно присутствующем ключе с null — отклоняем;
+	# проверяем наличие ключа, а не ненулевое значение
+	if entry.has("stats"):
+		var stats = entry["stats"]
+		if not (stats is Dictionary):
+			return {}
+		for key in stats:
+			var stat_value = stats[key]
+			if not _is_finite_number(stat_value) or stat_value < 0:
+				return {}
+
+	if entry.has("effect"):
+		var effect = entry["effect"]
+		if not (effect is Dictionary):
+			return {}
+		for key in effect:
+			var effect_value = effect[key]
+			if not _is_finite_number(effect_value) or effect_value < 0:
+				return {}
+
+	for string_key in ["name", "description", "icon", "quest_id", "faction_requirement"]:
+		if entry.has(string_key) and not (entry[string_key] is String):
+			return {}
+
+	var result: Variant = _deep_copy(entry)
+	if result == null or not (result is Dictionary):
+		return {}
+	result["quantity"] = quantity
+	result["value"] = value
+	result["type"] = type
+	result["stackable"] = stackable
+	return result
+
+
+func _is_finite_number(value: Variant) -> bool:
+	if value is int:
+		return true
+	if value is float:
+		return is_finite(value)
+	return false
+
+
+func _deep_copy(value: Variant, depth: int = 0) -> Variant:
+	# Отказ без ошибок движка: вход и runtime неизменны
+	if depth > 32:
+		return null
+	if value is Dictionary:
+		var result := {}
+		for key in value:
+			# Только значимые неизменяемые scalar-ключи; Array/Dictionary/Object/Callable/RID отклоняем
+			var key_is_scalar := (key is String) or (key is StringName) or (key is int) or (key is float) or (key is bool)
+			if not key_is_scalar:
+				return null
+			var copied_value = _deep_copy(value[key], depth + 1)
+			if copied_value == null and value[key] != null:
+				return null
+			result[key] = copied_value
+		return result
+	if value is Array:
+		var result: Array = []
+		for element in value:
+			var copied_element = _deep_copy(element, depth + 1)
+			if copied_element == null and element != null:
+				return null
+			result.append(copied_element)
+		return result
+	if value is Object or value is Callable or value is RID:
+		return null
+	return value

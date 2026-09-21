@@ -1,0 +1,63 @@
+[gd_scene load_steps=11 format=3]
+
+[ext_resource type="Script" path="res://scripts/courtyard/courtyard_level.gd" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/courtyard/courtyard_environment.tscn" id="2"]
+[ext_resource type="PackedScene" path="res://scenes/courtyard/courtyard_player.tscn" id="3"]
+[ext_resource type="PackedScene" path="res://scenes/courtyard/resident.tscn" id="4"]
+[ext_resource type="PackedScene" path="res://scenes/courtyard/courtyard_hud.tscn" id="5"]
+[ext_resource type="Script" path="res://scripts/courtyard/interaction_point.gd" id="6"]
+[ext_resource type="SpriteFrames" path="res://assets/characters/courtyard/watchman_frames.tres" id="7"]
+[ext_resource type="PackedScene" path="res://scenes/courtyard/third_person_camera.tscn" id="8"]
+[ext_resource type="PackedScene" path="res://scenes/courtyard/target_feedback.tscn" id="9"]
+[ext_resource type="PackedScene" path="res://scenes/courtyard/courtyard_inventory_menu.tscn" id="10_inventory_menu"]
+
+[node name="FirstCourtyard" type="Node3D"]
+script = ExtResource("1")
+
+[node name="Environment" parent="." instance=ExtResource("2")]
+
+[node name="Actors" type="Node3D" parent="."]
+
+[node name="Player" parent="Actors" instance=ExtResource("3")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 0.1, 7)
+
+[node name="Innkeeper" parent="Actors" instance=ExtResource("4")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 0, -3.5)
+interaction_id = "innkeeper"
+display_name = "COURTYARD_NAME_INNKEEPER"
+prompt = "COURTYARD_ACTION_TALK"
+
+[node name="Watchman" parent="Actors" instance=ExtResource("4")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 0)
+interaction_id = "watchman"
+display_name = "COURTYARD_NAME_WATCHMAN"
+prompt = "COURTYARD_ACTION_TALK"
+appearance = ExtResource("7")
+
+[node name="Interactions" type="Node3D" parent="."]
+
+[node name="Woodpile" type="Node3D" parent="Interactions"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 0, 1.05)
+script = ExtResource("6")
+interaction_id = "woodpile"
+display_name = "COURTYARD_NAME_WOODPILE"
+prompt = "COURTYARD_ACTION_TAKE_WOOD"
+
+[node name="Label3D" type="Label3D" parent="Interactions/Woodpile"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.4, 0)
+billboard = 1
+pixel_size = 0.006
+text = "COURTYARD_NAME_WOODPILE"
+font_size = 32
+outline_size = 8
+
+[node name="CameraRig" parent="." instance=ExtResource("8")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 1.55, 7)
+
+[node name="HUD" parent="." instance=ExtResource("5")]
+
+[node name="InteractionFocus" parent="." instance=ExtResource("9")]
+
+[node name="AttackFocus" parent="." instance=ExtResource("9")]
+
+[node name="InventoryMenu" parent="." instance=ExtResource("10_inventory_menu")]

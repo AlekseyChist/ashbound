@@ -1,0 +1,211 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/courtyard/courtyard_hud.gd" id="1"]
+
+[node name="CourtyardHUD" type="CanvasLayer"]
+script = ExtResource("1")
+
+[node name="RootControl" type="Control" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="TopLeftPanel" type="PanelContainer" parent="RootControl"]
+offset_left = 24.0
+offset_top = 24.0
+offset_right = 644.0
+offset_bottom = 254.0
+
+[node name="VBox" type="VBoxContainer" parent="RootControl/TopLeftPanel"]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="RootControl/TopLeftPanel/VBox"]
+custom_minimum_size = Vector2(590, 0)
+layout_mode = 2
+text = "A S H B O U N D"
+
+[node name="SubtitleLabel" type="Label" parent="RootControl/TopLeftPanel/VBox"]
+layout_mode = 2
+text = "COURTYARD_TITLE"
+
+[node name="ObjectiveLabel" type="Label" parent="RootControl/TopLeftPanel/VBox"]
+custom_minimum_size = Vector2(590, 0)
+layout_mode = 2
+text = "COURTYARD_OBJECTIVE_MEET_HOST"
+autowrap_mode = 3
+
+[node name="TopRightPanel" type="PanelContainer" parent="RootControl"]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -264.0
+offset_top = 24.0
+offset_right = -24.0
+offset_bottom = 84.0
+grow_horizontal = 0
+
+[node name="RestartButton" type="Button" parent="RootControl/TopRightPanel"]
+layout_mode = 2
+text = "UI_RESTART"
+
+[node name="MessagePanel" type="PanelContainer" parent="RootControl"]
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -450.0
+offset_top = -260.0
+offset_right = 450.0
+offset_bottom = -60.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="VBox" type="VBoxContainer" parent="RootControl/MessagePanel"]
+layout_mode = 2
+
+[node name="SpeakerLabel" type="Label" parent="RootControl/MessagePanel/VBox"]
+layout_mode = 2
+text = ""
+
+[node name="MessageText" type="Label" parent="RootControl/MessagePanel/VBox"]
+custom_minimum_size = Vector2(840, 160)
+layout_mode = 2
+text = ""
+autowrap_mode = 3
+
+[node name="PromptLabel" type="Label" parent="RootControl"]
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -540.0
+offset_top = -365.0
+offset_right = 540.0
+offset_bottom = -280.0
+grow_horizontal = 2
+grow_vertical = 0
+horizontal_alignment = 1
+vertical_alignment = 1
+text = ""
+
+[node name="BottomLeft" type="Control" parent="RootControl"]
+anchors_preset = 2
+anchor_left = 0.0
+anchor_top = 1.0
+anchor_right = 0.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = -408.0
+offset_right = 408.0
+offset_bottom = -24.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+
+[node name="DpadGrid" type="Control" parent="RootControl/BottomLeft"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = -8.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Up" type="Button" parent="RootControl/BottomLeft/DpadGrid"]
+custom_minimum_size = Vector2(120, 120)
+layout_mode = 2
+offset_left = 120.0
+offset_top = 0.0
+offset_right = 240.0
+offset_bottom = 120.0
+text = "▲"
+
+[node name="Left" type="Button" parent="RootControl/BottomLeft/DpadGrid"]
+custom_minimum_size = Vector2(120, 120)
+layout_mode = 2
+offset_left = 0.0
+offset_top = 120.0
+offset_right = 120.0
+offset_bottom = 240.0
+text = "◀"
+
+[node name="Down" type="Button" parent="RootControl/BottomLeft/DpadGrid"]
+custom_minimum_size = Vector2(120, 120)
+layout_mode = 2
+offset_left = 120.0
+offset_top = 240.0
+offset_right = 240.0
+offset_bottom = 360.0
+text = "▼"
+
+[node name="Right" type="Button" parent="RootControl/BottomLeft/DpadGrid"]
+custom_minimum_size = Vector2(120, 120)
+layout_mode = 2
+offset_left = 240.0
+offset_top = 120.0
+offset_right = 360.0
+offset_bottom = 240.0
+text = "▶"
+
+[node name="LegendLabel" type="Label" parent="RootControl/BottomLeft"]
+anchors_preset = 0
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+offset_left = 0.0
+offset_top = -38.0
+offset_right = 800.0
+offset_bottom = -8.0
+theme_override_font_sizes/font_size = 22
+mouse_filter = 2
+text = "COURTYARD_LEGEND_DESKTOP"
+
+[node name="BottomRight" type="Control" parent="RootControl"]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -288.0
+offset_top = -436.0
+offset_right = -24.0
+offset_bottom = -24.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 2
+
+[node name="VBox" type="VBoxContainer" parent="RootControl/BottomRight"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = -8.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 12
+
+[node name="RunButton" type="Button" parent="RootControl/BottomRight/VBox"]
+custom_minimum_size = Vector2(240, 120)
+layout_mode = 2
+text = "UI_ACTION_WALK"
+
+[node name="InteractButton" type="Button" parent="RootControl/BottomRight/VBox"]
+custom_minimum_size = Vector2(240, 120)
+layout_mode = 2
+text = "UI_ACTION_INTERACT"
+
+[node name="AttackButton" type="Button" parent="RootControl/BottomRight/VBox"]
+custom_minimum_size = Vector2(240, 120)
+layout_mode = 2
+text = "UI_ACTION_ATTACK"

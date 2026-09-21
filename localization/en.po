@@ -1,0 +1,398 @@
+# AshBound English catalog (source language).
+msgid ""
+msgstr ""
+"Project-Id-Version: AshBound\n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+# Settings menu: language selection label.
+msgid "UI_LANGUAGE"
+msgstr "Language"
+
+# Settings menu: option to follow the device/system language.
+msgid "UI_LANGUAGE_AUTO"
+msgstr "System language"
+
+# Generic close action (menus, dialogs).
+msgid "UI_CLOSE"
+msgstr "Close"
+
+# Player interaction prompt/action.
+msgid "UI_ACTION_INTERACT"
+msgstr "Interact"
+
+# Player attack action.
+msgid "UI_ACTION_ATTACK"
+msgstr "Attack"
+
+# Player run action.
+msgid "UI_ACTION_RUN"
+msgstr "Run"
+
+# Player walk action.
+msgid "UI_ACTION_WALK"
+msgstr "Walk"
+
+# Greeting to a character; {name} is the character name.
+msgid "UI_GREETING"
+msgstr "Hello, {name}."
+
+# Inventory item count; plural key UI_ITEM_COUNTS.
+msgid "UI_ITEM_COUNT"
+msgid_plural "UI_ITEM_COUNTS"
+msgstr[0] "{count} item"
+msgstr[1] "{count} items"
+
+# Courtyard scene: restart button.
+msgid "UI_RESTART"
+msgstr "Start over"
+
+# Courtyard scene: title.
+msgid "COURTYARD_TITLE"
+msgstr "Inn courtyard"
+
+# Courtyard scene: desktop controls legend.
+msgid "COURTYARD_LEGEND_DESKTOP"
+msgstr "WASD — move · mouse — look\nShift — run · E — interact · LMB — attack · Esc — cursor"
+
+# Courtyard scene: touch controls legend.
+msgid "COURTYARD_LEGEND_TOUCH"
+msgstr "Arrows — move · drag on the right — look\nTap the dialogue to close it"
+
+# Courtyard scene: innkeeper name.
+msgid "COURTYARD_NAME_INNKEEPER"
+msgstr "Innkeeper"
+
+# Courtyard scene: watchman name.
+msgid "COURTYARD_NAME_WATCHMAN"
+msgstr "Watchman"
+
+# Courtyard scene: woodpile name.
+msgid "COURTYARD_NAME_WOODPILE"
+msgstr "Woodpile"
+
+# Courtyard scene: training dummy name.
+msgid "COURTYARD_NAME_DUMMY"
+msgstr "Training dummy"
+
+# Courtyard scene: talk action label.
+msgid "COURTYARD_ACTION_TALK"
+msgstr "Talk"
+
+# Courtyard scene: take firewood action label.
+msgid "COURTYARD_ACTION_TAKE_WOOD"
+msgstr "Take firewood"
+
+# Courtyard scene: desktop interact focus prompt; {action} and {name} are placeholders.
+msgid "COURTYARD_FOCUS_INTERACT_DESKTOP"
+msgstr "E · {action} — {name}"
+
+# Courtyard scene: touch interact focus prompt; {action} and {name} are placeholders.
+msgid "COURTYARD_FOCUS_INTERACT_TOUCH"
+msgstr "Interact · {action} — {name}"
+
+# Courtyard scene: desktop attack focus prompt; {name} is a placeholder.
+msgid "COURTYARD_FOCUS_ATTACK_DESKTOP"
+msgstr "LMB · Attack — {name}"
+
+# Courtyard scene: touch attack focus prompt; {name} is a placeholder.
+msgid "COURTYARD_FOCUS_ATTACK_TOUCH"
+msgstr "Attack — {name}"
+
+# Courtyard objective: meet the innkeeper.
+msgid "COURTYARD_OBJECTIVE_MEET_HOST"
+msgstr "Talk to the innkeeper by the house."
+
+# Courtyard objective: fetch firewood from the woodpile.
+msgid "COURTYARD_OBJECTIVE_FETCH_WOOD"
+msgstr "Fetch firewood from the woodpile."
+
+# Courtyard objective: bring the firewood to the innkeeper.
+msgid "COURTYARD_OBJECTIVE_RETURN_WOOD"
+msgstr "Bring the firewood to the innkeeper."
+
+# Courtyard objective: talk to the watchman.
+msgid "COURTYARD_OBJECTIVE_MEET_GUARD"
+msgstr "Talk to the watchman."
+
+# Courtyard objective: practice hits on the dummy; {hits} and {total} are placeholders.
+msgid "COURTYARD_OBJECTIVE_PRACTICE"
+msgstr "Land three clean hits on the straw dummy. ({hits}/{total})"
+
+# Courtyard objective: report back to the watchman.
+msgid "COURTYARD_OBJECTIVE_REPORT"
+msgstr "Report back to the watchman."
+
+# Courtyard objective: all tasks completed.
+msgid "COURTYARD_OBJECTIVE_DONE"
+msgstr "You are settled for today. You can keep exploring the courtyard."
+
+# Courtyard dialogue: innkeeper offers work in exchange for a place to sleep.
+msgid "COURTYARD_DIALOGUE_HOST_JOB"
+msgstr "Need a place to sleep? Bring some firewood from the woodpile. Do that, and you can spend the night by the hearth."
+
+# Courtyard dialogue: innkeeper thanks the player after receiving the firewood.
+msgid "COURTYARD_DIALOGUE_HOST_REWARD"
+msgstr "Thank you. You have a place for tonight. Before you head out on the road, talk to the watchman. He will show you how to defend yourself."
+
+# Courtyard dialogue: innkeeper confirms the firewood was already taken.
+msgid "COURTYARD_DIALOGUE_HOST_ACCEPTED"
+msgstr "I already have the firewood. Go and talk to the watchman."
+
+# Courtyard dialogue: innkeeper reminds the player to fetch firewood first.
+msgid "COURTYARD_DIALOGUE_HOST_REMIND"
+msgstr "First, fetch some firewood from the woodpile."
+
+# Courtyard dialogue: innkeeper after the quest is done.
+msgid "COURTYARD_DIALOGUE_HOST_AFTER"
+msgstr "Your place by the hearth is ready. Feel free to look around the courtyard."
+
+# Courtyard dialogue: player picks up firewood at the woodpile.
+msgid "COURTYARD_DIALOGUE_WOOD_TAKEN"
+msgstr "You picked up a bundle of dry firewood. Bring it to the innkeeper."
+
+# Courtyard dialogue: woodpile before talking to the innkeeper.
+msgid "COURTYARD_DIALOGUE_WOOD_BEFORE"
+msgstr "Talk to the innkeeper first."
+
+# Courtyard dialogue: woodpile when the firewood is already taken.
+msgid "COURTYARD_DIALOGUE_WOOD_ALREADY"
+msgstr "You have already collected the firewood."
+
+# Courtyard dialogue: watchman explains the training task.
+msgid "COURTYARD_DIALOGUE_GUARD_LESSON"
+msgstr "Keep your distance and stay calm. Land three clean hits on the straw dummy."
+
+# Courtyard dialogue: watchman after the player completes the training.
+msgid "COURTYARD_DIALOGUE_GUARD_REPORT"
+msgstr "Not bad for a first try. Out on the road, look around before you pick a fight."
+
+# Courtyard dialogue: watchman reminds about the training task.
+msgid "COURTYARD_DIALOGUE_GUARD_REMIND"
+msgstr "Land three clean hits on the dummy."
+
+# Courtyard dialogue: watchman generic reply.
+msgid "COURTYARD_DIALOGUE_GUARD_OTHER"
+msgstr "The courtyard is open. Have a look around."
+
+# Inventory UI: open-inventory button/label.
+msgid "INV_OPEN"
+msgstr "Inventory"
+
+# Inventory UI: desktop open-inventory prompt with hotkey hint.
+msgid "INV_OPEN_DESKTOP"
+msgstr "Inventory · I / Tab"
+
+# Inventory UI: panel title.
+msgid "INV_TITLE"
+msgstr "Carried items"
+
+# Inventory UI: item source label for clothing pockets.
+msgid "INV_SOURCE_POCKET"
+msgstr "Clothing pocket"
+
+# Inventory UI: storage container name for a pocket.
+msgid "INV_STORAGE_POCKET"
+msgstr "Clothing pocket"
+
+# Inventory UI: storage container name for a belt pouch.
+msgid "INV_STORAGE_POUCH"
+msgstr "Belt pouch"
+
+# Inventory UI: storage container name for a backpack.
+msgid "INV_STORAGE_BACKPACK"
+msgstr "Backpack"
+
+# Inventory UI: storage usage line; {name}, {used} and {capacity} are placeholders.
+msgid "INV_STORAGE_USAGE"
+msgstr "{name} · slots: {used}/{capacity}"
+
+# Inventory UI: carried item row with its container; {item} and {storage} are placeholders.
+msgid "INV_STORAGE_ITEM_ROW"
+msgstr "{item} · {storage}"
+
+# Inventory UI: empty-state message.
+msgid "INV_EMPTY"
+msgstr "Nothing here yet."
+
+# Inventory UI: coin count line; {amount} is a placeholder.
+msgid "INV_GOLD"
+msgstr "Coins: {amount}"
+
+# Inventory UI: item row; {name} and {count} are placeholders.
+msgid "INV_ROW"
+msgstr "{name} × {count}"
+
+# Inventory UI: equipped item row; {name} is a placeholder.
+msgid "INV_EQUIPPED_ROW"
+msgstr "{name} · equipped"
+
+# Inventory UI: fallback name for an unknown item.
+msgid "INV_UNKNOWN_ITEM"
+msgstr "Unknown item"
+
+# Settings: error when the language preference cannot be saved.
+msgid "INV_SETTINGS_FAILURE"
+msgstr "Could not save the language preference."
+
+# Language selector: English option label.
+msgid "LOC_LANGUAGE_ENGLISH"
+msgstr "English"
+
+# Language selector: Russian option label.
+msgid "LOC_LANGUAGE_RUSSIAN"
+msgstr "Русский"
+
+# Item name: rusty sword.
+msgid "ITEM_RUSTY_SWORD_NAME"
+msgstr "Rusty sword"
+
+# Item name: iron sword.
+msgid "ITEM_IRON_SWORD_NAME"
+msgstr "Iron sword"
+
+# Item name: cultist's blade.
+msgid "ITEM_CULTIST_BLADE_NAME"
+msgstr "Cultist's blade"
+
+# Item name: leather armor.
+msgid "ITEM_LEATHER_ARMOR_NAME"
+msgstr "Leather armor"
+
+# Item name: chain mail.
+msgid "ITEM_CHAIN_MAIL_NAME"
+msgstr "Chain mail"
+
+# Item name: health potion.
+msgid "ITEM_HEALTH_POTION_NAME"
+msgstr "Health potion"
+
+# Item name: stamina potion.
+msgid "ITEM_STAMINA_POTION_NAME"
+msgstr "Stamina potion"
+
+# Item name: bread.
+msgid "ITEM_BREAD_NAME"
+msgstr "Bread"
+
+# Item name: sacred ash.
+msgid "ITEM_SACRED_ASH_NAME"
+msgstr "Sacred ash"
+
+# Inventory UI: prompt to select an item for inspection.
+msgid "INV_SELECT_ITEM"
+msgstr "Select an item to inspect it."
+
+# Inventory UI: item details block; {name}, {count} and {location} are placeholders.
+msgid "INV_ITEM_DETAILS"
+msgstr "{name} × {count}\n{location}"
+
+# Inventory UI: location label for equipped items.
+msgid "INV_LOCATION_EQUIPPED"
+msgstr "Equipped"
+
+# Inventory UI: location label for carried items.
+msgid "INV_LOCATION_CARRIED"
+msgstr "Carried"
+
+# Inventory UI: action to move a stack between containers.
+msgid "INV_MOVE_ITEM"
+msgstr "Move stack"
+
+# Inventory UI: prompt asking where to move the selected stack.
+msgid "INV_TRANSFER_TO"
+msgstr "Move to"
+
+# Inventory UI: error when a stack cannot be moved to the target container.
+msgid "INV_TRANSFER_FAILED"
+msgstr "Cannot move this item there. Check the available space."
+
+# Touch inventory: reviewed mobile equipment UI.
+msgid "TOUCH_ARMOR_SET"
+msgstr "Outfit"
+
+# Touch inventory: reviewed mobile equipment UI.
+msgid "TOUCH_WEAPON"
+msgstr "Weapon"
+
+# Touch inventory: reviewed mobile equipment UI.
+msgid "TOUCH_POCKET"
+msgstr "Inside pocket"
+
+# Touch inventory: reviewed mobile equipment UI.
+msgid "TOUCH_BACKPACK"
+msgstr "Backpack"
+
+# Touch inventory: reviewed mobile equipment UI.
+msgid "TOUCH_POUCH"
+msgstr "Belt pouch"
+
+# Touch inventory: reviewed mobile equipment UI.
+msgid "TOUCH_NOT_WORN"
+msgstr "Not worn"
+
+# Touch inventory: reviewed mobile equipment UI.
+msgid "TOUCH_DRAG_HINT"
+msgstr "Hold an item, then drag it to a slot."
+
+# Touch inventory: reviewed mobile equipment UI.
+msgid "TOUCH_QUICK_LABEL"
+msgstr "Quick slots · 1–0"
+
+# Touch inventory: reviewed mobile equipment UI.
+msgid "TOUCH_EMPTY_SLOT"
+msgstr "Empty"
+
+# Touch inventory: reviewed mobile equipment UI.
+msgid "TOUCH_MOVE_FAILED"
+msgstr "Cannot move this item here."
+
+# Touch inventory: reviewed mobile equipment UI.
+msgid "ITEM_TRAVELER_BACKPACK_NAME"
+msgstr "Travel backpack"
+
+# Touch inventory: reviewed mobile equipment UI.
+msgid "ITEM_BELT_POUCH_NAME"
+msgstr "Belt pouch"
+
+msgid "MENU_SECTION_ITEMS"
+msgstr "Items"
+
+msgid "MENU_SECTION_QUESTS"
+msgstr "Quests"
+
+msgid "MENU_JOURNAL_COURTYARD"
+msgstr "Settling in"
+
+msgid "MENU_QUEST_ACTIVE"
+msgstr "In progress"
+
+msgid "MENU_QUEST_COMPLETED"
+msgstr "Completed"
+
+msgid "MENU_QUEST_EMPTY"
+msgstr "No quests yet."
+
+msgid "MENU_SECTION_CHARACTER"
+msgstr "Character"
+
+msgid "MENU_CHARACTER_POINTS"
+msgstr "Learning points: {count}"
+
+msgid "MENU_CHARACTER_SKILLS"
+msgstr "Skills"
+
+msgid "MENU_CHARACTER_UNARMED_NOVICE"
+msgstr "Unarmed combat · Novice"
+
+msgid "MENU_CHARACTER_PRACTICE_DONE"
+msgstr "Practice with the watchman: completed"
+
+msgid "MENU_CHARACTER_PRACTICE_PENDING"
+msgstr "Practice with the watchman: not completed"
+
+msgid "MENU_CHARACTER_TEACHER_HINT"
+msgstr "Seek out teachers to learn new techniques."

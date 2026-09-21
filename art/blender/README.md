@@ -50,6 +50,14 @@
 
 ## Следующие правки через локальную модель
 
+Для первого двора добавлен локальный генератор `build_courtyard_props.py`, использующий тот же `buildings_common.py`. Он создаёт пять независимых моделей с пивотом на земле: `courtyard_well` (1 980 треугольников), `courtyard_dummy` (484), `courtyard_fence` (176), `courtyard_woodpile` (1 188), `courtyard_crate` (1 232). Проверены запуск Blender 5.2.2, файлы GLB/BLEND, отчёты размеров и изображения в `art/previews/`. Материалы простые, модели предназначены для первого игрового прототипа.
+
+```powershell
+& 'C:\Program Files\Blender Foundation\Blender 5.2\blender.exe' --background --factory-startup --python-exit-code 1 --python art/blender/build_courtyard_props.py
+```
+
+Концепт двора и исходные запросы: `art/concepts/first-courtyard/`. Как и у зданий, повторная генерация перезаписывает только результаты этого набора; ручную доработку сначала сохранить отдельно.
+
 ```powershell
 node tools/ollama-godot.mjs --task-file .tools/ollama-godot/tasks/task.txt --write --blender-scripts --files-only --image art/concepts/buildings/house-v1.png --context 24576 --output-tokens 8192
 ```

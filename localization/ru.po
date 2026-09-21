@@ -1,0 +1,399 @@
+# AshBound Russian catalog.
+msgid ""
+msgstr ""
+"Project-Id-Version: AshBound\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : (n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2));\n"
+
+# Settings menu: language selection label.
+msgid "UI_LANGUAGE"
+msgstr "Язык"
+
+# Settings menu: option to follow the device/system language.
+msgid "UI_LANGUAGE_AUTO"
+msgstr "Язык устройства"
+
+# Generic close action (menus, dialogs).
+msgid "UI_CLOSE"
+msgstr "Закрыть"
+
+# Player interaction prompt/action.
+msgid "UI_ACTION_INTERACT"
+msgstr "Действие"
+
+# Player attack action.
+msgid "UI_ACTION_ATTACK"
+msgstr "Удар"
+
+# Player run action.
+msgid "UI_ACTION_RUN"
+msgstr "Бег"
+
+# Player walk action.
+msgid "UI_ACTION_WALK"
+msgstr "Ходьба"
+
+# Greeting to a character; {name} is the character name.
+msgid "UI_GREETING"
+msgstr "Привет, {name}."
+
+# Inventory item count; plural key UI_ITEM_COUNTS.
+msgid "UI_ITEM_COUNT"
+msgid_plural "UI_ITEM_COUNTS"
+msgstr[0] "{count} предмет"
+msgstr[1] "{count} предмета"
+msgstr[2] "{count} предметов"
+
+# Courtyard scene: restart button.
+msgid "UI_RESTART"
+msgstr "Начать заново"
+
+# Courtyard scene: title.
+msgid "COURTYARD_TITLE"
+msgstr "Двор постоялого дома"
+
+# Courtyard scene: desktop controls legend.
+msgid "COURTYARD_LEGEND_DESKTOP"
+msgstr "WASD — движение · мышь — обзор\nShift — бег · E — действие · ЛКМ — удар · Esc — курсор"
+
+# Courtyard scene: touch controls legend.
+msgid "COURTYARD_LEGEND_TOUCH"
+msgstr "Стрелки — движение · справа — обзор\nКоснись реплики, чтобы закрыть"
+
+# Courtyard scene: innkeeper name.
+msgid "COURTYARD_NAME_INNKEEPER"
+msgstr "Хозяйка"
+
+# Courtyard scene: watchman name.
+msgid "COURTYARD_NAME_WATCHMAN"
+msgstr "Сторож"
+
+# Courtyard scene: woodpile name.
+msgid "COURTYARD_NAME_WOODPILE"
+msgstr "Поленница"
+
+# Courtyard scene: training dummy name.
+msgid "COURTYARD_NAME_DUMMY"
+msgstr "Мишень"
+
+# Courtyard scene: talk action label.
+msgid "COURTYARD_ACTION_TALK"
+msgstr "Поговорить"
+
+# Courtyard scene: take firewood action label.
+msgid "COURTYARD_ACTION_TAKE_WOOD"
+msgstr "Взять дрова"
+
+# Courtyard scene: desktop interact focus prompt; {action} and {name} are placeholders.
+msgid "COURTYARD_FOCUS_INTERACT_DESKTOP"
+msgstr "E · {action} — {name}"
+
+# Courtyard scene: touch interact focus prompt; {action} and {name} are placeholders.
+msgid "COURTYARD_FOCUS_INTERACT_TOUCH"
+msgstr "Действие · {action} — {name}"
+
+# Courtyard scene: desktop attack focus prompt; {name} is a placeholder.
+msgid "COURTYARD_FOCUS_ATTACK_DESKTOP"
+msgstr "ЛКМ · Удар — {name}"
+
+# Courtyard scene: touch attack focus prompt; {name} is a placeholder.
+msgid "COURTYARD_FOCUS_ATTACK_TOUCH"
+msgstr "Удар — {name}"
+
+# Courtyard objective: meet the innkeeper.
+msgid "COURTYARD_OBJECTIVE_MEET_HOST"
+msgstr "Поговори с хозяйкой у дома."
+
+# Courtyard objective: fetch firewood from the woodpile.
+msgid "COURTYARD_OBJECTIVE_FETCH_WOOD"
+msgstr "Принеси дрова от поленницы."
+
+# Courtyard objective: bring the firewood to the innkeeper.
+msgid "COURTYARD_OBJECTIVE_RETURN_WOOD"
+msgstr "Отнеси дрова хозяйке."
+
+# Courtyard objective: talk to the watchman.
+msgid "COURTYARD_OBJECTIVE_MEET_GUARD"
+msgstr "Поговори со сторожем."
+
+# Courtyard objective: practice hits on the dummy; {hits} and {total} are placeholders.
+msgid "COURTYARD_OBJECTIVE_PRACTICE"
+msgstr "Покажи три точных удара по соломенной мишени. ({hits}/{total})"
+
+# Courtyard objective: report back to the watchman.
+msgid "COURTYARD_OBJECTIVE_REPORT"
+msgstr "Отчитайся перед сторожем."
+
+# Courtyard objective: all tasks completed.
+msgid "COURTYARD_OBJECTIVE_DONE"
+msgstr "На сегодня ты устроился. Двор остаётся открытым для исследования."
+
+# Courtyard dialogue: innkeeper offers work in exchange for a place to sleep.
+msgid "COURTYARD_DIALOGUE_HOST_JOB"
+msgstr "Ищешь ночлег? Принеси дрова от поленницы. За работу найдётся место у очага."
+
+# Courtyard dialogue: innkeeper thanks the player after receiving the firewood.
+msgid "COURTYARD_DIALOGUE_HOST_REWARD"
+msgstr "Спасибо. На эту ночь место твоё. А прежде чем выходить на дорогу, поговори со сторожем — он покажет, как постоять за себя."
+
+# Courtyard dialogue: innkeeper confirms the firewood was already taken.
+msgid "COURTYARD_DIALOGUE_HOST_ACCEPTED"
+msgstr "Дрова уже приняты. Иди к сторожу."
+
+# Courtyard dialogue: innkeeper reminds the player to fetch firewood first.
+msgid "COURTYARD_DIALOGUE_HOST_REMIND"
+msgstr "Сначала возьми дрова у поленницы."
+
+# Courtyard dialogue: innkeeper after the quest is done.
+msgid "COURTYARD_DIALOGUE_HOST_AFTER"
+msgstr "Место у очага твоё. Двор открыт для осмотра."
+
+# Courtyard dialogue: player picks up firewood at the woodpile.
+msgid "COURTYARD_DIALOGUE_WOOD_TAKEN"
+msgstr "Ты подобрал вязанку сухих дров. Отнеси её хозяйке."
+
+# Courtyard dialogue: woodpile before talking to the innkeeper.
+msgid "COURTYARD_DIALOGUE_WOOD_BEFORE"
+msgstr "Сначала поговори с хозяйкой."
+
+# Courtyard dialogue: woodpile when the firewood is already taken.
+msgid "COURTYARD_DIALOGUE_WOOD_ALREADY"
+msgstr "Дрова уже взяты."
+
+# Courtyard dialogue: watchman explains the training task.
+msgid "COURTYARD_DIALOGUE_GUARD_LESSON"
+msgstr "Держи дистанцию и не суетись. Покажи три точных удара по соломенной мишени."
+
+# Courtyard dialogue: watchman after the player completes the training.
+msgid "COURTYARD_DIALOGUE_GUARD_REPORT"
+msgstr "Для первого раза сойдёт. На дороге сначала смотри по сторонам, потом лезь в драку."
+
+# Courtyard dialogue: watchman reminds about the training task.
+msgid "COURTYARD_DIALOGUE_GUARD_REMIND"
+msgstr "Покажи три точных удара по мишени."
+
+# Courtyard dialogue: watchman generic reply.
+msgid "COURTYARD_DIALOGUE_GUARD_OTHER"
+msgstr "Двор открыт. Можешь осмотреться."
+
+# Inventory UI: open-inventory button/label.
+msgid "INV_OPEN"
+msgstr "Вещи"
+
+# Inventory UI: desktop open-inventory prompt with hotkey hint.
+msgid "INV_OPEN_DESKTOP"
+msgstr "Вещи · I / Tab"
+
+# Inventory UI: panel title.
+msgid "INV_TITLE"
+msgstr "При себе"
+
+# Inventory UI: item source label for clothing pockets.
+msgid "INV_SOURCE_POCKET"
+msgstr "Карман одежды"
+
+# Inventory UI: storage container name for a pocket.
+msgid "INV_STORAGE_POCKET"
+msgstr "Карман одежды"
+
+# Inventory UI: storage container name for a belt pouch.
+msgid "INV_STORAGE_POUCH"
+msgstr "Поясной мешочек"
+
+# Inventory UI: storage container name for a backpack.
+msgid "INV_STORAGE_BACKPACK"
+msgstr "Рюкзак"
+
+# Inventory UI: storage usage line; {name}, {used} and {capacity} are placeholders.
+msgid "INV_STORAGE_USAGE"
+msgstr "{name} · места: {used}/{capacity}"
+
+# Inventory UI: carried item row with its container; {item} and {storage} are placeholders.
+msgid "INV_STORAGE_ITEM_ROW"
+msgstr "{item} · {storage}"
+
+# Inventory UI: empty-state message.
+msgid "INV_EMPTY"
+msgstr "Пока ничего нет."
+
+# Inventory UI: coin count line; {amount} is a placeholder.
+msgid "INV_GOLD"
+msgstr "Монеты: {amount}"
+
+# Inventory UI: item row; {name} and {count} are placeholders.
+msgid "INV_ROW"
+msgstr "{name} × {count}"
+
+# Inventory UI: equipped item row; {name} is a placeholder.
+msgid "INV_EQUIPPED_ROW"
+msgstr "{name} · надето"
+
+# Inventory UI: fallback name for an unknown item.
+msgid "INV_UNKNOWN_ITEM"
+msgstr "Неизвестный предмет"
+
+# Settings: error when the language preference cannot be saved.
+msgid "INV_SETTINGS_FAILURE"
+msgstr "Не удалось сохранить выбор языка."
+
+# Language selector: English option label.
+msgid "LOC_LANGUAGE_ENGLISH"
+msgstr "English"
+
+# Language selector: Russian option label.
+msgid "LOC_LANGUAGE_RUSSIAN"
+msgstr "Русский"
+
+# Item name: rusty sword.
+msgid "ITEM_RUSTY_SWORD_NAME"
+msgstr "Ржавый меч"
+
+# Item name: iron sword.
+msgid "ITEM_IRON_SWORD_NAME"
+msgstr "Железный меч"
+
+# Item name: cultist's blade.
+msgid "ITEM_CULTIST_BLADE_NAME"
+msgstr "Клинок культиста"
+
+# Item name: leather armor.
+msgid "ITEM_LEATHER_ARMOR_NAME"
+msgstr "Кожаная броня"
+
+# Item name: chain mail.
+msgid "ITEM_CHAIN_MAIL_NAME"
+msgstr "Кольчуга"
+
+# Item name: health potion.
+msgid "ITEM_HEALTH_POTION_NAME"
+msgstr "Зелье здоровья"
+
+# Item name: stamina potion.
+msgid "ITEM_STAMINA_POTION_NAME"
+msgstr "Зелье выносливости"
+
+# Item name: bread.
+msgid "ITEM_BREAD_NAME"
+msgstr "Хлеб"
+
+# Item name: sacred ash.
+msgid "ITEM_SACRED_ASH_NAME"
+msgstr "Священный пепел"
+
+# Inventory UI: prompt to select an item for inspection.
+msgid "INV_SELECT_ITEM"
+msgstr "Выбери предмет, чтобы осмотреть его."
+
+# Inventory UI: item details block; {name}, {count} and {location} are placeholders.
+msgid "INV_ITEM_DETAILS"
+msgstr "{name} × {count}\n{location}"
+
+# Inventory UI: location label for equipped items.
+msgid "INV_LOCATION_EQUIPPED"
+msgstr "Надето"
+
+# Inventory UI: location label for carried items.
+msgid "INV_LOCATION_CARRIED"
+msgstr "При себе"
+
+# Inventory UI: action to move a stack between containers.
+msgid "INV_MOVE_ITEM"
+msgstr "Переложить"
+
+# Inventory UI: prompt asking where to move the selected stack.
+msgid "INV_TRANSFER_TO"
+msgstr "Куда переложить"
+
+# Inventory UI: error when a stack cannot be moved to the target container.
+msgid "INV_TRANSFER_FAILED"
+msgstr "Не удалось переложить предмет. Проверь свободное место."
+
+# Touch inventory: reviewed mobile equipment UI.
+msgid "TOUCH_ARMOR_SET"
+msgstr "Комплект"
+
+# Touch inventory: reviewed mobile equipment UI.
+msgid "TOUCH_WEAPON"
+msgstr "Оружие"
+
+# Touch inventory: reviewed mobile equipment UI.
+msgid "TOUCH_POCKET"
+msgstr "За пазухой"
+
+# Touch inventory: reviewed mobile equipment UI.
+msgid "TOUCH_BACKPACK"
+msgstr "Рюкзак"
+
+# Touch inventory: reviewed mobile equipment UI.
+msgid "TOUCH_POUCH"
+msgstr "Мешочек"
+
+# Touch inventory: reviewed mobile equipment UI.
+msgid "TOUCH_NOT_WORN"
+msgstr "Не надет"
+
+# Touch inventory: reviewed mobile equipment UI.
+msgid "TOUCH_DRAG_HINT"
+msgstr "Удерживай вещь и перетащи её в ячейку."
+
+# Touch inventory: reviewed mobile equipment UI.
+msgid "TOUCH_QUICK_LABEL"
+msgstr "Быстрые слоты · 1–0"
+
+# Touch inventory: reviewed mobile equipment UI.
+msgid "TOUCH_EMPTY_SLOT"
+msgstr "Пусто"
+
+# Touch inventory: reviewed mobile equipment UI.
+msgid "TOUCH_MOVE_FAILED"
+msgstr "Сюда нельзя переложить эту вещь."
+
+# Touch inventory: reviewed mobile equipment UI.
+msgid "ITEM_TRAVELER_BACKPACK_NAME"
+msgstr "Дорожный рюкзак"
+
+# Touch inventory: reviewed mobile equipment UI.
+msgid "ITEM_BELT_POUCH_NAME"
+msgstr "Поясной мешочек"
+
+msgid "MENU_SECTION_ITEMS"
+msgstr "Вещи"
+
+msgid "MENU_SECTION_QUESTS"
+msgstr "Задания"
+
+msgid "MENU_JOURNAL_COURTYARD"
+msgstr "Обжиться на новом месте"
+
+msgid "MENU_QUEST_ACTIVE"
+msgstr "В процессе"
+
+msgid "MENU_QUEST_COMPLETED"
+msgstr "Завершено"
+
+msgid "MENU_QUEST_EMPTY"
+msgstr "Пока нет заданий."
+
+msgid "MENU_SECTION_CHARACTER"
+msgstr "Персонаж"
+
+msgid "MENU_CHARACTER_POINTS"
+msgstr "Очки обучения: {count}"
+
+msgid "MENU_CHARACTER_SKILLS"
+msgstr "Навыки"
+
+msgid "MENU_CHARACTER_UNARMED_NOVICE"
+msgstr "Кулачный бой · Новичок"
+
+msgid "MENU_CHARACTER_PRACTICE_DONE"
+msgstr "Занятие у сторожа: пройдено"
+
+msgid "MENU_CHARACTER_PRACTICE_PENDING"
+msgstr "Занятие у сторожа: не пройдено"
+
+msgid "MENU_CHARACTER_TEACHER_HINT"
+msgstr "Обращайся к учителям, чтобы осваивать новые приёмы."

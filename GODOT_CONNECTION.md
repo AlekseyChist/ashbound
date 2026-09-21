@@ -12,7 +12,7 @@
 
 Подключение позволяет запускать редактор и игру, получать вывод запущенной через MCP игры, читать сведения о проекте, создавать и изменять сцены. Это управление через команды Godot; подключение не предоставляет изображение уже открытого редактора или его несохранённое состояние.
 
-Проект получен из `https://github.com/AlekseyChist/ashbound.git` в `C:/Users/prost/Documents/AshBound`. Локальная ветка `main` отслеживает `origin/main`. Открывать в Godot нужно файл `project.godot` в этой папке.
+Проект получен из `https://github.com/AlekseyChist/ashbound.git` в `C:/Users/prost/Documents/AshBound`. Рабочая интеграционная ветка — `dev`; каждую фичу выполнять в новой ветке от неё и сливать после проверки. `main` предназначена для готовых проверенных играбельных билдов. Открывать в Godot нужно файл `project.godot` в этой папке; перед работой учитывать её текущую ветку.
 
 Git-плагин уже включён в репозиторий: `addons/godot-git-plugin`, включая библиотеку Windows. В `project.godot` заданы `version_control/plugin_name="GitPlugin"` и `version_control/autoload_on_startup=true`. Повторная установка не нужна. Плагин добавляет интерфейс Git в редактор Godot; Codex работает с Git непосредственно.
 
@@ -81,3 +81,11 @@ node tools/ollama-godot.mjs --task-file .tools/ollama-godot/tasks/task.txt --wri
 Созданы дом, башня и ворота: исходники `art/blender/output/*.blend`, импортированные модели `assets/buildings/ashbound/*.glb`, сцены с физическими преградами `scenes/buildings/*.tscn`. Для просмотра открыть `scenes/environments/building_showcase.tscn` в Godot и нажать **F6**. Клавиши **1/2/3** выбирают здание, **0** возвращает общий вид; ЛКМ вращает камеру, колесо меняет масштаб. Здания появляются при запуске сцены.
 
 При написании файлов локальной моделью можно добавить `--files-only`: тогда мост не запускает Godot MCP. Проверенный режим для длинных скриптов: `--context 24576 --output-tokens 8192`; `--think` для этой задачи не требуется. Логи исполнения и резервные копии хранятся локально в `.tools/ollama-godot/runs/`.
+
+## Экспорт первого двора
+
+20 сентября установлены официальные шаблоны Godot4.7.2: Windows x86_64 и Android (debug/release). Архив сверён с официальной SHA512. Каталог: `C:/Users/prost/AppData/Roaming/Godot/export_templates/4.7.2.stable`.
+
+Android SDK: `C:/Users/prost/AppData/Local/Android/Sdk`. В локальных Editor Settings указан Java SDK `C:/Program Files/Android/Android Studio/jbr` (Java21.0.10). Отладочный ключ остаётся в пользовательском каталоге Godot, в Git его нет. Пресеты и инструкции: [BUILDS.md](docs/production/BUILDS.md).
+
+Текстовые задачи первой сцены выполнялись установленной Ollama с `--context 16384`, без `--think`. Для узких исправлений доступен `--allow-file`, для нового файла — `--create-only`; эти ограничения описаны в `tools/README.md`. Заявление модели об успехе по-прежнему не заменяет проверку файлов и запуск Godot.

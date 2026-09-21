@@ -1,0 +1,76 @@
+[gd_scene load_steps=11 format=3]
+
+[ext_resource type="Script" path="res://scripts/courtyard/courtyard_player.gd" id="1_player"]
+[ext_resource type="SpriteFrames" path="res://assets/characters/courtyard/traveler_frames.tres" id="2_frames"]
+[ext_resource type="Script" path="res://scripts/courtyard/courtyard_character_visual.gd" id="3_visual"]
+[ext_resource type="SpriteFrames" path="res://assets/characters/courtyard/traveler_pocket_frames.tres" id="4_pocket_frames"]
+[ext_resource type="Script" path="res://scripts/courtyard/pocket_access.gd" id="5_pocket_access"]
+[ext_resource type="Script" path="res://scripts/courtyard/courtyard_backpack_visual.gd" id="6_backpack"]
+[ext_resource type="Script" path="res://scripts/characters/character_progress.gd" id="7_progress"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_1"]
+radius = 0.28
+height = 1.7
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_1"]
+top_radius = 0.28
+bottom_radius = 0.28
+height = 0.005
+radial_segments = 16
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_1"]
+albedo_color = Color(0, 0, 0, 0.2)
+shading_mode = 0
+transparency = 1
+
+[node name="CourtyardPlayer" type="CharacterBody3D"]
+script = ExtResource("1_player")
+collision_layer = 2
+collision_mask = 5
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.85, 0)
+shape = SubResource("CapsuleShape3D_1")
+
+[node name="Visual" type="Node3D" parent="."]
+script = ExtResource("3_visual")
+
+[node name="Body" type="AnimatedSprite3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+billboard = 2
+sprite_frames = ExtResource("2_frames")
+animation = &"idle"
+autoplay = "idle"
+pixel_size = 0.006
+shaded = false
+alpha_cut = 1
+alpha_scissor_threshold = 0.25
+
+[node name="PocketPose" type="AnimatedSprite3D" parent="Visual"]
+visible = false
+billboard = 2
+sprite_frames = ExtResource("4_pocket_frames")
+animation = &"pocket_back"
+pixel_size = 0.005084745762711864
+shaded = false
+alpha_cut = 1
+alpha_scissor_threshold = 0.25
+
+[node name="PocketAccess" type="Node" parent="."]
+script = ExtResource("5_pocket_access")
+storage_id = &"traveler_clothing_pocket"
+available = true
+
+[node name="BackpackLayer" type="Node3D" parent="Visual"]
+script = ExtResource("6_backpack")
+
+[node name="Equipment" type="Node3D" parent="Visual"]
+
+[node name="Progression" type="Node" parent="."]
+script = ExtResource("7_progress")
+
+[node name="GroundShadow" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.008, 0)
+cast_shadow = 0
+mesh = SubResource("CylinderMesh_1")
+material_override = SubResource("StandardMaterial3D_1")

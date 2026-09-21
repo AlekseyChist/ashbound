@@ -1,0 +1,47 @@
+[gd_resource type="SpriteFrames" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/characters/courtyard/residents-v1.png" id="1_nqxr7"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_lnia8"]
+atlas = ExtResource("1_nqxr7")
+region = Rect2(129, 6, 189, 431)
+margin = Rect2(131, 7, 259, 17)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_x6r33"]
+atlas = ExtResource("1_nqxr7")
+region = Rect2(572, 6, 189, 431)
+margin = Rect2(130, 7, 259, 17)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_m8wkr"]
+atlas = ExtResource("1_nqxr7")
+region = Rect2(1016, 6, 189, 431)
+margin = Rect2(131, 7, 259, 17)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_mxywu"]
+atlas = ExtResource("1_nqxr7")
+region = Rect2(1459, 6, 189, 431)
+margin = Rect2(130, 7, 259, 17)
+filter_clip = true
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_lnia8")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_x6r33")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_m8wkr")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_mxywu")
+}],
+"loop": 1,
+"name": &"idle",
+"speed": 3.0
+}]

@@ -1,0 +1,227 @@
+[
+  {
+    "key": "INV_SELECT_ITEM",
+    "en": "Select an item to inspect it.",
+    "ru": "Выбери предмет, чтобы осмотреть его."
+  },
+  {
+    "key": "INV_ITEM_DETAILS",
+    "en": "{name} × {count}\n{location}",
+    "ru": "{name} × {count}\n{location}"
+  },
+  {
+    "key": "INV_LOCATION_EQUIPPED",
+    "en": "Equipped",
+    "ru": "Надето"
+  },
+  {
+    "key": "INV_LOCATION_CARRIED",
+    "en": "Carried",
+    "ru": "При себе"
+  },
+  {
+    "key": "INV_MOVE_ITEM",
+    "en": "Move stack",
+    "ru": "Переложить"
+  },
+  {
+    "key": "INV_TRANSFER_TO",
+    "en": "Move to",
+    "ru": "Куда переложить"
+  },
+  {
+    "key": "INV_TRANSFER_FAILED",
+    "en": "Cannot move this item there. Check the available space.",
+    "ru": "Не удалось переложить предмет. Проверь свободное место."
+  },
+  {
+    "key": "INV_OPEN",
+    "en": "Inventory",
+    "ru": "Вещи"
+  },
+  {
+    "key": "INV_OPEN_DESKTOP",
+    "en": "Inventory · I / Tab",
+    "ru": "Вещи · I / Tab"
+  },
+  {
+    "key": "INV_TITLE",
+    "en": "Carried items",
+    "ru": "При себе"
+  },
+  {
+    "key": "INV_SOURCE_POCKET",
+    "en": "Clothing pocket",
+    "ru": "Карман одежды"
+  },
+  {
+    "key": "INV_EMPTY",
+    "en": "Nothing here yet.",
+    "ru": "Пока ничего нет."
+  },
+  {
+    "key": "INV_GOLD",
+    "en": "Coins: {amount}",
+    "ru": "Монеты: {amount}"
+  },
+  {
+    "key": "INV_ROW",
+    "en": "{name} × {count}",
+    "ru": "{name} × {count}"
+  },
+  {
+    "key": "INV_EQUIPPED_ROW",
+    "en": "{name} · equipped",
+    "ru": "{name} · надето"
+  },
+  {
+    "key": "INV_UNKNOWN_ITEM",
+    "en": "Unknown item",
+    "ru": "Неизвестный предмет"
+  },
+  {
+    "key": "INV_SETTINGS_FAILURE",
+    "en": "Could not save the language preference.",
+    "ru": "Не удалось сохранить выбор языка."
+  },
+  {
+    "key": "LOC_LANGUAGE_ENGLISH",
+    "en": "English",
+    "ru": "English"
+  },
+  {
+    "key": "LOC_LANGUAGE_RUSSIAN",
+    "en": "Русский",
+    "ru": "Русский"
+  },
+  {
+    "key": "ITEM_RUSTY_SWORD_NAME",
+    "en": "Rusty sword",
+    "ru": "Ржавый меч"
+  },
+  {
+    "key": "ITEM_IRON_SWORD_NAME",
+    "en": "Iron sword",
+    "ru": "Железный меч"
+  },
+  {
+    "key": "ITEM_CULTIST_BLADE_NAME",
+    "en": "Cultist's blade",
+    "ru": "Клинок культиста"
+  },
+  {
+    "key": "ITEM_LEATHER_ARMOR_NAME",
+    "en": "Leather armor",
+    "ru": "Кожаная броня"
+  },
+  {
+    "key": "ITEM_CHAIN_MAIL_NAME",
+    "en": "Chain mail",
+    "ru": "Кольчуга"
+  },
+  {
+    "key": "ITEM_HEALTH_POTION_NAME",
+    "en": "Health potion",
+    "ru": "Зелье здоровья"
+  },
+  {
+    "key": "ITEM_STAMINA_POTION_NAME",
+    "en": "Stamina potion",
+    "ru": "Зелье выносливости"
+  },
+  {
+    "key": "ITEM_BREAD_NAME",
+    "en": "Bread",
+    "ru": "Хлеб"
+  },
+  {
+    "key": "ITEM_SACRED_ASH_NAME",
+    "en": "Sacred ash",
+    "ru": "Священный пепел"
+  },
+  {
+    "key": "INV_STORAGE_POCKET",
+    "en": "Clothing pocket",
+    "ru": "Карман одежды"
+  },
+  {
+    "key": "INV_STORAGE_POUCH",
+    "en": "Belt pouch",
+    "ru": "Поясной мешочек"
+  },
+  {
+    "key": "INV_STORAGE_BACKPACK",
+    "en": "Backpack",
+    "ru": "Рюкзак"
+  },
+  {
+    "key": "INV_STORAGE_USAGE",
+    "en": "{name} · slots: {used}/{capacity}",
+    "ru": "{name} · места: {used}/{capacity}"
+  },
+  {
+    "key": "INV_STORAGE_ITEM_ROW",
+    "en": "{item} · {storage}",
+    "ru": "{item} · {storage}"
+  },
+  {
+    "key": "TOUCH_ARMOR_SET",
+    "en": "Outfit",
+    "ru": "Комплект"
+  },
+  {
+    "key": "TOUCH_WEAPON",
+    "en": "Weapon",
+    "ru": "Оружие"
+  },
+  {
+    "key": "TOUCH_POCKET",
+    "en": "Inside pocket",
+    "ru": "За пазухой"
+  },
+  {
+    "key": "TOUCH_BACKPACK",
+    "en": "Backpack",
+    "ru": "Рюкзак"
+  },
+  {
+    "key": "TOUCH_POUCH",
+    "en": "Belt pouch",
+    "ru": "Мешочек"
+  },
+  {
+    "key": "TOUCH_NOT_WORN",
+    "en": "Not worn",
+    "ru": "Не надет"
+  },
+  {
+    "key": "TOUCH_DRAG_HINT",
+    "en": "Hold an item, then drag it to a slot.",
+    "ru": "Удерживай вещь и перетащи её в ячейку."
+  },
+  {
+    "key": "TOUCH_QUICK_LABEL",
+    "en": "Quick slots · 1–0",
+    "ru": "Быстрые слоты · 1–0"
+  },
+  {
+    "key": "TOUCH_EMPTY_SLOT",
+    "en": "Empty",
+    "ru": "Пусто"
+  },
+  {
+    "key": "TOUCH_MOVE_FAILED",
+    "en": "Cannot move this item here.",
+    "ru": "Сюда нельзя переложить эту вещь."
+  },
+  {
+    "key": "ITEM_TRAVELER_BACKPACK_NAME",
+    "en": "Travel backpack",
+    "ru": "Дорожный рюкзак"
+  },
+  {
+    "key": "ITEM_BELT_POUCH_NAME",
+    "en": "Belt pouch",
+    "ru": "Поясной мешочек"
+  }
+]
