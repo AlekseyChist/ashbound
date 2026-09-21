@@ -430,3 +430,18 @@ msgstr "Восстановлена предыдущая резервная ко�
 
 msgid "SAVE_WRITE_FAILED"
 msgstr "Не удалось сохранить прогресс. Проверь свободное место."
+
+msgid "INV_DROP_ITEM"
+msgstr "Выбросить"
+
+msgid "INV_DROP_QUEST_LOCKED"
+msgstr "Нужен для задания"
+
+msgid "INV_DROP_UNEQUIP_FIRST"
+msgstr "Сначала сними предмет"
+
+msgid "DROP_PICK_UP"
+msgstr "Подобрать"
+
+msgid "DROP_STORAGE_FULL"
+msgstr "В хранилищах нет места."

@@ -4,14 +4,14 @@ extends RefCounted
 
 const PROGRESS_PATH := "res://scripts/characters/character_progress.gd"
 
-const ROOT_KEYS := ["schema_version", "location", "quest", "progress", "inventory", "player", "camera", "quick", "map_available", "pocket_available"]
+const ROOT_KEYS := ["schema_version", "location", "quest", "progress", "inventory", "player", "camera", "quick", "map_available", "pocket_available", "world_items"]
 const QUEST_KEYS := ["state", "dummy_hits", "reward_claimed"]
 const PLAYER_KEYS := ["position", "facing"]
 const CAMERA_KEYS := ["yaw", "pitch"]
 const INVENTORY_ROOT_KEYS := ["schema_version", "items", "equipped", "gold", "storage", "worn_storage"]
 
 const LOCATION := "first_courtyard"
-const SCHEMA_VERSION := 1
+const SCHEMA_VERSION := 2
 
 const POS_MIN := Vector3(-17.0, -0.5, -17.0)
 const POS_MAX := Vector3(17.0, 5.0, 15.0)
@@ -34,6 +34,50 @@ func _empty_quick() -> Array[String]:
 	return out
 
 # ---------------------------------------------------------------- capture ---
+func fresh_start(level: Node, inventory: Node) -> Dictionary:
+	var data := capture(level, inventory)
+
+	var quest := _new_quest()
+	data["quest"] = quest
+
+	var progress := {
+		"schema_version": 1,
+		"learning_points": 0,
+		"point_awards": {},
+		"guard_practice_completed": false,
+	}
+	data["progress"] = progress
+
+	var inv_data: Dictionary = {
+		"schema_version": int(data["inventory"]["schema_version"]),
+		"items": [],
+		"equipped": {},
+		"gold": 0,
+		"storage": {"placements": {}, "cells": {}},
+	}
+	for key in data["inventory"]["equipped"]:
+		inv_data["equipped"][key] = null
+	data["inventory"] = inv_data
+
+	var player := {
+		"position": level._player_spawn,
+		"facing": Vector3.FORWARD,
+	}
+	data["player"] = player
+
+	var camera := {
+		"yaw": 0.0,
+		"pitch": deg_to_rad(-12.0),
+	}
+	data["camera"] = camera
+
+	data["quick"] = _empty_quick()
+	data["world_items"] = []
+	data["map_available"] = true
+	data["pocket_available"] = true
+
+	return data
+
 func capture(level: Node, inventory: Node) -> Dictionary:
 	var player := level.get_node("Actors/Player")
 	var camera := level.get_node("CameraRig")
@@ -57,7 +101,7 @@ func capture(level: Node, inventory: Node) -> Dictionary:
 	var quick: Array[String] = []
 	for id in panel._quick_bindings:
 		# Normalize stale references only in the returned copy.
-		if not _is_bindable_id(str(id), inv_data):
+		if not _is_bindable_id(str(id), inv_data, inventory):
 			id = ""
 		quick.append(str(id))
 
@@ -75,11 +119,12 @@ func capture(level: Node, inventory: Node) -> Dictionary:
 		"quick": quick,
 		"map_available": map_available,
 		"pocket_available": bool(level.get_node("Actors/Player/PocketAccess").available),
+		"world_items": level.get_node("WorldItems").get_records() if level.has_node("WorldItems") else [],
 	}
 	return data.duplicate(true)
 
 
-func _is_bindable_id(id: String, inventory_data: Dictionary) -> bool:
+func _is_bindable_id(id: String, inventory_data: Dictionary, inventory: Node) -> bool:
 	if id == "":
 		return true
 	var items = inventory_data.get("items", [])
@@ -87,24 +132,27 @@ func _is_bindable_id(id: String, inventory_data: Dictionary) -> bool:
 		for entry in items:
 			if not (entry is Dictionary):
 				continue
-			if str(entry.get("instance_id", "")) == id and int(entry.get("type", -1)) in [0, 2]:
+			if str(entry.get("instance_id", "")) == id and inventory.describe_item_id(entry.id).quick_bindable:
 				return true
 	var equipped = inventory_data.get("equipped", {})
 	if equipped is Dictionary:
 		for value in equipped.values():
 			if not (value is Dictionary):
 				continue
-			if str(value.get("instance_id", "")) == id and int(value.get("type", -1)) in [0, 2]:
+			if str(value.get("instance_id", "")) == id and inventory.describe_item_id(value.id).quick_bindable:
 				return true
 	return false
 
 
 # --------------------------------------------------------------- validate ---
 func validate(data: Dictionary, inventory: Node) -> bool:
-	if not _is_exact_keys(data, ROOT_KEYS):
+	var expected := ROOT_KEYS.duplicate()
+	var schema_version = data.get("schema_version", null)
+	if not (schema_version is int) or schema_version < 1 or schema_version > 2:
 		return false
-	var schema_version = data["schema_version"]
-	if not (schema_version is int) or schema_version != SCHEMA_VERSION:
+	if schema_version == 1:
+		expected.erase("world_items")
+	if not _is_exact_keys(data, expected):
 		return false
 	var location = data["location"]
 	if not (location is String) or location != LOCATION:
@@ -199,7 +247,7 @@ func validate(data: Dictionary, inventory: Node) -> bool:
 	for id in quick:
 		if not (id is String):
 			return false
-		if id != "" and not _is_bindable_id(id, inv_data):
+		if id != "" and not _is_bindable_id(id, inv_data, inventory):
 			return false
 
 	var progress = data["progress"]
@@ -214,7 +262,23 @@ func validate(data: Dictionary, inventory: Node) -> bool:
 	if not _validate_progress_detached(progress):
 		return false
 
+	var world_items_raw = data.get("world_items", [])
+	if not (world_items_raw is Array):
+		return false
+	var world_items: Array = world_items_raw
+	var world_manager: Node3D = load("res://scripts/courtyard/courtyard_world_items.gd").new()
+	world_manager.setup(null, inventory)
+	var world_ok: bool = world_manager.validate_records(world_items, inv_data)
+	world_manager.free()
+	if not world_ok:
+		return false
 	var map_count := _count_map_items(inv_data)
+	for record in world_items:
+		if not (record is Dictionary):
+			return false
+		var ground_item: Dictionary = record["item"]
+		if ground_item["id"] == "courtyard_sketch":
+			map_count += int(ground_item["quantity"])
 	if map_count < 0 or map_count > 1:
 		return false
 	if map_available != (map_count == 0):
@@ -270,6 +334,8 @@ func apply(level: Node, inventory: Node, data: Dictionary) -> bool:
 		return false
 	if not validate(data, inventory):
 		return false
+	if data.get("world_items", []).size() > 0 and not level.has_node("WorldItems"):
+		return false
 	if inventory.get("_trade_guard") or inventory.get("_wearable_guard") or inventory.get("_storage_guard"):
 		return false
 
@@ -324,6 +390,11 @@ func apply(level: Node, inventory: Node, data: Dictionary) -> bool:
 		pocket.set_block_signals(pocket_blocked)
 		_applying = false
 		return false
+
+	# Restore world items silently (no replay drop/pickup, no changed notifications).
+	var world_items := level.get_node_or_null("WorldItems")
+	if world_items != null and world_items.has_method("restore_records"):
+		world_items.restore_records(data.get("world_items", []))
 
 	# Player coherent state.
 	if player.has_method("stop_input"):

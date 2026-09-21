@@ -34,6 +34,8 @@ var _capture_path: String = ""
 var _capture_started: bool = false
 var _capture_frames: int = 0
 var _pending_interact: bool = false
+var _message_source: Node3D = null
+var _restarting: bool = false
 var _dummy_flash_t: float = 0.0
 var _dummy_base_scale: Vector3 = Vector3.ONE
 
@@ -51,6 +53,10 @@ func _ready() -> void:
 	_camera_rig.set_target(_player)
 	_snap_camera_to_player()
 	_apply_state(State.MEET_HOST)
+	var world_items: Node3D = preload("res://scripts/courtyard/courtyard_world_items.gd").new()
+	world_items.name = "WorldItems"
+	add_child(world_items)
+	world_items.setup(self, Inventory)
 	call_deferred("_start_persistence")
 	print("ASHBOUND_COURTYARD_READY")
 	# Скриншот-хук только при явном аргументе запуска.
@@ -78,6 +84,9 @@ func _start_persistence() -> void:
 	persistence.name = "Persistence"
 	add_child(persistence)
 	persistence.initialize(self)
+	var world_items: Node = get_node_or_null("WorldItems")
+	if world_items != null and world_items.has_signal("changed"):
+		world_items.changed.connect(persistence.queue_save)
 
 func _connect_signals() -> void:
 	_hud.move_changed.connect(_player.set_move_input)
@@ -100,6 +109,16 @@ func _physics_process(_delta: float) -> void:
 		if t != null:
 			t.interacted.emit(t)
 	_update_interaction_prompt()
+	if _message_source != null:
+		if not is_instance_valid(_message_source):
+			_message_source = null
+		elif not _hud._message_visible:
+			_message_source = null
+		else:
+			var d: float = _planar_distance(_player.global_position, _message_source.global_position)
+			if d > interact_radius + 0.75:
+				_hud.clear_message()
+				_message_source = null
 
 
 func _process(delta: float) -> void:
@@ -127,7 +146,11 @@ func _snap_camera_to_player() -> void:
 func _nearest_interactable() -> Node:
 	var best: Node = null
 	var best_d: float = INF
-	for p in [_innkeeper, _watchman, _woodpile, get_node_or_null("Interactions/MapStand")]:
+	var points: Array = [_innkeeper, _watchman, _woodpile, get_node_or_null("Interactions/MapStand")]
+	var world_items: Node = get_node_or_null("WorldItems")
+	if world_items != null and world_items.has_method("get_points"):
+		points.append_array(world_items.get_points())
+	for p in points:
 		if p == null or not is_instance_valid(p):
 			continue
 		var d: float = _planar_distance(_player.global_position, p.global_position)
@@ -231,10 +254,13 @@ func _on_interact_requested() -> void:
 func _on_point_interacted(point: Node) -> void:
 	match point.interaction_id:
 		"innkeeper":
+			_message_source = point as Node3D
 			_on_innkeeper_interact()
 		"woodpile":
+			_message_source = point as Node3D
 			_on_woodpile_interact()
 		"watchman":
+			_message_source = point as Node3D
 			_on_watchman_interact()
 
 
@@ -462,7 +488,21 @@ func reset_lesson() -> void:
 
 
 func _on_restart_pressed() -> void:
+	if _restarting:
+		return
+	_restarting = true
+	var schema = load("res://scripts/courtyard/courtyard_save_schema.gd").new()
+	var fresh: Dictionary = schema.fresh_start(self, Inventory)
+	if not schema.apply(self, Inventory, fresh):
+		_restarting = false
+		push_error("Courtyard restart failed: schema.apply returned false")
+		return
+	_message_source = null
 	reset_lesson()
+	var persistence: Node = get_node_or_null("Persistence")
+	if persistence != null and persistence.has_method("flush_now"):
+		persistence.call("flush_now")
+	_restarting = false
 
 
 # --- Скриншот -------------------------------------------------------------

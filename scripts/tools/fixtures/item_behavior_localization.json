@@ -1,0 +1,7 @@
+[
+ {"key":"INV_DROP_ITEM","en":"Drop","ru":"Выбросить"},
+ {"key":"INV_DROP_QUEST_LOCKED","en":"Needed for a quest","ru":"Нужен для задания"},
+ {"key":"INV_DROP_UNEQUIP_FIRST","en":"Unequip this item first","ru":"Сначала сними предмет"},
+ {"key":"DROP_PICK_UP","en":"Pick up","ru":"Подобрать"},
+ {"key":"DROP_STORAGE_FULL","en":"There is no room in your storage.","ru":"В хранилищах нет места."}
+]

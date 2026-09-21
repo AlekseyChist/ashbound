@@ -1,7 +1,7 @@
 class_name InventoryStorageLayout
 extends RefCounted
 ## Reusable physical inventory storage layout.
-## Tracks assignment of carried instance ids to stable container slots.
+## Tracks assignment of carried instance ids to stable container slots and exact cells.
 ## Does not own or copy items; canonical data stays in Inventory.items.
 
 const _MAX_TOTAL_CAPACITY := 1000000
@@ -9,6 +9,7 @@ const _VALID_KINDS: Array = ["pocket", "pouch", "backpack"]
 
 var _definitions: Array = []
 var _assignments: Dictionary = {}
+var _cells: Dictionary = {}
 
 
 func configure(definitions: Variant, carried: Variant) -> bool:
@@ -18,8 +19,12 @@ func configure(definitions: Variant, carried: Variant) -> bool:
 	var planned: Variant = _plan_assignments(parsed, carried, _assignments)
 	if planned == null:
 		return false
+	var cells: Variant = _plan_cells(parsed, carried, planned, _cells)
+	if cells == null:
+		return false
 	_definitions = parsed
 	_assignments = planned
+	_cells = cells
 	return true
 
 
@@ -27,35 +32,73 @@ func reconcile(carried: Variant) -> bool:
 	var planned: Variant = _plan_assignments(_definitions, carried, _assignments)
 	if planned == null:
 		return false
+	var cells: Variant = _plan_cells(_definitions, carried, planned, _cells)
+	if cells == null:
+		return false
 	_assignments = planned
+	_cells = cells
 	return true
 
 
-func move(instance_id: String, destination_id: String, carried: Variant) -> bool:
+func move(instance_id: String, destination_id: String, carried: Variant, cell_index: int = -1) -> bool:
+	if cell_index < -1:
+		return false
 	if not _is_valid_carried(carried):
 		return false
 	var by_id := _definitions_by_id()
 	if not by_id.has(destination_id):
 		return false
-	var current: Dictionary = _assignments.duplicate(true)
-	if not current.has(instance_id):
-		current[instance_id] = ""
-	var planned: Variant = _plan_assignments(_definitions, carried, current)
-	if planned == null:
+	var planned: Variant = _plan_assignments(_definitions, carried, _assignments)
+	if planned == null or not planned.has(instance_id):
 		return false
-	if not planned.has(instance_id):
+	var cells: Variant = _plan_cells(_definitions, carried, planned, _cells)
+	if cells == null:
 		return false
-	if str(planned[instance_id]) == destination_id:
-		_assignments = planned
-		return true
-	var target_used := 0
-	for key in planned.keys():
-		if planned[key] == destination_id:
-			target_used += 1
-	if target_used >= int(by_id[destination_id]["capacity"]):
-		return false
-	planned[instance_id] = destination_id
+	var source_container := str(planned[instance_id])
+	var source_index := int(cells.get(instance_id, -1))
+	if cell_index >= 0:
+		var capacity := int(by_id[destination_id]["capacity"])
+		if cell_index >= capacity:
+			return false
+		var occupant := ""
+		for key in planned.keys():
+			if str(planned[key]) == destination_id and int(cells.get(key, -1)) == cell_index:
+				occupant = str(key)
+				break
+		if occupant != "":
+			planned[occupant] = source_container
+			cells[occupant] = source_index
+		planned[instance_id] = destination_id
+		cells[instance_id] = cell_index
+	else:
+		if source_container == destination_id:
+			_assignments = planned
+			_cells = cells
+			return true
+		var target_used := 0
+		for key in planned.keys():
+			if str(planned[key]) == destination_id:
+				target_used += 1
+		if target_used >= int(by_id[destination_id]["capacity"]):
+			return false
+		var free_index := -1
+		for index in range(int(by_id[destination_id]["capacity"])):
+			var occupied := false
+			for key in planned.keys():
+				if str(key) == instance_id:
+					continue
+				if str(planned[key]) == destination_id and int(cells.get(key, -1)) == index:
+					occupied = true
+					break
+			if not occupied:
+				free_index = index
+				break
+		if free_index < 0:
+			return false
+		planned[instance_id] = destination_id
+		cells[instance_id] = free_index
 	_assignments = planned
+	_cells = cells
 	return true
 
 
@@ -88,11 +131,20 @@ func get_container_id(instance_id: String) -> String:
 	return ""
 
 
+func get_cell_index(instance_id: String) -> int:
+	if _cells.has(instance_id):
+		return int(_cells[instance_id])
+	return -1
+
+
 func get_save_data() -> Dictionary:
 	var placements: Dictionary = {}
 	for key in _assignments.keys():
 		placements[str(key)] = str(_assignments[key])
-	return {"placements": placements}
+	var cells: Dictionary = {}
+	for key in _cells.keys():
+		cells[str(key)] = int(_cells[key])
+	return {"placements": placements, "cells": cells}
 
 
 func load_placements(data: Variant, carried: Variant) -> bool:
@@ -129,8 +181,93 @@ func load_placements(data: Variant, carried: Variant) -> bool:
 	var next: Dictionary = {}
 	for id in carried_ids:
 		next[id] = str(placements[id])
+	var raw_cells: Variant = (data as Dictionary).get("cells", null)
+	var cells: Variant = _plan_cells(_definitions, carried, next, {})
+	if cells == null:
+		return false
+	if data.has("cells"):
+		if not raw_cells is Dictionary:
+			return false
+		var saved_cells: Dictionary = raw_cells
+		if saved_cells.size() != carried_ids.size():
+			return false
+		var occupancy: Dictionary = {}
+		for id in carried_ids:
+			if not saved_cells.has(id):
+				return false
+			var cell: Variant = saved_cells[id]
+			if not cell is int:
+				return false
+			var container_id: String = next[id]
+			var capacity: int = int(by_id[container_id]["capacity"])
+			if int(cell) < 0 or int(cell) >= capacity:
+				return false
+			var key: String = container_id + ":" + str(int(cell))
+			if occupancy.has(key):
+				return false
+			occupancy[key] = true
+		cells = saved_cells.duplicate(true)
 	_assignments = next
+	_cells = cells
 	return true
+
+
+func _plan_cells(definitions: Variant, carried: Variant, planned: Dictionary, previous: Dictionary) -> Variant:
+	if not definitions is Array or not planned is Dictionary:
+		return null
+	var by_id: Dictionary = {}
+	for def in definitions:
+		by_id[def["id"]] = def
+	var result: Dictionary = {}
+	var occupied: Dictionary = {}
+	for dest in by_id.keys():
+		occupied[dest] = {}
+	var carried_ids: Dictionary = {}
+	for entry in carried:
+		var id := str((entry as Dictionary).get("instance_id", ""))
+		if not planned.has(id):
+			return null
+		var dest := str(planned[id])
+		if not by_id.has(dest):
+			return null
+		carried_ids[id] = true
+	# Pass 1: reserve surviving in-bounds previous cells.
+	for id in carried_ids.keys():
+		var dest := str(planned[id])
+		var capacity := int(by_id[dest]["capacity"])
+		if _assignments.has(id) and _assignments[id] == planned[id]:
+			var prev_cell: Variant = previous.get(id, null)
+			if _is_strict_int(prev_cell):
+				var idx := int(prev_cell)
+				if idx >= 0 and idx < capacity and not occupied[dest].has(idx):
+					result[id] = idx
+					occupied[dest][idx] = true
+	# Pass 2: assign first free cell for every unassigned carried id.
+	for id in carried_ids.keys():
+		if result.has(id):
+			continue
+		var dest := str(planned[id])
+		var capacity := int(by_id[dest]["capacity"])
+		var free := -1
+		for idx in range(capacity):
+			if not occupied[dest].has(idx):
+				free = idx
+				break
+		if free < 0:
+			return null
+		result[id] = free
+		occupied[dest][free] = true
+	return result
+
+
+
+
+
+
+
+
+
+
 
 
 func _parse_definitions(definitions: Variant) -> Variant:

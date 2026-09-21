@@ -51,6 +51,10 @@ var _original_quit_on_go_back: bool = true
 # следующее нажатие Back работает как раньше.
 var _go_back_handled_frame: int = -1
 
+# Индекс быстрого слота (0..9), запрошенный до открытия окна; активируется
+# после OPEN, если окно открылось. Сбрасывается при закрытии/успехе.
+var _pending_quick: int = -1
+
 # Защита от МЕЖКАДРОВОГО дубля (Samsung S23): один физический KEYCODE_BACK
 # может быть доставлен как ДВЕ отдельные NOTIFICATION_WM_GO_BACK_REQUEST
 # с разницей ~7 мс на СОСЕДНИХ кадрах. Кадровая защита выше их не ловит:
@@ -202,6 +206,7 @@ func request_open() -> bool:
 
 
 func close_menu(restore_capture: bool = true) -> void:
+	_pending_quick = -1
 	if state == State.CLOSED:
 		return
 	var was_active := state != State.CLOSED
@@ -254,7 +259,62 @@ func close_menu(restore_capture: bool = true) -> void:
 # Ввод
 # ---------------------------------------------------------------------------
 
+func request_quick(index: int) -> bool:
+	if index < 0 or index > 9:
+		return false
+	if _window == null or not is_instance_valid(_window):
+		return false
+	var inventory: Node = get_node_or_null("/root/Inventory")
+	if inventory == null or not inventory.has_method("can_assign_quick"):
+		return false
+	var bindings_value: Variant = _window.get("_quick_bindings") if "_quick_bindings" in _window else null
+	if not (bindings_value is Array):
+		return false
+	var bindings: Array = bindings_value
+	if index >= bindings.size():
+		return false
+	var iid: String = str(bindings[index])
+	var handle: Dictionary = {"instance_id": iid}
+	if not inventory.can_assign_quick(handle):
+		return false
+	var rules: Dictionary = inventory.get_item_rules(handle)
+	if rules.get("quick_action", "") != "open_map":
+		return false
+	if state == State.OPEN:
+		if _window.has_method("activate_quick"):
+			return bool(_window.activate_quick(index))
+		return false
+	if state == State.CLOSED:
+		_pending_quick = index
+		var ok: bool = request_open()
+		if not ok:
+			_pending_quick = -1
+		return ok
+	return false
+
+
 func _input(event: InputEvent) -> void:
+	# Быстрые слоты 1..9/0 (только физический жест, без эмуляции).
+	if event is InputEventKey and event.pressed and not event.is_echo():
+		var key_code: int = event.physical_keycode
+		if key_code == KEY_NONE:
+			key_code = event.keycode
+		var quick_index := -1
+		match key_code:
+			KEY_1: quick_index = 0
+			KEY_2: quick_index = 1
+			KEY_3: quick_index = 2
+			KEY_4: quick_index = 3
+			KEY_5: quick_index = 4
+			KEY_6: quick_index = 5
+			KEY_7: quick_index = 6
+			KEY_8: quick_index = 7
+			KEY_9: quick_index = 8
+			KEY_0: quick_index = 9
+		if quick_index >= 0 and request_quick(quick_index):
+			get_viewport().set_input_as_handled()
+			return
+
 	# Подавляем ТОЛЬКО эмулированные мышь/движение мыши над видимым OpenButton,
 	# чтобы не было двойного переключения (сырое касание + эмуляция мыши).
 	# Нативная мышь должна пройти в GUI (OpenButton.pressed).
@@ -398,6 +458,11 @@ func _on_inventory_access_finished() -> void:
 		if _window.has_method("open_panel"):
 			_window.open_panel()
 		_window.visible = true
+	if _pending_quick >= 0:
+		var pending_index := _pending_quick
+		_pending_quick = -1
+		if _window.has_method("activate_quick"):
+			_window.activate_quick(pending_index)
 	_update_open_button_visibility()
 	opened.emit()
 
