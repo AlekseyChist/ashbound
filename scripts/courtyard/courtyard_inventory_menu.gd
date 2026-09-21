@@ -43,6 +43,14 @@ var _active_storage_id: StringName = &""
 var _go_back_owned: bool = false
 var _original_quit_on_go_back: bool = true
 
+# Защита от повторной доставки одного Back-события в пределах кадра/события:
+# Android может доставить один KEYCODE_BACK и как ui_cancel (InputEventKey),
+# и как NOTIFICATION_WM_GO_BACK_REQUEST. Первый обработчик закрывает меню,
+# второй (в том же кадре) видит CLOSED и вызывает quit(). Хранится номер
+# обработанного кадра: следующий кадр имеет другой номер, поэтому отдельное
+# следующее нажатие Back работает как раньше.
+var _go_back_handled_frame: int = -1
+
 # --- Touch-обработка OpenButton ---
 var _open_button_touch_index: int = -1
 var _open_button_pressed: bool = false
@@ -253,7 +261,11 @@ func _input(event: InputEvent) -> void:
 
 	# Esc закрывает меню в любом активном состоянии (CLOSED не трогаем).
 	if event.is_action_pressed("ui_cancel") and state != State.CLOSED:
-		close_menu(true)
+		# Один Back может прийти и как ui_cancel, и как GO_BACK_REQUEST;
+		# обрабатываем только первый канал в пределах кадра.
+		if _go_back_handled_frame != Engine.get_process_frames():
+			_go_back_handled_frame = Engine.get_process_frames()
+			close_menu(true)
 		get_viewport().set_input_as_handled()
 		return
 
@@ -263,6 +275,11 @@ func _input(event: InputEvent) -> void:
 
 
 func _handle_go_back() -> void:
+	# Один Back может прийти и как ui_cancel, и как GO_BACK_REQUEST;
+	# обрабатываем только первый канал в пределах кадра.
+	if _go_back_handled_frame == Engine.get_process_frames():
+		return
+	_go_back_handled_frame = Engine.get_process_frames()
 	if state != State.CLOSED:
 		close_menu(false)
 	elif _original_quit_on_go_back:
