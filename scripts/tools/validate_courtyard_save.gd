@@ -103,7 +103,7 @@ func _run() -> void:
 		var missing: Dictionary = rich.duplicate(true)
 		missing.erase(key)
 		invalids.append(missing)
-	for value in [0,2,"1",1.0]:
+	for value in [0,3,"1",1.0]:
 		var wrong: Dictionary = rich.duplicate(true); wrong.schema_version=value; invalids.append(wrong)
 	for pair in [["state","6"],["state",7],["state",-1],["dummy_hits",2],["reward_claimed",false]]:
 		var wrong: Dictionary = rich.duplicate(true); wrong.quest[pair[0]]=pair[1]; invalids.append(wrong)
@@ -115,7 +115,8 @@ func _run() -> void:
 	bad=rich.duplicate(true); bad.camera.pitch=1.0; invalids.append(bad)
 	bad=rich.duplicate(true); bad.camera.yaw="0.8"; invalids.append(bad)
 	bad=rich.duplicate(true); bad.quick[0]="missing_instance"; invalids.append(bad)
-	bad=rich.duplicate(true); bad.quick[0]=str(item("courtyard_sketch").instance_id); invalids.append(bad)
+	# Maps became bindable in payload v2; armor remains forbidden.
+	bad=rich.duplicate(true); bad.quick[0]=str(inventory.get_save_data().equipped.armor.instance_id); invalids.append(bad)
 	bad=rich.duplicate(true); bad.inventory.gold=-1; invalids.append(bad)
 	bad=rich.duplicate(true); bad.inventory.storage={}; invalids.append(bad)
 	for candidate in invalids:

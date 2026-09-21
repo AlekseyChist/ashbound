@@ -427,3 +427,18 @@ msgstr ""
 
 msgid "SAVE_WRITE_FAILED"
 msgstr ""
+
+msgid "INV_DROP_ITEM"
+msgstr ""
+
+msgid "INV_DROP_QUEST_LOCKED"
+msgstr ""
+
+msgid "INV_DROP_UNEQUIP_FIRST"
+msgstr ""
+
+msgid "DROP_PICK_UP"
+msgstr ""
+
+msgid "DROP_STORAGE_FULL"
+msgstr ""

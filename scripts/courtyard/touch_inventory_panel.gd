@@ -69,6 +69,7 @@ var _quick_slots: HBoxContainer
 var _hint: Label
 var _language_choice: OptionButton
 var _settings_error: Label
+var _drop_button: Button
 
 # State
 var _selected_item_id: String = ""
@@ -127,6 +128,7 @@ func _ready() -> void:
 	_setup_equipment_slots()
 	_setup_quick_slots()
 	_setup_language_choice()
+	_setup_drop_action()
 	_refresh_labels()
 
 	if _inventory:
@@ -327,7 +329,76 @@ func _text(key: String, params: Dictionary = {}) -> String:
 	return key
 
 
+func _setup_drop_action() -> void:
+	_drop_button = Button.new()
+	_drop_button.name = "DropItem"
+	_drop_button.custom_minimum_size = Vector2(190, 90)
+	_drop_button.add_theme_font_size_override("font_size", 30)
+	_drop_button.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_drop_button.focus_mode = Control.FOCUS_NONE
+	var footer: Node = $Margin/RootVBox/Footer
+	var lang_index := footer.get_node_or_null("LanguageChoice").get_index()
+	footer.add_child(_drop_button)
+	footer.move_child(_drop_button, lang_index)
+
+func _world_items() -> Node:
+	var node: Node = self
+	while node != null:
+		var manager := node.get_node_or_null("WorldItems")
+		if manager:
+			return manager
+		node = node.get_parent()
+	return null
+
+func can_drop_instance(iid: String) -> bool:
+	if iid.is_empty():
+		return false
+	if not _inventory or not _inventory.has_method("get_item_rules"):
+		return false
+	var rules:Dictionary = _inventory.get_item_rules({"instance_id": iid})
+	if not (rules is Dictionary):
+		return false
+	if not rules.get("droppable", false):
+		return false
+	var storage:String = _inventory.get_item_storage(iid)
+	if not (storage is String) or storage == "":
+		return false
+	if _world_items() == null:
+		return false
+	return true
+
+
+func drop_instance(iid: String) -> bool:
+	var manager := _world_items()
+	if iid.is_empty() or manager == null or not can_drop_instance(iid):
+		_flash_error()
+		return false
+	var result: bool = manager.drop_item({"instance_id": iid})
+	if not result:
+		_flash_error()
+	else:
+		_selected_item_id = ""
+		refresh_contents()
+	return result
+
+
+func _refresh_drop_action() -> void:
+	if _drop_button == null:
+		return
+	_drop_button.text = _text("INV_DROP_ITEM")
+	_drop_button.disabled = not can_drop_instance(_selected_item_id)
+	_drop_button.tooltip_text = ""
+	if not _selected_item_id.is_empty():
+		var rules:Dictionary = _inventory.get_item_rules({ "instance_id": _selected_item_id })
+		if bool(rules.get("quest_locked", false)):
+			_drop_button.tooltip_text = _text("INV_DROP_QUEST_LOCKED")
+		elif not rules.is_empty() and _inventory.get_item_storage(_selected_item_id) == "":
+			_drop_button.tooltip_text = _text("INV_DROP_UNEQUIP_FIRST")
+
+
 func _refresh_labels() -> void:
+	if _drop_button != null:
+		_refresh_drop_action()
 	_title.text = _text("INV_TITLE")
 	_coins.text = _text("INV_GOLD", {"amount": str(_get_gold())})
 	_close_button.text = _text("UI_CLOSE")
@@ -530,11 +601,25 @@ func _rebuild_grid() -> void:
 
 	var count := mini(capacity, MAX_VISIBLE_CELLS)
 
+	# Map instance_id -> item data, keyed by its configured storage cell.
+	var by_cell := {}
+	for item in items:
+		if not (item is Dictionary):
+			continue
+		var iid: String = str(item.get("instance_id", ""))
+		if iid == "":
+			continue
+		var cell_index := -1
+		if _inventory != null and _inventory.has_method("get_item_cell"):
+			cell_index = int(_inventory.get_item_cell(iid))
+		if cell_index >= 0:
+			by_cell[cell_index] = item
+
 	for i in count:
 		var cell := _make_item_cell(180.0)
 		cell.set_meta("cell_index", i)
-		if i < items.size():
-			var item: Dictionary = items[i]
+		var item: Dictionary = by_cell.get(i, {})
+		if not item.is_empty():
 			var iid: String = str(item.get("instance_id", ""))
 			cell.set_meta("item_id", iid)
 			cell.set_meta("item_data", item)
@@ -733,7 +818,7 @@ func _rebuild_quick_slots() -> void:
 			btn.icon = null
 			continue
 		var item := _find_item_by_instance(iid)
-		if item.is_empty():
+		if item.is_empty() or not _inventory.can_assign_quick({"instance_id": iid}):
 			_quick_bindings[i] = ""
 			btn.icon = null
 			continue
@@ -759,27 +844,34 @@ func _find_item_by_instance(instance_id: String) -> Dictionary:
 	return {}
 
 
-func _on_quick_slot_tapped(index: int) -> void:
+func activate_quick(index: int) -> bool:
+	if index < 0 or index >= QUICK_SLOT_COUNT:
+		return false
 	var iid := _quick_bindings[index]
-	if not iid.is_empty():
-		# Toggle selection of bound item.
-		var item := _find_item_by_instance(iid)
-		if not item.is_empty():
-			_selected_item_id = iid if _selected_item_id != iid else ""
-			_rebuild_grid()
-			_update_details()
+	if iid.is_empty():
+		return false
+	var rules: Dictionary = _inventory.get_item_rules({"instance_id": iid})
+	if str(rules.get("quick_action", "")) != "open_map" or not bool(rules.get("quick_bindable", false)):
+		return false
+	_sections.select_section("map")
+	return _sections.current_section == "map"
+
+
+func _on_quick_slot_tapped(index: int) -> void:
+	if index < 0 or index >= QUICK_SLOT_COUNT:
 		return
-	# Bind selected item to this quick slot.
-	if _selected_item_id.is_empty():
-		return
-	var item := _find_item_by_instance(_selected_item_id)
-	if item.is_empty():
-		return
-	var type_val: int = int(item.get("type", -1))
-	if type_val != 0 and type_val != 2:
-		return
-	_quick_bindings[index] = _selected_item_id
-	_rebuild_quick_slots()
+	var bound: String = _quick_bindings[index]
+	if not _selected_item_id.is_empty() and _selected_item_id != bound:
+		if _inventory.can_assign_quick({"instance_id": _selected_item_id}):
+			_quick_bindings[index] = _selected_item_id
+			_rebuild_quick_slots()
+			return
+	if not bound.is_empty():
+		if activate_quick(index):
+			return
+		_selected_item_id = bound if _selected_item_id != bound else ""
+		_rebuild_grid()
+		_update_details()
 
 
 # ---------------------------------------------------------------------------
@@ -787,6 +879,7 @@ func _on_quick_slot_tapped(index: int) -> void:
 # ---------------------------------------------------------------------------
 
 func _update_details() -> void:
+	_refresh_drop_action()
 	if _selected_item_id.is_empty():
 		_item_details.text = ""
 		return

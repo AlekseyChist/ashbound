@@ -51,6 +51,10 @@ func _ready() -> void:
 	_camera_rig.set_target(_player)
 	_snap_camera_to_player()
 	_apply_state(State.MEET_HOST)
+	var world_items: Node3D = preload("res://scripts/courtyard/courtyard_world_items.gd").new()
+	world_items.name = "WorldItems"
+	add_child(world_items)
+	world_items.setup(self, Inventory)
 	call_deferred("_start_persistence")
 	print("ASHBOUND_COURTYARD_READY")
 	# Скриншот-хук только при явном аргументе запуска.
@@ -78,6 +82,9 @@ func _start_persistence() -> void:
 	persistence.name = "Persistence"
 	add_child(persistence)
 	persistence.initialize(self)
+	var world_items: Node = get_node_or_null("WorldItems")
+	if world_items != null and world_items.has_signal("changed"):
+		world_items.changed.connect(persistence.queue_save)
 
 func _connect_signals() -> void:
 	_hud.move_changed.connect(_player.set_move_input)
@@ -127,7 +134,11 @@ func _snap_camera_to_player() -> void:
 func _nearest_interactable() -> Node:
 	var best: Node = null
 	var best_d: float = INF
-	for p in [_innkeeper, _watchman, _woodpile, get_node_or_null("Interactions/MapStand")]:
+	var points: Array = [_innkeeper, _watchman, _woodpile, get_node_or_null("Interactions/MapStand")]
+	var world_items: Node = get_node_or_null("WorldItems")
+	if world_items != null and world_items.has_method("get_points"):
+		points.append_array(world_items.get_points())
+	for p in points:
 		if p == null or not is_instance_valid(p):
 			continue
 		var d: float = _planar_distance(_player.global_position, p.global_position)

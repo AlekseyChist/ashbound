@@ -429,3 +429,18 @@ msgstr "The previous backup was restored."
 
 msgid "SAVE_WRITE_FAILED"
 msgstr "Progress could not be saved. Check available storage."
+
+msgid "INV_DROP_ITEM"
+msgstr "Drop"
+
+msgid "INV_DROP_QUEST_LOCKED"
+msgstr "Needed for a quest"
+
+msgid "INV_DROP_UNEQUIP_FIRST"
+msgstr "Unequip this item first"
+
+msgid "DROP_PICK_UP"
+msgstr "Pick up"
+
+msgid "DROP_STORAGE_FULL"
+msgstr "There is no room in your storage."

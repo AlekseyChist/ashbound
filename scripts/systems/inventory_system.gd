@@ -18,7 +18,7 @@ const SLOT_RING = "ring"
 const SLOT_AMULET = "amulet"
 
 # Типы предметов
-enum ItemType { WEAPON, ARMOR, CONSUMABLE, QUEST, MISC }
+enum ItemType { WEAPON, ARMOR, CONSUMABLE, QUEST, MISC, MAGIC }
 
 # Инвентарь (массив предметов)
 var items: Array = []
@@ -216,6 +216,28 @@ func _init_item_database() -> void:
 		"max_stack": 5,
 	}
 
+	# Каталог: category/subtype/tags определяются каталогом, а не сохранёнными копиями
+	var _catalog_meta := {
+		"courtyard_sketch": {"category": "object", "subtype": "map", "tags": []},
+		"traveler_backpack": {"category": "equipment", "subtype": "backpack", "tags": []},
+		"belt_pouch": {"category": "equipment", "subtype": "pouch", "tags": []},
+		"rusty_sword": {"category": "weapon", "subtype": "sword", "tags": []},
+		"iron_sword": {"category": "weapon", "subtype": "sword", "tags": []},
+		"cultist_blade": {"category": "weapon", "subtype": "sword", "tags": ["magic"]},
+		"leather_armor": {"category": "clothing", "subtype": "armor_set", "tags": []},
+		"chain_mail": {"category": "clothing", "subtype": "armor_set", "tags": []},
+		"bread": {"category": "consumable", "subtype": "food", "tags": []},
+		"health_potion": {"category": "consumable", "subtype": "potion", "tags": []},
+		"stamina_potion": {"category": "consumable", "subtype": "potion", "tags": []},
+		"sacred_ash": {"category": "object", "subtype": "quest_object", "tags": []},
+	}
+	for _catalog_id in _catalog_meta:
+		var _meta: Dictionary = _catalog_meta[_catalog_id]
+		item_database[_catalog_id]["category"] = _meta["category"]
+		item_database[_catalog_id]["subtype"] = _meta["subtype"]
+		item_database[_catalog_id]["tags"] = _meta["tags"]
+	item_database["sacred_ash"]["quest_locked"] = true
+
 
 # === ИНВЕНТАРЬ ===
 
@@ -404,6 +426,9 @@ func equip_item(item: Dictionary) -> bool:
 
 	var slot = carried.get("slot", "")
 	if not (slot is String) or not equipped.has(slot):
+		return false
+
+	if not can_equip_in_slot({"instance_id": instance_id}, slot):
 		return false
 
 	var raw_quantity = carried.get("quantity", 0)
@@ -612,6 +637,124 @@ func use_item(item: Dictionary) -> bool:
 	return true
 
 
+func resolve_owned_item(handle: Dictionary) -> Dictionary:
+	var instance_id := _get_handle_instance_id(handle)
+	if instance_id == "":
+		return {}
+	var found: Array = []
+	for entry in items:
+		if (entry is Dictionary) and String(entry.get("instance_id", "")) == instance_id:
+			found.append(entry)
+	for value in equipped.values():
+		if (value is Dictionary) and String(value.get("instance_id", "")) == instance_id:
+			found.append(value)
+	for value in worn_storage.values():
+		if (value is Dictionary) and String(value.get("instance_id", "")) == instance_id:
+			found.append(value)
+	if found.size() != 1:
+		return {}
+	var canonical: Dictionary = found[0]
+	var copy := canonical.duplicate(true)
+	copy["instance_id"] = instance_id
+	return copy
+
+func describe_item_id(id: String) -> Dictionary:
+	var rules_script: GDScript = preload("res://scripts/systems/item_rules.gd")
+	var template: Dictionary = item_database.get(id, {})
+	if not (template is Dictionary):
+		template = {}
+	var result = rules_script.call("describe", template)
+	return result if result is Dictionary else {}
+
+func get_item_rules(handle: Dictionary) -> Dictionary:
+	var resolved := resolve_owned_item(handle)
+	if resolved.is_empty():
+		return {}
+	var id = resolved.get("id", "")
+	if not (id is String) or id == "":
+		return {}
+	return describe_item_id(id)
+
+func can_assign_quick(handle: Dictionary) -> bool:
+	var rules := get_item_rules(handle)
+	if rules.is_empty():
+		return false
+	return bool(rules.get("quick_bindable", false))
+
+func can_equip_in_slot(handle: Dictionary, slot: String) -> bool:
+	var resolved := resolve_owned_item(handle)
+	if resolved.is_empty():
+		return false
+	var id = resolved.get("id", "")
+	if not (id is String) or id == "":
+		return false
+	var template: Variant = item_database.get(id, {})
+	if not (template is Dictionary):
+		return false
+	var rules_script: GDScript = preload("res://scripts/systems/item_rules.gd")
+	var result = rules_script.call("can_equip", template, slot)
+	return bool(result)
+
+func has_carried_tag(tag: String) -> bool:
+	if not (tag is String) or tag == "":
+		return false
+	for entry in items:
+		if not (entry is Dictionary):
+			continue
+		var id = entry.get("id", "")
+		if not (id is String) or id == "":
+			continue
+		var tags = describe_item_id(id).get("tags", [])
+		if (tags is Array) and tags.has(tag):
+			return true
+	for value in equipped.values():
+		if not (value is Dictionary):
+			continue
+		var id = value.get("id", "")
+		if not (id is String) or id == "":
+			continue
+		var tags = describe_item_id(id).get("tags", [])
+		if (tags is Array) and tags.has(tag):
+			return true
+	for value in worn_storage.values():
+		if not (value is Dictionary):
+			continue
+		var id = value.get("id", "")
+		if not (id is String) or id == "":
+			continue
+		var tags = describe_item_id(id).get("tags", [])
+		if (tags is Array) and tags.has(tag):
+			return true
+	return false
+
+
+func get_item_cell(instance_id: String) -> int:
+	if _storage_layout == null:
+		return -1
+	var result = _storage_layout.call("get_cell_index", instance_id)
+	return int(result) if result is int else -1
+
+func move_item_to_cell(handle: Dictionary, destination: String, cell: int) -> bool:
+	if _trade_guard or _storage_guard or _wearable_guard:
+		return false
+	if _storage_layout == null:
+		return false
+	if cell < 0:
+		return false
+	var instance_id := _get_handle_instance_id(handle)
+	if instance_id == "":
+		return false
+	var resolved := resolve_owned_item(handle)
+	if resolved.is_empty():
+		return false
+	_storage_guard = true
+	var result = _storage_layout.call("move", instance_id, destination, items, cell)
+	_storage_guard = false
+	if not bool(result):
+		return false
+	_emit_storage_changed_guarded()
+	return true
+
 func _get_handle_instance_id(handle: Dictionary) -> String:
 	if not (handle is Dictionary):
 		return ""
@@ -684,6 +827,17 @@ func sell_item(item: Dictionary) -> bool:
 			carried = entry
 			found = true
 	if not found:
+		return false
+
+	# Проверка правил предмета: пустые правила или quest_locked блокируют продажу.
+	# Метаданные вызывающего не могут обойти эту проверку (защита ценных квестовых предметов).
+	var rules: Dictionary = get_item_rules({"instance_id": instance_id})
+	if rules.is_empty():
+		# Legacy fallback: для неизвестных в каталоге crafted-предметов (например, qa_crafted)
+		# используем правила из канонической owned-записи carried.
+		# Передаём только строго валидированную owned-запись, а не handle от вызывающего.
+		rules = preload("res://scripts/systems/item_rules.gd").describe(carried)
+	if bool(rules.get("quest_locked", false)):
 		return false
 
 	# Предмет, присутствующий в equipped, продавать нельзя.
