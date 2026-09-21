@@ -73,12 +73,17 @@ func _run() -> void:
 	root.size = Vector2i(1920, 1080)
 	root.get_node("Localization").load_preferences("res://.tools/inventory-menu-qa.cfg", "en_US")
 	var original_back := quit_on_go_back
-	var snapshot: Dictionary = root.get_node("Inventory").get_save_data()
+	var before_scene: Dictionary = root.get_node("Inventory").get_save_data()
 	scene = load("res://scenes/courtyard/first_courtyard.tscn").instantiate()
 	hud = scene.get_node("HUD")
 	hud.force_touch_controls = true
 	root.add_child(scene)
 	await frames(5)
+	# The player's clothing now establishes physical storage before any menu opens.
+	# It must not create belongings; subsequent menu checks include the new layout too.
+	var snapshot: Dictionary = root.get_node("Inventory").get_save_data()
+	for field in ["items", "equipped", "gold"]:
+		check(snapshot.get(field) == before_scene.get(field), "clothing setup preserves " + field)
 	menu = scene.get_node_or_null("InventoryMenu")
 	if menu == null or not menu.has_method("request_open"):
 		printerr("MENU_FAIL: integrated menu script is unavailable")

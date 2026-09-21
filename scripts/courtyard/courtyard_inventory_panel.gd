@@ -62,7 +62,7 @@ func refresh_contents() -> void:
 		return
 	_title.text = Localization.text("INV_TITLE")
 	_close_button.text = Localization.text("UI_CLOSE")
-	_source.text = Localization.text("INV_SOURCE_POCKET")
+	_refresh_source_label()
 	_empty.text = Localization.text("INV_EMPTY")
 	_language_label.text = Localization.text("UI_LANGUAGE")
 	if _settings_error.visible:
@@ -90,6 +90,8 @@ func _connect_signals() -> void:
 	Inventory.item_unequipped.connect(_on_inventory_dirty)
 	Inventory.gold_changed.connect(_on_inventory_dirty)
 	Inventory.inventory_restored.connect(_on_inventory_dirty)
+	if Inventory.has_signal("storage_changed"):
+		Inventory.storage_changed.connect(_on_inventory_dirty)
 
 
 func _rebuild_items() -> void:
@@ -111,11 +113,13 @@ func _rebuild_items() -> void:
 		if typeof(raw_gold) == TYPE_INT:
 			gold = raw_gold
 
+	var containers := _get_storage_containers()
+	var multi_container := containers.size() > 1
 	_items.clear()
 	var row_count := 0
 	for entry in items:
 		var item: Dictionary = entry
-		var line := _format_item_row(item)
+		var line := _format_item_row(item, multi_container)
 		if line.is_empty():
 			continue
 		_items.add_item(line)
@@ -136,7 +140,7 @@ func _rebuild_items() -> void:
 	_coins.text = Localization.text("INV_GOLD", {"amount": str(gold)})
 
 
-func _format_item_row(item: Dictionary) -> String:
+func _format_item_row(item: Dictionary, multi_container: bool) -> String:
 	var name := _translate_item_name(item)
 	if name.is_empty():
 		return ""
@@ -144,7 +148,84 @@ func _format_item_row(item: Dictionary) -> String:
 	var count := 1
 	if typeof(quantity) == TYPE_INT:
 		count = quantity
-	return Localization.text("INV_ROW", {"name": name, "count": str(count)})
+	var base := Localization.text("INV_ROW", {"name": name, "count": str(count)})
+	if not multi_container:
+		return base
+	var storage_name := _storage_name_for_item(item)
+	if storage_name.is_empty():
+		return base
+	return Localization.text("INV_STORAGE_ITEM_ROW", {"item": base, "storage": storage_name})
+
+
+func _refresh_source_label() -> void:
+	var containers := _get_storage_containers()
+	if containers.is_empty():
+		# Legacy/unconfigured: keep the exact old source behavior.
+		_source.text = Localization.text("INV_SOURCE_POCKET")
+		return
+	var lines: Array[String] = []
+	for container in containers:
+		lines.append(_format_container_line(container))
+	_source.text = "\n".join(lines)
+
+
+func _get_storage_containers() -> Array:
+	var raw: Variant = Inventory.get_storage_containers()
+	if typeof(raw) != TYPE_ARRAY:
+		return []
+	var result: Array = []
+	for entry in raw:
+		if typeof(entry) == TYPE_DICTIONARY:
+			result.append(entry)
+	return result
+
+
+func _format_container_line(container: Dictionary) -> String:
+	var kind := str(container.get("kind", ""))
+	var name_key := _storage_name_key(kind)
+	if name_key.is_empty():
+		return ""
+	var capacity: Variant = container.get("capacity", 0)
+	var used: Variant = container.get("used", 0)
+	var cap := 0
+	var use := 0
+	if typeof(capacity) == TYPE_INT:
+		cap = capacity
+	if typeof(used) == TYPE_INT:
+		use = used
+	return Localization.text("INV_STORAGE_USAGE", {
+		"name": Localization.text(name_key),
+		"used": str(use),
+		"capacity": str(cap),
+	})
+
+
+func _storage_name_for_item(item: Dictionary) -> String:
+	var instance_id := str(item.get("instance_id", ""))
+	if instance_id.is_empty():
+		return ""
+	var container_id := Inventory.get_item_storage(instance_id)
+	if container_id.is_empty():
+		return ""
+	for container in _get_storage_containers():
+		if str(container.get("id", "")) == container_id:
+			var kind := str(container.get("kind", ""))
+			var name_key := _storage_name_key(kind)
+			if not name_key.is_empty():
+				return Localization.text(name_key)
+	return ""
+
+
+func _storage_name_key(kind: String) -> String:
+	match kind:
+		"pocket":
+			return "INV_STORAGE_POCKET"
+		"pouch":
+			return "INV_STORAGE_POUCH"
+		"backpack":
+			return "INV_STORAGE_BACKPACK"
+		_:
+			return ""
 
 
 func _format_equipped_row(slot_item: Dictionary) -> String:

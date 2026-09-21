@@ -194,6 +194,26 @@ msgstr "Carried items"
 msgid "INV_SOURCE_POCKET"
 msgstr "Clothing pocket"
 
+# Inventory UI: storage container name for a pocket.
+msgid "INV_STORAGE_POCKET"
+msgstr "Clothing pocket"
+
+# Inventory UI: storage container name for a belt pouch.
+msgid "INV_STORAGE_POUCH"
+msgstr "Belt pouch"
+
+# Inventory UI: storage container name for a backpack.
+msgid "INV_STORAGE_BACKPACK"
+msgstr "Backpack"
+
+# Inventory UI: storage usage line; {name}, {used} and {capacity} are placeholders.
+msgid "INV_STORAGE_USAGE"
+msgstr "{name} · slots: {used}/{capacity}"
+
+# Inventory UI: carried item row with its container; {item} and {storage} are placeholders.
+msgid "INV_STORAGE_ITEM_ROW"
+msgstr "{item} · {storage}"
+
 # Inventory UI: empty-state message.
 msgid "INV_EMPTY"
 msgstr "Nothing here yet."
