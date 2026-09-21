@@ -1,0 +1,9 @@
+[
+ {"key":"MENU_SECTION_CHARACTER","en":"Character","ru":"Персонаж"},
+ {"key":"MENU_CHARACTER_POINTS","en":"Learning points: {count}","ru":"Очки обучения: {count}"},
+ {"key":"MENU_CHARACTER_SKILLS","en":"Skills","ru":"Навыки"},
+ {"key":"MENU_CHARACTER_UNARMED_NOVICE","en":"Unarmed combat · Novice","ru":"Кулачный бой · Новичок"},
+ {"key":"MENU_CHARACTER_PRACTICE_DONE","en":"Practice with the watchman: completed","ru":"Занятие у сторожа: пройдено"},
+ {"key":"MENU_CHARACTER_PRACTICE_PENDING","en":"Practice with the watchman: not completed","ru":"Занятие у сторожа: не пройдено"},
+ {"key":"MENU_CHARACTER_TEACHER_HINT","en":"Seek out teachers to learn new techniques.","ru":"Обращайся к учителям, чтобы осваивать новые приёмы."}
+]

@@ -11,7 +11,7 @@ foreach ($match in [regex]::Matches($autoloadSection, 'res://([^"\r\n]+\.gd)')) 
 }
 # The modal menu is reached through a scene, not through an autoload.
 # Include its script closure so section controllers cannot disappear in exports.
-foreach ($relative in @('scripts/courtyard/touch_inventory_panel.gd', 'scripts/courtyard/courtyard_level.gd')) {
+foreach ($relative in @('scripts/courtyard/touch_inventory_panel.gd', 'scripts/courtyard/courtyard_level.gd', 'scripts/characters/character_progress.gd')) {
     $pending.Enqueue($relative)
 }
 $scripts = [Collections.Generic.HashSet[string]]::new()
