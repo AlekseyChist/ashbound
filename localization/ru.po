@@ -397,3 +397,24 @@ msgstr "Занятие у сторожа: не пройдено"
 
 msgid "MENU_CHARACTER_TEACHER_HINT"
 msgstr "Обращайся к учителям, чтобы осваивать новые приёмы."
+
+msgid "MENU_SECTION_MAP"
+msgstr "Карта"
+
+msgid "ITEM_COURTYARD_SKETCH_NAME"
+msgstr "Схема двора"
+
+msgid "MENU_MAP_CAPTION"
+msgstr "Дом · Ворота · Башня · Колодец · Поленница · Мишень"
+
+msgid "COURTYARD_ACTION_TAKE_MAP"
+msgstr "Взять схему"
+
+msgid "COURTYARD_ACTION_RETURN_MAP"
+msgstr "Положить схему"
+
+msgid "COURTYARD_ACTION_MAP_ABSENT"
+msgstr "Схемы нет"
+
+msgid "COURTYARD_MAP_FULL"
+msgstr "Для схемы нет свободного места."

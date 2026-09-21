@@ -15,6 +15,7 @@ const ATLAS_PATH := preload("res://assets/ui/inventory/items-v1.png")
 const POCKET_TEX := preload("res://assets/ui/inventory/pocket-v1.png")
 const BACKPACK_TEX := preload("res://assets/ui/inventory/backpack-v1.png")
 const POUCH_TEX := preload("res://assets/ui/inventory/pouch-v1.png")
+const MAP_TEX := preload("res://assets/ui/maps/courtyard-sketch-v1.png")
 const TRAVELER_FRAMES := preload("res://assets/characters/courtyard/traveler_frames.tres")
 
 const ITEM_IDS := [
@@ -607,6 +608,8 @@ func _item_texture(id: String) -> Texture2D:
 		return BACKPACK_TEX
 	if id == "belt_pouch":
 		return POUCH_TEX
+	if id == "courtyard_sketch":
+		return MAP_TEX
 	if not _atlas_texture:
 		return null
 	var idx := ITEM_IDS.find(id)
@@ -838,3 +841,5 @@ func _on_storage_changed() -> void:
 	_rebuild_tabs()
 	_rebuild_grid()
 	_rebuild_equipment()
+	if _sections:
+		_sections.refresh()

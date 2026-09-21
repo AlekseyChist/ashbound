@@ -84,6 +84,15 @@ func _ready() -> void:
 
 
 func _init_item_database() -> void:
+	item_database["courtyard_sketch"] = {
+		"id": "courtyard_sketch",
+		"type": ItemType.MISC,
+		"name": "Схема двора",
+		"description": "",
+		"value": 0,
+		"stackable": false,
+		"icon": "res://assets/ui/maps/courtyard-sketch-v1.png"
+	}
 	item_database["traveler_backpack"] = {
 		"id": "traveler_backpack",
 		"type": ItemType.MISC,
