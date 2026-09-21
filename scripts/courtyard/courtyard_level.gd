@@ -387,6 +387,9 @@ func _on_watchman_interact() -> void:
 			_hud.show_message("COURTYARD_NAME_WATCHMAN", "COURTYARD_DIALOGUE_GUARD_LESSON")
 			_apply_state(State.PRACTICE)
 		State.REPORT:
+			var _progression: Node = _player.get_node_or_null("Progression") if _player != null else null
+			if _progression != null and _progression.has_method("complete_guard_practice"):
+				_progression.call("complete_guard_practice")
 			_hud.show_message("COURTYARD_NAME_WATCHMAN", "COURTYARD_DIALOGUE_GUARD_REPORT")
 			_apply_state(State.DONE)
 		State.PRACTICE:
@@ -418,6 +421,9 @@ func reset_lesson() -> void:
 	if _woodpile.has_node("Label3D"):
 		_woodpile.get_node("Label3D").visible = true
 	if _player != null and is_instance_valid(_player):
+		var _progression: Node = _player.get_node_or_null("Progression")
+		if _progression != null and _progression.has_method("reset_guard_practice"):
+			_progression.call("reset_guard_practice")
 		_player.stop_input()
 		_player.velocity = Vector3.ZERO
 		_player.input_enabled = true

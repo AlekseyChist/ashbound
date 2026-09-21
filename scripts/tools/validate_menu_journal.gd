@@ -75,6 +75,9 @@ func open_menu() -> void:
 
 func assert_entry(stage: int) -> void:
 	var before := state_snapshot()
+	var character: Dictionary = level.get_node("Actors/Player/Progression").get_character_data()
+	check(character.guard_practice_completed == (stage == 6), "character practice only after real report")
+	check(character.learning_points == 0 and character.unarmed_mastery == "novice", "lesson does not grant points or trained technique")
 	var entry: Dictionary = level.get_journal_entry()
 	check(entry.get("id") == "courtyard_lesson", "stable journal ID")
 	check(entry.get("objective_key") == "COURTYARD_OBJECTIVE_" + OBJECTIVES[stage], "actual stage %d" % stage)
@@ -92,7 +95,7 @@ func assert_entry(stage: int) -> void:
 func layout(language: String) -> void:
 	var bounds := panel.get_global_rect()
 	check(root.get_visible_rect().grow(1).encloses(bounds), language + " panel fits viewport")
-	for b in [tab("ItemsTab"), tab("QuestsTab"), panel.get_node("%CloseButton"), panel.get_node("%LanguageChoice")]:
+	for b in [tab("ItemsTab"), tab("QuestsTab"), tab("CharacterTab"), panel.get_node("%CloseButton"), panel.get_node("%LanguageChoice")]:
 		check(bounds.grow(1).encloses(b.get_global_rect()), language + " control fits " + b.name)
 		check(b.size.y >= 90, "finger height " + b.name)
 		check(b.get_theme_font("font").get_string_size(b.text, HORIZONTAL_ALIGNMENT_LEFT, -1, b.get_theme_font_size("font_size")).x < b.size.x - 12, language + " text fits " + b.name)

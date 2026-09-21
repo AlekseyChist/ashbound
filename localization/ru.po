@@ -376,3 +376,24 @@ msgstr "Завершено"
 
 msgid "MENU_QUEST_EMPTY"
 msgstr "Пока нет заданий."
+
+msgid "MENU_SECTION_CHARACTER"
+msgstr "Персонаж"
+
+msgid "MENU_CHARACTER_POINTS"
+msgstr "Очки обучения: {count}"
+
+msgid "MENU_CHARACTER_SKILLS"
+msgstr "Навыки"
+
+msgid "MENU_CHARACTER_UNARMED_NOVICE"
+msgstr "Кулачный бой · Новичок"
+
+msgid "MENU_CHARACTER_PRACTICE_DONE"
+msgstr "Занятие у сторожа: пройдено"
+
+msgid "MENU_CHARACTER_PRACTICE_PENDING"
+msgstr "Занятие у сторожа: не пройдено"
+
+msgid "MENU_CHARACTER_TEACHER_HINT"
+msgstr "Обращайся к учителям, чтобы осваивать новые приёмы."

@@ -375,3 +375,24 @@ msgstr "Completed"
 
 msgid "MENU_QUEST_EMPTY"
 msgstr "No quests yet."
+
+msgid "MENU_SECTION_CHARACTER"
+msgstr "Character"
+
+msgid "MENU_CHARACTER_POINTS"
+msgstr "Learning points: {count}"
+
+msgid "MENU_CHARACTER_SKILLS"
+msgstr "Skills"
+
+msgid "MENU_CHARACTER_UNARMED_NOVICE"
+msgstr "Unarmed combat · Novice"
+
+msgid "MENU_CHARACTER_PRACTICE_DONE"
+msgstr "Practice with the watchman: completed"
+
+msgid "MENU_CHARACTER_PRACTICE_PENDING"
+msgstr "Practice with the watchman: not completed"
+
+msgid "MENU_CHARACTER_TEACHER_HINT"
+msgstr "Seek out teachers to learn new techniques."

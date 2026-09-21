@@ -373,3 +373,24 @@ msgstr ""
 
 msgid "MENU_QUEST_EMPTY"
 msgstr ""
+
+msgid "MENU_SECTION_CHARACTER"
+msgstr ""
+
+msgid "MENU_CHARACTER_POINTS"
+msgstr ""
+
+msgid "MENU_CHARACTER_SKILLS"
+msgstr ""
+
+msgid "MENU_CHARACTER_UNARMED_NOVICE"
+msgstr ""
+
+msgid "MENU_CHARACTER_PRACTICE_DONE"
+msgstr ""
+
+msgid "MENU_CHARACTER_PRACTICE_PENDING"
+msgstr ""
+
+msgid "MENU_CHARACTER_TEACHER_HINT"
+msgstr ""
