@@ -164,7 +164,31 @@ func run() -> void:
 		check(panel.get_global_rect().grow(1).encloses(panel._drop_button.get_global_rect()),"discard fits "+language)
 		check(panel._drop_button.size.x>=150 and panel._drop_button.size.y>=80,"finger-sized discard")
 		check(panel._drop_button.text != "INV_DROP_ITEM","discard localized "+language)
+		await capture("item-drop-disabled-"+language)
+		await tap(cell_pos(map.instance_id))
+		await capture("item-drop-selected-"+language)
+		panel._selected_item_id=""
+		panel.refresh_contents()
+		await settle()
 	await capture("item-actions")
+	var drag_from:Vector2=cell_pos(map.instance_id)
+	var drag_to:Vector2=panel._drop_button.get_global_rect().get_center()
+	send_touch(drag_from,true)
+	# The touch hold is measured in wall time, independent of rendered-frame deltas.
+	var held_at:int=Time.get_ticks_msec()
+	while Time.get_ticks_msec()-held_at<300:
+		await process_frame
+	send_motion(drag_from+Vector2(10,0),Vector2(10,0))
+	await process_frame
+	send_motion(drag_to,drag_to-drag_from-Vector2(10,0))
+	await process_frame
+	check(panel._ghost.visible,"discard hover displays carried preview")
+	check(panel._gesture_handler._drop_target_valid(panel._gesture_handler._hit_test(drag_to)),"discard hover accepts carried map")
+	await settle()
+	await capture("item-drop-preview")
+	send_touch(drag_to,false,0,true)
+	await settle()
+	check(inv.has_item("courtyard_sketch") and drops.get_records().is_empty(),"discard preview cancel preserves item")
 	# S23 regression: selected-item button discard emits inventory changes before
 	# selection clears. Refresh must tolerate the now-stale selected instance.
 	await tap(cell_pos(map.instance_id))

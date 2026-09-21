@@ -336,10 +336,49 @@ func _setup_drop_action() -> void:
 	_drop_button.add_theme_font_size_override("font_size", 30)
 	_drop_button.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_drop_button.focus_mode = Control.FOCUS_NONE
+
+	var normal_style := _make_cell_style(false, false)
+	normal_style.set_border_color(COLOR_BRONZE)
+	normal_style.bg_color = COLOR_PANEL_DARK
+	normal_style.content_margin_left = 16.0
+	normal_style.content_margin_right = 16.0
+	normal_style.content_margin_top = 8.0
+	normal_style.content_margin_bottom = 8.0
+
+	var hover_style := _make_cell_style(true, false)
+	hover_style.content_margin_left = 16.0
+	hover_style.content_margin_right = 16.0
+	hover_style.content_margin_top = 8.0
+	hover_style.content_margin_bottom = 8.0
+
+	var pressed_style := _make_cell_style(true, false)
+	pressed_style.content_margin_left = 16.0
+	pressed_style.content_margin_right = 16.0
+	pressed_style.content_margin_top = 8.0
+	pressed_style.content_margin_bottom = 8.0
+
+	var disabled_style := _make_cell_style(false, false)
+	disabled_style.set_border_color(COLOR_BRONZE_DIM)
+	disabled_style.bg_color = COLOR_PANEL_DARK
+	disabled_style.content_margin_left = 16.0
+	disabled_style.content_margin_right = 16.0
+	disabled_style.content_margin_top = 8.0
+	disabled_style.content_margin_bottom = 8.0
+
+	_drop_button.add_theme_stylebox_override("normal", normal_style)
+	_drop_button.add_theme_stylebox_override("hover", hover_style)
+	_drop_button.add_theme_stylebox_override("pressed", pressed_style)
+	_drop_button.add_theme_stylebox_override("disabled", disabled_style)
+	_drop_button.add_theme_color_override("font_color", COLOR_TEXT)
+	_drop_button.add_theme_color_override("font_hover_color", COLOR_TEXT)
+	_drop_button.add_theme_color_override("font_pressed_color", COLOR_TEXT)
+	_drop_button.add_theme_color_override("font_disabled_color", COLOR_MUTED)
+
 	var footer: Node = $Margin/RootVBox/Footer
 	var lang_index := footer.get_node_or_null("LanguageChoice").get_index()
 	footer.add_child(_drop_button)
 	footer.move_child(_drop_button, lang_index)
+
 
 func _world_items() -> Node:
 	var node: Node = self
