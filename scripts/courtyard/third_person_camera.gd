@@ -7,8 +7,11 @@ extends Node3D
 @export var follow_height: float = 1.45
 @export var mouse_sensitivity: float = 0.003
 @export var touch_sensitivity: float = 0.004
-@export var pitch_min_degrees: float = -50.0
-@export var pitch_max_degrees: float = 12.0
+## Пробный художественный диапазон наклона (не финальная настройка):
+## ограничивает вертикальное движение камеры, чтобы 2D-спрайты не искажались
+## при взгляде сильно сверху/снизу. Настраивается из инспектора.
+@export var pitch_min_degrees: float = -28.0
+@export var pitch_max_degrees: float = 5.0
 @export var follow_speed: float = 12.0
 
 var target: Node3D
