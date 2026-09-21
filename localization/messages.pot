@@ -415,3 +415,15 @@ msgstr ""
 
 msgid "COURTYARD_MAP_FULL"
 msgstr ""
+
+msgid "SAVE_STATUS_TITLE"
+msgstr ""
+
+msgid "SAVE_LOAD_FAILED"
+msgstr ""
+
+msgid "SAVE_RECOVERED"
+msgstr ""
+
+msgid "SAVE_WRITE_FAILED"
+msgstr ""

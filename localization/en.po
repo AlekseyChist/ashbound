@@ -417,3 +417,15 @@ msgstr "Sketch is gone"
 
 msgid "COURTYARD_MAP_FULL"
 msgstr "There is no room for the sketch."
+
+msgid "SAVE_STATUS_TITLE"
+msgstr "Saved progress"
+
+msgid "SAVE_LOAD_FAILED"
+msgstr "The save could not be read. Autosaving is paused to protect your progress."
+
+msgid "SAVE_RECOVERED"
+msgstr "The previous backup was restored."
+
+msgid "SAVE_WRITE_FAILED"
+msgstr "Progress could not be saved. Check available storage."
