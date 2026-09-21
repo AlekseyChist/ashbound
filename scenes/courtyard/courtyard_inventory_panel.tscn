@@ -64,10 +64,48 @@ auto_translate_mode = 2
 
 [node name="Items" type="ItemList" parent="Margin/VBox"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 320)
+custom_minimum_size = Vector2(0, 170)
 layout_mode = 2
 size_flags_vertical = 3
-select_mode = 1
+select_mode = 0
+
+[node name="ItemDetails" type="Label" parent="Margin/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 68)
+layout_mode = 2
+text = "INV_SELECT_ITEM"
+autowrap_mode = 3
+auto_translate_mode = 2
+
+[node name="TransferRow" type="HBoxContainer" parent="Margin/VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="TransferTarget" type="OptionButton" parent="Margin/VBox/TransferRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+size_flags_horizontal = 3
+fit_to_longest_item = false
+clip_text = true
+
+[node name="TransferButton" type="Button" parent="Margin/VBox/TransferRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(160, 72)
+layout_mode = 2
+text = "INV_MOVE_ITEM"
+auto_translate_mode = 2
+
+[node name="TransferError" type="Label" parent="Margin/VBox"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 2
+text = "INV_TRANSFER_FAILED"
+autowrap_mode = 3
+auto_translate_mode = 2
 
 [node name="Coins" type="Label" parent="Margin/VBox"]
 unique_name_in_owner = true

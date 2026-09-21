@@ -50,13 +50,16 @@ func _run() -> void:
 			match order:
 				"notifications":
 					back()
+					await frames(1)
 					back()
 				"key_first":
 					cancel_key()
+					await frames(2)
 					back()
 				"notification_first":
 					back()
 					cancel_key()
+					await frames(1)
 					back()
 			await frames(5)
 			check(menu.get_menu_state() == 0, "Back closes")
@@ -72,6 +75,9 @@ func _run() -> void:
 			quit(1)
 			return
 		print("ASHBOUND_INVENTORY_BACK_CLOSED_EXIT_ARMED groups=6")
+		# Same hardware press can generate notifications across adjacent frames.
+		# An independent later Back is outside the documented 250ms grace.
+		await create_timer(0.35).timeout
 		back()
 		await frames(10)
 		printerr("INVENTORY_BACK_FAIL: separate later Back did not exit")

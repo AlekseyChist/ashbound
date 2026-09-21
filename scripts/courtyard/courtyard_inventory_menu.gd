@@ -51,6 +51,18 @@ var _original_quit_on_go_back: bool = true
 # следующее нажатие Back работает как раньше.
 var _go_back_handled_frame: int = -1
 
+# Защита от МЕЖКАДРОВОГО дубля (Samsung S23): один физический KEYCODE_BACK
+# может быть доставлен как ДВЕ отдельные NOTIFICATION_WM_GO_BACK_REQUEST
+# с разницей ~7 мс на СОСЕДНИХ кадрах. Кадровая защита выше их не ловит:
+# первый запрос закрывает меню (OPEN -> CLOSED), второй приходит в следующем
+# кадре, видит CLOSED и вызывает quit() — приложение закрывается от одного
+# нажатия Back. Поэтому фиксируем момент закрытия по Back/ui_cancel и
+# игнорируем повторный GO_BACK_REQUEST в состоянии CLOSED в пределах
+# ограниченного grace-окна (250 мс) после такого закрытия. Реальное
+# нажатие Back позже окна обрабатывается как раньше (quit по политике).
+const GO_BACK_GRACE_MSEC: int = 250
+var _go_back_grace_deadline_ms: int = -1
+
 # --- Touch-обработка OpenButton ---
 var _open_button_touch_index: int = -1
 var _open_button_pressed: bool = false
@@ -266,6 +278,9 @@ func _input(event: InputEvent) -> void:
 		if _go_back_handled_frame != Engine.get_process_frames():
 			_go_back_handled_frame = Engine.get_process_frames()
 			close_menu(true)
+			# Закрытие по Back/ui_cancel: открываем grace-окно, чтобы
+			# межкадровый дубль GO_BACK_REQUEST в CLOSED не вызвал quit().
+			_go_back_grace_deadline_ms = Time.get_ticks_msec() + GO_BACK_GRACE_MSEC
 		get_viewport().set_input_as_handled()
 		return
 
@@ -282,6 +297,13 @@ func _handle_go_back() -> void:
 	_go_back_handled_frame = Engine.get_process_frames()
 	if state != State.CLOSED:
 		close_menu(false)
+		# Закрытие по GO_BACK_REQUEST: открываем grace-окно против
+		# межкадрового дубля (см. _go_back_grace_deadline_ms).
+		_go_back_grace_deadline_ms = Time.get_ticks_msec() + GO_BACK_GRACE_MSEC
+	elif Time.get_ticks_msec() < _go_back_grace_deadline_ms:
+		# Межкадровый дубль того же Back, доставленный уже в CLOSED
+		# (Samsung S23): подавляем, чтобы не выйти из приложения.
+		return
 	elif _original_quit_on_go_back:
 		get_tree().quit()
 

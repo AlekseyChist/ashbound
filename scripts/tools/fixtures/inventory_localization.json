@@ -1,5 +1,40 @@
 [
   {
+    "key": "INV_SELECT_ITEM",
+    "en": "Select an item to inspect it.",
+    "ru": "Выбери предмет, чтобы осмотреть его."
+  },
+  {
+    "key": "INV_ITEM_DETAILS",
+    "en": "{name} × {count}\n{location}",
+    "ru": "{name} × {count}\n{location}"
+  },
+  {
+    "key": "INV_LOCATION_EQUIPPED",
+    "en": "Equipped",
+    "ru": "Надето"
+  },
+  {
+    "key": "INV_LOCATION_CARRIED",
+    "en": "Carried",
+    "ru": "При себе"
+  },
+  {
+    "key": "INV_MOVE_ITEM",
+    "en": "Move stack",
+    "ru": "Переложить"
+  },
+  {
+    "key": "INV_TRANSFER_TO",
+    "en": "Move to",
+    "ru": "Куда переложить"
+  },
+  {
+    "key": "INV_TRANSFER_FAILED",
+    "en": "Cannot move this item there. Check the available space.",
+    "ru": "Не удалось переложить предмет. Проверь свободное место."
+  },
+  {
     "key": "INV_OPEN",
     "en": "Inventory",
     "ru": "Вещи"

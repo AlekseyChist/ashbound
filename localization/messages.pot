@@ -279,3 +279,31 @@ msgstr ""
 # Item name: sacred ash.
 msgid "ITEM_SACRED_ASH_NAME"
 msgstr ""
+
+# Inventory UI: prompt to select an item for inspection.
+msgid "INV_SELECT_ITEM"
+msgstr ""
+
+# Inventory UI: item details block; {name}, {count} and {location} are placeholders.
+msgid "INV_ITEM_DETAILS"
+msgstr ""
+
+# Inventory UI: location label for equipped items.
+msgid "INV_LOCATION_EQUIPPED"
+msgstr ""
+
+# Inventory UI: location label for carried items.
+msgid "INV_LOCATION_CARRIED"
+msgstr ""
+
+# Inventory UI: action to move a stack between containers.
+msgid "INV_MOVE_ITEM"
+msgstr ""
+
+# Inventory UI: prompt asking where to move the selected stack.
+msgid "INV_TRANSFER_TO"
+msgstr ""
+
+# Inventory UI: error when a stack cannot be moved to the target container.
+msgid "INV_TRANSFER_FAILED"
+msgstr ""
