@@ -34,6 +34,8 @@ try {
         if (-not $files.Contains($resource) -and -not $files.Contains($resource + '.remap')) { $missing += $script }
     }
     if ($missing.Count -gt 0) { throw ('Missing runtime scripts: ' + ($missing -join ', ')) }
+    $heroShader = 'assets/assets/shaders/character_depth.gdshader'
+    if (-not $files.Contains($heroShader) -and -not $files.Contains($heroShader + '.remap')) { throw 'Missing hero depth shader' }
     # Selected-scene exports may omit art loaded only through a script preload.
     # Require both its import descriptor and every referenced GPU texture.
     $inventoryArt = @(

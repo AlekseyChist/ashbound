@@ -37,7 +37,7 @@ script = ExtResource("3_visual")
 
 [node name="Body" type="AnimatedSprite3D" parent="Visual"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
-billboard = 2
+billboard = 0
 sprite_frames = ExtResource("2_frames")
 animation = &"idle"
 autoplay = "idle"
@@ -48,7 +48,7 @@ alpha_scissor_threshold = 0.25
 
 [node name="PocketPose" type="AnimatedSprite3D" parent="Visual"]
 visible = false
-billboard = 2
+billboard = 0
 sprite_frames = ExtResource("4_pocket_frames")
 animation = &"pocket_back"
 pixel_size = 0.005084745762711864
