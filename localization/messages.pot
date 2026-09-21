@@ -394,3 +394,24 @@ msgstr ""
 
 msgid "MENU_CHARACTER_TEACHER_HINT"
 msgstr ""
+
+msgid "MENU_SECTION_MAP"
+msgstr ""
+
+msgid "ITEM_COURTYARD_SKETCH_NAME"
+msgstr ""
+
+msgid "MENU_MAP_CAPTION"
+msgstr ""
+
+msgid "COURTYARD_ACTION_TAKE_MAP"
+msgstr ""
+
+msgid "COURTYARD_ACTION_RETURN_MAP"
+msgstr ""
+
+msgid "COURTYARD_ACTION_MAP_ABSENT"
+msgstr ""
+
+msgid "COURTYARD_MAP_FULL"
+msgstr ""

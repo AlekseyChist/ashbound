@@ -11,7 +11,7 @@ foreach ($match in [regex]::Matches($autoloadSection, 'res://([^"\r\n]+\.gd)')) 
 }
 # The modal menu is reached through a scene, not through an autoload.
 # Include its script closure so section controllers cannot disappear in exports.
-foreach ($relative in @('scripts/courtyard/touch_inventory_panel.gd', 'scripts/courtyard/courtyard_level.gd', 'scripts/characters/character_progress.gd')) {
+foreach ($relative in @('scripts/courtyard/touch_inventory_panel.gd', 'scripts/courtyard/courtyard_level.gd', 'scripts/courtyard/courtyard_map_stand.gd', 'scripts/characters/character_progress.gd')) {
     $pending.Enqueue($relative)
 }
 $scripts = [Collections.Generic.HashSet[string]]::new()
@@ -41,6 +41,7 @@ try {
         'assets/ui/inventory/pocket-v1.png',
         'assets/ui/inventory/backpack-v1.png',
         'assets/ui/inventory/pouch-v1.png',
+        'assets/ui/maps/courtyard-sketch-v1.png',
         'assets/characters/courtyard/painted-backpack/traveler-side-pack.png',
         'assets/characters/courtyard/painted-backpack/traveler-back-pack.png',
         'assets/characters/courtyard/painted-backpack/traveler-front-pack.png',

@@ -106,7 +106,7 @@ func _snap_camera_to_player() -> void:
 func _nearest_interactable() -> Node:
 	var best: Node = null
 	var best_d: float = INF
-	for p in [_innkeeper, _watchman, _woodpile]:
+	for p in [_innkeeper, _watchman, _woodpile, get_node_or_null("Interactions/MapStand")]:
 		if p == null or not is_instance_valid(p):
 			continue
 		var d: float = _planar_distance(_player.global_position, p.global_position)

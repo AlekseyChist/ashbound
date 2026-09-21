@@ -396,3 +396,24 @@ msgstr "Practice with the watchman: not completed"
 
 msgid "MENU_CHARACTER_TEACHER_HINT"
 msgstr "Seek out teachers to learn new techniques."
+
+msgid "MENU_SECTION_MAP"
+msgstr "Map"
+
+msgid "ITEM_COURTYARD_SKETCH_NAME"
+msgstr "Courtyard sketch"
+
+msgid "MENU_MAP_CAPTION"
+msgstr "Inn · Gate · Watchtower · Well · Woodpile · Training dummy"
+
+msgid "COURTYARD_ACTION_TAKE_MAP"
+msgstr "Take sketch"
+
+msgid "COURTYARD_ACTION_RETURN_MAP"
+msgstr "Put sketch back"
+
+msgid "COURTYARD_ACTION_MAP_ABSENT"
+msgstr "Sketch is gone"
+
+msgid "COURTYARD_MAP_FULL"
+msgstr "There is no room for the sketch."
