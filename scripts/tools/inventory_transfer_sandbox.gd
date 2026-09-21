@@ -31,7 +31,7 @@ func _ready() -> void:
 	print("ASHBOUND_TRANSFER_SANDBOX_READY")
 	_report_storage()
 	var panel: Control = level.get_node("InventoryMenu/RootControl/Overlay/Window")
-	for id in ["ItemGrid", "StorageTabs", "ArmorSlot", "WeaponSlot", "BackpackSlot", "PouchSlot", "QuickSlots", "LanguageChoice", "CloseButton"]:
+	for id in ["ItemGrid", "StorageTabs", "ArmorSlot", "WeaponSlot", "BackpackSlot", "PouchSlot", "QuickSlots", "CloseButton"]:
 		var control: Control = panel.get_node("%" + id)
 		print("TRANSFER_SANDBOX_RECT ", id, " ", control.get_global_rect())
 

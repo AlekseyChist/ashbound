@@ -64,6 +64,14 @@ func _label(path: String) -> String:
 func _expected(key: String) -> String:
 	return fixture[key][loc.get_language()]
 
+func _talk_near(path: String) -> void:
+	# Dialogue now closes on departure. Keep the presentation fixture within
+	# conversation range instead of triggering a remote NPC from the spawn.
+	var point:Node3D=level.get_node(path)
+	player.global_position=point.global_position+Vector3(0,0.1,1.5)
+	player.velocity=Vector3.ZERO
+	point.interact()
+
 func _presentation_snapshot() -> Dictionary:
 	return {"state": level.state, "hits": level.dummy_hits, "reward": level.reward_claimed,
 		"message_visible": hud._message_visible, "wood_visible": level.get_node("Interactions/Woodpile/Label3D").visible,
@@ -90,7 +98,7 @@ func _initial_and_labels() -> void:
 	completed += 1
 
 func _open_dialogue() -> void:
-	level.get_node("Actors/Innkeeper").interact()
+	_talk_near("Actors/Innkeeper")
 	_check(level.state == 1 and hud._message_visible, "job dialogue opened")
 	for language in ["en", "ru", "en"]:
 		await _switch(language)
@@ -101,24 +109,24 @@ func _open_dialogue() -> void:
 	completed += 1
 
 func _wood_and_reward() -> void:
-	level.get_node("Interactions/Woodpile").interact()
+	_talk_near("Interactions/Woodpile")
 	_check(level.state == 2 and not level.get_node("Interactions/Woodpile/Label3D").visible, "wood collected")
 	await _switch("ru")
 	_check(_label("MessagePanel/VBox/SpeakerLabel").is_empty(), "narration has no invented speaker")
 	_check(_label("MessagePanel/VBox/MessageText") == _expected("COURTYARD_DIALOGUE_WOOD_TAKEN"), "collection text translated")
-	level.get_node("Actors/Innkeeper").interact()
+	_talk_near("Actors/Innkeeper")
 	_check(level.state == 3 and level.reward_claimed, "reward stage reached")
 	await _switch("en")
 	_check(_label("MessagePanel/VBox/MessageText") == _expected("COURTYARD_DIALOGUE_HOST_REWARD"), "reward dialogue retained")
 	hud.clear_message()
 	await _switch("ru")
 	_check(not hud.get_node("RootControl/MessagePanel").visible, "closed message stays closed")
-	level.get_node("Actors/Innkeeper").interact()
+	_talk_near("Actors/Innkeeper")
 	_check(level.state == 3 and level.reward_claimed, "repeated host interaction does not repeat reward")
 	completed += 1
 
 func _practice_and_controls() -> void:
-	level.get_node("Actors/Watchman").interact()
+	_talk_near("Actors/Watchman")
 	_check(level.state == 4, "training begins")
 	# Arrange a partial-count fixture; actual strikes are covered by the physical route test.
 	level.dummy_hits = 1
@@ -180,9 +188,9 @@ func _capture_profiles() -> void:
 		current_scene = level
 		player = level.get_node("Actors/Player")
 		await _frames(8)
-		level.get_node("Actors/Innkeeper").interact()
-		level.get_node("Interactions/Woodpile").interact()
-		level.get_node("Actors/Innkeeper").interact()
+		_talk_near("Actors/Innkeeper")
+		_talk_near("Interactions/Woodpile")
+		_talk_near("Actors/Innkeeper")
 		for language in ["en", "ru"]:
 			await _switch(language)
 			await RenderingServer.frame_post_draw
@@ -213,7 +221,7 @@ func _all_dialogue_branches() -> void:
 		level.reset_lesson()
 		level.state = test_case[1]
 		level.reward_claimed = test_case[2]
-		level.get_node(test_case[0]).interact()
+		_talk_near(test_case[0])
 		for language in ["en", "ru"]:
 			await _switch(language)
 			_check(_label("MessagePanel/VBox/MessageText") == _expected(test_case[3]), "dialogue branch " + test_case[3] + " " + language)

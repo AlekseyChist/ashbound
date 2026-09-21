@@ -397,3 +397,60 @@ msgstr "Занятие у сторожа: не пройдено"
 
 msgid "MENU_CHARACTER_TEACHER_HINT"
 msgstr "Обращайся к учителям, чтобы осваивать новые приёмы."
+
+msgid "MENU_SECTION_MAP"
+msgstr "Карта"
+
+msgid "ITEM_COURTYARD_SKETCH_NAME"
+msgstr "Схема двора"
+
+msgid "MENU_MAP_CAPTION"
+msgstr "Дом · Ворота · Башня · Колодец · Поленница · Мишень"
+
+msgid "COURTYARD_ACTION_TAKE_MAP"
+msgstr "Взять схему"
+
+msgid "COURTYARD_ACTION_RETURN_MAP"
+msgstr "Положить схему"
+
+msgid "COURTYARD_ACTION_MAP_ABSENT"
+msgstr "Схемы нет"
+
+msgid "COURTYARD_MAP_FULL"
+msgstr "Для схемы нет свободного места."
+
+msgid "SAVE_STATUS_TITLE"
+msgstr "Сохранение"
+
+msgid "SAVE_LOAD_FAILED"
+msgstr "Не удалось прочитать сохранение. Автосохранение приостановлено, чтобы не потерять прогресс."
+
+msgid "SAVE_RECOVERED"
+msgstr "Восстановлена предыдущая резервная копия."
+
+msgid "SAVE_WRITE_FAILED"
+msgstr "Не удалось сохранить прогресс. Проверь свободное место."
+
+msgid "INV_DROP_ITEM"
+msgstr "Выбросить"
+
+msgid "INV_DROP_QUEST_LOCKED"
+msgstr "Нужен для задания"
+
+msgid "INV_DROP_UNEQUIP_FIRST"
+msgstr "Сначала сними предмет"
+
+msgid "DROP_PICK_UP"
+msgstr "Подобрать"
+
+msgid "DROP_STORAGE_FULL"
+msgstr "В хранилищах нет места."
+
+msgid "MENU_SECTION_SETTINGS"
+msgstr "Настройки"
+
+msgid "SETTINGS_LANGUAGE_TITLE"
+msgstr "Язык"
+
+msgid "SETTINGS_LANGUAGE_HINT"
+msgstr "Изменения применяются сразу и сохраняются."

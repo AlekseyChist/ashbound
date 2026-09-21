@@ -394,3 +394,60 @@ msgstr ""
 
 msgid "MENU_CHARACTER_TEACHER_HINT"
 msgstr ""
+
+msgid "MENU_SECTION_MAP"
+msgstr ""
+
+msgid "ITEM_COURTYARD_SKETCH_NAME"
+msgstr ""
+
+msgid "MENU_MAP_CAPTION"
+msgstr ""
+
+msgid "COURTYARD_ACTION_TAKE_MAP"
+msgstr ""
+
+msgid "COURTYARD_ACTION_RETURN_MAP"
+msgstr ""
+
+msgid "COURTYARD_ACTION_MAP_ABSENT"
+msgstr ""
+
+msgid "COURTYARD_MAP_FULL"
+msgstr ""
+
+msgid "SAVE_STATUS_TITLE"
+msgstr ""
+
+msgid "SAVE_LOAD_FAILED"
+msgstr ""
+
+msgid "SAVE_RECOVERED"
+msgstr ""
+
+msgid "SAVE_WRITE_FAILED"
+msgstr ""
+
+msgid "INV_DROP_ITEM"
+msgstr ""
+
+msgid "INV_DROP_QUEST_LOCKED"
+msgstr ""
+
+msgid "INV_DROP_UNEQUIP_FIRST"
+msgstr ""
+
+msgid "DROP_PICK_UP"
+msgstr ""
+
+msgid "DROP_STORAGE_FULL"
+msgstr ""
+
+msgid "MENU_SECTION_SETTINGS"
+msgstr ""
+
+msgid "SETTINGS_LANGUAGE_TITLE"
+msgstr ""
+
+msgid "SETTINGS_LANGUAGE_HINT"
+msgstr ""

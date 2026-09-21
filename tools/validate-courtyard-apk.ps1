@@ -11,7 +11,7 @@ foreach ($match in [regex]::Matches($autoloadSection, 'res://([^"\r\n]+\.gd)')) 
 }
 # The modal menu is reached through a scene, not through an autoload.
 # Include its script closure so section controllers cannot disappear in exports.
-foreach ($relative in @('scripts/courtyard/touch_inventory_panel.gd', 'scripts/courtyard/courtyard_level.gd', 'scripts/characters/character_progress.gd')) {
+foreach ($relative in @('scripts/courtyard/courtyard_inventory_menu.gd', 'scripts/courtyard/courtyard_save_schema.gd', 'scripts/courtyard/courtyard_save_store.gd', 'scripts/courtyard/touch_inventory_panel.gd', 'scripts/courtyard/courtyard_level.gd', 'scripts/courtyard/courtyard_map_stand.gd', 'scripts/characters/character_progress.gd')) {
     $pending.Enqueue($relative)
 }
 $scripts = [Collections.Generic.HashSet[string]]::new()
@@ -34,6 +34,8 @@ try {
         if (-not $files.Contains($resource) -and -not $files.Contains($resource + '.remap')) { $missing += $script }
     }
     if ($missing.Count -gt 0) { throw ('Missing runtime scripts: ' + ($missing -join ', ')) }
+    $heroShader = 'assets/assets/shaders/character_depth.gdshader'
+    if (-not $files.Contains($heroShader) -and -not $files.Contains($heroShader + '.remap')) { throw 'Missing hero depth shader' }
     # Selected-scene exports may omit art loaded only through a script preload.
     # Require both its import descriptor and every referenced GPU texture.
     $inventoryArt = @(
@@ -41,6 +43,7 @@ try {
         'assets/ui/inventory/pocket-v1.png',
         'assets/ui/inventory/backpack-v1.png',
         'assets/ui/inventory/pouch-v1.png',
+        'assets/ui/maps/courtyard-sketch-v1.png',
         'assets/characters/courtyard/painted-backpack/traveler-side-pack.png',
         'assets/characters/courtyard/painted-backpack/traveler-back-pack.png',
         'assets/characters/courtyard/painted-backpack/traveler-front-pack.png',

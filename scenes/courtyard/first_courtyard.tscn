@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource type="Script" path="res://scripts/courtyard/courtyard_level.gd" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/courtyard/courtyard_environment.tscn" id="2"]
@@ -10,6 +10,7 @@
 [ext_resource type="PackedScene" path="res://scenes/courtyard/third_person_camera.tscn" id="8"]
 [ext_resource type="PackedScene" path="res://scenes/courtyard/target_feedback.tscn" id="9"]
 [ext_resource type="PackedScene" path="res://scenes/courtyard/courtyard_inventory_menu.tscn" id="10_inventory_menu"]
+[ext_resource type="PackedScene" path="res://scenes/courtyard/props/map_stand.tscn" id="11_map"]
 
 [node name="FirstCourtyard" type="Node3D"]
 script = ExtResource("1")
@@ -50,6 +51,9 @@ pixel_size = 0.006
 text = "COURTYARD_NAME_WOODPILE"
 font_size = 32
 outline_size = 8
+
+[node name="MapStand" parent="Interactions" instance=ExtResource("11_map")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10.5, 0, -3.5)
 
 [node name="CameraRig" parent="." instance=ExtResource("8")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 1.55, 7)

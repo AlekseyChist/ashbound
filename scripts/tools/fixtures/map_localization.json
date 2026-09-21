@@ -1,0 +1,9 @@
+[
+ {"key":"MENU_SECTION_MAP","en":"Map","ru":"Карта"},
+ {"key":"ITEM_COURTYARD_SKETCH_NAME","en":"Courtyard sketch","ru":"Схема двора"},
+ {"key":"MENU_MAP_CAPTION","en":"Inn · Gate · Watchtower · Well · Woodpile · Training dummy","ru":"Дом · Ворота · Башня · Колодец · Поленница · Мишень"},
+ {"key":"COURTYARD_ACTION_TAKE_MAP","en":"Take sketch","ru":"Взять схему"},
+ {"key":"COURTYARD_ACTION_RETURN_MAP","en":"Put sketch back","ru":"Положить схему"},
+ {"key":"COURTYARD_ACTION_MAP_ABSENT","en":"Sketch is gone","ru":"Схемы нет"},
+ {"key":"COURTYARD_MAP_FULL","en":"There is no room for the sketch.","ru":"Для схемы нет свободного места."}
+]

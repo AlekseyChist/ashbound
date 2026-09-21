@@ -51,6 +51,10 @@ var _original_quit_on_go_back: bool = true
 # следующее нажатие Back работает как раньше.
 var _go_back_handled_frame: int = -1
 
+# Индекс быстрого слота (0..9), запрошенный до открытия окна; активируется
+# после OPEN, если окно открылось. Сбрасывается при закрытии/успехе.
+var _pending_quick: int = -1
+
 # Защита от МЕЖКАДРОВОГО дубля (Samsung S23): один физический KEYCODE_BACK
 # может быть доставлен как ДВЕ отдельные NOTIFICATION_WM_GO_BACK_REQUEST
 # с разницей ~7 мс на СОСЕДНИХ кадрах. Кадровая защита выше их не ловит:
@@ -98,6 +102,14 @@ func _ready() -> void:
 	if localization and localization.has_signal("language_changed"):
 		localization.connect("language_changed", _on_language_changed)
 
+	# Быстрая панель (Android): эксклюзивно владеет своей эмуляцией touch/mouse.
+	var quick_bar_script: GDScript = preload("res://scripts/courtyard/courtyard_quick_bar.gd")
+	var quick_bar: Control = quick_bar_script.new()
+	quick_bar.name = "QuickBar"
+	_root_control.add_child(quick_bar)
+	if quick_bar.has_method("setup"):
+		quick_bar.setup(self, _window, _hud, _player)
+
 
 func _exit_tree() -> void:
 	# Безопасное закрытие и восстановление владения SceneTree Back.
@@ -133,8 +145,6 @@ func request_open() -> bool:
 	if not _bool_prop(_player, "input_enabled"):
 		return false
 	if _player.has_method("is_attacking") and _player.is_attacking():
-		return false
-	if _hud != null and is_instance_valid(_hud) and _dialogue_visible():
 		return false
 	var access := get_node_or_null(access_path)
 	if access == null or not access.has_method("has_access") or not access.has_access():
@@ -194,10 +204,17 @@ func request_open() -> bool:
 		_rollback_open()
 		return false
 
+	# Информационный ответ HUD (без выбора, квест уже принят) не блокирует ввод:
+	# очищаем его только после успешного запуска жеста.
+	if _hud != null and is_instance_valid(_hud) and _dialogue_visible() \
+			and _hud.has_method("clear_message"):
+		_hud.clear_message()
+
 	return true
 
 
 func close_menu(restore_capture: bool = true) -> void:
+	_pending_quick = -1
 	if state == State.CLOSED:
 		return
 	var was_active := state != State.CLOSED
@@ -250,7 +267,94 @@ func close_menu(restore_capture: bool = true) -> void:
 # Ввод
 # ---------------------------------------------------------------------------
 
+func request_quick(index: int) -> bool:
+	if index < 0 or index > 9:
+		return false
+	if _window == null or not is_instance_valid(_window):
+		return false
+	if state == State.OPENING:
+		return false
+	if _player == null or not is_instance_valid(_player):
+		return false
+	if _player.has_method("is_attacking") and bool(_player.is_attacking()):
+		return false
+	if not _window.has_method("get_quick_slot_info"):
+		return false
+	var slot_info: Variant = _window.get_quick_slot_info(index)
+	if not (slot_info is Dictionary):
+		return false
+	var info: Dictionary = slot_info
+	if str(info.get("action", "")) == "":
+		return false
+	if bool(info.get("available", false)) == false:
+		return false
+	var action: String = str(info.get("action", ""))
+	if action == "open_map":
+		if state == State.OPEN:
+			if _window.has_method("activate_quick"):
+				return bool(_window.activate_quick(index))
+			return false
+		if state == State.CLOSED:
+			_pending_quick = index
+			var ok: bool = request_open()
+			if not ok:
+				_pending_quick = -1
+			return ok
+		return false
+	if action == "equip_weapon":
+		if state == State.OPEN:
+			if _window.has_method("activate_quick"):
+				return bool(_window.activate_quick(index))
+			return false
+		if state == State.CLOSED:
+			var input_enabled := true
+			if _player.has_method("is_input_enabled"):
+				input_enabled = bool(_player.is_input_enabled())
+			elif "input_enabled" in _player:
+				input_enabled = bool(_player.get("input_enabled"))
+			if input_enabled and _window.has_method("activate_quick"):
+				return bool(_window.activate_quick(index))
+			return false
+		return false
+	return false
+
+
 func _input(event: InputEvent) -> void:
+	# Быстрые слоты 1..9/0 (только физический жест, без эмуляции).
+	if event is InputEventKey and event.pressed and not event.is_echo():
+		var quick_blocked := false
+		if _window != null and is_instance_valid(_window) and "_active_pointers" in _window:
+			var pointers_value: Variant = _window.get("_active_pointers")
+			if (pointers_value is Dictionary and not (pointers_value as Dictionary).is_empty()) or (pointers_value is Array and (pointers_value as Array).size() > 0):
+				quick_blocked = true
+		if _window != null and is_instance_valid(_window) and "_drag_mode" in _window:
+			var drag_mode_value: Variant = _window.get("_drag_mode")
+			if int(drag_mode_value) != 0:
+				quick_blocked = true
+		if not quick_blocked:
+			var focus_owner: Node = get_viewport().gui_get_focus_owner()
+			if focus_owner is LineEdit or focus_owner is TextEdit:
+				quick_blocked = true
+		if not quick_blocked:
+			var key_code: int = event.physical_keycode
+			if key_code == KEY_NONE:
+				key_code = event.keycode
+			var quick_index := -1
+			match key_code:
+				KEY_1: quick_index = 0
+				KEY_2: quick_index = 1
+				KEY_3: quick_index = 2
+				KEY_4: quick_index = 3
+				KEY_5: quick_index = 4
+				KEY_6: quick_index = 5
+				KEY_7: quick_index = 6
+				KEY_8: quick_index = 7
+				KEY_9: quick_index = 8
+				KEY_0: quick_index = 9
+			if quick_index >= 0 and request_quick(quick_index):
+				get_viewport().set_input_as_handled()
+				return
+
 	# Подавляем ТОЛЬКО эмулированные мышь/движение мыши над видимым OpenButton,
 	# чтобы не было двойного переключения (сырое касание + эмуляция мыши).
 	# Нативная мышь должна пройти в GUI (OpenButton.pressed).
@@ -394,6 +498,11 @@ func _on_inventory_access_finished() -> void:
 		if _window.has_method("open_panel"):
 			_window.open_panel()
 		_window.visible = true
+	if _pending_quick >= 0:
+		var pending_index := _pending_quick
+		_pending_quick = -1
+		if _window.has_method("activate_quick"):
+			_window.activate_quick(pending_index)
 	_update_open_button_visibility()
 	opened.emit()
 

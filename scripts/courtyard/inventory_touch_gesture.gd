@@ -75,8 +75,6 @@ func _handle_mouse_button(ev: InputEventMouseButton) -> bool:
 	if ev.pressed:
 		if ev.button_index != MOUSE_BUTTON_LEFT:
 			return false
-		if _active_pointers.is_empty() and _language_menu_blocked(ev.position):
-			return false
 		_begin_pointer(-10, ev.position)
 		return true
 	else:
@@ -87,16 +85,6 @@ func _handle_mouse_button(ev: InputEventMouseButton) -> bool:
 		_end_pointer(-10, ev.position)
 		return true
 
-func _language_menu_blocked(pos: Vector2) -> bool:
-	var lang_btn := _panel.get("_language_choice") as OptionButton
-	if lang_btn == null:
-		return false
-	var popup := lang_btn.get_popup()
-	if popup != null and popup.visible:
-		return true
-	if lang_btn.get_global_rect().has_point(pos):
-		return true
-	return false
 
 
 func _handle_mouse_motion(ev: InputEventMouseMotion) -> bool:
@@ -126,8 +114,6 @@ func _handle_screen_touch(ev: InputEventScreenTouch) -> bool:
 		_restore_highlight()
 		return true
 	if ev.pressed:
-		if _active_pointers.is_empty() and _language_menu_blocked(ev.position):
-			return false
 		_begin_pointer(ev.index, ev.position)
 	else:
 		if not _active_pointers.has(ev.index):
@@ -276,11 +262,6 @@ func _hit_test(pos: Vector2) -> Dictionary:
 	if close_btn is Button and close_btn.visible:
 		if close_btn.get_global_rect().has_point(pos):
 			return {"kind": "close", "id": "close", "control": close_btn}
-	# Language choice (native popup preserved; if active pointer, release cancels).
-	var lang_choice: OptionButton = panel.get("_language_choice")
-	if lang_choice is OptionButton and lang_choice.visible:
-		if lang_choice.get_global_rect().has_point(pos):
-			return {"kind": "language", "id": "language", "control": lang_choice}
 	# Menu sections (journal/quests etc. via existing controller).
 	var sections: RefCounted = panel.get("_sections")
 	if sections != null and sections.has_method("hit_test"):
@@ -290,6 +271,11 @@ func _hit_test(pos: Vector2) -> Dictionary:
 	# If a non-items section is active, block storage tabs/quick/equipment/items.
 	if sections != null and sections.get("current_section") != "items":
 		return {}
+	# Drop button (discard) — hit only when enabled or while dragging.
+	var drop_button: Button = panel.get("_drop_button")
+	if drop_button is Button and drop_button.visible:
+		if (not drop_button.disabled or _mode == "drag") and drop_button.get_global_rect().has_point(pos):
+			return {"kind": "discard", "id": "discard", "control": drop_button}
 	# Tab buttons (active only).
 	var tab_buttons: Dictionary = panel.get("_tab_buttons")
 	if tab_buttons is Dictionary:
@@ -335,7 +321,7 @@ func _hit_test(pos: Vector2) -> Dictionary:
 					if node.get_global_rect().has_point(pos):
 						var iid: String = str(node.get_meta("item_id", ""))
 						if iid.is_empty():
-							return {"kind": "storage", "id": _current_container_id(), "control": node}
+							return {"kind": "storage", "id": _current_container_id(), "index": i, "control": node}
 						return {"kind": "item", "id": iid, "index": i, "control": node}
 			# Empty grid area within scroll.
 			return {"kind": "storage", "id": _current_container_id(), "control": item_scroll}
@@ -495,10 +481,15 @@ func _do_tap(target: Dictionary) -> void:
 		"quick":
 			_quick_tap(int(target.get("index", 0)))
 			_refresh()
+		"discard":
+			if _panel.has_method("drop_instance"):
+				_panel.drop_instance(_panel.get("_selected_item_id"))
 		"storage":
 			pass # No action on empty grid tap.
-		"language":
-			pass # Native popup preserved.
+		"setting_language":
+			var sections: RefCounted = _panel.get("_sections")
+			if sections != null and sections.has_method("choose_language"):
+				sections.choose_language(id)
 		"section":
 			var sections: RefCounted = _panel.get("_sections")
 			if sections != null and sections.has_method("select_section"):
@@ -533,21 +524,9 @@ func _set_current_container(cid: String) -> void:
 
 func _quick_tap(idx: int) -> void:
 	var bindings: Array = _panel.get("_quick_bindings")
-	if not (bindings is Array) or idx >= bindings.size():
+	if not (bindings is Array) or idx < 0 or idx >= bindings.size():
 		return
-	var sel: String = str(_panel.get("_selected_item_id"))
-	if not sel.is_empty():
-		var found := _find_item_full(sel)
-		if not found.is_empty():
-			var item: Dictionary = found.get("item", {})
-			var itype: int = int(item.get("type", -1))
-			if itype == 0 or itype == 2:
-				bindings[idx] = sel
-				return
-	# Nothing valid selected: select current bound.
-	var bound: String = str(bindings[idx])
-	if not bound.is_empty():
-		_panel.set("_selected_item_id", bound)
+	_panel._on_quick_slot_tapped(idx)
 
 
 # ---------------------------------------------------------------------------
@@ -606,6 +585,7 @@ func _drop_target_valid(target: Dictionary) -> bool:
 	var inv: Node = _panel.get("_inventory")
 	if inv == null:
 		return false
+	var iid: String = str(_source.get("instance_id", ""))
 	var kind: String = str(target.get("kind", ""))
 	match kind:
 		"storage":
@@ -637,6 +617,7 @@ func _drop_target_valid(target: Dictionary) -> bool:
 					return used < capacity
 			return false
 		"item":
+			var cell_index: int = int(target.get("index", -1))
 			var dest_id: String = _current_container_id()
 			if dest_id.is_empty():
 				return false
@@ -646,6 +627,13 @@ func _drop_target_valid(target: Dictionary) -> bool:
 					var used: int = int(c.get("used", 0))
 					var capacity: int = int(c.get("capacity", 0))
 					var same_carried: bool = str(_source.get("location", "")) == dest_id and _source_kind_is("carried")
+					if cell_index >= 0:
+						if not _source_kind_is("carried"):
+							return false
+						if used < capacity:
+							return true
+						# occupied swap allowed even when full (source has a real cell)
+						return true
 					if same_carried:
 						return true
 					return used < capacity
@@ -654,27 +642,19 @@ func _drop_target_valid(target: Dictionary) -> bool:
 			if not _source_kind_is("carried"):
 				return false
 			var slot: String = str(target.get("id", ""))
-			var item_type: int = int(item.get("type", -1))
-			if slot == "weapon":
-				return str(item.get("slot", "")) == "weapon" and item_type == 0
-			elif slot == "armor":
-				return str(item.get("slot", "")) == "armor" and item_type == 1
-			return false
+			return bool(inv.call("can_equip_in_slot", {"instance_id": iid}, slot))
 		"worn":
 			if not _source_kind_is("carried"):
 				return false
 			var slot: String = str(target.get("id", ""))
-			if slot == "backpack":
-				return str(item.get("id", "")) == "traveler_backpack"
-			elif slot == "pouch":
-				return str(item.get("id", "")) == "belt_pouch"
-			return false
+			return bool(inv.call("can_equip_in_slot", {"instance_id": iid}, slot))
+		"discard":
+			return _source_kind_is("carried") and bool(_panel.can_drop_instance(iid))
 		"quick":
 			var idx: int = int(target.get("index", -1))
 			if idx < 0 or idx > 9:
 				return false
-			var item_type: int = int(item.get("type", -1))
-			return item_type == 0 or item_type == 2
+			return bool(inv.call("can_assign_quick", {"instance_id": iid}))
 		_:
 			return false
 
@@ -697,6 +677,18 @@ func _do_drop(pos: Vector2) -> void:
 				_refresh()
 		return
 	var tkind: String = str(target.get("kind", ""))
+	if (tkind == "storage" or tkind == "item") and int(target.get("index", -1)) >= 0 and str(src_snapshot.get("kind", "")) == "carried":
+		var inv:Node = _panel.get('_inventory')
+		var dest: String = str(target.get("id", "")) if tkind == "storage" else _current_container_id()
+		if inv.move_item_to_cell({"instance_id": src_snapshot.instance_id}, dest, int(target.get("index", -1))):
+			_refresh()
+		else:
+			_flash_error()
+		return
+	elif tkind == "discard":
+		if str(src_snapshot.get("kind", "")) == "carried":
+			_panel.drop_instance(str(src_snapshot.instance_id))
+		return
 	match tkind:
 		"tab":
 			_drop_to_storage(str(target.get("id", "")))
@@ -855,9 +847,8 @@ func _drop_to_quick(idx: int) -> void:
 			var found := _find_item_full(iid)
 			if found.is_empty():
 				return
-			var item: Dictionary = found.get("item", {})
-			var itype: int = int(item.get("type", -1))
-			if itype != 0 and itype != 2:
+			var inv = _panel._inventory
+			if not inv.can_assign_quick({"instance_id": iid}):
 				_flash_error()
 				return
 			bindings[idx] = iid

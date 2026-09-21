@@ -10,11 +10,13 @@ var _gesture_handler: RefCounted = null
 var _sections: RefCounted = null
 
 signal close_requested()
+signal quick_slots_changed()
 
 const ATLAS_PATH := preload("res://assets/ui/inventory/items-v1.png")
 const POCKET_TEX := preload("res://assets/ui/inventory/pocket-v1.png")
 const BACKPACK_TEX := preload("res://assets/ui/inventory/backpack-v1.png")
 const POUCH_TEX := preload("res://assets/ui/inventory/pouch-v1.png")
+const MAP_TEX := preload("res://assets/ui/maps/courtyard-sketch-v1.png")
 const TRAVELER_FRAMES := preload("res://assets/characters/courtyard/traveler_frames.tres")
 
 const ITEM_IDS := [
@@ -66,8 +68,8 @@ var _empty_label: Label
 var _quick_label: Label
 var _quick_slots: HBoxContainer
 var _hint: Label
-var _language_choice: OptionButton
 var _settings_error: Label
+var _drop_button: Button
 
 # State
 var _selected_item_id: String = ""
@@ -118,14 +120,13 @@ func _ready() -> void:
 	_quick_label = $Margin/RootVBox/QuickLabel
 	_quick_slots = $Margin/RootVBox/QuickSlots
 	_hint = $Margin/RootVBox/Footer/Hint
-	_language_choice = $Margin/RootVBox/Footer/LanguageChoice
 	_settings_error = %SettingsError
 
 	_apply_styles()
 	_setup_character_preview()
 	_setup_equipment_slots()
 	_setup_quick_slots()
-	_setup_language_choice()
+	_setup_drop_action()
 	_refresh_labels()
 
 	if _inventory:
@@ -285,48 +286,118 @@ func _setup_quick_slots() -> void:
 		_quick_cells.append(btn)
 
 
-func _setup_language_choice() -> void:
-	_language_choice.clear()
-	_language_choice.add_item(_text("UI_LANGUAGE_AUTO"), 0)
-	_language_choice.add_item(_text("LOC_LANGUAGE_ENGLISH"), 1)
-	_language_choice.add_item(_text("LOC_LANGUAGE_RUSSIAN"), 2)
-	if _localization and _localization.has_method("get_preference"):
-		var pref: String = _localization.get_preference()
-		match pref:
-			"en": _language_choice.select(1)
-			"ru": _language_choice.select(2)
-			_: _language_choice.select(0)
-	if not _language_choice.item_selected.is_connected(_on_language_selected):
-		_language_choice.item_selected.connect(_on_language_selected)
-
-
-func _on_language_selected(index: int) -> void:
-	if not _localization or not _localization.has_method("set_language"):
-		return
-	var code := ""
-	match index:
-		1: code = "en"
-		2: code = "ru"
-		_: code = "auto"
-	var result: Error = _localization.set_language(code)
-	if result != OK:
-		_settings_error.text = _text("INV_SETTINGS_FAILURE")
-		_settings_error.visible = true
-	else:
-		_settings_error.visible = false
-
-
-# ---------------------------------------------------------------------------
-# Labels / localization
-# ---------------------------------------------------------------------------
-
 func _text(key: String, params: Dictionary = {}) -> String:
 	if _localization and _localization.has_method("text"):
 		return _localization.text(key, params)
 	return key
 
+func _setup_drop_action() -> void:
+	_drop_button = Button.new()
+	_drop_button.name = "DropItem"
+	_drop_button.custom_minimum_size = Vector2(190, 90)
+	_drop_button.add_theme_font_size_override("font_size", 30)
+	_drop_button.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_drop_button.focus_mode = Control.FOCUS_NONE
+
+	var normal_style := _make_cell_style(false, false)
+	normal_style.set_border_color(COLOR_BRONZE)
+	normal_style.bg_color = COLOR_PANEL_DARK
+	normal_style.content_margin_left = 16.0
+	normal_style.content_margin_right = 16.0
+	normal_style.content_margin_top = 8.0
+	normal_style.content_margin_bottom = 8.0
+
+	var hover_style := _make_cell_style(true, false)
+	hover_style.content_margin_left = 16.0
+	hover_style.content_margin_right = 16.0
+	hover_style.content_margin_top = 8.0
+	hover_style.content_margin_bottom = 8.0
+
+	var pressed_style := _make_cell_style(true, false)
+	pressed_style.content_margin_left = 16.0
+	pressed_style.content_margin_right = 16.0
+	pressed_style.content_margin_top = 8.0
+	pressed_style.content_margin_bottom = 8.0
+
+	var disabled_style := _make_cell_style(false, false)
+	disabled_style.set_border_color(COLOR_BRONZE_DIM)
+	disabled_style.bg_color = COLOR_PANEL_DARK
+	disabled_style.content_margin_left = 16.0
+	disabled_style.content_margin_right = 16.0
+	disabled_style.content_margin_top = 8.0
+	disabled_style.content_margin_bottom = 8.0
+
+	_drop_button.add_theme_stylebox_override("normal", normal_style)
+	_drop_button.add_theme_stylebox_override("hover", hover_style)
+	_drop_button.add_theme_stylebox_override("pressed", pressed_style)
+	_drop_button.add_theme_stylebox_override("disabled", disabled_style)
+	_drop_button.add_theme_color_override("font_color", COLOR_TEXT)
+	_drop_button.add_theme_color_override("font_hover_color", COLOR_TEXT)
+	_drop_button.add_theme_color_override("font_pressed_color", COLOR_TEXT)
+	_drop_button.add_theme_color_override("font_disabled_color", COLOR_MUTED)
+
+	var footer: Node = $Margin/RootVBox/Footer
+	footer.add_child(_drop_button)
+
+
+func _world_items() -> Node:
+	var node: Node = self
+	while node != null:
+		var manager := node.get_node_or_null("WorldItems")
+		if manager:
+			return manager
+		node = node.get_parent()
+	return null
+
+func can_drop_instance(iid: String) -> bool:
+	if iid.is_empty():
+		return false
+	if not _inventory or not _inventory.has_method("get_item_rules"):
+		return false
+	var rules:Dictionary = _inventory.get_item_rules({"instance_id": iid})
+	if not (rules is Dictionary):
+		return false
+	if not rules.get("droppable", false):
+		return false
+	var storage:String = _inventory.get_item_storage(iid)
+	if not (storage is String) or storage == "":
+		return false
+	if _world_items() == null:
+		return false
+	return true
+
+
+func drop_instance(iid: String) -> bool:
+	var manager := _world_items()
+	if iid.is_empty() or manager == null or not can_drop_instance(iid):
+		_flash_error()
+		return false
+	var result: bool = manager.drop_item({"instance_id": iid})
+	if not result:
+		_flash_error()
+	else:
+		_selected_item_id = ""
+		refresh_contents()
+	return result
+
+
+func _refresh_drop_action() -> void:
+	if _drop_button == null:
+		return
+	_drop_button.text = _text("INV_DROP_ITEM")
+	_drop_button.disabled = not can_drop_instance(_selected_item_id)
+	_drop_button.tooltip_text = ""
+	if not _selected_item_id.is_empty():
+		var rules:Dictionary = _inventory.get_item_rules({ "instance_id": _selected_item_id })
+		if bool(rules.get("quest_locked", false)):
+			_drop_button.tooltip_text = _text("INV_DROP_QUEST_LOCKED")
+		elif not rules.is_empty() and _inventory.get_item_storage(_selected_item_id) == "":
+			_drop_button.tooltip_text = _text("INV_DROP_UNEQUIP_FIRST")
+
 
 func _refresh_labels() -> void:
+	if _drop_button != null:
+		_refresh_drop_action()
 	_title.text = _text("INV_TITLE")
 	_coins.text = _text("INV_GOLD", {"amount": str(_get_gold())})
 	_close_button.text = _text("UI_CLOSE")
@@ -343,7 +414,6 @@ func _refresh_labels() -> void:
 
 func _on_language_changed(_language: String) -> void:
 	_reset_gesture()
-	_setup_language_choice()
 	refresh_contents()
 
 
@@ -529,11 +599,25 @@ func _rebuild_grid() -> void:
 
 	var count := mini(capacity, MAX_VISIBLE_CELLS)
 
+	# Map instance_id -> item data, keyed by its configured storage cell.
+	var by_cell := {}
+	for item in items:
+		if not (item is Dictionary):
+			continue
+		var iid: String = str(item.get("instance_id", ""))
+		if iid == "":
+			continue
+		var cell_index := -1
+		if _inventory != null and _inventory.has_method("get_item_cell"):
+			cell_index = int(_inventory.get_item_cell(iid))
+		if cell_index >= 0:
+			by_cell[cell_index] = item
+
 	for i in count:
 		var cell := _make_item_cell(180.0)
 		cell.set_meta("cell_index", i)
-		if i < items.size():
-			var item: Dictionary = items[i]
+		var item: Dictionary = by_cell.get(i, {})
+		if not item.is_empty():
 			var iid: String = str(item.get("instance_id", ""))
 			cell.set_meta("item_id", iid)
 			cell.set_meta("item_data", item)
@@ -607,6 +691,8 @@ func _item_texture(id: String) -> Texture2D:
 		return BACKPACK_TEX
 	if id == "belt_pouch":
 		return POUCH_TEX
+	if id == "courtyard_sketch":
+		return MAP_TEX
 	if not _atlas_texture:
 		return null
 	var idx := ITEM_IDS.find(id)
@@ -730,13 +816,50 @@ func _rebuild_quick_slots() -> void:
 			btn.icon = null
 			continue
 		var item := _find_item_by_instance(iid)
-		if item.is_empty():
+		if item.is_empty() or not _inventory.can_assign_quick({"instance_id": iid}):
 			_quick_bindings[i] = ""
 			btn.icon = null
 			continue
 		var id: String = str(item.get("id", ""))
 		btn.icon = _item_texture(id)
+	quick_slots_changed.emit()
 
+
+func get_quick_slot_info(index: int) -> Dictionary:
+	if index < 0 or index >= QUICK_SLOT_COUNT:
+		return {}
+	var iid := _quick_bindings[index]
+	if iid.is_empty():
+		return {}
+	if _inventory == null:
+		return {}
+	var item: Dictionary = _inventory.resolve_owned_item({"instance_id": iid})
+	if item.is_empty():
+		return {}
+	if not bool(_inventory.can_assign_quick({"instance_id": iid})):
+		return {}
+	var rules: Dictionary = _inventory.get_item_rules({"instance_id": iid})
+	if not bool(rules.get("quick_bindable", false)):
+		return {}
+	var id: String = str(item.get("id", ""))
+	var action := str(rules.get("quick_action", ""))
+	var available := action == "open_map" or action == "equip_weapon"
+	var equipped := false
+	if action == "equip_weapon":
+		var equipped_data: Variant = _inventory.get_save_data().get("equipped", {})
+		if equipped_data is Dictionary:
+			var weapon: Variant = equipped_data.get("weapon")
+			if weapon is Dictionary:
+				equipped = str(weapon.get("instance_id", "")) == iid
+	return {
+		"instance_id": iid,
+		"icon": _item_texture(id),
+		"name": _item_name(id),
+		"quantity": int(item.get("quantity", 1)),
+		"available": available,
+		"equipped": equipped,
+		"action": action,
+	}
 
 func _find_item_by_instance(instance_id: String) -> Dictionary:
 	if not _inventory or not _inventory.has_method("get_save_data"):
@@ -756,27 +879,54 @@ func _find_item_by_instance(instance_id: String) -> Dictionary:
 	return {}
 
 
-func _on_quick_slot_tapped(index: int) -> void:
+func activate_quick(index: int) -> bool:
+	if index < 0 or index >= QUICK_SLOT_COUNT:
+		return false
 	var iid := _quick_bindings[index]
-	if not iid.is_empty():
-		# Toggle selection of bound item.
-		var item := _find_item_by_instance(iid)
-		if not item.is_empty():
-			_selected_item_id = iid if _selected_item_id != iid else ""
-			_rebuild_grid()
-			_update_details()
-		return
-	# Bind selected item to this quick slot.
-	if _selected_item_id.is_empty():
-		return
-	var item := _find_item_by_instance(_selected_item_id)
+	if iid.is_empty():
+		return false
+	if _inventory == null:
+		return false
+	var item: Dictionary = _inventory.resolve_owned_item({"instance_id": iid})
 	if item.is_empty():
+		return false
+	if not bool(_inventory.can_assign_quick({"instance_id": iid})):
+		return false
+	var rules: Dictionary = _inventory.get_item_rules({"instance_id": iid})
+	var action := str(rules.get("quick_action", ""))
+	if not bool(rules.get("quick_bindable", false)):
+		return false
+	if action == "open_map":
+		_sections.select_section("map")
+		return _sections.current_section == "map"
+	if action == "equip_weapon":
+		var equipped_data: Variant = _inventory.get_save_data().get("equipped", {})
+		if equipped_data is Dictionary:
+			var weapon: Variant = equipped_data.get("weapon")
+			if weapon is Dictionary and str(weapon.get("instance_id", "")) == iid:
+				return true
+		var ok: bool = bool(_inventory.equip_item({"instance_id": iid}))
+		if ok:
+			refresh_contents()
+		return ok
+	return false
+
+
+func _on_quick_slot_tapped(index: int) -> void:
+	if index < 0 or index >= QUICK_SLOT_COUNT:
 		return
-	var type_val: int = int(item.get("type", -1))
-	if type_val != 0 and type_val != 2:
-		return
-	_quick_bindings[index] = _selected_item_id
-	_rebuild_quick_slots()
+	var bound: String = _quick_bindings[index]
+	if not _selected_item_id.is_empty() and _selected_item_id != bound:
+		if _inventory.can_assign_quick({"instance_id": _selected_item_id}):
+			_quick_bindings[index] = _selected_item_id
+			_rebuild_quick_slots()
+			return
+	if not bound.is_empty():
+		if activate_quick(index):
+			return
+		_selected_item_id = bound if _selected_item_id != bound else ""
+		_rebuild_grid()
+		_update_details()
 
 
 # ---------------------------------------------------------------------------
@@ -784,6 +934,7 @@ func _on_quick_slot_tapped(index: int) -> void:
 # ---------------------------------------------------------------------------
 
 func _update_details() -> void:
+	_refresh_drop_action()
 	if _selected_item_id.is_empty():
 		_item_details.text = ""
 		return
@@ -838,3 +989,5 @@ func _on_storage_changed() -> void:
 	_rebuild_tabs()
 	_rebuild_grid()
 	_rebuild_equipment()
+	if _sections:
+		_sections.refresh()

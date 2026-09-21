@@ -81,6 +81,125 @@ func update_visual(action: StringName, facing_direction: Vector3, walk_pose_fps:
 
 
 ## Текущее визуальное направление (front/back/left/right).
+func _ready() -> void:
+	# Камера обрабатывается на priority 0, рюкзак — на 10;
+	# визуал героя должен обновляться после обоих.
+	process_priority = 100
+	# Тени-прокси создаются напрямую: _make_shadow_proxy добавляет детей
+	# в этот Visual во время собственного _ready, а не в занятого родителя.
+	_make_shadow_proxy($Body, "BodyShadow")
+	_make_shadow_proxy($PocketPose, "PocketShadow")
+	$Body.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	$PocketPose.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	# Инициализация ориентации по текущей камере.
+	_process(0.0)
+
+
+func _process(_delta: float) -> void:
+	var camera := get_viewport().get_camera_3d()
+	if camera != null:
+		# Поворачиваем весь Visual целиком (якорь — ноги, origin 0):
+		# дети Body/PocketPose вращаются вокруг ног, сохраняя авторские
+		# локальные смещения и пропорции на экране. Поворот отдельных
+		# центров спрайтов сломал бы их взаимное расположение.
+		# Без сглаживания (lerp/smooth): жёсткий basis камеры даёт
+		# мгновенную, стабильную ориентацию без запаздывания/дрожания.
+		global_basis = camera.global_basis.orthonormalized()
+	# Тени-прокси синхронизируются всегда (даже без камеры):
+	# только локальная позиция под актором, без pitch камеры.
+	var body := $Body as AnimatedSprite3D
+	var pocket := $PocketPose as AnimatedSprite3D
+	if body != null:
+		_sync_shadow(body, get_node_or_null("BodyShadow") as AnimatedSprite3D)
+	if pocket != null:
+		_sync_shadow(pocket, get_node_or_null("PocketShadow") as AnimatedSprite3D)
+	# Кастомный depth-материал только для видимых Body/PocketPose;
+	# тени оставляем со стандартным upright-материалом.
+	if camera != null:
+		if body != null:
+			_sync_depth_material(body, camera)
+		if pocket != null:
+			_sync_depth_material(pocket, camera)
+
+
+# Создаёт тень-прокси (только тень, FIXED_Y) как брата исходного спрайта.
+func _make_shadow_proxy(source: AnimatedSprite3D, name: String) -> AnimatedSprite3D:
+	# Тень — ребёнок этого Visual (не родителя): top_level=true сохраняет
+	# её вертикальной (FIXED_Y billboard), но привязанной к актору.
+	var shadow := AnimatedSprite3D.new()
+	shadow.name = name
+	shadow.top_level = true
+	add_child(shadow)
+	shadow.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_SHADOWS_ONLY
+	shadow.billboard = BaseMaterial3D.BILLBOARD_FIXED_Y
+	shadow.shaded = source.shaded
+	shadow.alpha_cut = source.alpha_cut
+	shadow.alpha_scissor_threshold = source.alpha_scissor_threshold
+	shadow.texture_filter = source.texture_filter
+	shadow.double_sided = source.double_sided
+	return shadow
+
+
+# Синхронизирует тень-прокси с исходным спрайтом (без независимого
+# воспроизведения: только копирование состояния, локальная позиция).
+func _sync_shadow(source: AnimatedSprite3D, shadow: AnimatedSprite3D) -> void:
+	if shadow == null or source == null:
+		return
+	if shadow.sprite_frames != source.sprite_frames:
+		shadow.sprite_frames = source.sprite_frames
+	# Без явной анимации индексы кадров применяются к несуществующей
+	# анимации по умолчанию.
+	shadow.animation = source.animation
+	# Явного свойства progress у AnimatedSprite3D нет — кадр и прогресс
+	# задаются одним вызовом.
+	shadow.set_frame_and_progress(source.frame, source.frame_progress)
+	# Гарантированно останавливаем проигрывание: тень не должна
+	# анимироваться самостоятельно, только зеркалить источник.
+	shadow.pause()
+	shadow.flip_h = source.flip_h
+	shadow.flip_v = source.flip_v
+	shadow.pixel_size = source.pixel_size
+	shadow.offset = source.offset
+	shadow.centered = source.centered
+	shadow.visible = source.visible
+	shadow.modulate = source.modulate
+	shadow.axis = source.axis
+	# Глобальная позиция: тень остаётся вертикальной под актором,
+	# несмотря на вращение самого Visual.
+	shadow.global_transform = get_parent().global_transform * Transform3D(Basis.IDENTITY, source.position)
+
+
+## Текущее визуальное направление.
+func _sync_depth_material(source: AnimatedSprite3D, camera: Camera3D) -> void:
+	if source == null or camera == null:
+		return
+	var frames := source.sprite_frames
+	if frames == null:
+		return
+	var anim := String(source.animation)
+	if anim.is_empty() or not frames.has_animation(anim):
+		return
+	var frame := int(source.frame)
+	if frame < 0 or frame >= frames.get_frame_count(anim):
+		return
+	var mat := source.material_override as ShaderMaterial
+	if mat == null:
+		mat = ShaderMaterial.new()
+		mat.shader = load("res://assets/shaders/character_depth.gdshader")
+		source.material_override = mat
+	var tex: Texture2D = frames.get_frame_texture(anim, frame)
+	while tex is AtlasTexture:
+		tex = (tex as AtlasTexture).atlas
+	if tex == null:
+		return
+	mat.set_shader_parameter("texture_albedo", tex)
+	mat.set_shader_parameter("foot_world", global_position)
+	var upright := camera.global_basis.x
+	upright.y = 0.0
+	if upright.length_squared() < 1e-8:
+		upright = Vector3.RIGHT
+	mat.set_shader_parameter("upright_right", upright.normalized())
+
 func get_visual_direction() -> StringName:
 	return _current_view
 

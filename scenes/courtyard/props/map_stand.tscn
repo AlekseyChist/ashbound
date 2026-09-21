@@ -1,0 +1,32 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/courtyard/courtyard_map_stand.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/ui/maps/courtyard-sketch-v1.png" id="2_texture"]
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_paper"]
+size = Vector2(0.7, 0.46)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_paper"]
+albedo_texture = ExtResource("2_texture")
+roughness = 1.0
+cull_mode = 2
+
+[node name="MapStand" type="Node3D"]
+script = ExtResource("1_script")
+interaction_id = "courtyard_map"
+display_name = "ITEM_COURTYARD_SKETCH_NAME"
+prompt = "COURTYARD_ACTION_TAKE_MAP"
+
+[node name="Paper" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.865, 0)
+mesh = SubResource("PlaneMesh_paper")
+surface_material_override/0 = SubResource("StandardMaterial3D_paper")
+cast_shadow = 0
+
+[node name="Label3D" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.55, 0)
+billboard = 1
+pixel_size = 0.006
+text = "ITEM_COURTYARD_SKETCH_NAME"
+font_size = 32
+outline_size = 8
