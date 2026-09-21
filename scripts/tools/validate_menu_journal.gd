@@ -95,7 +95,7 @@ func assert_entry(stage: int) -> void:
 func layout(language: String) -> void:
 	var bounds := panel.get_global_rect()
 	check(root.get_visible_rect().grow(1).encloses(bounds), language + " panel fits viewport")
-	for b in [tab("ItemsTab"), tab("QuestsTab"), tab("CharacterTab"), panel.get_node("%CloseButton"), panel.get_node("%LanguageChoice")]:
+	for b in [tab("ItemsTab"), tab("QuestsTab"), tab("CharacterTab"), panel.get_node("%CloseButton"), tab("SettingsTab")]:
 		check(bounds.grow(1).encloses(b.get_global_rect()), language + " control fits " + b.name)
 		check(b.size.y >= 90, "finger height " + b.name)
 		check(b.get_theme_font("font").get_string_size(b.text, HORIZONTAL_ALIGNMENT_LEFT, -1, b.get_theme_font_size("font_size")).x < b.size.x - 12, language + " text fits " + b.name)
@@ -126,10 +126,10 @@ func _run() -> void:
 		quit(1)
 		return
 	await open_menu()
-	var language_rect: Rect2 = panel.get_node("%LanguageChoice").get_global_rect()
+	var settings_rect: Rect2 = tab("SettingsTab").get_global_rect()
 	await tap_tab("QuestsTab")
 	check(sections.current_section == "quests", "native touch opens quests")
-	check(panel.get_node("%LanguageChoice").get_global_rect() == language_rect, "language control stays in place across sections")
+	check(tab("SettingsTab").get_global_rect() == settings_rect, "settings tab stays in place across sections")
 	assert_entry(0)
 	check(not panel.get_node("%Body").is_visible_in_tree() and not panel.get_node("%QuickSlots").is_visible_in_tree(), "inventory hidden in journal")
 	check(not panel.get_node("%Hint").is_visible_in_tree(), "no drag hint in journal")

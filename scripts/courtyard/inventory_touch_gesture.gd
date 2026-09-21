@@ -75,8 +75,6 @@ func _handle_mouse_button(ev: InputEventMouseButton) -> bool:
 	if ev.pressed:
 		if ev.button_index != MOUSE_BUTTON_LEFT:
 			return false
-		if _active_pointers.is_empty() and _language_menu_blocked(ev.position):
-			return false
 		_begin_pointer(-10, ev.position)
 		return true
 	else:
@@ -87,16 +85,6 @@ func _handle_mouse_button(ev: InputEventMouseButton) -> bool:
 		_end_pointer(-10, ev.position)
 		return true
 
-func _language_menu_blocked(pos: Vector2) -> bool:
-	var lang_btn := _panel.get("_language_choice") as OptionButton
-	if lang_btn == null:
-		return false
-	var popup := lang_btn.get_popup()
-	if popup != null and popup.visible:
-		return true
-	if lang_btn.get_global_rect().has_point(pos):
-		return true
-	return false
 
 
 func _handle_mouse_motion(ev: InputEventMouseMotion) -> bool:
@@ -126,8 +114,6 @@ func _handle_screen_touch(ev: InputEventScreenTouch) -> bool:
 		_restore_highlight()
 		return true
 	if ev.pressed:
-		if _active_pointers.is_empty() and _language_menu_blocked(ev.position):
-			return false
 		_begin_pointer(ev.index, ev.position)
 	else:
 		if not _active_pointers.has(ev.index):
@@ -276,11 +262,6 @@ func _hit_test(pos: Vector2) -> Dictionary:
 	if close_btn is Button and close_btn.visible:
 		if close_btn.get_global_rect().has_point(pos):
 			return {"kind": "close", "id": "close", "control": close_btn}
-	# Language choice (native popup preserved; if active pointer, release cancels).
-	var lang_choice: OptionButton = panel.get("_language_choice")
-	if lang_choice is OptionButton and lang_choice.visible:
-		if lang_choice.get_global_rect().has_point(pos):
-			return {"kind": "language", "id": "language", "control": lang_choice}
 	# Menu sections (journal/quests etc. via existing controller).
 	var sections: RefCounted = panel.get("_sections")
 	if sections != null and sections.has_method("hit_test"):
@@ -505,8 +486,10 @@ func _do_tap(target: Dictionary) -> void:
 				_panel.drop_instance(_panel.get("_selected_item_id"))
 		"storage":
 			pass # No action on empty grid tap.
-		"language":
-			pass # Native popup preserved.
+		"setting_language":
+			var sections: RefCounted = _panel.get("_sections")
+			if sections != null and sections.has_method("choose_language"):
+				sections.choose_language(id)
 		"section":
 			var sections: RefCounted = _panel.get("_sections")
 			if sections != null and sections.has_method("select_section"):

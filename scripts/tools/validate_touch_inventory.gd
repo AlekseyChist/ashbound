@@ -65,7 +65,7 @@ func layout(language: String) -> void:
 	var area: Rect2 = panel.get_global_rect()
 	check(root.get_visible_rect().grow(1).encloses(area),language+" panel fits")
 	check(area.size.x >= root.get_visible_rect().size.x*0.9,language+" uses phone width")
-	for key in ["CloseButton","ArmorSlot","WeaponSlot","BackpackSlot","PouchSlot","LanguageChoice","QuickSlots","ItemDetails"]:
+	for key in ["CloseButton","ArmorSlot","WeaponSlot","BackpackSlot","PouchSlot","QuickSlots","ItemDetails"]:
 		var c: Control = panel.get_node("%"+key)
 		check(area.grow(1).encloses(c.get_global_rect()),language+" inside "+key)
 	for c: Control in panel.get("_quick_cells"):
@@ -100,7 +100,7 @@ func run() -> void:
 		loc.load_preferences("res://.tools/touch-qa-language.cfg",language)
 		await settle()
 		check(panel.get_node("%Title").text==loc.text("INV_TITLE"),"title updates to "+language)
-		check(panel.get_node("%LanguageChoice").get_item_text(0)==loc.text("UI_LANGUAGE_AUTO"),"language chooser updates to "+language)
+		check(panel.get_node("Margin/RootVBox/Header/SectionTabs/SettingsTab").text==loc.text("MENU_SECTION_SETTINGS"),"settings tab updates to "+language)
 		layout(language)
 		await capture("empty-"+language)
 	groups+=1
