@@ -10,6 +10,7 @@ var _gesture_handler: RefCounted = null
 var _sections: RefCounted = null
 
 signal close_requested()
+signal quick_slots_changed()
 
 const ATLAS_PATH := preload("res://assets/ui/inventory/items-v1.png")
 const POCKET_TEX := preload("res://assets/ui/inventory/pocket-v1.png")
@@ -821,7 +822,44 @@ func _rebuild_quick_slots() -> void:
 			continue
 		var id: String = str(item.get("id", ""))
 		btn.icon = _item_texture(id)
+	quick_slots_changed.emit()
 
+
+func get_quick_slot_info(index: int) -> Dictionary:
+	if index < 0 or index >= QUICK_SLOT_COUNT:
+		return {}
+	var iid := _quick_bindings[index]
+	if iid.is_empty():
+		return {}
+	if _inventory == null:
+		return {}
+	var item: Dictionary = _inventory.resolve_owned_item({"instance_id": iid})
+	if item.is_empty():
+		return {}
+	if not bool(_inventory.can_assign_quick({"instance_id": iid})):
+		return {}
+	var rules: Dictionary = _inventory.get_item_rules({"instance_id": iid})
+	if not bool(rules.get("quick_bindable", false)):
+		return {}
+	var id: String = str(item.get("id", ""))
+	var action := str(rules.get("quick_action", ""))
+	var available := action == "open_map" or action == "equip_weapon"
+	var equipped := false
+	if action == "equip_weapon":
+		var equipped_data: Variant = _inventory.get_save_data().get("equipped", {})
+		if equipped_data is Dictionary:
+			var weapon: Variant = equipped_data.get("weapon")
+			if weapon is Dictionary:
+				equipped = str(weapon.get("instance_id", "")) == iid
+	return {
+		"instance_id": iid,
+		"icon": _item_texture(id),
+		"name": _item_name(id),
+		"quantity": int(item.get("quantity", 1)),
+		"available": available,
+		"equipped": equipped,
+		"action": action,
+	}
 
 func _find_item_by_instance(instance_id: String) -> Dictionary:
 	if not _inventory or not _inventory.has_method("get_save_data"):
@@ -847,11 +885,31 @@ func activate_quick(index: int) -> bool:
 	var iid := _quick_bindings[index]
 	if iid.is_empty():
 		return false
-	var rules: Dictionary = _inventory.get_item_rules({"instance_id": iid})
-	if str(rules.get("quick_action", "")) != "open_map" or not bool(rules.get("quick_bindable", false)):
+	if _inventory == null:
 		return false
-	_sections.select_section("map")
-	return _sections.current_section == "map"
+	var item: Dictionary = _inventory.resolve_owned_item({"instance_id": iid})
+	if item.is_empty():
+		return false
+	if not bool(_inventory.can_assign_quick({"instance_id": iid})):
+		return false
+	var rules: Dictionary = _inventory.get_item_rules({"instance_id": iid})
+	var action := str(rules.get("quick_action", ""))
+	if not bool(rules.get("quick_bindable", false)):
+		return false
+	if action == "open_map":
+		_sections.select_section("map")
+		return _sections.current_section == "map"
+	if action == "equip_weapon":
+		var equipped_data: Variant = _inventory.get_save_data().get("equipped", {})
+		if equipped_data is Dictionary:
+			var weapon: Variant = equipped_data.get("weapon")
+			if weapon is Dictionary and str(weapon.get("instance_id", "")) == iid:
+				return true
+		var ok: bool = bool(_inventory.equip_item({"instance_id": iid}))
+		if ok:
+			refresh_contents()
+		return ok
+	return false
 
 
 func _on_quick_slot_tapped(index: int) -> void:

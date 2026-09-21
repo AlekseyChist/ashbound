@@ -102,6 +102,14 @@ func _ready() -> void:
 	if localization and localization.has_signal("language_changed"):
 		localization.connect("language_changed", _on_language_changed)
 
+	# Быстрая панель (Android): эксклюзивно владеет своей эмуляцией touch/mouse.
+	var quick_bar_script: GDScript = preload("res://scripts/courtyard/courtyard_quick_bar.gd")
+	var quick_bar: Control = quick_bar_script.new()
+	quick_bar.name = "QuickBar"
+	_root_control.add_child(quick_bar)
+	if quick_bar.has_method("setup"):
+		quick_bar.setup(self, _window, _hud, _player)
+
 
 func _exit_tree() -> void:
 	# Безопасное закрытие и восстановление владения SceneTree Back.
@@ -264,56 +272,88 @@ func request_quick(index: int) -> bool:
 		return false
 	if _window == null or not is_instance_valid(_window):
 		return false
-	var inventory: Node = get_node_or_null("/root/Inventory")
-	if inventory == null or not inventory.has_method("can_assign_quick"):
+	if state == State.OPENING:
 		return false
-	var bindings_value: Variant = _window.get("_quick_bindings") if "_quick_bindings" in _window else null
-	if not (bindings_value is Array):
+	if _player == null or not is_instance_valid(_player):
 		return false
-	var bindings: Array = bindings_value
-	if index >= bindings.size():
+	if _player.has_method("is_attacking") and bool(_player.is_attacking()):
 		return false
-	var iid: String = str(bindings[index])
-	var handle: Dictionary = {"instance_id": iid}
-	if not inventory.can_assign_quick(handle):
+	if not _window.has_method("get_quick_slot_info"):
 		return false
-	var rules: Dictionary = inventory.get_item_rules(handle)
-	if rules.get("quick_action", "") != "open_map":
+	var slot_info: Variant = _window.get_quick_slot_info(index)
+	if not (slot_info is Dictionary):
 		return false
-	if state == State.OPEN:
-		if _window.has_method("activate_quick"):
-			return bool(_window.activate_quick(index))
+	var info: Dictionary = slot_info
+	if str(info.get("action", "")) == "":
 		return false
-	if state == State.CLOSED:
-		_pending_quick = index
-		var ok: bool = request_open()
-		if not ok:
-			_pending_quick = -1
-		return ok
+	if bool(info.get("available", false)) == false:
+		return false
+	var action: String = str(info.get("action", ""))
+	if action == "open_map":
+		if state == State.OPEN:
+			if _window.has_method("activate_quick"):
+				return bool(_window.activate_quick(index))
+			return false
+		if state == State.CLOSED:
+			_pending_quick = index
+			var ok: bool = request_open()
+			if not ok:
+				_pending_quick = -1
+			return ok
+		return false
+	if action == "equip_weapon":
+		if state == State.OPEN:
+			if _window.has_method("activate_quick"):
+				return bool(_window.activate_quick(index))
+			return false
+		if state == State.CLOSED:
+			var input_enabled := true
+			if _player.has_method("is_input_enabled"):
+				input_enabled = bool(_player.is_input_enabled())
+			elif "input_enabled" in _player:
+				input_enabled = bool(_player.get("input_enabled"))
+			if input_enabled and _window.has_method("activate_quick"):
+				return bool(_window.activate_quick(index))
+			return false
+		return false
 	return false
 
 
 func _input(event: InputEvent) -> void:
 	# Быстрые слоты 1..9/0 (только физический жест, без эмуляции).
 	if event is InputEventKey and event.pressed and not event.is_echo():
-		var key_code: int = event.physical_keycode
-		if key_code == KEY_NONE:
-			key_code = event.keycode
-		var quick_index := -1
-		match key_code:
-			KEY_1: quick_index = 0
-			KEY_2: quick_index = 1
-			KEY_3: quick_index = 2
-			KEY_4: quick_index = 3
-			KEY_5: quick_index = 4
-			KEY_6: quick_index = 5
-			KEY_7: quick_index = 6
-			KEY_8: quick_index = 7
-			KEY_9: quick_index = 8
-			KEY_0: quick_index = 9
-		if quick_index >= 0 and request_quick(quick_index):
-			get_viewport().set_input_as_handled()
-			return
+		var quick_blocked := false
+		if _window != null and is_instance_valid(_window) and "_active_pointers" in _window:
+			var pointers_value: Variant = _window.get("_active_pointers")
+			if (pointers_value is Dictionary and not (pointers_value as Dictionary).is_empty()) or (pointers_value is Array and (pointers_value as Array).size() > 0):
+				quick_blocked = true
+		if _window != null and is_instance_valid(_window) and "_drag_mode" in _window:
+			var drag_mode_value: Variant = _window.get("_drag_mode")
+			if int(drag_mode_value) != 0:
+				quick_blocked = true
+		if not quick_blocked:
+			var focus_owner: Node = get_viewport().gui_get_focus_owner()
+			if focus_owner is LineEdit or focus_owner is TextEdit:
+				quick_blocked = true
+		if not quick_blocked:
+			var key_code: int = event.physical_keycode
+			if key_code == KEY_NONE:
+				key_code = event.keycode
+			var quick_index := -1
+			match key_code:
+				KEY_1: quick_index = 0
+				KEY_2: quick_index = 1
+				KEY_3: quick_index = 2
+				KEY_4: quick_index = 3
+				KEY_5: quick_index = 4
+				KEY_6: quick_index = 5
+				KEY_7: quick_index = 6
+				KEY_8: quick_index = 7
+				KEY_9: quick_index = 8
+				KEY_0: quick_index = 9
+			if quick_index >= 0 and request_quick(quick_index):
+				get_viewport().set_input_as_handled()
+				return
 
 	# Подавляем ТОЛЬКО эмулированные мышь/движение мыши над видимым OpenButton,
 	# чтобы не было двойного переключения (сырое касание + эмуляция мыши).
