@@ -103,5 +103,30 @@
     "key": "ITEM_SACRED_ASH_NAME",
     "en": "Sacred ash",
     "ru": "Священный пепел"
+  },
+  {
+    "key": "INV_STORAGE_POCKET",
+    "en": "Clothing pocket",
+    "ru": "Карман одежды"
+  },
+  {
+    "key": "INV_STORAGE_POUCH",
+    "en": "Belt pouch",
+    "ru": "Поясной мешочек"
+  },
+  {
+    "key": "INV_STORAGE_BACKPACK",
+    "en": "Backpack",
+    "ru": "Рюкзак"
+  },
+  {
+    "key": "INV_STORAGE_USAGE",
+    "en": "{name} · slots: {used}/{capacity}",
+    "ru": "{name} · места: {used}/{capacity}"
+  },
+  {
+    "key": "INV_STORAGE_ITEM_ROW",
+    "en": "{item} · {storage}",
+    "ru": "{item} · {storage}"
   }
 ]

@@ -8,6 +8,7 @@ signal item_equipped(item: Dictionary, slot: String)
 signal item_unequipped(slot: String)
 signal gold_changed(amount: int)
 signal inventory_restored()
+signal storage_changed()
 
 # Слоты экипировки
 const SLOT_WEAPON = "weapon"
@@ -37,6 +38,14 @@ var gold: int = 0
 
 # Защита от повторного входа в денежные/торговые операции
 var _trade_guard := false
+
+# Явный preload раскладки хранилища (INV-01B): не зависит от глобального class cache
+const InventoryStorageLayoutScript := preload("res://scripts/systems/inventory_storage_layout.gd")
+
+# Физическая раскладка хранилища (INV-01B); null = legacy без конфигурации
+var _storage_layout: RefCounted = null
+# Защита от реентерабельных мутаций раскладки во время commit + сигналов
+var _storage_guard := false
 
 # База предметов
 var item_database: Dictionary = {}
@@ -180,7 +189,7 @@ func add_item(item_id: String, quantity: int = 1) -> bool:
 			free_in_stacks += maxi(0, max_stack - int(item.get("quantity", 1)))
 
 	# Свободные записи инвентаря
-	var free_slots := maxi(0, max_capacity - items.size())
+	var free_slots := maxi(0, get_effective_capacity() - items.size())
 
 	if stackable:
 		# Недостаток после существующих стопок
@@ -230,6 +239,10 @@ func add_item(item_id: String, quantity: int = 1) -> bool:
 			items.append(new_item)
 			changed_items.append(new_item)
 
+	# Синхронизируем раскладку ДО любых наблюдаемых сигналов
+	if not _sync_storage_layout():
+		push_error("[ASHBOUND] Не удалось синхронизировать раскладку хранилища")
+
 	# Сигнал несёт реальные словари предметов из items
 	for item in changed_items:
 		item_added.emit(item)
@@ -264,6 +277,10 @@ func remove_item(item_id: String, quantity: int = 1) -> bool:
 			remaining -= take
 			if item["quantity"] <= 0:
 				items.remove_at(i)
+
+	# Синхронизируем раскладку ДО наблюдаемого сигнала
+	if not _sync_storage_layout():
+		push_error("[ASHBOUND] Не удалось синхронизировать раскладку хранилища")
 
 	item_removed.emit(item_id)
 	return true
@@ -353,7 +370,7 @@ func equip_item(item: Dictionary) -> bool:
 	var final_size := items.size() - 1
 	if old_item != null:
 		final_size += 1
-	if final_size > max_capacity:
+	if final_size > get_effective_capacity():
 		print("[ASHBOUND] Нет места в инвентаре!")
 		return false
 
@@ -366,6 +383,10 @@ func equip_item(item: Dictionary) -> bool:
 
 	items.erase(carried)
 	equipped[slot] = carried
+
+	# Синхронизируем раскладку ДО любых наблюдаемых сигналов
+	if not _sync_storage_layout():
+		push_error("[ASHBOUND] Не удалось синхронизировать раскладку хранилища")
 
 	# Применяем статы ДО отправки событий
 	_apply_equipment_stats()
@@ -387,12 +408,16 @@ func unequip_slot(slot: String) -> bool:
 	if item == null:
 		return false
 
-	if items.size() >= max_capacity:
+	if items.size() >= get_effective_capacity():
 		print("[ASHBOUND] Нет места в инвентаре!")
 		return false
 
 	items.append(item)
 	equipped[slot] = null
+
+	# Синхронизируем раскладку ДО наблюдаемого сигнала
+	if not _sync_storage_layout():
+		push_error("[ASHBOUND] Не удалось синхронизировать раскладку хранилища")
 
 	_apply_equipment_stats()
 
@@ -501,8 +526,14 @@ func use_item(item: Dictionary) -> bool:
 
 	# Удаляем ровно ОДИН предмет из выбранного стака
 	carried["quantity"] = quantity - 1
+	var consumed := false
 	if carried["quantity"] <= 0:
 		items.erase(carried)
+		consumed = true
+
+	# Синхронизируем раскладку ДО наблюдаемого сигнала
+	if consumed and not _sync_storage_layout():
+		push_error("[ASHBOUND] Не удалось синхронизировать раскладку хранилища")
 
 	# Применяем эффект
 	if has_heal:
@@ -624,10 +655,16 @@ func sell_item(item: Dictionary) -> bool:
 
 	# Применяем изменения атомарно
 	carried["quantity"] = raw_quantity - 1
+	var sold := false
 	if carried["quantity"] <= 0:
 		items.erase(carried)
+		sold = true
 
 	gold += raw_value
+
+	# Синхронизируем раскладку ДО наблюдаемых сигналов
+	if sold and not _sync_storage_layout():
+		push_error("[ASHBOUND] Не удалось синхронизировать раскладку хранилища")
 
 	# Сигналы: сначала item_removed, затем gold_changed
 	item_removed.emit(item_id)
@@ -671,7 +708,7 @@ func buy_item(item_id: String, price: int) -> bool:
 		if item["id"] == item_id and stackable:
 			free_in_stacks += maxi(0, max_stack - int(item.get("quantity", 1)))
 
-	var free_slots := maxi(0, max_capacity - items.size())
+	var free_slots := maxi(0, get_effective_capacity() - items.size())
 
 	if stackable:
 		if free_in_stacks < 1 and free_slots < 1:
@@ -711,6 +748,10 @@ func buy_item(item_id: String, price: int) -> bool:
 
 	gold -= price
 
+	# Синхронизируем раскладку ДО наблюдаемых сигналов
+	if not _sync_storage_layout():
+		push_error("[ASHBOUND] Не удалось синхронизировать раскладку хранилища")
+
 	# Сигналы: сначала item_added (с реальной записью, без копии), затем gold_changed
 	item_added.emit(changed_entry)
 	gold_changed.emit(gold)
@@ -721,15 +762,160 @@ func buy_item(item_id: String, price: int) -> bool:
 	return true
 
 
+# === ХРАНИЛИЩЕ (INV-01B) ===
+
+func is_storage_configured() -> bool:
+	return _storage_layout != null
+
+
+func get_storage_containers() -> Array:
+	if not is_storage_configured():
+		return []
+	# Синхронизируем канонические items (legacy-фикстуры могут менять массив напрямую)
+	# БЕЗ сигнала storage_changed; при неудаче — отказ, а не ложный снимок.
+	if not _sync_storage_layout():
+		push_error("[ASHBOUND] Не удалось синхронизировать раскладку хранилища")
+		return []
+	var containers = _storage_layout.get_containers()
+	if not (containers is Array):
+		return []
+	return containers
+
+
+func get_item_storage(instance_id: String) -> String:
+	if not is_storage_configured() or not (instance_id is String):
+		return ""
+	if not _sync_storage_layout():
+		push_error("[ASHBOUND] Не удалось синхронизировать раскладку хранилища")
+		return ""
+	var container_id = _storage_layout.get_container_id(instance_id)
+	if not (container_id is String):
+		return ""
+	return container_id
+
+
+func get_effective_capacity() -> int:
+	if not is_storage_configured():
+		return max_capacity
+	return mini(max_capacity, _storage_layout.get_capacity())
+
+
+func configure_storage(definitions: Array) -> bool:
+	if _trade_guard or _storage_guard:
+		return false
+	if not (definitions is Array):
+		return false
+
+	var previous: RefCounted = _storage_layout
+
+	# Кандидат строится ДО установки и никогда не устанавливается временно
+	# ради валидации. При наличии старой раскладки её размещения переносятся
+	# на новую, поэтому повторная конфигурация не меняет местоположения предметов.
+	var candidate: RefCounted = InventoryStorageLayoutScript.new()
+	if previous != null:
+		# 1) Кандидат из СТАРЫХ определений — чтобы старые размещения были легальны
+		if not candidate.configure(previous.get_containers(), items):
+			return false
+		# 2) Переносим старые placements (валидация точных id и вместимости)
+		var previous_save: Variant = previous.get_save_data()
+		if not (previous_save is Dictionary):
+			return false
+		if not candidate.load_placements(previous_save, items):
+			return false
+
+	# 3) Применяем НОВЫЕ определения, сохраняя перенесённые размещения;
+	#    занятые контейнеры, которых нет в новых определениях, отклоняются.
+	if not candidate.configure(definitions, items):
+		return false
+
+	# 4) Валидация эффективного лимита ДО установки
+	if items.size() > mini(max_capacity, int(candidate.get_capacity())):
+		return false
+
+	# Атомарная установка: при неудаче старое состояние не затрагивается
+	_storage_guard = true
+	_storage_layout = candidate
+	_storage_guard = false
+
+	_emit_storage_changed_guarded()
+	return true
+
+
+func move_item_to_storage(item: Dictionary, destination_id: String) -> bool:
+	if _trade_guard or _storage_guard:
+		return false
+	if not is_storage_configured():
+		return false
+	if not (destination_id is String) or destination_id == "":
+		return false
+
+	var instance_id := _get_handle_instance_id(item)
+	if instance_id == "":
+		return false
+
+	# Каноническая запись в items; экипированные предметы не имеют хранилища
+	var found := false
+	for entry in items:
+		if not (entry is Dictionary):
+			continue
+		var entry_id = entry.get("instance_id", "")
+		if entry_id is String and entry_id == instance_id:
+			found = true
+			break
+	if not found:
+		return false
+	for slot in equipped:
+		var eq = equipped[slot]
+		if not (eq is Dictionary):
+			continue
+		var eq_id = eq.get("instance_id", "")
+		if eq_id is String and eq_id == instance_id:
+			return false
+
+	# Идемпотентность: предмет уже в целевом контейнере
+	if _storage_layout.get_container_id(instance_id) == destination_id:
+		return true
+
+	_storage_guard = true
+	var moved: bool = _storage_layout.move(instance_id, destination_id, items)
+	_storage_guard = false
+	if not moved:
+		return false
+
+	_emit_storage_changed_guarded()
+	return true
+
+
+func _sync_storage_layout() -> bool:
+	if not is_storage_configured():
+		return true
+	# Reconcile без сигналов: прямой доступ к items (legacy-совместимость)
+	return _storage_layout.reconcile(items)
+
+
+func _emit_storage_changed_guarded() -> void:
+	_storage_guard = true
+	storage_changed.emit()
+	_storage_guard = false
+
+
 # === СОХРАНЕНИЕ/ЗАГРУЗКА ===
 
 func get_save_data() -> Dictionary:
-	return {
+	# Синхронизируем канонические items БЕЗ сигнала; при неудаче — отказ,
+	# а не ложно валидный снимок.
+	if is_storage_configured() and not _sync_storage_layout():
+		push_error("[ASHBOUND] Не удалось синхронизировать раскладку хранилища")
+		return {}
+	var data := {
 		"schema_version": 1,
 		"items": _deep_copy(items),
 		"equipped": _deep_copy(equipped),
 		"gold": gold,
 	}
+	if is_storage_configured():
+		data["storage"] = _deep_copy(_storage_layout.get_save_data())
+	return data
 
 
 func load_save_data(data: Dictionary) -> bool:
@@ -745,9 +931,14 @@ func load_save_data(data: Dictionary) -> bool:
 	items = validated["items"]
 	equipped = validated["equipped"]
 	gold = validated["gold"]
+	var candidate_layout: RefCounted = validated.get("storage_layout", null)
+	if candidate_layout != null:
+		_storage_layout = candidate_layout
 	_apply_equipment_stats()
 	inventory_restored.emit()
 	gold_changed.emit(gold)
+	if candidate_layout != null:
+		_emit_storage_changed_guarded()
 	_trade_guard = false
 	return true
 
@@ -773,7 +964,7 @@ func _validate_save_data(data: Dictionary) -> Dictionary:
 		return {}
 
 	# Проверяем количество записей до обработки каждой записи
-	if raw_items.size() > max_capacity:
+	if raw_items.size() > get_effective_capacity():
 		return {}
 
 	var expected_slots := [SLOT_WEAPON, SLOT_ARMOR, SLOT_HELMET, SLOT_RING, SLOT_AMULET]
@@ -813,11 +1004,27 @@ func _validate_save_data(data: Dictionary) -> Dictionary:
 			return {}
 		new_equipped[slot] = validated_entry
 
-	return {
+	var result := {
 		"items": new_items,
 		"equipped": new_equipped,
 		"gold": raw_gold,
 	}
+
+	# Раскладка хранилища: текущие определения — доверенная runtime-конфигурация,
+	# из сохранения восстанавливаются только placements.
+	var has_storage := data.has("storage")
+	if is_storage_configured():
+		var candidate: RefCounted = InventoryStorageLayoutScript.new()
+		if not candidate.configure(_storage_layout.get_containers(), new_items):
+			return {}
+		if has_storage:
+			if not candidate.load_placements(data["storage"], new_items):
+				return {}
+		result["storage_layout"] = candidate
+	elif has_storage:
+		# Неизвестные физические владельцы — отказ, даже для пустого storage
+		return {}
+	return result
 
 
 func _validate_save_item(entry: Variant, seen_ids: Dictionary) -> Dictionary:
