@@ -5,8 +5,16 @@ extends Node3D
 
 const VIEW_HYSTERESIS := 0.08
 
+signal inventory_access_finished()
+
 var _current_action: StringName = &""
 var _current_view: StringName = &"back"
+
+# --- Pocket gesture state ---
+var _pocket_active := false
+var _pocket_finished := false
+var _body_was_visible := true
+var _body_was_playing := false
 
 
 ## Обновить визуал: действие (idle/walk/run/attack), направление взгляда, частота walk/run-позы.
@@ -15,10 +23,20 @@ func update_visual(action: StringName, facing_direction: Vector3, walk_pose_fps:
 	if body == null or body.sprite_frames == null:
 		return
 
+	var new_view := _resolve_view(facing_direction)
+
+	# --- Pocket gesture active: обновляем только pocket view ---
+	if _pocket_active:
+		var pocket: AnimatedSprite3D = get_node_or_null("PocketPose") as AnimatedSprite3D
+		if pocket != null and pocket.sprite_frames != null:
+			var pocket_view_changed := new_view != _current_view
+			if pocket_view_changed:
+				_current_view = new_view
+				_update_pocket_view(pocket, new_view)
+		return
+
 	var new_action := action
 	var moving := new_action == &"walk" or new_action == &"run"
-
-	var new_view := _resolve_view(facing_direction)
 
 	var action_changed := new_action != _current_action
 	var view_changed := new_view != _current_view
@@ -65,6 +83,169 @@ func update_visual(action: StringName, facing_direction: Vector3, walk_pose_fps:
 ## Текущее визуальное направление (front/back/left/right).
 func get_visual_direction() -> StringName:
 	return _current_view
+
+
+# ============================================================
+# Pocket gesture presentation API
+# ============================================================
+
+## Начать жест доступа к инвентарю. Возвращает false, если уже активен
+## или отсутствуют валидные клипы. Скрывает Body, показывает PocketPose.
+func begin_inventory_access() -> bool:
+	if _pocket_active:
+		return false
+	var pocket: AnimatedSprite3D = get_node_or_null("PocketPose") as AnimatedSprite3D
+	if pocket == null or pocket.sprite_frames == null:
+		return false
+	# Валидность: все 3 клипа pocket_back/front/side должны быть валидными
+	# и non-looping (looping-клип не может завершиться жестом).
+	for clip in [&"pocket_back", &"pocket_front", &"pocket_side"]:
+		if not _clip_is_valid(pocket.sprite_frames, clip):
+			return false
+		if pocket.sprite_frames.get_animation_loop(clip):
+			return false
+
+	# Сохраняем состояние Body
+	var body: AnimatedSprite3D = $Body
+	_body_was_visible = body.visible
+	_body_was_playing = body.is_playing()
+
+	_pocket_active = true
+	_pocket_finished = false
+
+	# Подключаем сигнал завершения: каждый begin проверяем реальное состояние
+	# подключения (флаг не ведёт — PocketPose-узел могли заменить).
+	if not pocket.animation_finished.is_connected(_on_pocket_animation_finished):
+		pocket.animation_finished.connect(_on_pocket_animation_finished)
+
+	# Скрываем Body, показываем PocketPose
+	body.visible = false
+	pocket.visible = true
+
+	# Старт с frame 0 текущего вида
+	var view := _current_view
+	pocket.animation = _resolve_pocket_clip(view)
+	pocket.frame = 0
+	pocket.frame_progress = 0.0
+	pocket.play()
+	_apply_pocket_scale(pocket, view)
+
+	# Непосредственно применяем начальный flip (left — flip_h), даже если
+	# вид не меняется в последующих кадрах.
+	var flip := view == &"left"
+	if pocket.flip_h != flip:
+		pocket.flip_h = flip
+	return true
+
+
+## Завершить жест доступа (идемпотентно). Останавливает pocket-анимацию,
+## отменяет состояние жеста и восстанавливает нормальный Body.
+func end_inventory_access() -> void:
+	if not _pocket_active:
+		return
+	var pocket: AnimatedSprite3D = get_node_or_null("PocketPose") as AnimatedSprite3D
+	if pocket != null:
+		pocket.stop()
+		pocket.visible = false
+
+	# Отменяем состояние жеста
+	_pocket_active = false
+	_pocket_finished = false
+
+	# Восстанавливаем нормальный Body: вид синхронизируем с текущим
+	# _current_view (не оставляем старый back-спрайт при front-виде).
+	var body: AnimatedSprite3D = $Body
+	if body != null and body.sprite_frames != null:
+		var action := _current_action
+		if action == &"":
+			action = &"idle"
+		body.animation = _resolve_clip_name(body.sprite_frames, action, _current_view)
+		body.frame = 0
+		body.frame_progress = 0.0
+		var flip := _current_view == &"left"
+		if body.flip_h != flip:
+			body.flip_h = flip
+		_apply_sprite_scale(body)
+		body.visible = _body_was_visible
+		if _body_was_playing and body.is_inside_tree():
+			body.play()
+		else:
+			body.pause()
+
+
+## Активен ли жест доступа к инвентарю.
+func is_inventory_access_active() -> bool:
+	return _pocket_active
+
+
+func _resolve_pocket_clip(view: StringName) -> StringName:
+	match view:
+		&"front":
+			return &"pocket_front"
+		&"left", &"right":
+			return &"pocket_side"
+		_:
+			return &"pocket_back"
+
+
+func _apply_pocket_scale(pocket: AnimatedSprite3D, view: StringName) -> void:
+	var frames := pocket.sprite_frames
+	if frames == null:
+		return
+	var view_key := "back"
+	match view:
+		&"front":
+			view_key = "front"
+		&"left", &"right":
+			view_key = "side"
+	var pixel_size: float = frames.get_meta("pixel_size_" + view_key, 0.005)
+	if pixel_size <= 0.0:
+		pixel_size = 0.005
+	pocket.pixel_size = pixel_size
+	var baseline: float = frames.get_meta("baseline_offset_pixels", 240.0)
+	pocket.position.y = baseline * pixel_size
+
+
+func _update_pocket_view(pocket: AnimatedSprite3D, new_view: StringName) -> void:
+	# Смена вида: сохраняем нормализованную фазу и паузу
+	var old_frame := pocket.frame
+	var old_progress: float = pocket.frame_progress
+	var was_paused := not pocket.is_playing()
+
+	pocket.animation = _resolve_pocket_clip(new_view)
+
+	var frame_count := pocket.sprite_frames.get_frame_count(pocket.animation)
+	var clamped_frame: int = clampi(old_frame, 0, maxi(frame_count - 1, 0))
+	pocket.set_frame_and_progress(clamped_frame, old_progress)
+	if was_paused:
+		pocket.pause()
+
+	# Flip для боковых видов (side facing right → left = flip_h)
+	var flip := new_view == &"left"
+	if pocket.flip_h != flip:
+		pocket.flip_h = flip
+
+	_apply_pocket_scale(pocket, new_view)
+
+
+## Сигнал animation_finished: единственный источник "завершения" жеста.
+## Пауза/отмена сигнала не дают — только активное non-looping завершение.
+func _on_pocket_animation_finished() -> void:
+	if not _pocket_active or _pocket_finished:
+		return
+	var pocket: AnimatedSprite3D = get_node_or_null("PocketPose") as AnimatedSprite3D
+	if pocket == null or pocket.sprite_frames == null:
+		return
+	# Looping-клипы не считаются завершёнными
+	if pocket.sprite_frames.get_animation_loop(pocket.animation):
+		return
+	# Фиксируем последний кадр (запозированная поза)
+	var frame_count := pocket.sprite_frames.get_frame_count(pocket.animation)
+	pocket.set_frame_and_progress(frame_count - 1, 0.0)
+	if not pocket.is_playing():
+		pocket.pause()
+	_pocket_finished = true
+	inventory_access_finished.emit()
 
 
 ## Заменить спрайт-ресурс на совместимый. Не валидно — вернуть false, ничего не меняя.

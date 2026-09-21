@@ -154,6 +154,19 @@ func is_running() -> bool:
 	return absf(real_velocity.x) > 0.01 or absf(real_velocity.z) > 0.01
 
 
+## Активна ли атака в данный момент (для внешних систем, напр. инвентаря).
+func is_attacking() -> bool:
+	return _attack_active
+
+
+## Очистить только ввод движения, не трогая состояние атаки и кулдаун.
+func clear_movement_input() -> void:
+	_touch_move = Vector2.ZERO
+	_touch_run = false
+	velocity.x = 0.0
+	velocity.z = 0.0
+
+
 func stop_input() -> void:
 	_touch_move = Vector2.ZERO
 	_touch_run = false

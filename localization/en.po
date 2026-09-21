@@ -177,3 +177,87 @@ msgstr "Land three clean hits on the dummy."
 # Courtyard dialogue: watchman generic reply.
 msgid "COURTYARD_DIALOGUE_GUARD_OTHER"
 msgstr "The courtyard is open. Have a look around."
+
+# Inventory UI: open-inventory button/label.
+msgid "INV_OPEN"
+msgstr "Inventory"
+
+# Inventory UI: desktop open-inventory prompt with hotkey hint.
+msgid "INV_OPEN_DESKTOP"
+msgstr "Inventory · I / Tab"
+
+# Inventory UI: panel title.
+msgid "INV_TITLE"
+msgstr "Carried items"
+
+# Inventory UI: item source label for clothing pockets.
+msgid "INV_SOURCE_POCKET"
+msgstr "Clothing pocket"
+
+# Inventory UI: empty-state message.
+msgid "INV_EMPTY"
+msgstr "Nothing here yet."
+
+# Inventory UI: coin count line; {amount} is a placeholder.
+msgid "INV_GOLD"
+msgstr "Coins: {amount}"
+
+# Inventory UI: item row; {name} and {count} are placeholders.
+msgid "INV_ROW"
+msgstr "{name} × {count}"
+
+# Inventory UI: equipped item row; {name} is a placeholder.
+msgid "INV_EQUIPPED_ROW"
+msgstr "{name} · equipped"
+
+# Inventory UI: fallback name for an unknown item.
+msgid "INV_UNKNOWN_ITEM"
+msgstr "Unknown item"
+
+# Settings: error when the language preference cannot be saved.
+msgid "INV_SETTINGS_FAILURE"
+msgstr "Could not save the language preference."
+
+# Language selector: English option label.
+msgid "LOC_LANGUAGE_ENGLISH"
+msgstr "English"
+
+# Language selector: Russian option label.
+msgid "LOC_LANGUAGE_RUSSIAN"
+msgstr "Русский"
+
+# Item name: rusty sword.
+msgid "ITEM_RUSTY_SWORD_NAME"
+msgstr "Rusty sword"
+
+# Item name: iron sword.
+msgid "ITEM_IRON_SWORD_NAME"
+msgstr "Iron sword"
+
+# Item name: cultist's blade.
+msgid "ITEM_CULTIST_BLADE_NAME"
+msgstr "Cultist's blade"
+
+# Item name: leather armor.
+msgid "ITEM_LEATHER_ARMOR_NAME"
+msgstr "Leather armor"
+
+# Item name: chain mail.
+msgid "ITEM_CHAIN_MAIL_NAME"
+msgstr "Chain mail"
+
+# Item name: health potion.
+msgid "ITEM_HEALTH_POTION_NAME"
+msgstr "Health potion"
+
+# Item name: stamina potion.
+msgid "ITEM_STAMINA_POTION_NAME"
+msgstr "Stamina potion"
+
+# Item name: bread.
+msgid "ITEM_BREAD_NAME"
+msgstr "Bread"
+
+# Item name: sacred ash.
+msgid "ITEM_SACRED_ASH_NAME"
+msgstr "Sacred ash"

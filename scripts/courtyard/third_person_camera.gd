@@ -117,6 +117,19 @@ func _set_mouse_captured(captured: bool) -> void:
 		_mouse_captured = false
 
 
+## Внешний запрос захвата мыши (например, из меню инвентаря).
+## Захват желателен только при включённом вводе и _should_capture_mouse().
+func set_mouse_capture(captured: bool) -> void:
+	var desired := captured and input_enabled and _should_capture_mouse()
+	_set_mouse_captured(desired)
+	if desired:
+		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+		_mouse_captured = true
+	else:
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+		_mouse_captured = false
+
+
 func _input(event: InputEvent) -> void:
 	# Релиз палеца камеры обязан очищаться всегда, даже если GUI позже
 	# пометит событие обработанным.

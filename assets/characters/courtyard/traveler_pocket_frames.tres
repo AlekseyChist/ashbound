@@ -1,0 +1,145 @@
+[gd_resource type="SpriteFrames" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/characters/courtyard/traveler-pocket-v1.png" id="1_atlas"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_0"]
+atlas = ExtResource("1_atlas")
+region = Rect2(107, 74, 153, 354)
+margin = Rect2(180.5, 142, 359, 158)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_1"]
+atlas = ExtResource("1_atlas")
+region = Rect2(403, 74, 161, 354)
+margin = Rect2(178.5, 142, 351, 158)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_2"]
+atlas = ExtResource("1_atlas")
+region = Rect2(694, 85, 164, 343)
+margin = Rect2(176.5, 153, 348, 169)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_3"]
+atlas = ExtResource("1_atlas")
+region = Rect2(999, 85, 164, 342)
+margin = Rect2(178.5, 154, 348, 170)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_4"]
+atlas = ExtResource("1_atlas")
+region = Rect2(101, 451, 163, 367)
+margin = Rect2(174.5, 129, 349, 145)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_5"]
+atlas = ExtResource("1_atlas")
+region = Rect2(401, 454, 165, 364)
+margin = Rect2(177, 132, 347, 148)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_6"]
+atlas = ExtResource("1_atlas")
+region = Rect2(702, 464, 165, 354)
+margin = Rect2(177, 142, 347, 158)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_7"]
+atlas = ExtResource("1_atlas")
+region = Rect2(1000, 466, 168, 352)
+margin = Rect2(172, 144, 344, 160)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_8"]
+atlas = ExtResource("1_atlas")
+region = Rect2(122, 840, 105, 372)
+margin = Rect2(198.5, 124, 407, 140)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_9"]
+atlas = ExtResource("1_atlas")
+region = Rect2(421, 843, 125, 369)
+margin = Rect2(195.5, 127, 387, 143)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_10"]
+atlas = ExtResource("1_atlas")
+region = Rect2(717, 850, 118, 362)
+margin = Rect2(197, 134, 394, 150)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_11"]
+atlas = ExtResource("1_atlas")
+region = Rect2(1020, 852, 115, 360)
+margin = Rect2(196, 136, 397, 152)
+filter_clip = true
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"name": &"",
+"texture": SubResource("AtlasTexture_0")
+}, {
+"duration": 1.0,
+"name": &"",
+"texture": SubResource("AtlasTexture_1")
+}, {
+"duration": 1.0,
+"name": &"",
+"texture": SubResource("AtlasTexture_2")
+}, {
+"duration": 1.0,
+"name": &"",
+"texture": SubResource("AtlasTexture_3")
+}],
+"loop": false,
+"name": &"pocket_back",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"name": &"",
+"texture": SubResource("AtlasTexture_4")
+}, {
+"duration": 1.0,
+"name": &"",
+"texture": SubResource("AtlasTexture_5")
+}, {
+"duration": 1.0,
+"name": &"",
+"texture": SubResource("AtlasTexture_6")
+}, {
+"duration": 1.0,
+"name": &"",
+"texture": SubResource("AtlasTexture_7")
+}],
+"loop": false,
+"name": &"pocket_front",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"name": &"",
+"texture": SubResource("AtlasTexture_8")
+}, {
+"duration": 1.0,
+"name": &"",
+"texture": SubResource("AtlasTexture_9")
+}, {
+"duration": 1.0,
+"name": &"",
+"texture": SubResource("AtlasTexture_10")
+}, {
+"duration": 1.0,
+"name": &"",
+"texture": SubResource("AtlasTexture_11")
+}],
+"loop": false,
+"name": &"pocket_side",
+"speed": 6.0
+}]
+metadata/pixel_size_back = 0.005084745762711864
+metadata/pixel_size_front = 0.004904632152588556
+metadata/pixel_size_side = 0.004838709677419355
+metadata/baseline_offset_pixels = 240.0

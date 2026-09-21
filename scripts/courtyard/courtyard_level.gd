@@ -377,6 +377,11 @@ func _on_watchman_interact() -> void:
 # --- Сброс ----------------------------------------------------------------
 
 func reset_lesson() -> void:
+	# Сначала закрываем меню инвентаря (открытое или открывающееся),
+	# чтобы сброс не конфликтовал с его состоянием.
+	var inventory_menu: Node = get_node_or_null("InventoryMenu")
+	if inventory_menu != null and inventory_menu.has_method("close_menu"):
+		inventory_menu.call("close_menu")
 	state = State.MEET_HOST
 	dummy_hits = 0
 	reward_claimed = false

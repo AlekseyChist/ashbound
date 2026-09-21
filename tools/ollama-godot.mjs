@@ -166,8 +166,11 @@ async function fileTool(name, args) {
     const target = await safePath(args.path);
     if ((await fs.stat(target)).size > 256000) throw new Error('File exceeds 256 KB. Ask the coordinator to provide an excerpt.');
     const start = args.start_line ?? 1;
-    const count = args.max_lines ?? 100;
-    if (!Number.isInteger(start) || start < 1 || !Number.isInteger(count) || count < 1 || count > 200) throw new Error('Invalid line range.');
+    const requestedCount = args.max_lines ?? 100;
+    if (!Number.isInteger(start) || start < 1 || !Number.isInteger(requestedCount) || requestedCount < 1) throw new Error('start_line and max_lines must be positive integers; max_lines is a count, not an end line.');
+    // Some local models ignore the schema maximum and repeat the same rejected
+    // read. Return a bounded chunk so they can advance using end_line instead.
+    const count = Math.min(requestedCount, 200);
     const lines = (await fs.readFile(target, 'utf8')).split('\n');
     const chunk = [];
     let length = 0;

@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3]
+[gd_scene load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://scripts/courtyard/courtyard_level.gd" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/courtyard/courtyard_environment.tscn" id="2"]
@@ -9,6 +9,7 @@
 [ext_resource type="SpriteFrames" path="res://assets/characters/courtyard/watchman_frames.tres" id="7"]
 [ext_resource type="PackedScene" path="res://scenes/courtyard/third_person_camera.tscn" id="8"]
 [ext_resource type="PackedScene" path="res://scenes/courtyard/target_feedback.tscn" id="9"]
+[ext_resource type="PackedScene" path="res://scenes/courtyard/courtyard_inventory_menu.tscn" id="10_inventory_menu"]
 
 [node name="FirstCourtyard" type="Node3D"]
 script = ExtResource("1")
@@ -58,3 +59,5 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 1.55, 7)
 [node name="InteractionFocus" parent="." instance=ExtResource("9")]
 
 [node name="AttackFocus" parent="." instance=ExtResource("9")]
+
+[node name="InventoryMenu" parent="." instance=ExtResource("10_inventory_menu")]
