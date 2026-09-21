@@ -134,8 +134,6 @@ func request_open() -> bool:
 		return false
 	if _player.has_method("is_attacking") and _player.is_attacking():
 		return false
-	if _hud != null and is_instance_valid(_hud) and _dialogue_visible():
-		return false
 	var access := get_node_or_null(access_path)
 	if access == null or not access.has_method("has_access") or not access.has_access():
 		return false
@@ -193,6 +191,12 @@ func request_open() -> bool:
 	if not visual.begin_inventory_access():
 		_rollback_open()
 		return false
+
+	# Информационный ответ HUD (без выбора, квест уже принят) не блокирует ввод:
+	# очищаем его только после успешного запуска жеста.
+	if _hud != null and is_instance_valid(_hud) and _dialogue_visible() \
+			and _hud.has_method("clear_message"):
+		_hud.clear_message()
 
 	return true
 
