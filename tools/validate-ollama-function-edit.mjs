@@ -23,3 +23,25 @@ assert.throws(() => rangeOf(gd + '\nfunc alpha():\n\tpass\n', 'alpha'), /exactly
 assert.throws(() => rangeOf(gd, 'alpha.*'), /Invalid function/);
 assert.equal(rangeOf('func only():\n\tpass', 'only').end, 18);
 console.log('OLLAMA_FUNCTION_EDIT_OK: function boundaries preserve surrounding code; unsafe names and ambiguity rejected');
+
+// Real tool advertisement must enforce the requested write mode, not just
+// describe it in the prompt: edits-only cannot offer whole-file overwrites.
+const declarationStart = source.indexOf('const schema =');
+assert(declarationStart >= 0 && declarationStart < start);
+const declarations = source.slice(declarationStart, start);
+function names(values) {
+  return vm.runInNewContext(declarations + '; fileTools.map(t => t.function.name)', {
+    values, allowedFiles: new Set(['scoped.gd']),
+  });
+}
+const precise = names({ write: true, 'edits-only': true });
+assert(!precise.includes('write_file'));
+assert(precise.includes('replace_function') && precise.includes('replace_text'));
+assert(!precise.includes('read_file'));
+const creation = names({ write: true, 'create-only': true });
+assert(creation.includes('write_file') && !creation.includes('replace_text'));
+const normal = names({ write: true });
+assert(normal.includes('write_file') && normal.includes('read_file'));
+const readonly = names({ write: false });
+assert(readonly.includes('read_file') && !readonly.some(n => /^(write|replace)_/.test(n)));
+console.log('OLLAMA_EDIT_MODES_OK: precise/create/general/read-only tool boundaries');

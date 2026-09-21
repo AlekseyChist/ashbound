@@ -165,7 +165,7 @@ const fileTools = values['create-only'] || values['edits-only'] ? [] : [
   schema('read_file', 'Read a chunk of a UTF-8 project text file. Use end_line + 1 as start_line to read the next chunk.', { path: str, start_line: { type: 'integer', minimum: 1 }, max_lines: { type: 'integer', minimum: 1, maximum: 200 } }, ['path']),
   schema('read_function', 'Read only one top-level GDScript function by name. Prefer this for bounded fixes in large scripts.', { path: str, function_name: str }, ['path', 'function_name']),
 ];
-if (values.write) fileTools.push(
+if (values.write && !values['edits-only']) fileTools.push(
   schema('write_file', 'Write game code or a scene. Existing files require overwrite=true and are backed up.', { path: str, content: str, overwrite: { type: 'boolean' } }, ['path', 'content']),
 );
 if (values.write && !values['create-only']) fileTools.push(schema('replace_text', 'Replace exactly one occurrence in an existing game file, with backup.', { path: str, old_text: str, new_text: str }, ['path', 'old_text', 'new_text']));

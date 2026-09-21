@@ -93,7 +93,8 @@ func run() -> void:
 	panel.open_panel()
 	await settle()
 	check(panel.get("_tab_buttons").size()==1,"only starter pocket active")
-	check(not panel.get_node("%CharacterPreview").get_node("BackpackPreview").visible,"portrait does not invent backpack")
+	check(panel.get_node("%CharacterPreview").get_child_count()==0,"portrait has no accessory overlay")
+	check(panel.get_node("%CharacterPreview").texture==load("res://assets/characters/courtyard/traveler_frames.tres").get_frame_texture("idle_front",0),"portrait does not invent backpack")
 	check(panel.get_node("%StorageTabs").get_child_count()==3,"missing bags still pictured")
 	for language in ["en","ru"]:
 		loc.load_preferences("res://.tools/touch-qa-language.cfg",language)
@@ -113,7 +114,7 @@ func run() -> void:
 	var armor: Dictionary = item("leather_armor").duplicate(true)
 	await carry(cell_pos(bag.instance_id),center("BackpackSlot"))
 	check(inv.get_worn_storage("backpack").get("instance_id","")==bag.instance_id,"touch equip backpack")
-	check(panel.get_node("%CharacterPreview").get_node("BackpackPreview").visible,"portrait shows worn backpack straps")
+	check(panel.get_node("%CharacterPreview").texture==load("res://assets/characters/courtyard/traveler_backpack_frames.tres").get_frame_texture("idle_front",0),"portrait switches to complete painted backpack frame")
 	var bag_id := "worn_storage:"+str(bag.instance_id)
 	check(panel.get("_tab_buttons").has(bag_id),"backpack tab becomes active")
 	await carry(cell_pos(pouch.instance_id),center("PouchSlot"))
