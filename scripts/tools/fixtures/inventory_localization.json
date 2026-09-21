@@ -163,5 +163,65 @@
     "key": "INV_STORAGE_ITEM_ROW",
     "en": "{item} · {storage}",
     "ru": "{item} · {storage}"
+  },
+  {
+    "key": "TOUCH_ARMOR_SET",
+    "en": "Outfit",
+    "ru": "Комплект"
+  },
+  {
+    "key": "TOUCH_WEAPON",
+    "en": "Weapon",
+    "ru": "Оружие"
+  },
+  {
+    "key": "TOUCH_POCKET",
+    "en": "Inside pocket",
+    "ru": "За пазухой"
+  },
+  {
+    "key": "TOUCH_BACKPACK",
+    "en": "Backpack",
+    "ru": "Рюкзак"
+  },
+  {
+    "key": "TOUCH_POUCH",
+    "en": "Belt pouch",
+    "ru": "Мешочек"
+  },
+  {
+    "key": "TOUCH_NOT_WORN",
+    "en": "Not worn",
+    "ru": "Не надет"
+  },
+  {
+    "key": "TOUCH_DRAG_HINT",
+    "en": "Hold an item, then drag it to a slot.",
+    "ru": "Удерживай вещь и перетащи её в ячейку."
+  },
+  {
+    "key": "TOUCH_QUICK_LABEL",
+    "en": "Quick slots · 1–0",
+    "ru": "Быстрые слоты · 1–0"
+  },
+  {
+    "key": "TOUCH_EMPTY_SLOT",
+    "en": "Empty",
+    "ru": "Пусто"
+  },
+  {
+    "key": "TOUCH_MOVE_FAILED",
+    "en": "Cannot move this item here.",
+    "ru": "Сюда нельзя переложить эту вещь."
+  },
+  {
+    "key": "ITEM_TRAVELER_BACKPACK_NAME",
+    "en": "Travel backpack",
+    "ru": "Дорожный рюкзак"
+  },
+  {
+    "key": "ITEM_BELT_POUCH_NAME",
+    "en": "Belt pouch",
+    "ru": "Поясной мешочек"
   }
 ]

@@ -85,7 +85,7 @@ for (const directory of ['scripts/courtyard', 'scenes/courtyard']) {
   for (const file of fs.readdirSync(path.join(root, directory)).filter(name => /\.(gd|tscn)$/.test(name))) {
     const relative = `${directory}/${file}`;
     const source = fs.readFileSync(path.join(root, relative), 'utf8');
-    for (const match of source.matchAll(/"((?:COURTYARD|UI|INV|ITEM|LOC)_[A-Z_]+)"/g)) {
+    for (const match of source.matchAll(/"((?:COURTYARD|UI|INV|ITEM|LOC|TOUCH)_[A-Z_]+)"/g)) {
       check(expected.includes(match[1]), `${relative}: unregistered runtime key ${match[1]}`);
     }
     source.split(/\r?\n/).forEach((line, i) => {

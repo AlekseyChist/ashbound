@@ -29,9 +29,29 @@ try {
         if (-not $files.Contains($resource) -and -not $files.Contains($resource + '.remap')) { $missing += $script }
     }
     if ($missing.Count -gt 0) { throw ('Missing runtime scripts: ' + ($missing -join ', ')) }
+    # Selected-scene exports may omit art loaded only through a script preload.
+    # Require both its import descriptor and every referenced GPU texture.
+    $inventoryArt = @(
+        'assets/ui/inventory/items-v1.png',
+        'assets/ui/inventory/pocket-v1.png',
+        'assets/ui/inventory/backpack-v1.png',
+        'assets/ui/inventory/pouch-v1.png',
+        'assets/characters/courtyard/traveler-backpack-layer-v1.png'
+    )
+    foreach ($relative in $inventoryArt) {
+        $descriptor = $archive.GetEntry('assets/' + $relative + '.import')
+        if ($null -eq $descriptor) { throw "Missing inventory texture descriptor: $relative" }
+        $reader = [IO.StreamReader]::new($descriptor.Open())
+        try { $importText = $reader.ReadToEnd() } finally { $reader.Dispose() }
+        $paths = @([regex]::Matches($importText, '(?m)^path(?:\.[^=]+)?="res://([^"\r\n]+)"'))
+        if ($paths.Count -eq 0) { throw "Texture descriptor has no runtime path: $relative" }
+        foreach ($match in $paths) {
+            if (-not $files.Contains('assets/' + $match.Groups[1].Value)) { throw "Missing imported inventory image: $($match.Groups[1].Value)" }
+        }
+    }
     $diagnostics = @($files | Where-Object { $_ -match '^assets/scripts/tools/|back_probe\.tscn' })
     if ($diagnostics.Count -gt 0) { throw ('QA-only files included: ' + ($diagnostics -join ', ')) }
-    Write-Output "ASHBOUND_APK_DEPENDENCIES_OK autoload_scripts=$($scripts.Count) qa_files=0"
+    Write-Output "ASHBOUND_APK_DEPENDENCIES_OK autoload_scripts=$($scripts.Count) inventory_images=$($inventoryArt.Count) qa_files=0"
 } finally {
     $archive.Dispose()
 }

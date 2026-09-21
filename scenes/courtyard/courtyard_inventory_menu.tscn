@@ -1,7 +1,7 @@
 [gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://scripts/courtyard/courtyard_inventory_menu.gd" id="2_menu"]
-[ext_resource type="PackedScene" path="res://scenes/courtyard/courtyard_inventory_panel.tscn" id="1_panel"]
+[ext_resource type="PackedScene" path="res://scenes/courtyard/touch_inventory_panel.tscn" id="1_panel"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_goldborder_charcoal"]
 content_margin_left = 8.0
@@ -55,10 +55,10 @@ color = Color(0.05, 0.045, 0.04, 0.6)
 visible = false
 layout_mode = 1
 anchors_preset = 0
-anchor_left = 0.6
-anchor_top = 0.08
-anchor_right = 0.97
-anchor_bottom = 0.92
+anchor_left = 0.025
+anchor_top = 0.025
+anchor_right = 0.975
+anchor_bottom = 0.975
 offset_left = 0.0
 offset_top = 0.0
 offset_right = 0.0

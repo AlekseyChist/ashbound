@@ -7,7 +7,7 @@ signal closed()
 
 enum State { CLOSED, OPENING, OPEN }
 
-const PANEL_SCENE: PackedScene = preload("res://scenes/courtyard/courtyard_inventory_panel.tscn")
+const PANEL_SCENE: PackedScene = preload("res://scenes/courtyard/touch_inventory_panel.tscn")
 
 @export var player_path: NodePath = ^"../Actors/Player"
 @export var hud_path: NodePath = ^"../HUD"
