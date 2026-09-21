@@ -9,6 +9,11 @@ $pending = [Collections.Generic.Queue[string]]::new()
 foreach ($match in [regex]::Matches($autoloadSection, 'res://([^"\r\n]+\.gd)')) {
     $pending.Enqueue($match.Groups[1].Value)
 }
+# The modal menu is reached through a scene, not through an autoload.
+# Include its script closure so section controllers cannot disappear in exports.
+foreach ($relative in @('scripts/courtyard/touch_inventory_panel.gd', 'scripts/courtyard/courtyard_level.gd')) {
+    $pending.Enqueue($relative)
+}
 $scripts = [Collections.Generic.HashSet[string]]::new()
 while ($pending.Count -gt 0) {
     $relative = $pending.Dequeue()

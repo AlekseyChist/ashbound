@@ -1,0 +1,8 @@
+[
+  {"key":"MENU_SECTION_ITEMS","en":"Items","ru":"Вещи"},
+  {"key":"MENU_SECTION_QUESTS","en":"Quests","ru":"Задания"},
+  {"key":"MENU_JOURNAL_COURTYARD","en":"Settling in","ru":"Обжиться на новом месте"},
+  {"key":"MENU_QUEST_ACTIVE","en":"In progress","ru":"В процессе"},
+  {"key":"MENU_QUEST_COMPLETED","en":"Completed","ru":"Завершено"},
+  {"key":"MENU_QUEST_EMPTY","en":"No quests yet.","ru":"Пока нет заданий."}
+]

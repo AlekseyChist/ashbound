@@ -355,3 +355,21 @@ msgstr ""
 # Touch inventory: reviewed mobile equipment UI.
 msgid "ITEM_BELT_POUCH_NAME"
 msgstr ""
+
+msgid "MENU_SECTION_ITEMS"
+msgstr ""
+
+msgid "MENU_SECTION_QUESTS"
+msgstr ""
+
+msgid "MENU_JOURNAL_COURTYARD"
+msgstr ""
+
+msgid "MENU_QUEST_ACTIVE"
+msgstr ""
+
+msgid "MENU_QUEST_COMPLETED"
+msgstr ""
+
+msgid "MENU_QUEST_EMPTY"
+msgstr ""

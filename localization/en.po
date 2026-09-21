@@ -357,3 +357,21 @@ msgstr "Travel backpack"
 # Touch inventory: reviewed mobile equipment UI.
 msgid "ITEM_BELT_POUCH_NAME"
 msgstr "Belt pouch"
+
+msgid "MENU_SECTION_ITEMS"
+msgstr "Items"
+
+msgid "MENU_SECTION_QUESTS"
+msgstr "Quests"
+
+msgid "MENU_JOURNAL_COURTYARD"
+msgstr "Settling in"
+
+msgid "MENU_QUEST_ACTIVE"
+msgstr "In progress"
+
+msgid "MENU_QUEST_COMPLETED"
+msgstr "Completed"
+
+msgid "MENU_QUEST_EMPTY"
+msgstr "No quests yet."

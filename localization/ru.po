@@ -358,3 +358,21 @@ msgstr "Дорожный рюкзак"
 # Touch inventory: reviewed mobile equipment UI.
 msgid "ITEM_BELT_POUCH_NAME"
 msgstr "Поясной мешочек"
+
+msgid "MENU_SECTION_ITEMS"
+msgstr "Вещи"
+
+msgid "MENU_SECTION_QUESTS"
+msgstr "Задания"
+
+msgid "MENU_JOURNAL_COURTYARD"
+msgstr "Обжиться на новом месте"
+
+msgid "MENU_QUEST_ACTIVE"
+msgstr "В процессе"
+
+msgid "MENU_QUEST_COMPLETED"
+msgstr "Завершено"
+
+msgid "MENU_QUEST_EMPTY"
+msgstr "Пока нет заданий."

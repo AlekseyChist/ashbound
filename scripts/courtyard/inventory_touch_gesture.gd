@@ -281,6 +281,15 @@ func _hit_test(pos: Vector2) -> Dictionary:
 	if lang_choice is OptionButton and lang_choice.visible:
 		if lang_choice.get_global_rect().has_point(pos):
 			return {"kind": "language", "id": "language", "control": lang_choice}
+	# Menu sections (journal/quests etc. via existing controller).
+	var sections: RefCounted = panel.get("_sections")
+	if sections != null and sections.has_method("hit_test"):
+		var section_hit: Dictionary = sections.hit_test(pos)
+		if not section_hit.is_empty():
+			return section_hit
+	# If a non-items section is active, block storage tabs/quick/equipment/items.
+	if sections != null and sections.get("current_section") != "items":
+		return {}
 	# Tab buttons (active only).
 	var tab_buttons: Dictionary = panel.get("_tab_buttons")
 	if tab_buttons is Dictionary:
@@ -490,6 +499,10 @@ func _do_tap(target: Dictionary) -> void:
 			pass # No action on empty grid tap.
 		"language":
 			pass # Native popup preserved.
+		"section":
+			var sections: RefCounted = _panel.get("_sections")
+			if sections != null and sections.has_method("select_section"):
+				sections.select_section(id)
 
 
 func _select_item(iid: String) -> void:

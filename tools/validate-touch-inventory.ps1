@@ -1,5 +1,5 @@
 param(
-  [string[]]$Cases = @('wearable_storage','touch_inventory','backpack_visual','inventory_menu','inventory_back','inventory_storage_layout','inventory_storage','inventory_snapshot','inventory_snapshot_edges','inventory_trade','inventory_trade_edges','inventory_ownership','inventory_ownership_edges','localization','courtyard_localization','courtyard','inventory_gesture','courtyard_input_order'),
+  [string[]]$Cases = @('wearable_storage','touch_inventory','backpack_visual','inventory_menu','inventory_back','inventory_storage_layout','inventory_storage','inventory_snapshot','inventory_snapshot_edges','inventory_trade','inventory_trade_edges','inventory_ownership','inventory_ownership_edges','localization','courtyard_localization','courtyard','inventory_gesture','courtyard_input_order','menu_journal'),
   [switch]$Render
 )
 $ErrorActionPreference = 'Stop'
