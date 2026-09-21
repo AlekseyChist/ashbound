@@ -282,3 +282,31 @@ msgstr "Хлеб"
 # Item name: sacred ash.
 msgid "ITEM_SACRED_ASH_NAME"
 msgstr "Священный пепел"
+
+# Inventory UI: prompt to select an item for inspection.
+msgid "INV_SELECT_ITEM"
+msgstr "Выбери предмет, чтобы осмотреть его."
+
+# Inventory UI: item details block; {name}, {count} and {location} are placeholders.
+msgid "INV_ITEM_DETAILS"
+msgstr "{name} × {count}\n{location}"
+
+# Inventory UI: location label for equipped items.
+msgid "INV_LOCATION_EQUIPPED"
+msgstr "Надето"
+
+# Inventory UI: location label for carried items.
+msgid "INV_LOCATION_CARRIED"
+msgstr "При себе"
+
+# Inventory UI: action to move a stack between containers.
+msgid "INV_MOVE_ITEM"
+msgstr "Переложить"
+
+# Inventory UI: prompt asking where to move the selected stack.
+msgid "INV_TRANSFER_TO"
+msgstr "Куда переложить"
+
+# Inventory UI: error when a stack cannot be moved to the target container.
+msgid "INV_TRANSFER_FAILED"
+msgstr "Не удалось переложить предмет. Проверь свободное место."
