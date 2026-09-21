@@ -34,6 +34,50 @@ func _empty_quick() -> Array[String]:
 	return out
 
 # ---------------------------------------------------------------- capture ---
+func fresh_start(level: Node, inventory: Node) -> Dictionary:
+	var data := capture(level, inventory)
+
+	var quest := _new_quest()
+	data["quest"] = quest
+
+	var progress := {
+		"schema_version": 1,
+		"learning_points": 0,
+		"point_awards": {},
+		"guard_practice_completed": false,
+	}
+	data["progress"] = progress
+
+	var inv_data: Dictionary = {
+		"schema_version": int(data["inventory"]["schema_version"]),
+		"items": [],
+		"equipped": {},
+		"gold": 0,
+		"storage": {"placements": {}, "cells": {}},
+	}
+	for key in data["inventory"]["equipped"]:
+		inv_data["equipped"][key] = null
+	data["inventory"] = inv_data
+
+	var player := {
+		"position": level._player_spawn,
+		"facing": Vector3.FORWARD,
+	}
+	data["player"] = player
+
+	var camera := {
+		"yaw": 0.0,
+		"pitch": deg_to_rad(-12.0),
+	}
+	data["camera"] = camera
+
+	data["quick"] = _empty_quick()
+	data["world_items"] = []
+	data["map_available"] = true
+	data["pocket_available"] = true
+
+	return data
+
 func capture(level: Node, inventory: Node) -> Dictionary:
 	var player := level.get_node("Actors/Player")
 	var camera := level.get_node("CameraRig")

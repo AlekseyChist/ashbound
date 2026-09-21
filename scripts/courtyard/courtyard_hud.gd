@@ -285,6 +285,25 @@ func _notification(what: int) -> void:
 
 
 func _input(event: InputEvent) -> void:
+	# Закрытие диалога: interact или Escape (не эмуляция), либо реальный
+	# левый клик мыши при захваченном курсоре.
+	if _message_visible and _message_panel.is_visible_in_tree():
+		if event is InputEventKey:
+			var k := event as InputEventKey
+			if k.pressed and not k.echo:
+				var closes := k.is_action_pressed("interact") or k.keycode == KEY_ESCAPE or k.physical_keycode == KEY_ESCAPE
+				if closes:
+					clear_message()
+					get_viewport().set_input_as_handled()
+					return
+		elif event is InputEventMouseButton:
+			var mb := event as InputEventMouseButton
+			if mb.device != InputEvent.DEVICE_ID_EMULATION and mb.pressed \
+					and mb.button_index == MOUSE_BUTTON_LEFT \
+					and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+				clear_message()
+				get_viewport().set_input_as_handled()
+				return
 	# S23: эмулированные мышиные события (device=-1) дублируют тачи.
 	# Если точка попадает в собственную кнопку HUD, глотаем и press, и release,
 	# чтобы GUI button_down не переключал состояние раньше/позже тача.
@@ -406,7 +425,10 @@ func _on_touch_down(pos: Vector2, index: int) -> void:
 		return
 	if _btn_interact.is_visible_in_tree() and _btn_interact.get_global_rect().has_point(pos):
 		_track(index)
-		interact_pressed.emit()
+		if _message_visible:
+			clear_message()
+		else:
+			interact_pressed.emit()
 		return
 	if _btn_restart.is_visible_in_tree() and _btn_restart.get_global_rect().has_point(pos):
 		_track(index)
