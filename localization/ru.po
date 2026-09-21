@@ -310,3 +310,51 @@ msgstr "Куда переложить"
 # Inventory UI: error when a stack cannot be moved to the target container.
 msgid "INV_TRANSFER_FAILED"
 msgstr "Не удалось переложить предмет. Проверь свободное место."
+
+# Touch inventory: reviewed mobile equipment UI.
+msgid "TOUCH_ARMOR_SET"
+msgstr "Комплект"
+
+# Touch inventory: reviewed mobile equipment UI.
+msgid "TOUCH_WEAPON"
+msgstr "Оружие"
+
+# Touch inventory: reviewed mobile equipment UI.
+msgid "TOUCH_POCKET"
+msgstr "За пазухой"
+
+# Touch inventory: reviewed mobile equipment UI.
+msgid "TOUCH_BACKPACK"
+msgstr "Рюкзак"
+
+# Touch inventory: reviewed mobile equipment UI.
+msgid "TOUCH_POUCH"
+msgstr "Мешочек"
+
+# Touch inventory: reviewed mobile equipment UI.
+msgid "TOUCH_NOT_WORN"
+msgstr "Не надет"
+
+# Touch inventory: reviewed mobile equipment UI.
+msgid "TOUCH_DRAG_HINT"
+msgstr "Удерживай вещь и перетащи её в ячейку."
+
+# Touch inventory: reviewed mobile equipment UI.
+msgid "TOUCH_QUICK_LABEL"
+msgstr "Быстрые слоты · 1–0"
+
+# Touch inventory: reviewed mobile equipment UI.
+msgid "TOUCH_EMPTY_SLOT"
+msgstr "Пусто"
+
+# Touch inventory: reviewed mobile equipment UI.
+msgid "TOUCH_MOVE_FAILED"
+msgstr "Сюда нельзя переложить эту вещь."
+
+# Touch inventory: reviewed mobile equipment UI.
+msgid "ITEM_TRAVELER_BACKPACK_NAME"
+msgstr "Дорожный рюкзак"
+
+# Touch inventory: reviewed mobile equipment UI.
+msgid "ITEM_BELT_POUCH_NAME"
+msgstr "Поясной мешочек"

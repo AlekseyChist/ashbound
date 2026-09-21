@@ -309,3 +309,51 @@ msgstr "Move to"
 # Inventory UI: error when a stack cannot be moved to the target container.
 msgid "INV_TRANSFER_FAILED"
 msgstr "Cannot move this item there. Check the available space."
+
+# Touch inventory: reviewed mobile equipment UI.
+msgid "TOUCH_ARMOR_SET"
+msgstr "Outfit"
+
+# Touch inventory: reviewed mobile equipment UI.
+msgid "TOUCH_WEAPON"
+msgstr "Weapon"
+
+# Touch inventory: reviewed mobile equipment UI.
+msgid "TOUCH_POCKET"
+msgstr "Inside pocket"
+
+# Touch inventory: reviewed mobile equipment UI.
+msgid "TOUCH_BACKPACK"
+msgstr "Backpack"
+
+# Touch inventory: reviewed mobile equipment UI.
+msgid "TOUCH_POUCH"
+msgstr "Belt pouch"
+
+# Touch inventory: reviewed mobile equipment UI.
+msgid "TOUCH_NOT_WORN"
+msgstr "Not worn"
+
+# Touch inventory: reviewed mobile equipment UI.
+msgid "TOUCH_DRAG_HINT"
+msgstr "Hold an item, then drag it to a slot."
+
+# Touch inventory: reviewed mobile equipment UI.
+msgid "TOUCH_QUICK_LABEL"
+msgstr "Quick slots · 1–0"
+
+# Touch inventory: reviewed mobile equipment UI.
+msgid "TOUCH_EMPTY_SLOT"
+msgstr "Empty"
+
+# Touch inventory: reviewed mobile equipment UI.
+msgid "TOUCH_MOVE_FAILED"
+msgstr "Cannot move this item here."
+
+# Touch inventory: reviewed mobile equipment UI.
+msgid "ITEM_TRAVELER_BACKPACK_NAME"
+msgstr "Travel backpack"
+
+# Touch inventory: reviewed mobile equipment UI.
+msgid "ITEM_BELT_POUCH_NAME"
+msgstr "Belt pouch"
