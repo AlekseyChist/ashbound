@@ -478,3 +478,27 @@ msgstr "F1/F2: техника · F3: рюкзак · F4: ракурс"
 
 msgid "FIST_PREVIEW_NOTE"
 msgstr "Проба стойки и удара"
+
+msgid "DEFENSE_SWING"
+msgstr "Входящий удар"
+
+msgid "DEFENSE_RESET"
+msgstr "На исходную"
+
+msgid "DEFENSE_GUARD"
+msgstr "Держать защиту"
+
+msgid "DEFENSE_HINT_PC"
+msgstr "Проба: F5 — удар · держать G — защита · F6 — сброс. От удара можно уйти в сторону."
+
+msgid "DEFENSE_HINT_TOUCH"
+msgstr "Проба: запусти удар, затем держи защиту или отойди. Синий — блок, золотой — точный блок."
+
+msgid "DEFENSE_NOVICE_HINT"
+msgstr "Новичок: попытка прикрыться не останавливает удар."
+
+msgid "DEFENSE_TRAINED_HINT"
+msgstr "Обученный: для блока повернись к удару. Время реакции экспериментальное."
+
+msgid "DEFENSE_NOTE"
+msgstr "Проба входящего удара и защиты"
