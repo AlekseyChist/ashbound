@@ -12,5 +12,8 @@
   {"key":"ENEMY_GUARD","en":"Guard","ru":"Стражник"},
   {"key":"ENEMY_PREVIEW_TITLE","en":"Wolf and guard","ru":"Волк и стражник"},
   {"key":"ENEMY_HINT_PC","en":"Enter a circle to start combat. RMB (or G): block; F6: reset.","ru":"Войди в круг, чтобы начать бой. ПКМ (или G): блок; F6: на исходную."},
-  {"key":"ENEMY_HINT_TOUCH","en":"Enter a circle to start combat. Hold BLOCK or tap on the flash.","ru":"Войди в круг, чтобы начать бой. Держи БЛОК или нажми на вспышке."}
+  {"key":"ENEMY_HINT_TOUCH","en":"Enter a circle to start combat. Hold BLOCK or tap on the flash.","ru":"Войди в круг, чтобы начать бой. Держи БЛОК или нажми на вспышке."},
+  {"key":"DODGE_ACTION","en":"Dodge","ru":"Уклонение"},
+  {"key":"DODGE_HINT_PC","en":"Enter a circle. Space + direction: dodge; no direction: backstep. RMB: block.","ru":"Войди в круг. Пробел + направление: уклонение; без направления: назад. ПКМ: блок."},
+  {"key":"DODGE_HINT_TOUCH","en":"Enter a circle. Dodge + direction: sidestep; no direction: backstep. Hold BLOCK to guard.","ru":"Войди в круг. Уклонение + направление; без направления — назад. БЛОК — защита."}
 ]
