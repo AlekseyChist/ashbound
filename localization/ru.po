@@ -454,3 +454,27 @@ msgstr "Язык"
 
 msgid "SETTINGS_LANGUAGE_HINT"
 msgstr "Изменения применяются сразу и сохраняются."
+
+msgid "FIST_PREVIEW_TITLE"
+msgstr "Кулачные техники"
+
+msgid "FIST_PREVIEW_NOVICE"
+msgstr "Новичок"
+
+msgid "FIST_PREVIEW_TRAINED"
+msgstr "Обученный"
+
+msgid "FIST_PREVIEW_PACK_ON"
+msgstr "Рюкзак: надет"
+
+msgid "FIST_PREVIEW_PACK_OFF"
+msgstr "Рюкзак: снят"
+
+msgid "FIST_PREVIEW_VIEW"
+msgstr "Повернуть камеру"
+
+msgid "FIST_PREVIEW_HINT"
+msgstr "F1/F2: техника · F3: рюкзак · F4: ракурс"
+
+msgid "FIST_PREVIEW_NOTE"
+msgstr "Проба стойки и удара"

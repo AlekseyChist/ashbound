@@ -453,3 +453,27 @@ msgstr "Language"
 
 msgid "SETTINGS_LANGUAGE_HINT"
 msgstr "Changes apply immediately and are saved."
+
+msgid "FIST_PREVIEW_TITLE"
+msgstr "Fist techniques"
+
+msgid "FIST_PREVIEW_NOVICE"
+msgstr "Novice"
+
+msgid "FIST_PREVIEW_TRAINED"
+msgstr "Trained"
+
+msgid "FIST_PREVIEW_PACK_ON"
+msgstr "Backpack: on"
+
+msgid "FIST_PREVIEW_PACK_OFF"
+msgstr "Backpack: off"
+
+msgid "FIST_PREVIEW_VIEW"
+msgstr "Rotate view"
+
+msgid "FIST_PREVIEW_HINT"
+msgstr "F1/F2: technique · F3: backpack · F4: view"
+
+msgid "FIST_PREVIEW_NOTE"
+msgstr "Stance and strike preview"
