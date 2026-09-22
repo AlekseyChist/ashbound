@@ -6,6 +6,7 @@ var _stored_facing: Vector3 = Vector3.FORWARD
 var _stored_progress: float = 0.0
 var _stored_cue: bool = false
 var _hit_flash: bool = false
+var external_feedback: bool = false
 var _configured := false
 var _cue_root: Node3D
 
@@ -87,7 +88,7 @@ func _process(delta: float) -> void:
 		if _stored_action == &"walk":
 			frame = int(clampf(_stored_progress, 0.0, 0.999) * 2.0)
 		body.set_frame_and_progress(frame, 0)
-		body.modulate = Color(1.0, 0.35, 0.4) if _hit_flash else Color.WHITE
+		body.modulate = Color.WHITE if external_feedback else (Color(1.0, 0.35, 0.4) if _hit_flash else Color.WHITE)
 	if _cue_root != null:
-		_cue_root.visible = _stored_cue
+		_cue_root.visible = _stored_cue and not external_feedback
 	super._process(delta)
