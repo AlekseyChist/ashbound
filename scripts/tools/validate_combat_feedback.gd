@@ -88,8 +88,7 @@ func run() -> void:
 	session.set_physics_process(false)
 	player.set_physics_process(false)
 	session.resolved.connect(func(result: String) -> void: events.append(result))
-	for child in session.get_children():
-		if child.has_method("debug_snapshot"): fx = child
+	fx = session.get_node_or_null("CombatFeedbackFX")
 	check(fx != null, "new FX renderer is attached")
 	check(player.has_method("begin_feedback_stop"), "feedback player factory used")
 	if fx == null: get_tree().quit(1); return
