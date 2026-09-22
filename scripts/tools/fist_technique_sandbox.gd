@@ -7,6 +7,10 @@ const NOVICE_FRAMES := preload("res://assets/characters/courtyard/fist-preview/n
 const NOVICE_PACK_FRAMES := preload("res://assets/characters/courtyard/fist-preview/novice_pack_frames.tres")
 const TRAINED_FRAMES := preload("res://assets/characters/courtyard/fist-preview/trained_frames.tres")
 const TRAINED_PACK_FRAMES := preload("res://assets/characters/courtyard/fist-preview/trained_pack_frames.tres")
+const NOVICE_DEFENSE_FRAMES := preload("res://assets/characters/courtyard/fist-defense/novice_frames.tres")
+const NOVICE_DEFENSE_PACK_FRAMES := preload("res://assets/characters/courtyard/fist-defense/novice_pack_frames.tres")
+const TRAINED_DEFENSE_FRAMES := preload("res://assets/characters/courtyard/fist-defense/trained_frames.tres")
+const TRAINED_DEFENSE_PACK_FRAMES := preload("res://assets/characters/courtyard/fist-defense/trained_pack_frames.tres")
 
 @export var defense_preview: bool = false
 
@@ -120,12 +124,20 @@ func set_technique(value: String) -> bool:
 		return false
 	var bare: SpriteFrames
 	var worn: SpriteFrames
-	if value == "novice":
-		bare = NOVICE_FRAMES
-		worn = NOVICE_PACK_FRAMES
+	if defense_preview:
+		if value == "novice":
+			bare = NOVICE_DEFENSE_FRAMES
+			worn = NOVICE_DEFENSE_PACK_FRAMES
+		else:
+			bare = TRAINED_DEFENSE_FRAMES
+			worn = TRAINED_DEFENSE_PACK_FRAMES
 	else:
-		bare = TRAINED_FRAMES
-		worn = TRAINED_PACK_FRAMES
+		if value == "novice":
+			bare = NOVICE_FRAMES
+			worn = NOVICE_PACK_FRAMES
+		else:
+			bare = TRAINED_FRAMES
+			worn = TRAINED_PACK_FRAMES
 	var layer: Node = _player.get_node("Visual/BackpackLayer")
 	if layer == null or not layer.configure_body_frame_pair(bare, worn):
 		return false
@@ -136,6 +148,7 @@ func set_technique(value: String) -> bool:
 		_toolbar.refresh()
 	print("ASHBOUND_FIST_SANDBOX_TECHNIQUE=%s" % technique)
 	return true
+
 
 func set_backpack_enabled(enabled: bool) -> bool:
 	if _player == null:

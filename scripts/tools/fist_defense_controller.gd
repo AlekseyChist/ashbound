@@ -87,6 +87,20 @@ func setup(sbx: Node, plr: CharacterBody3D) -> void:
 	_apply_defense_camera()
 	print("ASHBOUND_DEFENSE_READY")
 
+func get_visual_action() -> StringName:
+	if not is_instance_valid(player) or not is_instance_valid(sandbox) or not is_inside_tree():
+		return &""
+	if get_tree().paused:
+		return &""
+	if not _gameplay_enabled():
+		return &""
+	if _recoil_until > _sim_time and _last_result == "hit":
+		return &"hit"
+	if _guarding:
+		return &"guard"
+	return &""
+
+
 func start_swing() -> bool:
 	if not _gameplay_enabled():
 		return false
