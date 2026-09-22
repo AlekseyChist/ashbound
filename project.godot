@@ -16,7 +16,7 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 
 config/name="ASHBOUND"
 config/description="Dark fantasy RPG in the style of Gothic 1-2"
-config/version="0.15.0-fist-preview"
+config/version="0.15.1-adaptive-display"
 run/main_scene="res://scenes/courtyard/first_courtyard.tscn"
 config/features=PackedStringArray("4.7", "Mobile")
 config/icon="res://icon.svg"
@@ -36,6 +36,7 @@ window/size/viewport_width=1920
 window/size/viewport_height=1080
 window/size/mode=2
 window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
 
 [editor]
 

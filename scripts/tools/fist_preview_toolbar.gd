@@ -65,11 +65,6 @@ func _ready() -> void:
 func _process(_delta: float) -> void:
 	if _owner == null or not is_inside_tree():
 		return
-	# Корень — обычный Control под CanvasLayer: держим его размером вьюпорта.
-	var vp_size := get_viewport().get_visible_rect().size
-	if _root.size != vp_size:
-		_root.position = Vector2.ZERO
-		_root.size = vp_size
 	var state := _get_menu_state()
 	if state != 0:
 		# Меню открыто/открывается — прячем панель и сбрасываем тач.
@@ -132,12 +127,10 @@ func _notification(what: int) -> void:
 
 func _build_ui() -> void:
 	layer = 50
-	_root = Control.new()
+	_root = (load("res://scripts/courtyard/adaptive_screen_root.gd") as GDScript).new()
 	_root.name = "FistPreviewRoot"
 	_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_root)
-	# CanvasLayer не даёт Control размер сам — заполняем логический вьюпорт явно.
-	_apply_root_size()
 
 	_panel = PanelContainer.new()
 	_panel.name = "FistPreviewPanel"
@@ -362,9 +355,7 @@ func _cancel_touch() -> void:
 # Вспомогательные
 # ---------------------------------------------------------------------------
 
-func _apply_root_size() -> void:
-	_root.position = Vector2.ZERO
-	_root.size = get_viewport().get_visible_rect().size
+
 
 
 func _point_in_panel(pos: Vector2) -> bool:
