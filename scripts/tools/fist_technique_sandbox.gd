@@ -45,7 +45,7 @@ func _ready() -> void:
 	hud.force_touch_controls = true
 	if defense_preview:
 		var preview_player: Node = level.get_node("Actors/Player")
-		preview_player.set_script(preload("res://scripts/tools/fist_defense_player.gd"))
+		preview_player.set_script(_create_preview_player_script())
 		# Defense probe: hide the legacy touch legend (it spans the left world
 		# and the NPC name) and clear stale quest instructions.
 		var legend: Node = hud.get_node_or_null("RootControl/BottomLeft/LegendLabel")
@@ -110,6 +110,9 @@ func _ready() -> void:
 
 func _create_level() -> Node:
 	return preload("res://scenes/courtyard/first_courtyard.tscn").instantiate()
+
+func _create_preview_player_script() -> GDScript:
+	return preload("res://scripts/tools/fist_defense_player.gd")
 
 func _create_preview_toolbar() -> CanvasLayer:
 	return preload("res://scripts/tools/fist_preview_toolbar.gd").new()
