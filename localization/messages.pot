@@ -485,6 +485,9 @@ msgstr ""
 msgid "DEFENSE_GUARD"
 msgstr ""
 
+msgid "DEFENSE_GUARD_NOW"
+msgstr ""
+
 msgid "DEFENSE_HINT_PC"
 msgstr ""
 

@@ -19,6 +19,18 @@ var _swing_btn: Button = null
 var _reset_btn: Button = null
 var _guard_btn: Button = null
 var _hint_label: Label = null
+var _hint_panel: Panel = null
+var _guard_cue_style: StyleBoxFlat = null
+# Cached HUD Attack button styles/colors, copied once during creation.
+var _hud_font: Font = null
+var _hud_font_size: int = 30
+var _hud_font_color: Color = Color.WHITE
+var _hud_font_hover_color: Color = Color.WHITE
+var _hud_font_pressed_color: Color = Color.WHITE
+var _hud_font_disabled_color: Color = Color.WHITE
+var _guard_normal_style: StyleBox = null
+var _guard_hover_style: StyleBox = null
+var _guard_pressed_style: StyleBox = null
 
 # Pointer ownership: pointer_id (finger index or MOUSE_POINTER_ID) -> button id.
 var _pointer_buttons := {}
@@ -65,6 +77,18 @@ func _build_ui() -> void:
 	top_row.add_child(_swing_btn)
 	top_row.add_child(_reset_btn)
 
+	_hint_panel = Panel.new()
+	_hint_panel.name = "DefenseHintPanel"
+	_hint_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var hud: Node = _level().get_node("HUD") if _level() != null else null
+	if hud != null:
+		var top_left := hud.get_node_or_null("RootControl/TopLeftPanel")
+		if top_left != null:
+			var panel_style: StyleBox = top_left.get_theme_stylebox("panel")
+			if panel_style != null:
+				_hint_panel.add_theme_stylebox_override("panel", panel_style)
+	_root.add_child(_hint_panel)
+
 	_hint_label = Label.new()
 	_hint_label.name = "DefenseHintLabel"
 	_hint_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -76,6 +100,9 @@ func _build_ui() -> void:
 	_guard_btn = _make_button("GuardButton", "DEFENSE_GUARD", Vector2(250, 110))
 	_root.add_child(_guard_btn)
 
+	_build_guard_cue_style()
+	_cache_hud_attack_styles(hud)
+
 	# Anchors/offsets set AFTER all children are added.
 	top_row.set_anchors_preset(Control.PRESET_CENTER_TOP)
 	top_row.offset_left = -270.0
@@ -83,11 +110,17 @@ func _build_ui() -> void:
 	top_row.offset_top = 245.0
 	top_row.offset_bottom = 333.0
 
+	_hint_panel.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	_hint_panel.offset_left = -620.0
+	_hint_panel.offset_right = 620.0
+	_hint_panel.offset_top = 343.0
+	_hint_panel.offset_bottom = 419.0
+
 	_hint_label.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	_hint_label.offset_left = -460.0
-	_hint_label.offset_right = 460.0
-	_hint_label.offset_top = 345.0
-	_hint_label.offset_bottom = 405.0
+	_hint_label.offset_left = -600.0
+	_hint_label.offset_right = 600.0
+	_hint_label.offset_top = 351.0
+	_hint_label.offset_bottom = 411.0
 
 	_guard_btn.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
 	# Left of the main HUD attack button (x1640..1888 in logical 1920):
@@ -104,9 +137,67 @@ func _make_button(btn_name: String, text_key: String, min_size: Vector2) -> Butt
 	b.custom_minimum_size = min_size
 	b.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	b.focus_mode = Control.FOCUS_NONE
-	b.add_theme_font_size_override("font_size", 26)
+	if _hud_font != null:
+		b.add_theme_font_override("font", _hud_font)
+	b.add_theme_font_size_override("font_size", _hud_font_size)
+	b.add_theme_color_override("font_color", _hud_font_color)
+	b.add_theme_color_override("font_hover_color", _hud_font_hover_color)
+	b.add_theme_color_override("font_pressed_color", _hud_font_pressed_color)
+	b.add_theme_color_override("font_disabled_color", _hud_font_disabled_color)
 	b.text = Localization.text(text_key)
 	return b
+
+
+func _cache_hud_attack_styles(hud: Node) -> void:
+	if hud == null:
+		return
+	var attack := hud.get("_btn_attack") as Button
+	if attack == null:
+		return
+	_hud_font = attack.get_theme_font("font")
+	_hud_font_size = attack.get_theme_font_size("font_size")
+	_hud_font_color = attack.get_theme_color("font_color")
+	_hud_font_hover_color = attack.get_theme_color("font_hover_color")
+	_hud_font_pressed_color = attack.get_theme_color("font_pressed_color")
+	_hud_font_disabled_color = attack.get_theme_color("font_disabled_color")
+	_guard_normal_style = attack.get_theme_stylebox("normal")
+	_guard_hover_style = attack.get_theme_stylebox("hover")
+	_guard_pressed_style = attack.get_theme_stylebox("pressed")
+	for btn: Button in [_swing_btn, _reset_btn, _guard_btn]:
+		if btn == null:
+			continue
+		if _hud_font != null:
+			btn.add_theme_font_override("font", _hud_font)
+		if _hud_font_size > 0:
+			btn.add_theme_font_size_override("font_size", _hud_font_size)
+		if _hud_font_color.a > 0.0:
+			btn.add_theme_color_override("font_color", _hud_font_color)
+		if _hud_font_hover_color.a > 0.0:
+			btn.add_theme_color_override("font_hover_color", _hud_font_hover_color)
+		if _hud_font_pressed_color.a > 0.0:
+			btn.add_theme_color_override("font_pressed_color", _hud_font_pressed_color)
+		if _hud_font_disabled_color.a > 0.0:
+			btn.add_theme_color_override("font_disabled_color", _hud_font_disabled_color)
+		if _guard_normal_style != null:
+			btn.add_theme_stylebox_override("normal", _guard_normal_style)
+		btn.add_theme_stylebox_override("disabled", _guard_normal_style)
+		if _guard_hover_style != null:
+			btn.add_theme_stylebox_override("hover", _guard_hover_style)
+		if _guard_pressed_style != null:
+			btn.add_theme_stylebox_override("pressed", _guard_pressed_style)
+	if _hint_label != null and _hud_font_color.a > 0.0:
+		_hint_label.add_theme_color_override("font_color", _hud_font_color)
+
+
+func _build_guard_cue_style() -> void:
+	_guard_cue_style = StyleBoxFlat.new()
+	_guard_cue_style.bg_color = Color(1.0, 0.7, 0.2)
+	_guard_cue_style.border_width_left = 3
+	_guard_cue_style.border_width_top = 3
+	_guard_cue_style.border_width_right = 3
+	_guard_cue_style.border_width_bottom = 3
+	_guard_cue_style.border_color = Color(1.0, 0.98, 0.9)
+	_guard_cue_style.set_corner_radius_all(8)
 
 
 func _refresh_labels() -> void:
@@ -117,6 +208,7 @@ func _refresh_labels() -> void:
 	if _guard_btn:
 		_guard_btn.text = Localization.text("DEFENSE_GUARD")
 	_update_hint()
+	_update_guard_visual()
 
 
 func _on_language_changed(_language: String) -> void:
@@ -196,10 +288,41 @@ func _release_guard(source: int, finger: int = -1) -> void:
 	_update_guard_visual()
 
 
+func _block_window_open() -> bool:
+	return is_instance_valid(_controller) \
+		and _controller.has_method("is_block_window_open") \
+		and bool(_controller.is_block_window_open())
+
+
 func _update_guard_visual() -> void:
 	if _guard_btn:
 		var guarding := _guard_is_active()
-		_guard_btn.modulate = Color(1.0, 0.85, 0.4) if guarding else Color.WHITE
+		var cue := _gating_ok() and _block_window_open()
+		if cue:
+			_guard_btn.text = Localization.text("DEFENSE_GUARD_NOW")
+			_guard_btn.modulate = Color.WHITE
+			_guard_btn.add_theme_stylebox_override("normal", _guard_cue_style)
+			_guard_btn.add_theme_stylebox_override("hover", _guard_cue_style)
+			_guard_btn.add_theme_stylebox_override("pressed", _guard_cue_style)
+			_guard_btn.add_theme_color_override("font_color", Color(0.25, 0.12, 0.05))
+			_guard_btn.add_theme_color_override("font_hover_color", Color(0.25, 0.12, 0.05))
+			_guard_btn.add_theme_color_override("font_pressed_color", Color(0.25, 0.12, 0.05))
+		else:
+			_guard_btn.text = Localization.text("DEFENSE_GUARD")
+			_guard_btn.modulate = Color.WHITE
+			if _guard_normal_style != null:
+				# Held state shows the cached pressed style in normal state.
+				_guard_btn.add_theme_stylebox_override("normal", _guard_pressed_style if guarding else _guard_normal_style)
+			if _guard_hover_style != null:
+				_guard_btn.add_theme_stylebox_override("hover", _guard_hover_style)
+			if _guard_pressed_style != null:
+				_guard_btn.add_theme_stylebox_override("pressed", _guard_pressed_style)
+			if _hud_font_color.a > 0.0:
+				_guard_btn.add_theme_color_override("font_color", _hud_font_color)
+			if _hud_font_hover_color.a > 0.0:
+				_guard_btn.add_theme_color_override("font_hover_color", _hud_font_hover_color)
+			if _hud_font_pressed_color.a > 0.0:
+				_guard_btn.add_theme_color_override("font_pressed_color", _hud_font_pressed_color)
 	# Disable the swing visual while the phase is not idle.
 	if _swing_btn:
 		_swing_btn.disabled = _phase() != "idle"

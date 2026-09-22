@@ -485,19 +485,22 @@ msgid "DEFENSE_RESET"
 msgstr "Reset positions"
 
 msgid "DEFENSE_GUARD"
-msgstr "Hold guard"
+msgstr "BLOCK"
+
+msgid "DEFENSE_GUARD_NOW"
+msgstr "BLOCK!"
 
 msgid "DEFENSE_HINT_PC"
-msgstr "Prototype: F5 strike · Hold G to guard · F6 reset. Step sideways to avoid the strike."
+msgstr "F5 strike · G block · F6 reset. Press G on the flash for a perfect block."
 
 msgid "DEFENSE_HINT_TOUCH"
-msgstr "Prototype: start a strike, then hold guard or step aside. Blue: block; gold: well-timed block."
+msgstr "Watch the windup: press Block on the flash. Holding gives a normal block."
 
 msgid "DEFENSE_NOVICE_HINT"
 msgstr "Novice: the guard attempt does not stop the strike."
 
 msgid "DEFENSE_TRAINED_HINT"
-msgstr "Trained: face the striker to block. Timing is experimental."
+msgstr "Trained: face the strike. Hold for a normal block; time a fresh press for a perfect block."
 
 msgid "DEFENSE_NOTE"
 msgstr "Experimental incoming strike and guard"

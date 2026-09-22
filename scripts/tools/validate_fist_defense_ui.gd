@@ -114,7 +114,7 @@ func run() -> void:
 				var old_button: Button = hud.get(field)
 				check(not old_button.get_global_rect().intersects(button("GuardButton").get_global_rect()), "guard clears existing HUD " + field)
 		check(button("GuardButton").text == loc.text("DEFENSE_GUARD"), "translated guard")
-		check(button("GuardButton").text == ("Hold guard" if language == "en" else "Держать защиту"), "guard has actual complete translation")
+		check(button("GuardButton").text == ("BLOCK" if language == "en" else "БЛОК"), "guard has actual complete translation")
 		check(button("SwingButton").text == ("Incoming strike" if language == "en" else "Входящий удар"), "swing has actual complete translation")
 		check(button("ResetTrialButton").text == ("Reset positions" if language == "en" else "На исходную"), "reset has actual complete translation")
 		var hint: Label = sandbox.find_child("DefenseHintLabel",true,false) as Label
