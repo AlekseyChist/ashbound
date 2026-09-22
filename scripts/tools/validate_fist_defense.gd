@@ -71,16 +71,18 @@ func run() -> void:
 	check(sandbox.level.get_node_or_null("Persistence") == null, "preview no campaign persistence")
 	check(initial.unarmed_mastery == "novice", "no free training")
 	reset()
+	var pad: MeshInstance3D = defense.get("_pad_mesh")
+	var neutral_pad: Color = pad.material_override.albedo_color if pad != null else Color.WHITE
 	check(defense.start_swing(), "explicit first swing")
 	check(not defense.start_swing(), "overlap rejected")
 	defense.advance(0.79)
 	check(snapshot().contacts == 0 and snapshot().phase == "windup", "no early invisible contact")
-	var pad: MeshInstance3D = defense.get("_pad_mesh")
-	var neutral_pad: Color = pad.material_override.albedo_color if pad != null else Color.WHITE
 	check(pad != null, "visible training pad")
 	if pad != null:
 		var before_contact := Vector2(pad.global_position.x-player.global_position.x,pad.global_position.z-player.global_position.z).length()
-		check(before_contact > 0.45, "preparation pad has not already reached hero")
+		# The new final stroke approaches before contact; its front face must
+		# still be short of the hero's center. The cue suite also checks travel.
+		check(before_contact > pad.mesh.size.z / 2.0, "pre-contact stroke has not passed hero center")
 	defense.advance(0.02)
 	result("hit", "unprotected hit")
 	if pad != null:

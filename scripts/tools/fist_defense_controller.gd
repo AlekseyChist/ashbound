@@ -45,6 +45,7 @@ var _hero_visual_base: Vector3 = Vector3.ZERO
 var _recoil_until: float = -1.0
 var _recoil_dir: Vector3 = Vector3.ZERO
 var _deflect_until: float = -1.0
+var _block_window_spark: Node3D
 
 func _ready() -> void:
 	# No-op; setup() is the entry point.
@@ -114,6 +115,7 @@ func start_swing() -> bool:
 	_phase = Phase.WINDUP
 	_phase_time = 0.0
 	_contact_done = false
+	_update_arm_visual()
 	return true
 
 func set_guard(pressed: bool) -> bool:
@@ -220,6 +222,24 @@ func advance(delta: float) -> void:
 	_update_recoil(delta)
 
 
+func is_block_window_open() -> bool:
+	if not is_inside_tree():
+		return false
+	if not is_instance_valid(sandbox) or not is_instance_valid(player):
+		return false
+	if get_tree().paused:
+		return false
+	if _focus_lost or _paused:
+		return false
+	if not _gameplay_enabled():
+		return false
+	if _phase != Phase.WINDUP:
+		return false
+	if _phase_time < WINDUP_TIME - PERFECT_WINDOW - CONTACT_EPS:
+		return false
+	return _phase_time < WINDUP_TIME
+
+
 func snapshot() -> Dictionary:
 	return {
 		"time": _sim_time,
@@ -279,7 +299,14 @@ func _clear_state() -> void:
 	_contact_done = false
 	_recoil_until = -1.0
 	_deflect_until = -1.0
-	_set_pad_color(Color(0.85, 0.65, 0.4))
+	# Immediately restore neutral pad + hide the window cue so no stale result
+	# color or spark leaks into the next windup, even without another tick.
+	if _pad_material != null:
+		_pad_material.albedo_color = Color(0.85, 0.65, 0.4)
+		_pad_material.emission_enabled = false
+	if _block_window_spark != null:
+		_block_window_spark.visible = false
+	_update_arm_visual()
 
 func _release_guard() -> void:
 	if not _guarding:
@@ -314,7 +341,7 @@ func _resolve_contact() -> void:
 			# Perfect iff this contact consumes a fresh eligible guard edge
 			# started within PERFECT_WINDOW before the contact.
 			var dt: float = _sim_time - _guard_started
-			if _perfect_eligible and dt >= 0.0 and dt <= PERFECT_WINDOW:
+			if _perfect_eligible and dt >= 0.0 and dt <= PERFECT_WINDOW + CONTACT_EPS:
 				result = "perfect_block"
 			else:
 				result = "block"
@@ -426,19 +453,21 @@ func _update_arm_visual() -> void:
 		target = Vector3(0.0, 0.0, -1.0)
 	_arm_pivot.rotation = _rotation_toward(target)
 	# Prismatic slide along the strike axis (local +Z):
-	# neutral pad center ~1.25 from post, full extension ~1.65 (within REACH 1.9).
-	# Windup: monotonic visible retraction held through the end of windup so the
-	# pad never moves toward the hero before contact; then forward strike at .8.
+	# neutral pad center ~1.25 from post; windup retracts to -0.45 over the
+	# first .32s, holds through .62, then advances with ease-in to +0.15 at .8.
 	var punch: float = 0.0
 	match _phase:
 		Phase.WINDUP:
-			# Retract monotonically to -0.35 and HOLD it until contact.
-			var t: float = clampf(_phase_time / WINDUP_TIME, 0.0, 1.0)
-			punch = -0.35 * minf(t / 0.25, 1.0)
+			if _phase_time <= 0.32:
+				punch = -0.45 * clampf(_phase_time / 0.32, 0.0, 1.0)
+			elif _phase_time < WINDUP_TIME:
+				var t: float = clampf((_phase_time - (WINDUP_TIME - PERFECT_WINDOW)) / PERFECT_WINDOW, 0.0, 1.0)
+				punch = lerpf(-0.45, 0.15, t * t)
+			else:
+				punch = 0.15
 		Phase.RECOVERY:
-			# Snap out at contact then retract to neutral.
 			var t: float = clampf(_phase_time / RECOVERY_TIME, 0.0, 1.0)
-			punch = lerpf(0.4, 0.0, t)
+			punch = lerpf(0.15, 0.0, t)
 		_:
 			punch = 0.0
 	if _deflect_until > 0.0 and _sim_time < _deflect_until:
@@ -446,12 +475,30 @@ func _update_arm_visual() -> void:
 		var dt: float = clampf((_deflect_until - _sim_time) / 0.25, 0.0, 1.0)
 		punch -= 0.3 * dt
 	_arm_pivot.position = Vector3(0.0, 1.4, 0.0) + target * punch
-	# Restore the neutral pad color once fully back in idle; never touch the
-	# color while a contact effect (recoil/deflect) is still visible.
-	var recoil_active: bool = _recoil_until > 0.0 and _sim_time < _recoil_until
-	var deflect_active: bool = _deflect_until > 0.0 and _sim_time < _deflect_until
-	if not recoil_active and not deflect_active:
-		_set_pad_color(Color(0.85, 0.65, 0.4))
+	# Block-window cue: visible exactly while the perfect window is open.
+	var window_open: bool = is_block_window_open()
+	if _block_window_spark != null:
+		_block_window_spark.visible = window_open
+		if window_open:
+			var wt: float = clampf((_phase_time - (WINDUP_TIME - PERFECT_WINDOW)) / PERFECT_WINDOW, 0.0, 1.0)
+			_block_window_spark.scale = Vector3.ONE * lerpf(0.8, 1.2, wt)
+	if _pad_material != null:
+		_pad_material.emission_enabled = window_open
+		var recoil_active: bool = _recoil_until > 0.0 and _sim_time < _recoil_until
+		var deflect_active: bool = _deflect_until > 0.0 and _sim_time < _deflect_until
+		if window_open:
+			_pad_material.albedo_color = Color(1.0, 0.92, 0.78)
+			_pad_material.emission_enabled = true
+			_pad_material.emission = Color(1.0, 0.75, 0.4)
+			_pad_material.emission_energy_multiplier = 2.0
+		elif _phase == Phase.WINDUP:
+			_pad_material.albedo_color = Color(0.95, 0.68, 0.3)
+			_pad_material.emission_enabled = false
+		elif not recoil_active and not deflect_active:
+			# Idle neutral brown; result colors (red/blue/gold) are left alone
+			# while their effects are still visible.
+			_pad_material.albedo_color = Color(0.85, 0.65, 0.4)
+			_pad_material.emission_enabled = false
 
 
 func _rotation_toward(dir: Vector3) -> Vector3:
@@ -507,3 +554,32 @@ func _build_device_meshes() -> void:
 	_pad_mesh.material_override = _pad_material
 	_pad_mesh.position = Vector3(0.0, 0.0, 1.25)
 	_arm_pivot.add_child(_pad_mesh)
+
+	_build_block_window_spark()
+
+func _build_block_window_spark() -> void:
+	# Display-only cue: three thin emissive spokes at the pad center.
+	_block_window_spark = Node3D.new()
+	_block_window_spark.name = "BlockWindowSpark"
+	var mat: StandardMaterial3D = StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.albedo_color = Color(1.0, 0.92, 0.78)
+	mat.emission_enabled = true
+	mat.emission = Color(1.0, 0.75, 0.4)
+	mat.emission_energy_multiplier = 2.0
+	var dirs: Array[Vector3] = [Vector3.UP, Vector3.RIGHT, Vector3.BACK]
+	for d in dirs:
+		var spoke: MeshInstance3D = MeshInstance3D.new()
+		var box: BoxMesh = BoxMesh.new()
+		box.size = Vector3(
+			0.58 if d.x != 0.0 else 0.035,
+			0.58 if d.y != 0.0 else 0.035,
+			0.58 if d.z != 0.0 else 0.035
+		)
+		spoke.mesh = box
+		spoke.material_override = mat
+		spoke.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		_block_window_spark.add_child(spoke)
+	_block_window_spark.position = Vector3.ZERO
+	_block_window_spark.visible = false
+	_pad_mesh.add_child(_block_window_spark)

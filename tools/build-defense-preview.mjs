@@ -6,9 +6,10 @@ const root = path.resolve(import.meta.dirname, '..');
 const validation = process.argv.includes('--validate');
 const ui = process.argv.includes('--ui');
 const poses = process.argv.includes('--poses');
-const name = validation ? `defense-poses-validation${ui?'-ui':poses?'-poses':''}` : 'defense-poses';
+const cue = process.argv.includes('--cue');
+const name = validation ? `defense-cue-validation${ui?'-ui':poses?'-poses':cue?'-cue':''}` : 'defense-cue';
 const stage = path.join(root, '.tools/export-staging', name);
-const imported = path.join(root,'.tools/export-staging/defense-checks/.godot/imported');
+const imported = path.join(root,'.tools/export-staging/block-cue-checks/.godot/imported');
 if (fs.existsSync(imported)) fs.cpSync(imported,path.join(stage,'.godot/imported'),{recursive:true});
 const files = execFileSync('git',['ls-files','--cached','--others','--exclude-standard'],{cwd:root,encoding:'utf8',windowsHide:true}).trim().split(/\r?\n/);
 for (const file of new Set(files)) {
@@ -16,7 +17,7 @@ for (const file of new Set(files)) {
   if (!fs.existsSync(source) || !fs.statSync(source).isFile()) continue;
   fs.mkdirSync(path.dirname(dest),{recursive:true}); fs.copyFileSync(source,dest);
 }
-const scene = validation ? `scripts/tools/validate_fist_defense${ui?'_ui':poses?'_poses':''}.tscn` : 'scripts/tools/fist_defense_sandbox.tscn';
+const scene = validation ? (cue ? 'scripts/tools/validate_block_timing_cue.tscn' : `scripts/tools/validate_fist_defense${ui?'_ui':poses?'_poses':''}.tscn`) : 'scripts/tools/fist_defense_sandbox.tscn';
 const resources = [scene, 'scripts/tools/fist_defense_sandbox.tscn',
   'scripts/tools/fist_technique_sandbox.tscn',
   'scripts/tools/fist_defense_controller.gd','scripts/tools/fist_defense_player.gd',
@@ -25,7 +26,7 @@ const resources = [scene, 'scripts/tools/fist_defense_sandbox.tscn',
   ...['novice','novice_pack','trained','trained_pack'].flatMap(id=>['fist-preview','fist-defense'].map(dir=>`assets/characters/courtyard/${dir}/${id}_frames.tres`))
 ].map(file=>`res://${file}`);
 const title = validation ? 'Defense Validation' : 'Defense Preview';
-const version = '0.16.1-defense-poses';
+const version = '0.16.2-block-timing';
 const packageId = validation ? 'org.ashbound.defensevalidation' : 'org.ashbound.fistqa';
 for (const file of ['project.godot','export_presets.cfg']) {
   const target = path.join(stage,file);
@@ -40,14 +41,14 @@ for (const file of ['project.godot','export_presets.cfg']) {
     data = data.replaceAll('export_files=PackedStringArray(',`export_files=PackedStringArray(${extra}, `)
       .replaceAll('org.ashbound.courtyard',packageId)
       .replaceAll('package/name="AshBound Courtyard"',`package/name="AshBound ${title}"`)
-      .replace(/version\/code=\d+/, 'version/code=33')
+      .replace(/version\/code=\d+/, 'version/code=34')
       .replace(/version\/name="[^"]+"/, `version/name="${version}"`);
   }
   fs.writeFileSync(target,data);
 }
-const godot = path.join(root,'.tools/godot/Godot_v4.7.2-stable_win64_console.exe');
+const godot = process.env.ASHBOUND_GODOT || path.join(root,'.tools/godot/Godot_v4.7.2-stable_win64_console.exe');
 const android = path.join(root,`.tools/builds/android/ashbound-${name}.apk`);
-const windows = path.join(root,'.tools/builds/defense-poses/AshBound-Defense-Poses.exe');
+const windows = path.join(root,'.tools/builds/defense-cue/AshBound-Defense-Cue.exe');
 fs.mkdirSync(path.join(stage,'.tools'),{recursive:true});
 fs.mkdirSync(path.dirname(android),{recursive:true});
 fs.mkdirSync(path.dirname(windows),{recursive:true});
