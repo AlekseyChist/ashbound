@@ -48,7 +48,7 @@
     },
     {
       "id": "trained",
-      "base": "assets/characters/courtyard/fist-defense/trained.png",
+      "base": "art/characters/fist-defense-v1/base/trained.png",
       "paint": "art/characters/fist-defense-v1/paint/trained-pack.png",
       "base_sha256": "a484eb9db6f9face232e9e33dacecabe9ecb664a521c247e0371180fb6bae163",
       "paint_sha256": "b8249d26f1cb2e0a26db19afd9aec4d914e19751c76394eaaa3ffea6117e590e",
