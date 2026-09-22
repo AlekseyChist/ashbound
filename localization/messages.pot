@@ -451,3 +451,27 @@ msgstr ""
 
 msgid "SETTINGS_LANGUAGE_HINT"
 msgstr ""
+
+msgid "FIST_PREVIEW_TITLE"
+msgstr ""
+
+msgid "FIST_PREVIEW_NOVICE"
+msgstr ""
+
+msgid "FIST_PREVIEW_TRAINED"
+msgstr ""
+
+msgid "FIST_PREVIEW_PACK_ON"
+msgstr ""
+
+msgid "FIST_PREVIEW_PACK_OFF"
+msgstr ""
+
+msgid "FIST_PREVIEW_VIEW"
+msgstr ""
+
+msgid "FIST_PREVIEW_HINT"
+msgstr ""
+
+msgid "FIST_PREVIEW_NOTE"
+msgstr ""

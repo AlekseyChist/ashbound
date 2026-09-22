@@ -521,8 +521,8 @@ func _apply_sprite_scale(body: AnimatedSprite3D) -> void:
 	if frames == null:
 		return
 
-	# Вид определяет базовый ключ; для run дополнительно пробуем
-	# pixel_size_run_<view> с fallback на обычный pixel_size_<view>.
+	# Вид определяет базовый ключ; для действия дополнительно пробуем
+	# pixel_size_<action>_<view> с fallback на обычный pixel_size_<view>.
 	var view_key := "side"
 	match _current_view:
 		&"back":
@@ -530,13 +530,34 @@ func _apply_sprite_scale(body: AnimatedSprite3D) -> void:
 		&"front":
 			view_key = "front"
 
-	var run_action := body.animation.begins_with("run")
-	var pixel_size: float = 0.0
-	if run_action:
-		pixel_size = frames.get_meta("pixel_size_run_" + view_key, -1.0)
-	if pixel_size <= 0.0:
-		pixel_size = frames.get_meta("pixel_size_" + view_key, 0.006)
-	if pixel_size <= 0.0:
+	# Действие берём из _current_action; если пусто — из префикса клипа.
+	var action_key := String(_current_action)
+	if action_key.is_empty():
+		action_key = body.animation.get_slice("_", 0)
+
+	# Читаем float-мета безопасно: нечисловой тип трактуем как отсутствие.
+	var pixel_size: float = -1.0
+	if not action_key.is_empty():
+		var meta_value: Variant = frames.get_meta("pixel_size_" + action_key + "_" + view_key, -1.0)
+		if typeof(meta_value) in [TYPE_FLOAT, TYPE_INT]:
+			pixel_size = float(meta_value)
+	if not is_finite(pixel_size) or pixel_size <= 0.0:
+		var meta_value: Variant = frames.get_meta("pixel_size_" + view_key, -1.0)
+		if typeof(meta_value) in [TYPE_FLOAT, TYPE_INT]:
+			pixel_size = float(meta_value)
+	if not is_finite(pixel_size) or pixel_size <= 0.0:
 		pixel_size = 0.006
 	body.pixel_size = pixel_size
-	body.position.y = float(frames.get_meta("baseline_offset_pixels", 150.0)) * pixel_size
+
+	var baseline: float = -1.0
+	if not action_key.is_empty():
+		var meta_value: Variant = frames.get_meta("baseline_offset_pixels_" + action_key, -1.0)
+		if typeof(meta_value) in [TYPE_FLOAT, TYPE_INT]:
+			baseline = float(meta_value)
+	if not is_finite(baseline) or baseline <= 0.0:
+		var meta_value: Variant = frames.get_meta("baseline_offset_pixels", -1.0)
+		if typeof(meta_value) in [TYPE_FLOAT, TYPE_INT]:
+			baseline = float(meta_value)
+	if not is_finite(baseline) or baseline <= 0.0:
+		baseline = 150.0
+	body.position.y = baseline * pixel_size
