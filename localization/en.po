@@ -504,3 +504,18 @@ msgstr "Trained: face the strike. Hold for a normal block; time a fresh press fo
 
 msgid "DEFENSE_NOTE"
 msgstr "Experimental incoming strike and guard"
+
+msgid "ENEMY_WOLF"
+msgstr "Wolf"
+
+msgid "ENEMY_GUARD"
+msgstr "Guard"
+
+msgid "ENEMY_PREVIEW_TITLE"
+msgstr "Wolf and guard"
+
+msgid "ENEMY_HINT_PC"
+msgstr "Enter a circle to start combat. G: block; F6: reset."
+
+msgid "ENEMY_HINT_TOUCH"
+msgstr "Enter a circle to start combat. Hold BLOCK or tap on the flash."

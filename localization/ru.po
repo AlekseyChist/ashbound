@@ -505,3 +505,18 @@ msgstr "Обученный: повернись к удару. Удержание
 
 msgid "DEFENSE_NOTE"
 msgstr "Проба входящего удара и защиты"
+
+msgid "ENEMY_WOLF"
+msgstr "Волк"
+
+msgid "ENEMY_GUARD"
+msgstr "Стражник"
+
+msgid "ENEMY_PREVIEW_TITLE"
+msgstr "Волк и стражник"
+
+msgid "ENEMY_HINT_PC"
+msgstr "Войди в круг, чтобы начать бой. G: блок; F6: на исходную."
+
+msgid "ENEMY_HINT_TOUCH"
+msgstr "Войди в круг, чтобы начать бой. Держи БЛОК или нажми на вспышке."

@@ -1,0 +1,7 @@
+ASHBOUND_CORNER_ENEMY_FRAMES_OK sheets=2 poses=36
+source=res://assets/characters/courtyard/enemy-preview/wolf.png sha256=d3270607ede889bfb3586669a603fed7589cf443b9e98214255f03fa1c3e75f5 alpha_cutoff=0.120
+source=res://assets/characters/courtyard/enemy-preview/guard.png sha256=cbaeae07090b53c65b34627e67b16f7ba1d1bb11add40de81888bc8e00f6432f alpha_cutoff=0.120
+atlas=res://assets/characters/courtyard/enemy-preview/wolf-atlas.png pixel_size_front=0.004545 pixel_size_back=0.004587 pixel_size_side=0.004587 baseline_offset_pixels=236.0
+frames=res://assets/characters/courtyard/enemy-preview/wolf_frames.tres
+atlas=res://assets/characters/courtyard/enemy-preview/guard-atlas.png pixel_size_front=0.008605 pixel_size_back=0.008645 pixel_size_side=0.008645 baseline_offset_pixels=236.0
+frames=res://assets/characters/courtyard/enemy-preview/guard_frames.tres

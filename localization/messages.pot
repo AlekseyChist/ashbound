@@ -502,3 +502,18 @@ msgstr ""
 
 msgid "DEFENSE_NOTE"
 msgstr ""
+
+msgid "ENEMY_WOLF"
+msgstr ""
+
+msgid "ENEMY_GUARD"
+msgstr ""
+
+msgid "ENEMY_PREVIEW_TITLE"
+msgstr ""
+
+msgid "ENEMY_HINT_PC"
+msgstr ""
+
+msgid "ENEMY_HINT_TOUCH"
+msgstr ""
