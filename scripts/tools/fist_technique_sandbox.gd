@@ -40,7 +40,7 @@ func _ready() -> void:
 		get_tree().quit(1)
 		return
 
-	level = preload("res://scenes/courtyard/first_courtyard.tscn").instantiate()
+	level = _create_level()
 	var hud: Node = level.get_node("HUD")
 	hud.force_touch_controls = true
 	if defense_preview:
@@ -91,22 +91,34 @@ func _ready() -> void:
 		get_tree().quit(1)
 		return
 
-	_toolbar = preload("res://scripts/tools/fist_preview_toolbar.gd").new()
+	_toolbar = _create_preview_toolbar()
 	add_child(_toolbar)
 	_toolbar.setup(self)
 
 	if defense_preview:
-		var defense_controller: Node = preload("res://scripts/tools/fist_defense_controller.gd").new()
+		var defense_controller: Node = _create_defense_controller()
 		defense_controller.name = "DefenseController"
 		add_child(defense_controller)
 		_player.set("defense_controller", defense_controller)
 		defense = defense_controller
 		defense.setup(self, _player)
-		var defense_toolbar: Node = preload("res://scripts/tools/fist_defense_toolbar.gd").new()
+		var defense_toolbar: Node = _create_defense_toolbar()
 		add_child(defense_toolbar)
 		defense_toolbar.setup(self, defense)
 
 	print("ASHBOUND_FIST_SANDBOX_READY")
+
+func _create_level() -> Node:
+	return preload("res://scenes/courtyard/first_courtyard.tscn").instantiate()
+
+func _create_preview_toolbar() -> CanvasLayer:
+	return preload("res://scripts/tools/fist_preview_toolbar.gd").new()
+
+func _create_defense_controller() -> Node:
+	return preload("res://scripts/tools/fist_defense_controller.gd").new()
+
+func _create_defense_toolbar() -> Node:
+	return preload("res://scripts/tools/fist_defense_toolbar.gd").new()
 
 func _process(_delta: float) -> void:
 	if level != null and level.dummy_hits >= 3:

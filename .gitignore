@@ -12,4 +12,5 @@ node_modules/
 
 # Local Blender cache and automatic save backups
 art/blender/__pycache__/
+tools/__pycache__/
 art/blender/output/*.blend[0-9]
