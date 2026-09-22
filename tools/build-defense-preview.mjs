@@ -18,6 +18,7 @@ for (const file of new Set(files)) {
 }
 const scene = validation ? `scripts/tools/validate_fist_defense${ui?'_ui':poses?'_poses':''}.tscn` : 'scripts/tools/fist_defense_sandbox.tscn';
 const resources = [scene, 'scripts/tools/fist_defense_sandbox.tscn',
+  'scripts/tools/fist_technique_sandbox.tscn',
   'scripts/tools/fist_defense_controller.gd','scripts/tools/fist_defense_player.gd',
   'scripts/tools/fist_defense_toolbar.gd','scripts/tools/fist_preview_toolbar.gd',
   'scripts/courtyard/adaptive_screen_root.gd',
