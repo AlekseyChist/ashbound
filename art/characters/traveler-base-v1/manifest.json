@@ -1,0 +1,1390 @@
+{
+  "schema": 1,
+  "base_id": "traveler-clothed-v1",
+  "pose_count": 84,
+  "composition": "replace_rgba_binary_mask",
+  "source_resources": [
+    {
+      "path": "assets/characters/courtyard/traveler_frames.tres",
+      "sha256": "9bcc04f73c26d98b0aca0244f1079e036cd78aa6518dba5bac5bdbd58a0cffd2"
+    },
+    {
+      "path": "assets/characters/courtyard/traveler_pocket_frames.tres",
+      "sha256": "b64ed018a37499e6336b8a8faa4bee720ecae5e644e4d21e4d508bb221f90540"
+    }
+  ],
+  "sheets": [
+    {
+      "id": "side",
+      "base_path": "assets/characters/courtyard/traveler-v1.png",
+      "base_sha256": "2dff296e1781ddc6195a9a3f5f4cf32aa1d8a973e0442e766b9e9d43288cd8d5",
+      "size": [
+        1254,
+        1254
+      ],
+      "regions": [
+        {
+          "id": "side-00",
+          "rect": [
+            86,
+            7,
+            150,
+            292
+          ],
+          "margin": [
+            117.5,
+            82.0,
+            234.0,
+            92.0
+          ]
+        },
+        {
+          "id": "side-01",
+          "rect": [
+            389,
+            7,
+            146,
+            292
+          ],
+          "margin": [
+            119.5,
+            82.0,
+            238.0,
+            92.0
+          ]
+        },
+        {
+          "id": "side-02",
+          "rect": [
+            713,
+            7,
+            172,
+            290
+          ],
+          "margin": [
+            106.5,
+            84.0,
+            212.0,
+            94.0
+          ]
+        },
+        {
+          "id": "side-03",
+          "rect": [
+            1015,
+            6,
+            182,
+            294
+          ],
+          "margin": [
+            101.5,
+            80.0,
+            202.0,
+            90.0
+          ]
+        },
+        {
+          "id": "side-04",
+          "rect": [
+            71,
+            321,
+            173,
+            288
+          ],
+          "margin": [
+            106.0,
+            86.0,
+            211.0,
+            96.0
+          ]
+        },
+        {
+          "id": "side-05",
+          "rect": [
+            398,
+            321,
+            128,
+            291
+          ],
+          "margin": [
+            128.5,
+            83.0,
+            256.0,
+            93.0
+          ]
+        },
+        {
+          "id": "side-06",
+          "rect": [
+            712,
+            321,
+            171,
+            289
+          ],
+          "margin": [
+            107.0,
+            85.0,
+            213.0,
+            95.0
+          ]
+        },
+        {
+          "id": "side-07",
+          "rect": [
+            736,
+            629,
+            108,
+            305
+          ],
+          "margin": [
+            138.0,
+            69.0,
+            276.0,
+            79.0
+          ]
+        },
+        {
+          "id": "side-08",
+          "rect": [
+            1030,
+            320,
+            157,
+            291
+          ],
+          "margin": [
+            114.0,
+            83.0,
+            227.0,
+            93.0
+          ]
+        },
+        {
+          "id": "side-09",
+          "rect": [
+            106,
+            632,
+            109,
+            302
+          ],
+          "margin": [
+            138.0,
+            72.0,
+            275.0,
+            82.0
+          ]
+        },
+        {
+          "id": "side-10",
+          "rect": [
+            421,
+            631,
+            109,
+            303
+          ],
+          "margin": [
+            136.0,
+            71.0,
+            275.0,
+            81.0
+          ]
+        },
+        {
+          "id": "side-11",
+          "rect": [
+            1050,
+            630,
+            107,
+            304
+          ],
+          "margin": [
+            138.0,
+            70.0,
+            277.0,
+            80.0
+          ]
+        },
+        {
+          "id": "side-12",
+          "rect": [
+            79,
+            950,
+            168,
+            286
+          ],
+          "margin": [
+            108.5,
+            88.0,
+            216.0,
+            98.0
+          ]
+        },
+        {
+          "id": "side-13",
+          "rect": [
+            378,
+            950,
+            239,
+            287
+          ],
+          "margin": [
+            106.0,
+            87.0,
+            145.0,
+            97.0
+          ]
+        },
+        {
+          "id": "side-14",
+          "rect": [
+            700,
+            950,
+            204,
+            286
+          ],
+          "margin": [
+            109.5,
+            88.0,
+            180.0,
+            98.0
+          ]
+        },
+        {
+          "id": "side-15",
+          "rect": [
+            1032,
+            949,
+            157,
+            287
+          ],
+          "margin": [
+            114.0,
+            87.0,
+            227.0,
+            97.0
+          ]
+        }
+      ],
+      "paint_path": "art/characters/traveler-base-v1/layers/side-backpack.png",
+      "mask_path": "art/characters/traveler-base-v1/layers/side-mask.png",
+      "output_name": "traveler-side-pack-v2.png",
+      "reference_path": "assets/characters/courtyard/painted-backpack/traveler-side-pack-v2.png",
+      "reference_sha256": "4f27925d41b9ae0510e68dbe378910b2818f97647d1438b21cc2442477be3056"
+    },
+    {
+      "id": "back",
+      "base_path": "assets/characters/courtyard/traveler-back-v1.png",
+      "base_sha256": "84f4d257c87d4f60ca2fed41f312ee15387a03ededb9c7abacfefe9bbe6dd88e",
+      "size": [
+        1254,
+        1254
+      ],
+      "regions": [
+        {
+          "id": "back-00",
+          "rect": [
+            134,
+            17,
+            125,
+            290
+          ],
+          "margin": [
+            133.5,
+            84.0,
+            259.0,
+            94.0
+          ]
+        },
+        {
+          "id": "back-01",
+          "rect": [
+            426,
+            13,
+            125,
+            293
+          ],
+          "margin": [
+            135.0,
+            81.0,
+            259.0,
+            91.0
+          ]
+        },
+        {
+          "id": "back-02",
+          "rect": [
+            711,
+            18,
+            123,
+            289
+          ],
+          "margin": [
+            124.0,
+            85.0,
+            261.0,
+            95.0
+          ]
+        },
+        {
+          "id": "back-03",
+          "rect": [
+            1010,
+            16,
+            124,
+            290
+          ],
+          "margin": [
+            122.0,
+            84.0,
+            260.0,
+            94.0
+          ]
+        },
+        {
+          "id": "back-04",
+          "rect": [
+            114,
+            330,
+            124,
+            289
+          ],
+          "margin": [
+            124.0,
+            85.0,
+            260.0,
+            95.0
+          ]
+        },
+        {
+          "id": "back-05",
+          "rect": [
+            422,
+            325,
+            124,
+            294
+          ],
+          "margin": [
+            125.0,
+            80.0,
+            260.0,
+            90.0
+          ]
+        },
+        {
+          "id": "back-06",
+          "rect": [
+            720,
+            328,
+            122,
+            293
+          ],
+          "margin": [
+            137.0,
+            81.0,
+            262.0,
+            91.0
+          ]
+        },
+        {
+          "id": "back-07",
+          "rect": [
+            1015,
+            326,
+            126,
+            292
+          ],
+          "margin": [
+            135.0,
+            82.0,
+            258.0,
+            92.0
+          ]
+        },
+        {
+          "id": "back-08",
+          "rect": [
+            125,
+            637,
+            119,
+            299
+          ],
+          "margin": [
+            132.5,
+            75.0,
+            265.0,
+            85.0
+          ]
+        },
+        {
+          "id": "back-09",
+          "rect": [
+            424,
+            635,
+            122,
+            303
+          ],
+          "margin": [
+            132.5,
+            71.0,
+            262.0,
+            81.0
+          ]
+        },
+        {
+          "id": "back-10",
+          "rect": [
+            713,
+            637,
+            121,
+            300
+          ],
+          "margin": [
+            132.5,
+            74.0,
+            263.0,
+            84.0
+          ]
+        },
+        {
+          "id": "back-11",
+          "rect": [
+            1016,
+            637,
+            118,
+            300
+          ],
+          "margin": [
+            136.0,
+            74.0,
+            266.0,
+            84.0
+          ]
+        },
+        {
+          "id": "back-12",
+          "rect": [
+            111,
+            951,
+            142,
+            283
+          ],
+          "margin": [
+            121.5,
+            91.0,
+            242.0,
+            101.0
+          ]
+        },
+        {
+          "id": "back-13",
+          "rect": [
+            410,
+            950,
+            162,
+            283
+          ],
+          "margin": [
+            116.5,
+            91.0,
+            222.0,
+            101.0
+          ]
+        },
+        {
+          "id": "back-14",
+          "rect": [
+            701,
+            956,
+            149,
+            277
+          ],
+          "margin": [
+            118.0,
+            97.0,
+            235.0,
+            107.0
+          ]
+        },
+        {
+          "id": "back-15",
+          "rect": [
+            1004,
+            952,
+            148,
+            281
+          ],
+          "margin": [
+            118.5,
+            93.0,
+            236.0,
+            103.0
+          ]
+        }
+      ],
+      "paint_path": "art/characters/traveler-base-v1/layers/back-backpack.png",
+      "mask_path": "art/characters/traveler-base-v1/layers/back-mask.png",
+      "output_name": "traveler-back-pack-v2.png",
+      "reference_path": "assets/characters/courtyard/painted-backpack/traveler-back-pack-v2.png",
+      "reference_sha256": "ed3dae0339ff029e07939715f09200dce160e61395f9df1d2e121f082bf48c8c"
+    },
+    {
+      "id": "front",
+      "base_path": "assets/characters/courtyard/traveler-front-v1.png",
+      "base_sha256": "d8d78d4d83c5b776c517492130a26fa45a7af452db077369319abf385bd91d6f",
+      "size": [
+        1254,
+        1254
+      ],
+      "regions": [
+        {
+          "id": "front-00",
+          "rect": [
+            118,
+            8,
+            131,
+            306
+          ],
+          "margin": [
+            126.0,
+            68.0,
+            253.0,
+            78.0
+          ]
+        },
+        {
+          "id": "front-01",
+          "rect": [
+            420,
+            5,
+            130,
+            308
+          ],
+          "margin": [
+            126.5,
+            66.0,
+            254.0,
+            76.0
+          ]
+        },
+        {
+          "id": "front-02",
+          "rect": [
+            715,
+            7,
+            134,
+            307
+          ],
+          "margin": [
+            127.5,
+            67.0,
+            250.0,
+            77.0
+          ]
+        },
+        {
+          "id": "front-03",
+          "rect": [
+            1027,
+            7,
+            134,
+            306
+          ],
+          "margin": [
+            125.0,
+            68.0,
+            250.0,
+            78.0
+          ]
+        },
+        {
+          "id": "front-04",
+          "rect": [
+            109,
+            627,
+            132,
+            313
+          ],
+          "margin": [
+            126.5,
+            61.0,
+            252.0,
+            71.0
+          ]
+        },
+        {
+          "id": "front-05",
+          "rect": [
+            112,
+            317,
+            135,
+            310
+          ],
+          "margin": [
+            125.5,
+            64.0,
+            249.0,
+            74.0
+          ]
+        },
+        {
+          "id": "front-06",
+          "rect": [
+            412,
+            627,
+            137,
+            313
+          ],
+          "margin": [
+            126.5,
+            61.0,
+            247.0,
+            71.0
+          ]
+        },
+        {
+          "id": "front-07",
+          "rect": [
+            416,
+            319,
+            136,
+            308
+          ],
+          "margin": [
+            131.5,
+            66.0,
+            248.0,
+            76.0
+          ]
+        },
+        {
+          "id": "front-08",
+          "rect": [
+            717,
+            321,
+            134,
+            306
+          ],
+          "margin": [
+            127.0,
+            68.0,
+            250.0,
+            78.0
+          ]
+        },
+        {
+          "id": "front-09",
+          "rect": [
+            1029,
+            627,
+            131,
+            313
+          ],
+          "margin": [
+            126.0,
+            61.0,
+            253.0,
+            71.0
+          ]
+        },
+        {
+          "id": "front-10",
+          "rect": [
+            1033,
+            321,
+            132,
+            306
+          ],
+          "margin": [
+            127.5,
+            68.0,
+            252.0,
+            78.0
+          ]
+        },
+        {
+          "id": "front-11",
+          "rect": [
+            714,
+            633,
+            132,
+            307
+          ],
+          "margin": [
+            126.5,
+            67.0,
+            252.0,
+            77.0
+          ]
+        },
+        {
+          "id": "front-12",
+          "rect": [
+            103,
+            947,
+            148,
+            303
+          ],
+          "margin": [
+            118.5,
+            71.0,
+            236.0,
+            81.0
+          ]
+        },
+        {
+          "id": "front-13",
+          "rect": [
+            407,
+            946,
+            144,
+            303
+          ],
+          "margin": [
+            120.5,
+            71.0,
+            240.0,
+            81.0
+          ]
+        },
+        {
+          "id": "front-14",
+          "rect": [
+            709,
+            947,
+            146,
+            303
+          ],
+          "margin": [
+            119.5,
+            71.0,
+            238.0,
+            81.0
+          ]
+        },
+        {
+          "id": "front-15",
+          "rect": [
+            1021,
+            947,
+            146,
+            302
+          ],
+          "margin": [
+            119.5,
+            72.0,
+            238.0,
+            82.0
+          ]
+        }
+      ],
+      "paint_path": "art/characters/traveler-base-v1/layers/front-backpack.png",
+      "mask_path": "art/characters/traveler-base-v1/layers/front-mask.png",
+      "output_name": "traveler-front-pack-v2.png",
+      "reference_path": "assets/characters/courtyard/painted-backpack/traveler-front-pack-v2.png",
+      "reference_sha256": "5eb205e9131bce8bdb70feaf59ca4df9c46fc456d87dd05359c245118e44e570"
+    },
+    {
+      "id": "run-back",
+      "base_path": "assets/characters/courtyard/traveler-run-back-v3.png",
+      "base_sha256": "ff4f35bca89bf21b6b9f2431e0e7e4f680a66796348ddd7abfe90e73f14b356b",
+      "size": [
+        1254,
+        1254
+      ],
+      "regions": [
+        {
+          "id": "run-back-00",
+          "rect": [
+            111,
+            39,
+            145,
+            287
+          ],
+          "margin": [
+            120.0,
+            87.0,
+            239.0,
+            97.0
+          ]
+        },
+        {
+          "id": "run-back-01",
+          "rect": [
+            403,
+            46,
+            154,
+            284
+          ],
+          "margin": [
+            115.5,
+            90.0,
+            230.0,
+            100.0
+          ]
+        },
+        {
+          "id": "run-back-02",
+          "rect": [
+            695,
+            49,
+            151,
+            271
+          ],
+          "margin": [
+            117.0,
+            103.0,
+            233.0,
+            113.0
+          ]
+        },
+        {
+          "id": "run-back-03",
+          "rect": [
+            1009,
+            43,
+            151,
+            284
+          ],
+          "margin": [
+            117.0,
+            90.0,
+            233.0,
+            100.0
+          ]
+        },
+        {
+          "id": "run-back-04",
+          "rect": [
+            112,
+            351,
+            148,
+            278
+          ],
+          "margin": [
+            118.5,
+            96.0,
+            236.0,
+            106.0
+          ]
+        },
+        {
+          "id": "run-back-05",
+          "rect": [
+            420,
+            353,
+            145,
+            276
+          ],
+          "margin": [
+            120.0,
+            98.0,
+            239.0,
+            108.0
+          ]
+        },
+        {
+          "id": "run-back-06",
+          "rect": [
+            703,
+            354,
+            153,
+            255
+          ],
+          "margin": [
+            116.0,
+            119.0,
+            231.0,
+            129.0
+          ]
+        },
+        {
+          "id": "run-back-07",
+          "rect": [
+            1017,
+            353,
+            150,
+            276
+          ],
+          "margin": [
+            117.5,
+            98.0,
+            234.0,
+            108.0
+          ]
+        }
+      ],
+      "paint_path": "art/characters/traveler-base-v1/layers/run-back-backpack.png",
+      "mask_path": "art/characters/traveler-base-v1/layers/run-back-mask.png",
+      "output_name": "traveler-run-back-pack-v2.png",
+      "reference_path": "assets/characters/courtyard/painted-backpack/traveler-run-back-pack-v2.png",
+      "reference_sha256": "f00d133a10e4c165f8959dfba277d0cf44cb8fafdc2a9761ab284dacf35a8907"
+    },
+    {
+      "id": "run-front",
+      "base_path": "assets/characters/courtyard/traveler-run-front-v3.png",
+      "base_sha256": "a0fcc596a9b536b46149982ec93c339fb2cb962b8605c0792f5fd206701a9022",
+      "size": [
+        1254,
+        1254
+      ],
+      "regions": [
+        {
+          "id": "run-front-00",
+          "rect": [
+            118,
+            16,
+            147,
+            309
+          ],
+          "margin": [
+            119.0,
+            65.0,
+            237.0,
+            75.0
+          ]
+        },
+        {
+          "id": "run-front-01",
+          "rect": [
+            405,
+            26,
+            151,
+            297
+          ],
+          "margin": [
+            117.0,
+            77.0,
+            233.0,
+            87.0
+          ]
+        },
+        {
+          "id": "run-front-02",
+          "rect": [
+            703,
+            26,
+            157,
+            299
+          ],
+          "margin": [
+            114.0,
+            75.0,
+            227.0,
+            85.0
+          ]
+        },
+        {
+          "id": "run-front-03",
+          "rect": [
+            1002,
+            15,
+            156,
+            279
+          ],
+          "margin": [
+            114.5,
+            95.0,
+            228.0,
+            105.0
+          ]
+        },
+        {
+          "id": "run-front-04",
+          "rect": [
+            105,
+            340,
+            151,
+            300
+          ],
+          "margin": [
+            117.0,
+            74.0,
+            233.0,
+            84.0
+          ]
+        },
+        {
+          "id": "run-front-05",
+          "rect": [
+            401,
+            348,
+            154,
+            292
+          ],
+          "margin": [
+            115.5,
+            82.0,
+            230.0,
+            92.0
+          ]
+        },
+        {
+          "id": "run-front-06",
+          "rect": [
+            694,
+            345,
+            154,
+            295
+          ],
+          "margin": [
+            115.5,
+            79.0,
+            230.0,
+            89.0
+          ]
+        },
+        {
+          "id": "run-front-07",
+          "rect": [
+            1004,
+            335,
+            152,
+            278
+          ],
+          "margin": [
+            116.5,
+            96.0,
+            232.0,
+            106.0
+          ]
+        }
+      ],
+      "paint_path": "art/characters/traveler-base-v1/layers/run-front-backpack.png",
+      "mask_path": "art/characters/traveler-base-v1/layers/run-front-mask.png",
+      "output_name": "traveler-run-front-pack-v2.png",
+      "reference_path": "assets/characters/courtyard/painted-backpack/traveler-run-front-pack-v2.png",
+      "reference_sha256": "1d1e642171708b470896981ed93e14ef582e293609eae6a1413b2f29d12acf96"
+    },
+    {
+      "id": "run-side",
+      "base_path": "assets/characters/courtyard/traveler-run-side-v3.png",
+      "base_sha256": "de394560e0ee953ebfacb47fdd9cb4c28e3ce8318f949fa91b9e3ef9dc0b9bf9",
+      "size": [
+        1254,
+        1254
+      ],
+      "regions": [
+        {
+          "id": "run-side-00",
+          "rect": [
+            39,
+            29,
+            216,
+            279
+          ],
+          "margin": [
+            84.5,
+            95.0,
+            168.0,
+            105.0
+          ]
+        },
+        {
+          "id": "run-side-01",
+          "rect": [
+            424,
+            34,
+            158,
+            274
+          ],
+          "margin": [
+            113.5,
+            100.0,
+            226.0,
+            110.0
+          ]
+        },
+        {
+          "id": "run-side-02",
+          "rect": [
+            669,
+            25,
+            219,
+            282
+          ],
+          "margin": [
+            83.0,
+            92.0,
+            165.0,
+            102.0
+          ]
+        },
+        {
+          "id": "run-side-03",
+          "rect": [
+            989,
+            11,
+            216,
+            290
+          ],
+          "margin": [
+            84.5,
+            84.0,
+            168.0,
+            94.0
+          ]
+        },
+        {
+          "id": "run-side-04",
+          "rect": [
+            39,
+            339,
+            228,
+            285
+          ],
+          "margin": [
+            78.5,
+            89.0,
+            156.0,
+            99.0
+          ]
+        },
+        {
+          "id": "run-side-05",
+          "rect": [
+            403,
+            349,
+            196,
+            275
+          ],
+          "margin": [
+            94.5,
+            99.0,
+            188.0,
+            109.0
+          ]
+        },
+        {
+          "id": "run-side-06",
+          "rect": [
+            676,
+            337,
+            220,
+            286
+          ],
+          "margin": [
+            82.5,
+            88.0,
+            164.0,
+            98.0
+          ]
+        },
+        {
+          "id": "run-side-07",
+          "rect": [
+            988,
+            325,
+            211,
+            285
+          ],
+          "margin": [
+            87.0,
+            89.0,
+            173.0,
+            99.0
+          ]
+        }
+      ],
+      "paint_path": "art/characters/traveler-base-v1/layers/run-side-backpack.png",
+      "mask_path": "art/characters/traveler-base-v1/layers/run-side-mask.png",
+      "output_name": "traveler-run-side-pack-v2.png",
+      "reference_path": "assets/characters/courtyard/painted-backpack/traveler-run-side-pack-v2.png",
+      "reference_sha256": "9ff8b736de8ef385e33676fd66dcf817f80f4b6dad65c219193b0701295d5ddb"
+    },
+    {
+      "id": "pocket",
+      "base_path": "assets/characters/courtyard/traveler-pocket-v1.png",
+      "base_sha256": "8472ba2dc99dc81410adc5d8f8e423a34f8983f97fa9953d39620274142ecbed",
+      "size": [
+        1254,
+        1254
+      ],
+      "regions": [
+        {
+          "id": "pocket-00",
+          "rect": [
+            107,
+            74,
+            153,
+            354
+          ],
+          "margin": [
+            180.5,
+            142.0,
+            359.0,
+            158.0
+          ]
+        },
+        {
+          "id": "pocket-01",
+          "rect": [
+            403,
+            74,
+            161,
+            354
+          ],
+          "margin": [
+            178.5,
+            142.0,
+            351.0,
+            158.0
+          ]
+        },
+        {
+          "id": "pocket-02",
+          "rect": [
+            694,
+            85,
+            164,
+            343
+          ],
+          "margin": [
+            176.5,
+            153.0,
+            348.0,
+            169.0
+          ]
+        },
+        {
+          "id": "pocket-03",
+          "rect": [
+            999,
+            85,
+            164,
+            342
+          ],
+          "margin": [
+            178.5,
+            154.0,
+            348.0,
+            170.0
+          ]
+        },
+        {
+          "id": "pocket-04",
+          "rect": [
+            101,
+            451,
+            163,
+            367
+          ],
+          "margin": [
+            174.5,
+            129.0,
+            349.0,
+            145.0
+          ]
+        },
+        {
+          "id": "pocket-05",
+          "rect": [
+            401,
+            454,
+            165,
+            364
+          ],
+          "margin": [
+            177.0,
+            132.0,
+            347.0,
+            148.0
+          ]
+        },
+        {
+          "id": "pocket-06",
+          "rect": [
+            702,
+            464,
+            165,
+            354
+          ],
+          "margin": [
+            177.0,
+            142.0,
+            347.0,
+            158.0
+          ]
+        },
+        {
+          "id": "pocket-07",
+          "rect": [
+            1000,
+            466,
+            168,
+            352
+          ],
+          "margin": [
+            172.0,
+            144.0,
+            344.0,
+            160.0
+          ]
+        },
+        {
+          "id": "pocket-08",
+          "rect": [
+            122,
+            840,
+            105,
+            372
+          ],
+          "margin": [
+            198.5,
+            124.0,
+            407.0,
+            140.0
+          ]
+        },
+        {
+          "id": "pocket-09",
+          "rect": [
+            421,
+            843,
+            125,
+            369
+          ],
+          "margin": [
+            195.5,
+            127.0,
+            387.0,
+            143.0
+          ]
+        },
+        {
+          "id": "pocket-10",
+          "rect": [
+            717,
+            850,
+            118,
+            362
+          ],
+          "margin": [
+            197.0,
+            134.0,
+            394.0,
+            150.0
+          ]
+        },
+        {
+          "id": "pocket-11",
+          "rect": [
+            1020,
+            852,
+            115,
+            360
+          ],
+          "margin": [
+            196.0,
+            136.0,
+            397.0,
+            152.0
+          ]
+        }
+      ],
+      "paint_path": "art/characters/traveler-base-v1/layers/pocket-backpack.png",
+      "mask_path": "art/characters/traveler-base-v1/layers/pocket-mask.png",
+      "output_name": "traveler-pocket-pack-v2.png",
+      "reference_path": "assets/characters/courtyard/painted-backpack/traveler-pocket-pack-v2.png",
+      "reference_sha256": "81b645fd580eceea1e9901c3f0195ba08231d3070ef406f496fbd5d087285f79"
+    }
+  ]
+}
