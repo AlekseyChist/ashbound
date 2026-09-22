@@ -36,14 +36,13 @@ func setup(sbx: Node, plr: CharacterBody3D) -> void:
 			if "facing_direction" in player:
 				player.set("facing_direction", Vector3(0.0, 0.0, -1.0))
 
-	var actor_script: GDScript = load(ACTOR_SCRIPT_PATH)
-	var wolf: CharacterBody3D = actor_script.new()
+	var wolf: CharacterBody3D = _create_enemy_actor("wolf")
 	wolf.name = "Wolf"
 	add_child(wolf)
 	wolf.setup("wolf", WOLF_HOME, self)
 	enemies.append(wolf)
 
-	var guard: CharacterBody3D = actor_script.new()
+	var guard: CharacterBody3D = _create_enemy_actor("guard")
 	guard.name = "Guard"
 	add_child(guard)
 	guard.setup("guard", GUARD_HOME, self)
@@ -54,6 +53,11 @@ func setup(sbx: Node, plr: CharacterBody3D) -> void:
 
 	_apply_focus_state()
 	print("ASHBOUND_CORNER_SESSION_READY")
+
+
+func _create_enemy_actor(p_kind: String) -> CharacterBody3D:
+	var actor_script: GDScript = load(ACTOR_SCRIPT_PATH)
+	return actor_script.new()
 
 
 func _build_home_rings(home: Vector3) -> void:
@@ -145,6 +149,28 @@ func resolve_enemy_contact(actor: Node) -> String:
 	return _last_result
 
 
+func enemy_contact_geometry(actor: CharacterBody3D) -> String:
+	if not enabled():
+		return "cancelled"
+	if actor == null or not is_instance_valid(actor):
+		return "cancelled"
+	if not enemies.has(actor):
+		return "cancelled"
+	if player == null or not is_instance_valid(player):
+		return "cancelled"
+	var reach: float = GUARD_REACH if actor.kind == "guard" else WOLF_REACH
+	var to_player: Vector3 = player.global_position - actor.global_position
+	var flat: Vector3 = Vector3(to_player.x, 0.0, to_player.z)
+	var dist: float = flat.length()
+	if absf(to_player.y) > MAX_HEIGHT_OFFSET or dist > reach:
+		return "miss"
+	if not _in_cone(flat, actor.facing_direction, ATTACK_HALF_CONE):
+		return "miss"
+	if not actor.has_line_to_player():
+		return "obstructed"
+	return "contact"
+
+
 func _resolve_contact() -> void:
 	if _contact_done:
 		return
@@ -152,18 +178,8 @@ func _resolve_contact() -> void:
 		_cancel_active()
 		return
 	_contact_done = true
-	var result: String = "miss"
-	var reach: float = GUARD_REACH if _active_source.kind == "guard" else WOLF_REACH
-	var to_player: Vector3 = player.global_position - device.global_position
-	var flat: Vector3 = Vector3(to_player.x, 0.0, to_player.z)
-	var dist: float = flat.length()
-	if absf(to_player.y) > MAX_HEIGHT_OFFSET or dist > reach:
-		result = "miss"
-	elif not _in_cone(flat, _strike_dir, ATTACK_HALF_CONE):
-		result = "miss"
-	elif not _ray_visible():
-		result = "obstructed"
-	else:
+	var result: String = enemy_contact_geometry(_active_source)
+	if result == "contact":
 		var trained: bool = _is_trained()
 		var frontal: bool = _frontal_guard()
 		if trained and _guarding and frontal:
@@ -174,6 +190,10 @@ func _resolve_contact() -> void:
 				result = "block"
 		else:
 			result = "hit"
+	_publish_enemy_result(result)
+
+
+func _publish_enemy_result(result: String) -> void:
 	_contacts += 1
 	_last_result = result
 	_perfect_eligible = false
