@@ -6,7 +6,7 @@ extends CanvasLayer
 
 const AdaptiveScreenRootScript := preload("res://scripts/courtyard/adaptive_screen_root.gd")
 
-enum GuardSource { NONE, KEY, MOUSE, TOUCH }
+enum GuardSource { NONE, KEY, MOUSE, RIGHT_MOUSE, TOUCH }
 
 const SWING := 1
 const RESET := 2
@@ -418,6 +418,38 @@ func _handle_key(key: InputEventKey) -> void:
 
 
 func _handle_real_mouse(mb: InputEventMouseButton) -> void:
+	# Right mouse is an independent guard owner (desktop only). It must be
+	# resolved before the LEFT path so leftUP/G-UP/touch-UP cannot release a
+	# right-owned guard and rightUP cannot release another owner.
+	if mb.button_index == MOUSE_BUTTON_RIGHT:
+		if OS.has_feature("android"):
+			return
+		# Canceled is always a release, even while pressed, so a canceled
+		# press can never leave the right-owned guard stuck.
+		if mb.canceled:
+			if _guard_source == GuardSource.RIGHT_MOUSE:
+				_release_guard(GuardSource.RIGHT_MOUSE)
+				get_viewport().set_input_as_handled()
+			return
+		if mb.pressed:
+			# Ordinary RMB guards anywhere in gameplay (world center, captured
+			# mouse), not only inside our controls.
+			get_viewport().set_input_as_handled()
+			# Guard acts immediately; another owner never steals it.
+			if _guard_source == GuardSource.NONE and _gating_ok():
+				if is_instance_valid(_controller) and _controller.has_method("set_guard"):
+					if bool(_controller.set_guard(true)):
+						_guard_source = GuardSource.RIGHT_MOUSE
+						_guard_owner_finger = -1
+						_update_guard_visual()
+			return
+		# Release: clear the right-owned guard unconditionally, even outside
+		# our controls or window controls, so a drag-out can never stick.
+		if _guard_source == GuardSource.RIGHT_MOUSE:
+			_release_guard(GuardSource.RIGHT_MOUSE)
+			get_viewport().set_input_as_handled()
+		return
+
 	if mb.button_index != MOUSE_BUTTON_LEFT:
 		return
 	var inside := _inside_own_control(mb.position)

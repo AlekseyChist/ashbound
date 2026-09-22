@@ -1,0 +1,16 @@
+[
+  {"key":"DEFENSE_SWING","en":"Incoming strike","ru":"Входящий удар"},
+  {"key":"DEFENSE_RESET","en":"Reset positions","ru":"На исходную"},
+  {"key":"DEFENSE_GUARD","en":"BLOCK","ru":"БЛОК"},
+  {"key":"DEFENSE_GUARD_NOW","en":"BLOCK!","ru":"БЛОК!"},
+  {"key":"DEFENSE_HINT_PC","en":"F5 strike · RMB (or G) block · F6 reset. Press RMB on the flash for a perfect block.","ru":"F5 — удар · ПКМ (или G) — блок · F6 — сброс. На вспышке нажми ПКМ для точного блока."},
+  {"key":"DEFENSE_HINT_TOUCH","en":"Watch the windup: press Block on the flash. Holding gives a normal block.","ru":"Следи за замахом: нажми «Блок» на вспышке. Удержание даёт обычный блок."},
+  {"key":"DEFENSE_NOVICE_HINT","en":"Novice: the guard attempt does not stop the strike.","ru":"Новичок: попытка прикрыться не останавливает удар."},
+  {"key":"DEFENSE_TRAINED_HINT","en":"Trained: face the strike. Hold for a normal block; time a fresh press for a perfect block.","ru":"Обученный: повернись к удару. Удержание — обычный блок, точное нажатие — идеальный."},
+  {"key":"DEFENSE_NOTE","en":"Experimental incoming strike and guard","ru":"Проба входящего удара и защиты"},
+  {"key":"ENEMY_WOLF","en":"Wolf","ru":"Волк"},
+  {"key":"ENEMY_GUARD","en":"Guard","ru":"Стражник"},
+  {"key":"ENEMY_PREVIEW_TITLE","en":"Wolf and guard","ru":"Волк и стражник"},
+  {"key":"ENEMY_HINT_PC","en":"Enter a circle to start combat. RMB (or G): block; F6: reset.","ru":"Войди в круг, чтобы начать бой. ПКМ (или G): блок; F6: на исходную."},
+  {"key":"ENEMY_HINT_TOUCH","en":"Enter a circle to start combat. Hold BLOCK or tap on the flash.","ru":"Войди в круг, чтобы начать бой. Держи БЛОК или нажми на вспышке."}
+]

@@ -7,7 +7,7 @@ const validation = process.argv.includes('--validate');
 
 
 
-const name = validation ? 'feedback-validation' : 'feedback-preview';
+const name = validation ? 'swing-validation' : 'swing-preview';
 const stage = path.join(root, '.tools/export-staging', name);
 const imported = path.join(root,'.tools/export-staging/corner-enemy-checks/.godot/imported');
 if (fs.existsSync(imported)) fs.cpSync(imported,path.join(stage,'.godot/imported'),{recursive:true});
@@ -17,17 +17,17 @@ for (const file of new Set(files)) {
   if (!fs.existsSync(source) || !fs.statSync(source).isFile()) continue;
   fs.mkdirSync(path.dirname(dest),{recursive:true}); fs.copyFileSync(source,dest);
 }
-const scene = validation ? 'scripts/tools/validate_combat_feedback.tscn' : 'scripts/tools/combat_feedback_sandbox.tscn';
-const resources = [scene, 'scripts/tools/combat_feedback_sandbox.tscn', 'scripts/tools/combat_swing_trails.gd', ...['fx','player','session','sandbox'].map(id=>'scripts/tools/combat_feedback_'+id+'.gd'), 'scripts/tools/corner_enemy_sandbox.tscn', ...['actor','visual','session','level','toolbar','preview_toolbar'].map(id=>'scripts/tools/corner_enemy_'+id+'.gd'), ...['wolf','guard'].map(id=>'assets/characters/courtyard/enemy-preview/'+id+'_frames.tres'), 'scripts/tools/fist_defense_sandbox.tscn',
+const scene = validation ? 'scripts/tools/validate_combat_swing_trails.tscn' : 'scripts/tools/combat_feedback_sandbox.tscn';
+const resources = [scene, 'scripts/tools/combat_feedback_sandbox.tscn', 'scripts/tools/combat_swing_trails.gd', 'scripts/tools/validate_combat_feedback.gd', ...['fx','player','session','sandbox'].map(id=>'scripts/tools/combat_feedback_'+id+'.gd'), 'scripts/tools/corner_enemy_sandbox.tscn', ...['actor','visual','session','level','toolbar','preview_toolbar'].map(id=>'scripts/tools/corner_enemy_'+id+'.gd'), ...['wolf','guard'].map(id=>'assets/characters/courtyard/enemy-preview/'+id+'_frames.tres'), 'scripts/tools/fist_defense_sandbox.tscn',
   'scripts/tools/fist_technique_sandbox.tscn',
   'scripts/tools/fist_defense_controller.gd','scripts/tools/fist_defense_player.gd',
   'scripts/tools/fist_defense_toolbar.gd','scripts/tools/fist_preview_toolbar.gd',
   'scripts/courtyard/adaptive_screen_root.gd',
   ...['novice','novice_pack','trained','trained_pack'].flatMap(id=>['fist-preview','fist-defense'].map(dir=>`assets/characters/courtyard/${dir}/${id}_frames.tres`))
 ].map(file=>`res://${file}`);
-const title = validation ? 'Feedback Validation' : 'Combat Feedback';
-const version = '0.17.1-combat-feedback';
-const packageId = validation ? 'org.ashbound.feedbackvalidation' : 'org.ashbound.fistqa';
+const title = validation ? 'Swing Validation' : 'Combat Swing';
+const version = '0.17.2-combat-swing';
+const packageId = validation ? 'org.ashbound.swingvalidation' : 'org.ashbound.fistqa';
 for (const file of ['project.godot','export_presets.cfg']) {
   const target = path.join(stage,file);
   let data = fs.readFileSync(target,'utf8');
@@ -41,14 +41,14 @@ for (const file of ['project.godot','export_presets.cfg']) {
     data = data.replaceAll('export_files=PackedStringArray(',`export_files=PackedStringArray(${extra}, `)
       .replaceAll('org.ashbound.courtyard',packageId)
       .replaceAll('package/name="AshBound Courtyard"',`package/name="AshBound ${title}"`)
-      .replace(/version\/code=\d+/, 'version/code=36')
+      .replace(/version\/code=\d+/, 'version/code=37')
       .replace(/version\/name="[^"]+"/, `version/name="${version}"`);
   }
   fs.writeFileSync(target,data);
 }
 const godot = process.env.ASHBOUND_GODOT || path.join(root,'.tools/godot/Godot_v4.7.2-stable_win64_console.exe');
 const android = path.join(root,`.tools/builds/android/ashbound-${name}.apk`);
-const windows = path.join(root,'.tools/builds/feedback-preview/AshBound-Combat-Feedback.exe');
+const windows = path.join(root,'.tools/builds/swing-preview/AshBound-Combat-Swing.exe');
 fs.mkdirSync(path.join(stage,'.tools'),{recursive:true});
 fs.mkdirSync(path.dirname(android),{recursive:true});
 fs.mkdirSync(path.dirname(windows),{recursive:true});
@@ -62,7 +62,7 @@ for (const [step,args] of steps) {
   console.log(`PASS ${name} ${step}`);
 }
 if (!validation) {
-  const log = path.join(root,'.tools/feedback-preview-package-smoke.log');
+  const log = path.join(root,'.tools/swing-preview-package-smoke.log');
   execFileSync(windows,['--headless','--quit-after','120','--log-file',log],{cwd:root,windowsHide:true,timeout:45000,stdio:'ignore'});
   const output = fs.readFileSync(log,'utf8');
   if (/SCRIPT ERROR:|^ERROR:/m.test(output) || !output.includes('ASHBOUND_COMBAT_FEEDBACK_READY')) throw Error(log);
