@@ -19,10 +19,19 @@ var _stop_count: int = 0
 var _last_feedback: String = ""
 
 
+func _create_feedback_fx() -> Node:
+	var fx_script: GDScript = load(FX_SCRIPT_PATH)
+	return fx_script.new()
+
+
+func _create_swing_trails() -> Node:
+	var trails_script: GDScript = load(TRAILS_SCRIPT_PATH)
+	return trails_script.new()
+
+
 func setup(sbx: Node, plr: CharacterBody3D) -> void:
 	super.setup(sbx, plr)
-	var fx_script: GDScript = load(FX_SCRIPT_PATH)
-	_fx = fx_script.new()
+	_fx = _create_feedback_fx()
 	_fx.name = "CombatFeedbackFX"
 	add_child(_fx)
 	for e in enemies:
@@ -31,8 +40,7 @@ func setup(sbx: Node, plr: CharacterBody3D) -> void:
 			if visual != null and "external_feedback" in visual:
 				visual.set("external_feedback", true)
 				visual._process(0.0)
-	var trails_script: GDScript = load(TRAILS_SCRIPT_PATH)
-	_trails = trails_script.new()
+	_trails = _create_swing_trails()
 	_trails.name = "SwingTrails"
 	add_child(_trails)
 
