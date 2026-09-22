@@ -1,0 +1,95 @@
+{
+  "schema": 1,
+  "sheets": [
+    {
+      "id": "novice",
+      "base": "assets/characters/courtyard/fist-defense/novice.png",
+      "paint": "art/characters/fist-defense-v1/paint/novice-pack.png",
+      "base_sha256": "46e1b4db43a31b0cf665d8dab80d90b15a0daeba497fc3a04599778f9a22bcb9",
+      "paint_sha256": "b9e54c7f4d1d0093e71b8556fac3d6adc832eda36361e832d4c2c4621c7376d2",
+      "regions": [
+        [
+          162,
+          135,
+          166,
+          171
+        ],
+        [
+          546,
+          130,
+          188,
+          182
+        ],
+        [
+          920,
+          122,
+          173,
+          190
+        ],
+        [
+          146,
+          738,
+          145,
+          190
+        ],
+        [
+          556,
+          734,
+          188,
+          190
+        ],
+        [
+          898,
+          744,
+          150,
+          181
+        ]
+      ]
+    },
+    {
+      "id": "trained",
+      "base": "assets/characters/courtyard/fist-defense/trained.png",
+      "paint": "art/characters/fist-defense-v1/paint/trained-pack.png",
+      "base_sha256": "a484eb9db6f9face232e9e33dacecabe9ecb664a521c247e0371180fb6bae163",
+      "paint_sha256": "b8249d26f1cb2e0a26db19afd9aec4d914e19751c76394eaaa3ffea6117e590e",
+      "regions": [
+        [
+          162,
+          135,
+          166,
+          171
+        ],
+        [
+          546,
+          130,
+          188,
+          182
+        ],
+        [
+          920,
+          122,
+          173,
+          190
+        ],
+        [
+          146,
+          738,
+          145,
+          190
+        ],
+        [
+          556,
+          734,
+          188,
+          190
+        ],
+        [
+          898,
+          744,
+          150,
+          181
+        ]
+      ]
+    }
+  ]
+}

@@ -31,12 +31,13 @@ run('import', ['--headless','--editor','--import','--quit']);
 run('core', ['--headless','res://scripts/tools/validate_fist_defense.tscn'], /ASHBOUND_FIST_DEFENSE_OK groups=12/);
 if (!process.argv.includes('--core-only')) {
   run('ui', ['--headless','res://scripts/tools/validate_fist_defense_ui.tscn'], /ASHBOUND_FIST_DEFENSE_UI_OK/);
+  run('poses', ['--headless','res://scripts/tools/validate_fist_defense_poses.tscn'], /ASHBOUND_FIST_DEFENSE_POSES_OK groups=6/);
   const regressions = process.argv.includes('--focused') ? [] : ['fist_sandbox','fist_techniques','attack_interruption','adaptive_display','localization','courtyard_localization','painted_frames','touch_inventory'];
   for (const name of regressions) {
     run(name, ['--headless','--script',`res://scripts/tools/validate_${name}.gd`], /^ASHBOUND_[A-Z_]+_OK/m);
   }
-  for (const name of ['core','ui']) {
-    run(`render-${name}`, ['--windowed','--position','-10000,-10000',`res://scripts/tools/validate_fist_defense${name==='ui'?'_ui':''}.tscn`], /^ASHBOUND_FIST_DEFENSE(_UI)?_OK/m);
+  for (const name of ['core','ui','poses']) {
+    run(`render-${name}`, ['--windowed','--position','-10000,-10000',`res://scripts/tools/validate_fist_defense${name==='ui'?'_ui':name==='poses'?'_poses':''}.tscn`], /^ASHBOUND_FIST_DEFENSE(_UI|_POSES)?_OK/m);
   }
 }
 console.log('ASHBOUND_DEFENSE_CHECKS_OK');
