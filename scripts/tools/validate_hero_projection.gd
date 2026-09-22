@@ -7,6 +7,7 @@ var viewport: SubViewport
 var camera: Camera3D
 var actor: CharacterBody3D
 var visual: Node3D
+var source_images: Dictionary = {}
 
 func _initialize() -> void:
 	_run.call_deferred()
@@ -50,6 +51,23 @@ func check_geometry(sprite: AnimatedSprite3D, label: String) -> void:
 		check(shadow.sprite_frames == sprite.sprite_frames and shadow.animation == sprite.animation and shadow.frame == sprite.frame and shadow.flip_h == sprite.flip_h and shadow.visible == sprite.visible, label + " shadow uses actual equipped pose")
 		check(is_equal_approx(shadow.pixel_size, sprite.pixel_size) and shadow.global_position.is_equal_approx(actor.to_global(sprite.position)), label + " shadow retains authored height and feet")
 
+func source_alpha_bounds(texture: Texture2D) -> Rect2i:
+	# AtlasTexture.get_image blits before callers can decompress its source.
+	# Decode the source first; alpha bounds and the original ratio tolerance stay unchanged.
+	var source_texture: Texture2D = texture.atlas if texture is AtlasTexture else texture
+	var key := source_texture.get_instance_id()
+	if not source_images.has(key):
+		var decoded := source_texture.get_image()
+		if decoded.is_compressed():
+			var status := decoded.decompress()
+			check(status == OK, "decode reference pixels")
+			if status != OK: return Rect2i()
+		source_images[key] = decoded
+	var image: Image = source_images[key]
+	if texture is AtlasTexture and texture.region.has_area():
+		image = image.get_region(Rect2i(texture.region))
+	return image.get_used_rect()
+
 func check_pixels(sprite: AnimatedSprite3D, label: String) -> void:
 	if DisplayServer.get_name() == "headless":
 		return
@@ -58,7 +76,7 @@ func check_pixels(sprite: AnimatedSprite3D, label: String) -> void:
 	var result := viewport.get_texture().get_image()
 	var bounds := result.get_used_rect()
 	var texture := sprite.sprite_frames.get_frame_texture(sprite.animation, sprite.frame)
-	var expected := texture.get_image().get_used_rect()
+	var expected := source_alpha_bounds(texture)
 	var actual_ratio := float(bounds.size.x) / maxf(bounds.size.y, 1)
 	var expected_ratio := float(expected.size.x) / maxf(expected.size.y, 1)
 	check(bounds.size.y > 100 and bounds.position.y > 0 and bounds.end.y < viewport.size.y, label + " complete visible artwork")
