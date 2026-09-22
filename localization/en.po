@@ -477,3 +477,27 @@ msgstr "F1/F2: technique · F3: backpack · F4: view"
 
 msgid "FIST_PREVIEW_NOTE"
 msgstr "Stance and strike preview"
+
+msgid "DEFENSE_SWING"
+msgstr "Incoming strike"
+
+msgid "DEFENSE_RESET"
+msgstr "Reset positions"
+
+msgid "DEFENSE_GUARD"
+msgstr "Hold guard"
+
+msgid "DEFENSE_HINT_PC"
+msgstr "Prototype: F5 strike · Hold G to guard · F6 reset. Step sideways to avoid the strike."
+
+msgid "DEFENSE_HINT_TOUCH"
+msgstr "Prototype: start a strike, then hold guard or step aside. Blue: block; gold: well-timed block."
+
+msgid "DEFENSE_NOVICE_HINT"
+msgstr "Novice: the guard attempt does not stop the strike."
+
+msgid "DEFENSE_TRAINED_HINT"
+msgstr "Trained: face the striker to block. Timing is experimental."
+
+msgid "DEFENSE_NOTE"
+msgstr "Experimental incoming strike and guard"

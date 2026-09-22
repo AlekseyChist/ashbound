@@ -475,3 +475,27 @@ msgstr ""
 
 msgid "FIST_PREVIEW_NOTE"
 msgstr ""
+
+msgid "DEFENSE_SWING"
+msgstr ""
+
+msgid "DEFENSE_RESET"
+msgstr ""
+
+msgid "DEFENSE_GUARD"
+msgstr ""
+
+msgid "DEFENSE_HINT_PC"
+msgstr ""
+
+msgid "DEFENSE_HINT_TOUCH"
+msgstr ""
+
+msgid "DEFENSE_NOVICE_HINT"
+msgstr ""
+
+msgid "DEFENSE_TRAINED_HINT"
+msgstr ""
+
+msgid "DEFENSE_NOTE"
+msgstr ""

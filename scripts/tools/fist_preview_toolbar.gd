@@ -45,8 +45,17 @@ func refresh() -> void:
 			"FIST_PREVIEW_PACK_ON" if _owner.is_backpack_enabled() else "FIST_PREVIEW_PACK_OFF"
 		)
 		_view_button.text = loc.text("FIST_PREVIEW_VIEW")
-		_hint.text = loc.text("FIST_PREVIEW_HINT")
-		_note.text = loc.text("FIST_PREVIEW_NOTE")
+		var defense_mode: bool = _owner.get("defense_preview") == true
+		if defense_mode:
+			# Defense preview: hide the duplicated hint/note; the defense
+			# toolbar already carries PC keys and how-to-test text.
+			_hint.visible = false
+			_note.visible = false
+		else:
+			_hint.text = loc.text("FIST_PREVIEW_HINT")
+			_hint.visible = OS.get_name() != "Android"
+			_note.text = loc.text("FIST_PREVIEW_NOTE")
+			_note.visible = true
 	var tech: String = _owner.technique
 	_novice_button.set_pressed_no_signal(tech == "novice")
 	_trained_button.set_pressed_no_signal(tech == "trained")

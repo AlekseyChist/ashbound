@@ -1,21 +1,29 @@
 extends Node
 ## Fist technique preview sandbox (3D). Stance/attack only.
-## No training, defense, rewards or saves.
+## Optional isolated defense mode via defense_preview flag.
+## No training, rewards or saves.
 
 const NOVICE_FRAMES := preload("res://assets/characters/courtyard/fist-preview/novice_frames.tres")
 const NOVICE_PACK_FRAMES := preload("res://assets/characters/courtyard/fist-preview/novice_pack_frames.tres")
 const TRAINED_FRAMES := preload("res://assets/characters/courtyard/fist-preview/trained_frames.tres")
 const TRAINED_PACK_FRAMES := preload("res://assets/characters/courtyard/fist-preview/trained_pack_frames.tres")
 
+@export var defense_preview: bool = false
+
 var level: Node
 var technique: String = "novice"
+var defense: Node
 
 var _player: CharacterBody3D
 var _toolbar: CanvasLayer
+var _defense_toolbar: Node
 var _strike_count := 0
 
 func _ready() -> void:
-	DisplayServer.window_set_title("ASHBOUND — Fist preview")
+	if defense_preview:
+		DisplayServer.window_set_title("ASHBOUND — Defense preview")
+	else:
+		DisplayServer.window_set_title("ASHBOUND — Fist preview")
 	var inventory: Node = get_node("/root/Inventory")
 	if not inventory.configure_storage([
 		{"id": "traveler_clothing_pocket", "kind": "pocket", "capacity": 6},
@@ -31,6 +39,16 @@ func _ready() -> void:
 	level = preload("res://scenes/courtyard/first_courtyard.tscn").instantiate()
 	var hud: Node = level.get_node("HUD")
 	hud.force_touch_controls = true
+	if defense_preview:
+		var preview_player: Node = level.get_node("Actors/Player")
+		preview_player.set_script(preload("res://scripts/tools/fist_defense_player.gd"))
+		# Defense probe: hide the legacy touch legend (it spans the left world
+		# and the NPC name) and clear stale quest instructions.
+		var legend: Node = hud.get_node_or_null("RootControl/BottomLeft/LegendLabel")
+		if legend != null:
+			legend.visible = false
+		if hud.has_method("clear_message"):
+			hud.clear_message()
 	add_child(level)
 
 	_player = level.get_node("Actors/Player")
@@ -73,6 +91,17 @@ func _ready() -> void:
 	add_child(_toolbar)
 	_toolbar.setup(self)
 
+	if defense_preview:
+		var defense_controller: Node = preload("res://scripts/tools/fist_defense_controller.gd").new()
+		defense_controller.name = "DefenseController"
+		add_child(defense_controller)
+		_player.set("defense_controller", defense_controller)
+		defense = defense_controller
+		defense.setup(self, _player)
+		var defense_toolbar: Node = preload("res://scripts/tools/fist_defense_toolbar.gd").new()
+		add_child(defense_toolbar)
+		defense_toolbar.setup(self, defense)
+
 	print("ASHBOUND_FIST_SANDBOX_READY")
 
 func _process(_delta: float) -> void:
@@ -100,6 +129,8 @@ func set_technique(value: String) -> bool:
 	var layer: Node = _player.get_node("Visual/BackpackLayer")
 	if layer == null or not layer.configure_body_frame_pair(bare, worn):
 		return false
+	if defense != null and technique != value:
+		defense.cancel_trial()
 	technique = value
 	if _toolbar != null:
 		_toolbar.refresh()
