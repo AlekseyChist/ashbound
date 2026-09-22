@@ -14,13 +14,13 @@ const SEARCH_PAD_Y := 6
 
 # original texture file name -> painted full-character texture file name
 const TEXTURE_MAP: Dictionary = {
-	"traveler-v1.png": "painted-backpack/traveler-side-pack.png",
-	"traveler-back-v1.png": "painted-backpack/traveler-back-pack.png",
-	"traveler-front-v1.png": "painted-backpack/traveler-front-pack.png",
-	"traveler-run-back-v3.png": "painted-backpack/traveler-run-back-pack.png",
-	"traveler-run-front-v3.png": "painted-backpack/traveler-run-front-pack.png",
-	"traveler-run-side-v3.png": "painted-backpack/traveler-run-side-pack.png",
-	"traveler-pocket-v1.png": "painted-backpack/traveler-pocket-pack.png",
+	"traveler-v1.png": "painted-backpack/traveler-side-pack-v2.png",
+	"traveler-back-v1.png": "painted-backpack/traveler-back-pack-v2.png",
+	"traveler-front-v1.png": "painted-backpack/traveler-front-pack-v2.png",
+	"traveler-run-back-v3.png": "painted-backpack/traveler-run-back-pack-v2.png",
+	"traveler-run-front-v3.png": "painted-backpack/traveler-run-front-pack-v2.png",
+	"traveler-run-side-v3.png": "painted-backpack/traveler-run-side-pack-v2.png",
+	"traveler-pocket-v1.png": "painted-backpack/traveler-pocket-pack-v2.png",
 }
 
 var _image_cache: Dictionary = {}
@@ -137,9 +137,6 @@ func _remap_frame_texture(old_atlas: AtlasTexture, anim_name: String, index: int
 			return cached
 
 	var painted_rel: String = TEXTURE_MAP[file_name] as String
-	# Individually corrected frame: idle_front frame 2 was redrawn on a separate sheet.
-	if file_name == "traveler-front-v1.png" and anim_name == &"idle_front" and index == 2:
-		painted_rel = "painted-backpack/traveler-front-idle-correction.png"
 	var painted_path := "res://assets/characters/courtyard/" + painted_rel
 	if not ResourceLoader.exists(painted_path):
 		push_error("Painted backpack frames: missing painted texture: %s" % painted_path)
@@ -234,9 +231,12 @@ func _get_source_image(path: String, tex: Texture2D) -> Image:
 		var cached: Image = _image_cache[path] as Image
 		if cached != null:
 			return cached
-	var img := tex.get_image()
-	if img == null or img.is_empty():
-		push_error("Painted backpack frames: could not read image for '%s'." % path)
+	# Measure ORIGINAL PNG pixels from disk; imported textures may be compressed or altered.
+	var fs_path := ProjectSettings.globalize_path(path)
+	var img := Image.new()
+	var err := img.load(fs_path)
+	if err != OK or img.is_empty():
+		push_error("Painted backpack frames: could not read image for '%s' (error=%d)." % [path, err])
 		return null
 	_image_cache[path] = img
 	return img

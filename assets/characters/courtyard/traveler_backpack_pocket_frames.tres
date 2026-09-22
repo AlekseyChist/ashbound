@@ -1,77 +1,77 @@
 [gd_resource type="SpriteFrames" format=3]
 
-[ext_resource type="Texture2D" path="res://assets/characters/courtyard/painted-backpack/traveler-pocket-pack.png" id="1_tiug3"]
+[ext_resource type="Texture2D" path="res://assets/characters/courtyard/painted-backpack/traveler-pocket-pack-v2.png" id="1_tiug3"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_3g7jw"]
 atlas = ExtResource("1_tiug3")
-region = Rect2(106, 73, 155, 356)
-margin = Rect2(179.08386, 140, 357, 156)
+region = Rect2(107, 74, 153, 354)
+margin = Rect2(180.5, 142, 359, 158)
 filter_clip = true
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_483hw"]
 atlas = ExtResource("1_tiug3")
-region = Rect2(402, 73, 165, 356)
-margin = Rect2(176.75371, 140, 347, 156)
+region = Rect2(403, 74, 161, 354)
+margin = Rect2(178.5, 142, 351, 158)
 filter_clip = true
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_o8jud"]
 atlas = ExtResource("1_tiug3")
-region = Rect2(694, 84, 166, 345)
-margin = Rect2(176.26305, 151, 346, 167)
+region = Rect2(694, 85, 164, 343)
+margin = Rect2(176.5, 153, 348, 169)
 filter_clip = true
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_lqgnr"]
 atlas = ExtResource("1_tiug3")
-region = Rect2(999, 84, 166, 345)
-margin = Rect2(178.27917, 151, 346, 167)
+region = Rect2(999, 85, 164, 342)
+margin = Rect2(178.5, 154, 348, 170)
 filter_clip = true
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_ktjxl"]
 atlas = ExtResource("1_tiug3")
-region = Rect2(100, 450, 165, 369)
-margin = Rect2(173.70193, 127, 347, 143)
+region = Rect2(101, 451, 163, 367)
+margin = Rect2(174.5, 129, 349, 145)
 filter_clip = true
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_hsq51"]
 atlas = ExtResource("1_tiug3")
-region = Rect2(400, 452, 167, 367)
-margin = Rect2(175.83397, 129, 345, 145)
+region = Rect2(401, 454, 165, 364)
+margin = Rect2(177, 132, 347, 148)
 filter_clip = true
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_rlq07"]
 atlas = ExtResource("1_tiug3")
-region = Rect2(700, 464, 168, 355)
-margin = Rect2(174.56892, 141, 344, 157)
+region = Rect2(702, 464, 165, 354)
+margin = Rect2(177, 142, 347, 158)
 filter_clip = true
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_pax0a"]
 atlas = ExtResource("1_tiug3")
-region = Rect2(999, 466, 171, 353)
-margin = Rect2(170.36041, 143, 341, 159)
+region = Rect2(1000, 466, 168, 352)
+margin = Rect2(172, 144, 344, 160)
 filter_clip = true
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_i6kw0"]
 atlas = ExtResource("1_tiug3")
-region = Rect2(109, 840, 119, 373)
-margin = Rect2(185.07666, 123, 393, 139)
+region = Rect2(109, 840, 118, 372)
+margin = Rect2(185.5, 124, 394, 140)
 filter_clip = true
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_wbl7j"]
 atlas = ExtResource("1_tiug3")
-region = Rect2(405, 842, 143, 371)
-margin = Rect2(178.76219, 125, 369, 141)
+region = Rect2(405, 843, 141, 369)
+margin = Rect2(179.5, 127, 371, 143)
 filter_clip = true
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_m4rld"]
 atlas = ExtResource("1_tiug3")
-region = Rect2(697, 849, 139, 364)
-margin = Rect2(176.86612, 132, 373, 148)
+region = Rect2(697, 850, 138, 362)
+margin = Rect2(177, 134, 374, 150)
 filter_clip = true
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_i3gct"]
 atlas = ExtResource("1_tiug3")
-region = Rect2(1001, 852, 137, 362)
-margin = Rect2(176.84523, 134, 375, 150)
+region = Rect2(1001, 852, 134, 360)
+margin = Rect2(177, 136, 378, 152)
 filter_clip = true
 
 [resource]
