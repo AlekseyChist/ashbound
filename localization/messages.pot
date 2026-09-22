@@ -517,3 +517,12 @@ msgstr ""
 
 msgid "ENEMY_HINT_TOUCH"
 msgstr ""
+
+msgid "DODGE_ACTION"
+msgstr ""
+
+msgid "DODGE_HINT_PC"
+msgstr ""
+
+msgid "DODGE_HINT_TOUCH"
+msgstr ""
