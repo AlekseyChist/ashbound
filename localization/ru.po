@@ -578,3 +578,43 @@ msgstr "Подъём к смотровой"
 # Forest route prototype: location heading or reset button; no canonical place name.
 msgid "FOREST_LOOKOUT"
 msgstr "Вид на город"
+
+#: scripts/world/world_graybox.gd
+msgid "WORLD_CITY_FOREST"
+msgstr "Лесной город"
+
+#: scripts/world/world_graybox.gd
+msgid "WORLD_CITY_SNOW"
+msgstr "Горный город"
+
+#: scripts/world/world_graybox.gd
+msgid "WORLD_CITY_DESERT"
+msgstr "Город пустыни"
+
+#: scripts/world/world_graybox.gd
+msgid "WORLD_CITY_LOWLAND"
+msgstr "Город низин"
+
+#: scripts/world/world_graybox.gd
+msgid "WORLD_WALK"
+msgstr "Прогулка"
+
+#: scripts/world/world_graybox.gd
+msgid "WORLD_OVERVIEW"
+msgstr "Обзор мира"
+
+#: scripts/world/world_graybox.gd
+msgid "WORLD_ALL"
+msgstr "Весь мир"
+
+#: scripts/world/world_graybox.gd
+msgid "WORLD_RESET"
+msgstr "К площади"
+
+#: scripts/world/world_graybox.gd
+msgid "WORLD_OVERVIEW_HELP"
+msgstr "2 × 2 км · Вращение пальцем · + / − масштаб · Стрелки: сдвиг · Tab: прогулка"
+
+#: scripts/world/world_graybox.gd
+msgid "WORLD_WALK_HELP"
+msgstr "Макет рельефа · Стрелки / WASD: шаг · Shift: бег · Справа: обзор · Tab: карта"
