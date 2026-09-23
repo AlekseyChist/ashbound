@@ -1,0 +1,18 @@
+{
+  "source_commit": "267feedb6cc6f09debaf202a7a1835330e315042",
+  "poses": 120,
+  "same_camera": true,
+  "same_raw_artwork": true,
+  "fixed_crop": [
+    445,
+    245,
+    835,
+    665
+  ],
+  "artifacts": {
+    "before-all-views.png": "2007d6041f457efb64873f70a1e51104f6fec5ccbfe0ea204e187053178eeb06",
+    "candidate-all-views.png": "00dc6083e11eeee80c1b9e3099581d3f5b5b5d948057361cea4423c8f5e7d67e",
+    "side-before-after.gif": "517e29f1bd94951887006d657f0c4aca293d5fa256f25df5795b88c0c386eca4",
+    "side-before-after.png": "5535e625815b7fe69a4a9bad9ace74181bc3141033d03142ac0312278a137c40"
+  }
+}
