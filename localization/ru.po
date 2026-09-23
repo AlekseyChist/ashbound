@@ -529,3 +529,24 @@ msgstr "Войди в круг. Пробел + направление: укло�
 
 msgid "DODGE_HINT_TOUCH"
 msgstr "Войди в круг. Уклонение + направление; без направления — назад. БЛОК — защита."
+
+msgid "COMBAT_TOOLS_OPEN"
+msgstr "Тренировка"
+
+msgid "COMBAT_TOOLS_CLOSE"
+msgstr "Свернуть"
+
+msgid "COMBAT_TOOLS_TITLE"
+msgstr "Приёмы и снаряжение"
+
+msgid "COMBAT_HINT_IDLE"
+msgstr "Войди в круг противника."
+
+msgid "COMBAT_HINT_NOVICE"
+msgstr "Уходи шагом: блок новичка не останавливает удар."
+
+msgid "COMBAT_HINT_WINDUP"
+msgstr "Повернись к удару и держи блок."
+
+msgid "COMBAT_HINT_CUE"
+msgstr "Нажми БЛОК на вспышке!"

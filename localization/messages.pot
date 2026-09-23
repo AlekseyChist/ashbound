@@ -526,3 +526,24 @@ msgstr ""
 
 msgid "DODGE_HINT_TOUCH"
 msgstr ""
+
+msgid "COMBAT_TOOLS_OPEN"
+msgstr ""
+
+msgid "COMBAT_TOOLS_CLOSE"
+msgstr ""
+
+msgid "COMBAT_TOOLS_TITLE"
+msgstr ""
+
+msgid "COMBAT_HINT_IDLE"
+msgstr ""
+
+msgid "COMBAT_HINT_NOVICE"
+msgstr ""
+
+msgid "COMBAT_HINT_WINDUP"
+msgstr ""
+
+msgid "COMBAT_HINT_CUE"
+msgstr ""

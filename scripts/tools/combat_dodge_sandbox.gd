@@ -14,6 +14,10 @@ func _create_defense_toolbar() -> Node:
 	return preload("res://scripts/tools/combat_dodge_toolbar.gd").new()
 
 
+func _create_preview_toolbar() -> CanvasLayer:
+	return preload("res://scripts/tools/combat_tools_toolbar.gd").new()
+
+
 func _ready() -> void:
 	super._ready()
 	DisplayServer.window_set_title("AshBound — Combat Dodge")

@@ -528,3 +528,24 @@ msgstr "Enter a circle. Space + direction: dodge; no direction: backstep. RMB: b
 
 msgid "DODGE_HINT_TOUCH"
 msgstr "Enter a circle. Dodge + direction: sidestep; no direction: backstep. Hold BLOCK to guard."
+
+msgid "COMBAT_TOOLS_OPEN"
+msgstr "Training"
+
+msgid "COMBAT_TOOLS_CLOSE"
+msgstr "Close"
+
+msgid "COMBAT_TOOLS_TITLE"
+msgstr "Technique and gear"
+
+msgid "COMBAT_HINT_IDLE"
+msgstr "Enter an enemy circle."
+
+msgid "COMBAT_HINT_NOVICE"
+msgstr "Dodge: a novice guard cannot stop the strike."
+
+msgid "COMBAT_HINT_WINDUP"
+msgstr "Face the strike and hold Block."
+
+msgid "COMBAT_HINT_CUE"
+msgstr "Press BLOCK on the flash!"
