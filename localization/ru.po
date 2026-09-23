@@ -486,10 +486,10 @@ msgid "DEFENSE_RESET"
 msgstr "На исходную"
 
 msgid "DEFENSE_GUARD"
-msgstr "БЛОК"
+msgstr "Блок"
 
 msgid "DEFENSE_GUARD_NOW"
-msgstr "БЛОК!"
+msgstr "Блок"
 
 msgid "DEFENSE_HINT_PC"
 msgstr "F5 — удар · ПКМ (или G) — блок · F6 — сброс. На вспышке нажми ПКМ для точного блока."
@@ -519,7 +519,7 @@ msgid "ENEMY_HINT_PC"
 msgstr "Войди в круг, чтобы начать бой. ПКМ (или G): блок; F6: на исходную."
 
 msgid "ENEMY_HINT_TOUCH"
-msgstr "Войди в круг, чтобы начать бой. Держи БЛОК или нажми на вспышке."
+msgstr "Войди в круг, чтобы начать бой. Удерживай «Блок» или нажми на вспышке."
 
 msgid "DODGE_ACTION"
 msgstr "Уклонение"
@@ -528,7 +528,7 @@ msgid "DODGE_HINT_PC"
 msgstr "Войди в круг. Пробел + направление: уклонение; без направления: назад. ПКМ: блок."
 
 msgid "DODGE_HINT_TOUCH"
-msgstr "Войди в круг. Уклонение + направление; без направления — назад. БЛОК — защита."
+msgstr "Войди в круг. Уклонение + направление; без направления — назад. «Блок» — защита."
 
 msgid "COMBAT_TOOLS_OPEN"
 msgstr "Тренировка"
@@ -549,4 +549,4 @@ msgid "COMBAT_HINT_WINDUP"
 msgstr "Повернись к удару и держи блок."
 
 msgid "COMBAT_HINT_CUE"
-msgstr "Нажми БЛОК на вспышке!"
+msgstr "Нажми «Блок» на вспышке!"

@@ -4,6 +4,7 @@ extends CanvasLayer
 ## All real mouse/touch/key input is handled manually in _input;
 ## GUI button signals are intentionally not used.
 
+const UI_THEME := preload("res://assets/ui/ashbound_ui.tres")
 const AdaptiveScreenRootScript := preload("res://scripts/courtyard/adaptive_screen_root.gd")
 
 enum GuardSource { NONE, KEY, MOUSE, RIGHT_MOUSE, TOUCH }
@@ -63,17 +64,18 @@ func setup(sandbox: Node, controller: Node) -> void:
 func _build_ui() -> void:
 	_root = AdaptiveScreenRootScript.new()
 	_root.name = "FistDefenseRoot"
+	_root.theme = UI_THEME
 	_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_root)
 
 	var top_row := HBoxContainer.new()
 	top_row.name = "DefenseTopRow"
 	top_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	top_row.add_theme_constant_override("separation", 20)
+	top_row.add_theme_constant_override("separation", 12)
 	_root.add_child(top_row)
 
-	_swing_btn = _make_button("SwingButton", "DEFENSE_SWING", Vector2(260, 88))
-	_reset_btn = _make_button("ResetTrialButton", "DEFENSE_RESET", Vector2(260, 88))
+	_swing_btn = _make_button("SwingButton", "DEFENSE_SWING", Vector2(260, 120))
+	_reset_btn = _make_button("ResetTrialButton", "DEFENSE_RESET", Vector2(260, 120))
 	top_row.add_child(_swing_btn)
 	top_row.add_child(_reset_btn)
 
@@ -97,7 +99,7 @@ func _build_ui() -> void:
 	_hint_label.add_theme_font_size_override("font_size", 22)
 	_root.add_child(_hint_label)
 
-	_guard_btn = _make_button("GuardButton", "DEFENSE_GUARD", Vector2(250, 110))
+	_guard_btn = _make_button("GuardButton", "DEFENSE_GUARD", Vector2(240, 120))
 	_root.add_child(_guard_btn)
 
 	_build_guard_cue_style()
@@ -108,32 +110,33 @@ func _build_ui() -> void:
 	top_row.offset_left = -270.0
 	top_row.offset_right = 270.0
 	top_row.offset_top = 245.0
-	top_row.offset_bottom = 333.0
+	top_row.offset_bottom = 365.0
 
 	_hint_panel.set_anchors_preset(Control.PRESET_CENTER_TOP)
 	_hint_panel.offset_left = -620.0
 	_hint_panel.offset_right = 620.0
-	_hint_panel.offset_top = 343.0
-	_hint_panel.offset_bottom = 419.0
+	_hint_panel.offset_top = 377.0
+	_hint_panel.offset_bottom = 453.0
 
 	_hint_label.set_anchors_preset(Control.PRESET_CENTER_TOP)
 	_hint_label.offset_left = -600.0
 	_hint_label.offset_right = 600.0
-	_hint_label.offset_top = 351.0
-	_hint_label.offset_bottom = 411.0
+	_hint_label.offset_top = 385.0
+	_hint_label.offset_bottom = 445.0
 
 	_guard_btn.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
 	# Left of the main HUD attack button (x1640..1888 in logical 1920):
-	# right edge at -310 leaves a 30px gap; width 300, height 110 unchanged.
+	# right edge at -310 leaves a 30px gap; UI Book action height is 120.
 	_guard_btn.offset_left = -610.0
 	_guard_btn.offset_top = -325.0
 	_guard_btn.offset_right = -310.0
-	_guard_btn.offset_bottom = -215.0
+	_guard_btn.offset_bottom = -205.0
 
 
 func _make_button(btn_name: String, text_key: String, min_size: Vector2) -> Button:
 	var b := Button.new()
 	b.name = btn_name
+	b.theme = UI_THEME
 	b.custom_minimum_size = min_size
 	b.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	b.focus_mode = Control.FOCUS_NONE
@@ -180,7 +183,8 @@ func _cache_hud_attack_styles(hud: Node) -> void:
 			btn.add_theme_color_override("font_disabled_color", _hud_font_disabled_color)
 		if _guard_normal_style != null:
 			btn.add_theme_stylebox_override("normal", _guard_normal_style)
-		btn.add_theme_stylebox_override("disabled", _guard_normal_style)
+		for state in ["disabled", "focus"]:
+			btn.add_theme_stylebox_override(state, attack.get_theme_stylebox(state))
 		if _guard_hover_style != null:
 			btn.add_theme_stylebox_override("hover", _guard_hover_style)
 		if _guard_pressed_style != null:
@@ -190,14 +194,7 @@ func _cache_hud_attack_styles(hud: Node) -> void:
 
 
 func _build_guard_cue_style() -> void:
-	_guard_cue_style = StyleBoxFlat.new()
-	_guard_cue_style.bg_color = Color(1.0, 0.7, 0.2)
-	_guard_cue_style.border_width_left = 3
-	_guard_cue_style.border_width_top = 3
-	_guard_cue_style.border_width_right = 3
-	_guard_cue_style.border_width_bottom = 3
-	_guard_cue_style.border_color = Color(1.0, 0.98, 0.9)
-	_guard_cue_style.set_corner_radius_all(8)
+	_guard_cue_style = UI_THEME.get_stylebox("normal", "GuardCue") as StyleBoxFlat
 
 
 func _refresh_labels() -> void:
@@ -299,14 +296,14 @@ func _update_guard_visual() -> void:
 		var guarding := _guard_is_active()
 		var cue := _gating_ok() and _block_window_open()
 		if cue:
-			_guard_btn.text = Localization.text("DEFENSE_GUARD_NOW")
+			_guard_btn.text = Localization.text("DEFENSE_GUARD")
 			_guard_btn.modulate = Color.WHITE
 			_guard_btn.add_theme_stylebox_override("normal", _guard_cue_style)
 			_guard_btn.add_theme_stylebox_override("hover", _guard_cue_style)
 			_guard_btn.add_theme_stylebox_override("pressed", _guard_cue_style)
-			_guard_btn.add_theme_color_override("font_color", Color(0.25, 0.12, 0.05))
-			_guard_btn.add_theme_color_override("font_hover_color", Color(0.25, 0.12, 0.05))
-			_guard_btn.add_theme_color_override("font_pressed_color", Color(0.25, 0.12, 0.05))
+			_guard_btn.add_theme_color_override("font_color", UI_THEME.get_color("font_color", "GuardCue"))
+			_guard_btn.add_theme_color_override("font_hover_color", UI_THEME.get_color("font_color", "GuardCue"))
+			_guard_btn.add_theme_color_override("font_pressed_color", UI_THEME.get_color("font_color", "GuardCue"))
 		else:
 			_guard_btn.text = Localization.text("DEFENSE_GUARD")
 			_guard_btn.modulate = Color.WHITE

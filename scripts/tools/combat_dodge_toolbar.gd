@@ -29,7 +29,7 @@ func _build_ui() -> void:
 		_hint_label.offset_right = 540.0
 		_hint_label.offset_top = 22.0
 		_hint_label.offset_bottom = 64.0
-	_dodge_btn = _make_button("DodgeButton", "DODGE_ACTION", Vector2(250, 110))
+	_dodge_btn = _make_button("DodgeButton", "DODGE_ACTION", Vector2(240, 120))
 	# Копируем кэшированные стили HUD guard (disabled = normal).
 	if _guard_normal_style != null:
 		_dodge_btn.add_theme_stylebox_override("normal", _guard_normal_style)
@@ -43,7 +43,7 @@ func _build_ui() -> void:
 	_dodge_btn.position = Vector2.ZERO
 	_dodge_btn.offset_left = -610.0
 	_dodge_btn.offset_right = -310.0
-	_dodge_btn.offset_top = -455.0
+	_dodge_btn.offset_top = -465.0
 	_dodge_btn.offset_bottom = -345.0
 
 

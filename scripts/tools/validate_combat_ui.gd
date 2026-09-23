@@ -128,17 +128,17 @@ func run() -> void:
 		var attack: Button=sandbox.level.get_node("HUD")._btn_attack
 		check(toggle.text==loc.text("COMBAT_TOOLS_CLOSE"),"open title localized "+lang)
 		check(get_viewport().get_visible_rect().encloses(panel.get_global_rect()),"panel inside safe viewport")
-		check(panel.size.x<=700.1 and panel.size.y<=480.1,"bounded panel size")
+		check(panel.size.x<=700.1 and panel.size.y<=640.1,"bounded panel size")
 		for n in ["CombatToolsTitle","CombatToolsDodgeHint","CombatToolsDefenseHint"]:
 			var label := sandbox.find_child(n,true,false) as Label
 			check(panel.get_global_rect().encloses(label.get_global_rect()),"instructions inside panel "+n)
-			check(label.get_theme_font_size("font_size")>=18 and not label.clip_text,"instructions legible "+n)
+			check(label.get_theme_font_size("font_size")>=22 and not label.clip_text,"instructions legible "+n)
 		for name in ["CombatToolsToggle","NoviceButton","TrainedButton","BackpackButton","ViewButton","ToolsResetButton"]:
 			var b := button(name); var rect := b.get_global_rect()
-			check(rect.size.x>=260 and rect.size.y>=88,"finger geometry "+name)
+			check(rect.size.x>=260 and rect.size.y>=120,"finger geometry "+name)
 			check(b.get_theme_stylebox("normal")==attack.get_theme_stylebox("normal") or b.get_theme_stylebox("normal")==attack.get_theme_stylebox("pressed"),"shared theme "+name)
 			check(b.focus_mode==Control.FOCUS_NONE,"no keyboard focus "+name)
-			check(b.get_theme_font_size("font_size")>=24,"legible font "+name)
+			check(b.get_theme_font_size("font_size")>=30,"legible font "+name)
 		for other in ["GuardButton","DodgeButton","AttackButton","InventoryButton","Up","Down","Left","Right"]:
 			var b := button(other)
 			if b!=null: check(not panel.get_global_rect().intersects(b.get_global_rect()),"no battle overlap "+other)

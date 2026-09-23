@@ -40,6 +40,7 @@ var _window_focus_out: bool = false
 var _app_paused: bool = false
 
 const _PI := PI
+const UI_THEME := preload("res://assets/ui/ashbound_ui.tres")
 
 
 func setup(owner: Node) -> void:
@@ -222,19 +223,20 @@ func _notification(what: int) -> void:
 func _build_ui() -> void:
 	_root = (load("res://scripts/courtyard/adaptive_screen_root.gd") as GDScript).new()
 	_root.name = "CombatToolsRoot"
+	_root.theme = UI_THEME
 	_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_root)
 
 	# Кнопка раскрытия у верхнего левого края внутри safe rect.
-	_toggle = _make_button("CombatToolsToggle", "COMBAT_TOOLS_OPEN", Vector2(260, 88), false)
+	_toggle = _make_button("CombatToolsToggle", "COMBAT_TOOLS_OPEN", Vector2(260, 120), false)
 	_toggle.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_root.add_child(_toggle)
 	_toggle.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	_toggle.position = Vector2.ZERO
-	_toggle.offset_left = 16.0
-	_toggle.offset_top = 16.0
-	_toggle.offset_right = 276.0
-	_toggle.offset_bottom = 104.0
+	_toggle.offset_left = 24.0
+	_toggle.offset_top = 24.0
+	_toggle.offset_right = 284.0
+	_toggle.offset_bottom = 144.0
 
 	# Раскрытая панель слева под кнопкой, две колонки крупных кнопок.
 	_panel = PanelContainer.new()
@@ -244,35 +246,35 @@ func _build_ui() -> void:
 	_root.add_child(_panel)
 	_panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	_panel.position = Vector2.ZERO
-	_panel.offset_left = 300.0
-	_panel.offset_top = 112.0
-	_panel.offset_right = 1000.0
-	_panel.offset_bottom = 592.0
+	_panel.offset_left = 432.0
+	_panel.offset_top = 156.0
+	_panel.offset_right = 1132.0
+	_panel.offset_bottom = 792.0
 	_style_panel(_panel)
 
 	var vbox := VBoxContainer.new()
 	vbox.name = "CombatToolsVBox"
-	vbox.add_theme_constant_override("separation", 8)
+	vbox.add_theme_constant_override("separation", 12)
 	_panel.add_child(vbox)
 
 	_title = Label.new()
 	_title.name = "CombatToolsTitle"
-	_title.add_theme_font_size_override("font_size", 24)
+	_title.add_theme_font_size_override("font_size", 32)
 	_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(_title)
 
 	var grid := GridContainer.new()
 	grid.name = "CombatToolsGrid"
 	grid.columns = 2
-	grid.add_theme_constant_override("h_separation", 10)
-	grid.add_theme_constant_override("v_separation", 10)
+	grid.add_theme_constant_override("h_separation", 12)
+	grid.add_theme_constant_override("v_separation", 12)
 	vbox.add_child(grid)
 
-	_novice_button = _make_button("NoviceButton", "FIST_PREVIEW_NOVICE", Vector2(260, 88))
-	_trained_button = _make_button("TrainedButton", "FIST_PREVIEW_TRAINED", Vector2(260, 88))
-	_backpack_button = _make_button("BackpackButton", "FIST_PREVIEW_PACK_OFF", Vector2(260, 88))
-	_view_button = _make_button("ViewButton", "FIST_PREVIEW_VIEW", Vector2(260, 88), false)
-	_reset_button = _make_button("ToolsResetButton", "DEFENSE_RESET", Vector2(260, 88), false)
+	_novice_button = _make_button("NoviceButton", "FIST_PREVIEW_NOVICE", Vector2(260, 120))
+	_trained_button = _make_button("TrainedButton", "FIST_PREVIEW_TRAINED", Vector2(260, 120))
+	_backpack_button = _make_button("BackpackButton", "FIST_PREVIEW_PACK_OFF", Vector2(260, 120))
+	_view_button = _make_button("ViewButton", "FIST_PREVIEW_VIEW", Vector2(260, 120), false)
+	_reset_button = _make_button("ToolsResetButton", "DEFENSE_RESET", Vector2(260, 120), false)
 
 	grid.add_child(_novice_button)
 	grid.add_child(_trained_button)
@@ -287,13 +289,13 @@ func _build_ui() -> void:
 
 	_dodge_hint = Label.new()
 	_dodge_hint.name = "CombatToolsDodgeHint"
-	_dodge_hint.add_theme_font_size_override("font_size", 18)
+	_dodge_hint.add_theme_font_size_override("font_size", 22)
 	_dodge_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	vbox.add_child(_dodge_hint)
 
 	_defense_hint = Label.new()
 	_defense_hint.name = "CombatToolsDefenseHint"
-	_defense_hint.add_theme_font_size_override("font_size", 18)
+	_defense_hint.add_theme_font_size_override("font_size", 22)
 	_defense_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	vbox.add_child(_defense_hint)
 
@@ -301,8 +303,9 @@ func _build_ui() -> void:
 func _make_button(btn_name: String, text_key: String, min_size: Vector2, toggle: bool = true) -> Button:
 	var b := Button.new()
 	b.name = btn_name
+	b.theme = UI_THEME
 	b.custom_minimum_size = min_size
-	b.add_theme_font_size_override("font_size", 24)
+	b.add_theme_font_size_override("font_size", 30)
 	b.focus_mode = Control.FOCUS_NONE
 	b.toggle_mode = toggle
 	b.text = Localization.text(text_key)
@@ -314,7 +317,7 @@ func _apply_button_style(button: Button, selected: bool) -> void:
 	if hud == null:
 		return
 	var normal_key := "pressed" if selected else "normal"
-	for state in ["normal", "hover", "pressed", "disabled"]:
+	for state in ["normal", "hover", "pressed", "disabled", "focus"]:
 		var src_state: String = state if state != "normal" else normal_key
 		var sb: StyleBox = hud.get_theme_stylebox(src_state)
 		if sb != null:

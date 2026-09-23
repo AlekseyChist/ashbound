@@ -183,7 +183,7 @@ func run() -> void:
 		await capture("hud-" + language + "-running")
 		touch(hp("RunButton"), true, 62)
 		touch(hp("RunButton"), false, 62)
-		check(hud._btn_run.text == loc.text("UI_ACTION_WALK"), "walking caption " + language)
+		check(hud._btn_run.text == loc.text("UI_ACTION_RUN"), "stable caption while walking " + language)
 	await capture("hud-idle")
 	group("localized ordinary HUD states")
 	hud.notification(NOTIFICATION_APPLICATION_FOCUS_OUT)
