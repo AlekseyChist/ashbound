@@ -77,7 +77,7 @@ def finish(name,page):
     text(1550,1078,str(page),17,MUTED,'right')
     font64=base64.b64encode(FONT_PATH.read_bytes()).decode()
     content=f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}"><title>{html.escape(name)}</title><defs><style>@font-face{{font-family:AshBound;src:url(data:font/ttf;base64,{font64})}}text{{font-family:AshBound,sans-serif}}</style></defs>'+''.join(SVG)+'</svg>'
-    (HERE/(name+'.svg')).write_text(content,encoding='utf-8')
+    (HERE/(name+'.svg')).write_text(content,encoding='utf-8',newline='\n')
     PDF.showPage()
 
 def stats(road):
@@ -216,7 +216,7 @@ for river in DATA['rivers']:
     assert all(b[2]<a[2] for a,b in zip(river['points'],river['points'][1:]))
     if river.get('joins'):assert river['points'][-1] in main_points
 assert 'desert' in graph['forest'] and 'jungle_or_swamp' in DATA['open_decisions']
-(HERE/'route-metrics.json').write_text(json.dumps({'roads':STATS,'ring_length_m':ring,'assumptions':DATA['notes']},ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
-(HERE/'text-qa.json').write_text(json.dumps(TEXTS,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+(HERE/'route-metrics.json').write_text(json.dumps({'roads':STATS,'ring_length_m':ring,'assumptions':DATA['notes']},ensure_ascii=False,indent=2)+'\n',encoding='utf-8',newline='\n')
+(HERE/'text-qa.json').write_text(json.dumps(TEXTS,ensure_ascii=False,indent=2)+'\n',encoding='utf-8',newline='\n')
 print('PASS 4 cities, connected ring+valley, downhill river junctions, bounded roads, proposed grades <25%, text page bounds')
 for st in STATS:print(st['id'],round(st['length_m']),duration(st['walk_seconds']),round(st['max_grade_percent'],1))
