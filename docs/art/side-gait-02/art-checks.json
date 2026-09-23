@@ -1,0 +1,14 @@
+{
+  "checks": [
+    "walk: alpha, eight distinct poses, alternating contacts, counter-swing, support, identical head/legs in pair",
+    "run: alpha, eight distinct poses, alternating contacts, counter-swing, support, identical head/legs in pair",
+    "reject source without changing prior exports",
+    "reject phase-count without changing prior exports",
+    "reject baseline without changing prior exports",
+    "reject reach without changing prior exports"
+  ],
+  "source_hashes": "PASS",
+  "determinism": "PASS",
+  "poses": 32,
+  "visual_review": "separate from programmatic checks"
+}

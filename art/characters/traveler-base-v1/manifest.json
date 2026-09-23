@@ -5,11 +5,11 @@
   "composition": "replace_rgba_binary_mask",
   "source_resources": [
     {
-      "path": "assets/characters/courtyard/traveler_frames.tres",
+      "path": "assets/characters/courtyard/base-v1-source/traveler_frames.tres",
       "sha256": "9bcc04f73c26d98b0aca0244f1079e036cd78aa6518dba5bac5bdbd58a0cffd2"
     },
     {
-      "path": "assets/characters/courtyard/traveler_pocket_frames.tres",
+      "path": "assets/characters/courtyard/base-v1-source/traveler_pocket_frames.tres",
       "sha256": "b64ed018a37499e6336b8a8faa4bee720ecae5e644e4d21e4d508bb221f90540"
     }
   ],

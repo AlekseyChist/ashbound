@@ -1,0 +1,15 @@
+{
+  "version": "    versionCode=47 minSdk=24 targetSdk=36\r\n    versionName=0.19.2-side-gait\r",
+  "apkSHA256": "3f431da68b5d5cba0adcc698f6ce9d1e921ee43d19157af1ce9884187ffb8f1d",
+  "pid": "16136",
+  "events": [
+    "run/right/left/front/back",
+    "orbit+side movement",
+    "attack",
+    "Home/resume same PID",
+    "fresh input",
+    "reset"
+  ],
+  "campaign": "unchanged",
+  "log": "clean"
+}
