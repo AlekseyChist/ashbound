@@ -8,6 +8,27 @@ var _dodge_owners := {}
 
 func _build_ui() -> void:
 	super._build_ui()
+	# Старый ResetTrialButton/DefenseTopRow скрыты: сброс теперь в панели «Тренировка».
+	if is_instance_valid(_reset_btn):
+		_reset_btn.hide()
+	var top_row := _reset_btn.get_parent() as Control
+	if top_row != null and top_row.name == "DefenseTopRow":
+		top_row.hide()
+	# Новый reset_requested из панели «Тренировка» -> существующий _request_reset.
+	var tools: Node = _sandbox.get("_toolbar") if _sandbox != null else null
+	if tools != null and tools.has_signal("reset_requested"):
+		tools.reset_requested.connect(_request_reset)
+	# Компактная геометрия подсказки: одна строка, высота <=54, ширина <=1100, прижата к верху safe root.
+	if is_instance_valid(_hint_panel):
+		_hint_panel.offset_left = -550.0
+		_hint_panel.offset_right = 550.0
+		_hint_panel.offset_top = 16.0
+		_hint_panel.offset_bottom = 70.0
+	if is_instance_valid(_hint_label):
+		_hint_label.offset_left = -540.0
+		_hint_label.offset_right = 540.0
+		_hint_label.offset_top = 22.0
+		_hint_label.offset_bottom = 64.0
 	_dodge_btn = _make_button("DodgeButton", "DODGE_ACTION", Vector2(250, 110))
 	# Копируем кэшированные стили HUD guard (disabled = normal).
 	if _guard_normal_style != null:
@@ -33,13 +54,21 @@ func _inside_own_control(pos: Vector2) -> bool:
 
 
 func _update_hint() -> void:
-	super._update_hint()
 	if _hint_label == null:
 		return
-	var is_touch := OS.has_feature("android")
-	var platform_key := "DODGE_HINT_TOUCH" if is_touch else "DODGE_HINT_PC"
-	var level_key := "DEFENSE_NOVICE_HINT" if _is_novice() else "DEFENSE_TRAINED_HINT"
-	_hint_label.text = Localization.text(platform_key) + "\n" + Localization.text(level_key)
+	var key := "COMBAT_HINT_IDLE"
+	var phase: String = _snapshot().get("phase", "idle")
+	var window_open := _block_window_open()
+	if phase == "windup" or window_open:
+		if _is_novice():
+			key = "COMBAT_HINT_NOVICE"
+		elif window_open:
+			key = "COMBAT_HINT_CUE"
+		else:
+			key = "COMBAT_HINT_WINDUP"
+	var text := Localization.text(key)
+	if _hint_label.text != text:
+		_hint_label.text = text
 
 
 func _handle_key(key: InputEventKey) -> void:
@@ -135,6 +164,7 @@ func _refresh_labels() -> void:
 
 func _process(_delta: float) -> void:
 	super._process(_delta)
+	_update_hint()
 	if _dodge_btn == null or not is_instance_valid(_dodge_btn):
 		return
 	var player := _level().get_node_or_null("Actors/Player") if _level() != null else null

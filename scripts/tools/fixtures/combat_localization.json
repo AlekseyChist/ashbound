@@ -15,5 +15,12 @@
   {"key":"ENEMY_HINT_TOUCH","en":"Enter a circle to start combat. Hold BLOCK or tap on the flash.","ru":"Войди в круг, чтобы начать бой. Держи БЛОК или нажми на вспышке."},
   {"key":"DODGE_ACTION","en":"Dodge","ru":"Уклонение"},
   {"key":"DODGE_HINT_PC","en":"Enter a circle. Space + direction: dodge; no direction: backstep. RMB: block.","ru":"Войди в круг. Пробел + направление: уклонение; без направления: назад. ПКМ: блок."},
-  {"key":"DODGE_HINT_TOUCH","en":"Enter a circle. Dodge + direction: sidestep; no direction: backstep. Hold BLOCK to guard.","ru":"Войди в круг. Уклонение + направление; без направления — назад. БЛОК — защита."}
+  {"key":"DODGE_HINT_TOUCH","en":"Enter a circle. Dodge + direction: sidestep; no direction: backstep. Hold BLOCK to guard.","ru":"Войди в круг. Уклонение + направление; без направления — назад. БЛОК — защита."},
+  {"key":"COMBAT_TOOLS_OPEN","en":"Training","ru":"Тренировка"},
+  {"key":"COMBAT_TOOLS_CLOSE","en":"Close","ru":"Свернуть"},
+  {"key":"COMBAT_TOOLS_TITLE","en":"Technique and gear","ru":"Приёмы и снаряжение"},
+  {"key":"COMBAT_HINT_IDLE","en":"Enter an enemy circle.","ru":"Войди в круг противника."},
+  {"key":"COMBAT_HINT_NOVICE","en":"Dodge: a novice guard cannot stop the strike.","ru":"Уходи шагом: блок новичка не останавливает удар."},
+  {"key":"COMBAT_HINT_WINDUP","en":"Face the strike and hold Block.","ru":"Повернись к удару и держи блок."},
+  {"key":"COMBAT_HINT_CUE","en":"Press BLOCK on the flash!","ru":"Нажми БЛОК на вспышке!"}
 ]
