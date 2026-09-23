@@ -2,6 +2,7 @@ extends Node3D
 ## Separate, full-scale geography prototype. No campaign or save migration.
 const Geometry = preload("res://scripts/world/world_graybox_geometry.gd")
 const Shapes = preload("res://scripts/world/world_graybox_shapes.gd")
+const Headwaters = preload("res://scripts/world/world_graybox_headwaters.gd")
 const Landmarks = preload("res://scripts/world/world_graybox_landmarks.gd")
 const PlayerScene = preload("res://scenes/courtyard/courtyard_player.tscn")
 const CameraScene = preload("res://scenes/courtyard/third_person_camera.tscn")
@@ -45,7 +46,7 @@ var city_labels: Array[Label3D] = []
 var locations: Array = []
 
 func _ready() -> void:
-	DisplayServer.window_set_title("AshBound — World Exploration 0.21.1")
+	DisplayServer.window_set_title("AshBound — World Headwaters 0.21.2")
 	layout = JSON.parse_string(FileAccess.get_file_as_string("res://assets/world/graybox-v1/layout.json"))
 	locations = layout.cities + layout.sites
 	heights = FileAccess.get_file_as_bytes("res://assets/world/graybox-v1/heights.bin").to_float32_array()
@@ -80,6 +81,7 @@ func _ready() -> void:
 			right.append(points[i] - side)
 		var strip: MeshInstance3D = shapes.add_band(left, right, Color("537d91"), false)
 		strip.name = river.id
+	_build_headwaters()
 	_build_sites()
 	_add_light()
 	player = PlayerScene.instantiate()
@@ -144,6 +146,20 @@ func _build_shoulders(points: PackedVector3Array, width: float) -> void:
 		if inner.size() > 1:
 			shapes.add_band(outer if side > 0 else inner, inner if side > 0 else outer, Color("8c836d"), true)
 
+func _build_headwaters() -> void:
+	var water := Headwaters.new()
+	water.name = "Headwaters"
+	add_child(water)
+	for lake in layout.lakes:
+		var p: Array = lake.center
+		var mesh: MeshInstance3D = water.add_lake(Vector3(p[0] - 1000, p[2], p[1] - 1000), Vector2(lake.radii_m[0], lake.radii_m[1]))
+		mesh.name = lake.id
+	for spring in layout.springs:
+		var p: Array = spring.mouth
+		var direction: Array = spring.facing
+		var cave: Node3D = water.add_spring_cave(Vector3(p[0] - 1000, p[2] - 1, p[1] - 1000), Vector3(direction[0], 0, direction[2]))
+		cave.name = spring.id
+
 func _build_sites() -> void:
 	for index in range(locations.size()):
 		var city: Dictionary = locations[index]
@@ -155,7 +171,7 @@ func _build_sites() -> void:
 				var base: Vector3 = center + offset
 				base.y = ground_height(base.x, base.z)
 				shapes.add_marker(base + Vector3.UP * size.y * 0.5, size, Color("92938b"))
-		else:
+		elif city.kind != "lake" and city.kind != "spring_cave":
 			var landmark := Landmarks.new()
 			landmark.name = city.id
 			add_child(landmark)

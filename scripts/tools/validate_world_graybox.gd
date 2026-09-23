@@ -31,6 +31,7 @@ func _run() -> void:
 	check(world.player.get_node("Visual/Body").sprite_frames == world.AcceptedFrames, "accepted hero resource")
 	await _geometry_fixture()
 	await _surfaces_and_ui()
+	await _headwaters()
 	if not args.has("--screens-only") and not ProjectSettings.get_setting("ashbound/qa/screens_only", false):
 		await _cross_road()
 		await _routes()
@@ -133,9 +134,10 @@ func _surfaces_and_ui() -> void:
 		for control in [world.mode_button, world.city_picker, world.language_button, world.hud.get_node("RootControl/TopRightPanel/RestartButton")]:
 			check(bounds.encloses(control.get_global_rect()), "toolbar within safe area " + language)
 		await _screenshot("overview-" + language)
-	check(world.locations.size() == 14, "four cities plus ten requested sites")
+	check(world.locations.size() == 16, "four cities, ten exploration sites and two headwaters")
 	for site in world.layout.sites:
-		check(world.has_node(NodePath(site.id)), "landmark exists " + str(site.id))
+		if site.kind != "lake" and site.kind != "spring_cave":
+			check(world.has_node(NodePath(site.id)), "landmark exists " + str(site.id))
 		check(not str(Localization.text(site.key)).begins_with("WORLD_"), "translated site " + str(site.id))
 	for river in world.layout.rivers:
 		var river_mesh: MeshInstance3D = world.shapes.get_node(NodePath(river.id))
@@ -153,14 +155,14 @@ func _surfaces_and_ui() -> void:
 	await get_tree().process_frame
 	await get_tree().process_frame
 	var bounds: Rect2 = world.hud.get_node("RootControl").get_global_rect()
-	check(bounds.encloses(world.locations_panel.get_global_rect()) and world.location_buttons.size() == 14, "bounded scrollable location picker")
+	check(bounds.encloses(world.locations_panel.get_global_rect()) and world.location_buttons.size() == 16, "bounded scrollable location picker")
 	check(not world.player.input_enabled and not world.camera_rig.input_enabled, "location chooser owns input")
 	world.locations_scroll.ensure_control_visible(world.location_buttons[-1])
 	await get_tree().process_frame
 	check(world.locations_scroll.get_global_rect().intersects(world.location_buttons[-1].get_global_rect()), "last destination visible after scroll")
 	await _screenshot("locations-popup")
 	world.location_buttons[-1].pressed.emit()
-	check(world.selected_city == 13 and not world.locations_overlay.visible, "last destination selection closes chooser")
+	check(world.selected_city == 15 and not world.locations_overlay.visible, "last destination selection closes chooser")
 	await _location_gestures()
 	world.player.set_run_input(true)
 	world.player.set_move_input(Vector2(1, 0))
@@ -175,6 +177,41 @@ func _surfaces_and_ui() -> void:
 	check(world.overview_distance == 180, "minimum zoom")
 	world.zoom_overview(10000)
 	check(world.overview_distance == 3000, "maximum zoom")
+	world.reset_overview()
+
+func _headwaters() -> void:
+	var lake: MeshInstance3D = world.get_node("Headwaters/mountain_lake")
+	var arrays: Array = lake.mesh.surface_get_arrays(0)
+	var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+	var indices: PackedInt32Array = arrays[Mesh.ARRAY_INDEX]
+	check(vertices.size() == 97 and indices.size() == 288, "closed lake fan")
+	for v in vertices:
+		check(is_equal_approx(v.y, 260.0), "lake surface level")
+	for i in range(0, indices.size(), 3):
+		var a := vertices[indices[i]]
+		var b := vertices[indices[i + 1]]
+		var c := vertices[indices[i + 2]]
+		check((b - a).cross(c - a).y < 0, "lake clockwise facing")
+	var lake_bottom := _ray(-670, -640)
+	check(not lake_bottom.is_empty() and lake_bottom.position.y < 255, "lake has bed, not water collision")
+	var bank := _ray(-575, -660)
+	check(not bank.is_empty() and bank.position.y > 262, "lake arrival on dry bank")
+	var portal: Node3D = world.get_node("Headwaters/desert_spring")
+	var spring: Dictionary = world.layout.springs[0]
+	var river: Dictionary = world.layout.rivers.filter(func(r: Dictionary): return r.id == "east")[0]
+	var source: Vector3 = world.points_of(river)[0]
+	var local_source := portal.to_local(source)
+	check(absf(local_source.x) < 0.05 and absf(local_source.z + 9) < 0.05 and absf(local_source.y - 1) < 0.05, "stream begins inside portal")
+	check(not spring.interior_implemented, "spring interior remains a plan")
+	for index in [14, 15]:
+		world.select_city(index)
+		world.set_overview(true)
+		world.overview_center = Vector3(-670, 260, -640) if index == 14 else Vector3(350, 210, -460)
+		world.overview_distance = 320.0 if index == 14 else 160.0
+		world.overview_yaw = 0.0 if index == 14 else 0.55
+		world.overview_pitch = deg_to_rad(48.0)
+		await get_tree().process_frame
+		await _screenshot("headwater-" + str(index))
 	world.reset_overview()
 
 func _location_gestures() -> void:
@@ -214,7 +251,7 @@ func _location_gestures() -> void:
 	world._input(touch)
 	touch.pressed = false
 	world._input(touch)
-	check(world.selected_city == 13 and not world.locations_overlay.visible and world.hud.is_processing_input(), "finger tap chooses last place and restores HUD")
+	check(world.selected_city == 15 and not world.locations_overlay.visible and world.hud.is_processing_input(), "finger tap chooses last place and restores HUD")
 	world.show_locations(true)
 	world._notification(NOTIFICATION_APPLICATION_FOCUS_OUT)
 	check(world.location_touch == -1 and not world.locations_overlay.visible, "focus loss closes modal gesture")

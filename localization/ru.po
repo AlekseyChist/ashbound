@@ -666,3 +666,11 @@ msgstr "Места"
 #. World exploration graybox; working place label.
 msgid "WORLD_SITE_HINT"
 msgstr "Макеты входов; услуги и интерьеры — в плане."
+
+#. WORLD-GRAYBOX-03 destination
+msgid "WORLD_SITE_LAKE_SHORE"
+msgstr "Горное озеро"
+
+#. WORLD-GRAYBOX-03 destination
+msgid "WORLD_SITE_SPRING_CAVE"
+msgstr "Пещера источника"
