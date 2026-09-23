@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "cell": [
+    384,
+    384
+  ],
+  "grid": [
+    4,
+    2
+  ],
+  "baseline": 374,
+  "frames_per_clip": 8,
+  "pose_fps": 15,
+  "source_sha256": {
+    "assets/characters/courtyard/traveler-v1.png": "2dff296e1781ddc6195a9a3f5f4cf32aa1d8a973e0442e766b9e9d43288cd8d5",
+    "assets/characters/courtyard/painted-backpack/traveler-side-pack-v2.png": "4f27925d41b9ae0510e68dbe378910b2818f97647d1438b21cc2442477be3056",
+    "assets/characters/courtyard/traveler-run-side-v3.png": "de394560e0ee953ebfacb47fdd9cb4c28e3ce8318f949fa91b9e3ef9dc0b9bf9",
+    "assets/characters/courtyard/painted-backpack/traveler-run-side-pack-v2.png": "9ff8b736de8ef385e33676fd66dcf817f80f4b6dad65c219193b0701295d5ddb"
+  },
+  "rig_sha256": "1a147bbb2b52739202b52dba12798dbebb7c688c667eb8339625015d54d7e274",
+  "atlases": {
+    "run-bare.png": "f8cc4d3a7780b7fe3eaad3135b5fb059594c587fe8a324c46b74a2fe73c01a66",
+    "run-pack.png": "cb01a64898981429f1005d0c6e8c4146a82154f3864fa32606268173a39d8d4c",
+    "walk-bare.png": "81e83b25f26348b929779651ce73ac36655a2ea44436dd04659194dee7bd6e94",
+    "walk-pack.png": "4e6beb1ee9fe8f0f9dc8630bccb07a5521e15bd63a17b7b7ad626cfefb7037cb"
+  }
+}

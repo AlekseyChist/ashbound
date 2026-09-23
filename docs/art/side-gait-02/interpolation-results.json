@@ -1,0 +1,63 @@
+{
+  "baseline": false,
+  "failures": [],
+  "platform": "Windows",
+  "samples": [
+    {
+      "case": "(1.0, 0.0) run animated yaw=0.0",
+      "count": 193,
+      "min_arm_length": 3.0,
+      "p95_screen_step_px": 0.107994705438614
+    },
+    {
+      "case": "(-1.0, 0.0) run animated yaw=0.0",
+      "count": 193,
+      "min_arm_length": 3.0,
+      "p95_screen_step_px": 0.225170940160751
+    },
+    {
+      "case": "(0.0, -1.0) run animated yaw=0.0",
+      "count": 193,
+      "min_arm_length": 3.0,
+      "p95_screen_step_px": 0.0009765625
+    },
+    {
+      "case": "(0.0, 1.0) run animated yaw=0.0",
+      "count": 193,
+      "min_arm_length": 3.0,
+      "p95_screen_step_px": 0.0008544921875
+    },
+    {
+      "case": "(1.0, 0.0) run frozen yaw=0.0",
+      "count": 193,
+      "min_arm_length": 3.0,
+      "p95_screen_step_px": 0.108543589711189
+    },
+    {
+      "case": "(-1.0, 0.0) walk animated yaw=0.0",
+      "count": 193,
+      "min_arm_length": 3.0,
+      "p95_screen_step_px": 0.10938324034214
+    },
+    {
+      "case": "(0.707107, -0.707107) run animated yaw=0.0",
+      "count": 193,
+      "min_arm_length": 3.0,
+      "p95_screen_step_px": 0.00100661756005138
+    },
+    {
+      "case": "(1.0, 0.0) run animated yaw=90.0",
+      "count": 193,
+      "min_arm_length": 3.0,
+      "p95_screen_step_px": 0.001953125
+    },
+    {
+      "case": "(-1.0, 0.0) run animated yaw=0.0",
+      "count": 193,
+      "min_arm_length": 3.0,
+      "p95_screen_step_px": 0.223017454147339
+    }
+  ],
+  "full_trace_archive": ".tools/side-gait-checks/interpolation-results.json",
+  "full_trace_sha256": "7a676a96e2d75029f9a71f991db5a7ecc04881e5ee77d7b9fc399de212bd31b5"
+}
