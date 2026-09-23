@@ -1,6 +1,6 @@
 # AshBound — документы разработки
 
-23 сентября 2026. **SIDE-GAIT-02: полный боковой цикл walk/run, Forest Route 0.19.2 установлен на S23.** [Протокол](production/SIDE_GAIT_02_CHECKS.md), [стандарт производства](art/ANIMATION_PIPELINE.md), [сравнение и запись](art/side-gait-02/README.md). [Схема рельефа BIOME-01D](design/world-relief-v1/README.md) подготовлена для обсуждения; механики приоритетнее производства окружения. [Очередь](production/STATUS.md).
+23 сентября 2026. **D-056: Blender-проба отвергнута; возвращаемся к рисованным 2D-спрайтам.** [Текущая лаборатория](production/SPRITE_GAIT_LAB_TASK.md), [исследование](art/SPRITE_GAIT_RESEARCH.md), [очередь](production/STATUS.md). Исправление SIDE-GAIT-02 ещё не готово; игровая 0.19.2/code47 прежняя.
 
 Локальная опора интерфейса по D-049: **[книга UI 1.0](art/ui/README.md)**, [PDF](art/ui/AshBound-UI-Book.pdf), [автономный HTML](art/ui/index.html), [параметры](art/ui/tokens.json). UI-BOOK-02 применил книгу к HUD/защите в 0.18.4; [проверки ПК/S23](production/UI_BOOK_02_CHECKS.md). Новый лесной макет использует ту же Theme.
 

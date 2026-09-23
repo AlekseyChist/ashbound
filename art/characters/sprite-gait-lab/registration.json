@@ -1,0 +1,171 @@
+{
+  "canvas": 627,
+  "method": "Whole drawings translated only: head silhouette right edge has common X; sole has common Y. One fixed normalization from source cell resolution to 627 units. No pose-specific fitting, body-part transforms, color changes or morphing.",
+  "poses": [
+    {
+      "pose": "a0",
+      "file": "probe-a-sheet.png",
+      "sha256": "88f83bf7292769c8e446786cc07bd2ba438aab95ffb643100d5c784351318b5a",
+      "pivot": [
+        353.0,
+        598.0
+      ],
+      "foreground_bounds": [
+        187,
+        28,
+        555,
+        598
+      ]
+    },
+    {
+      "pose": "a1",
+      "file": "probe-a-sheet.png",
+      "sha256": "88f83bf7292769c8e446786cc07bd2ba438aab95ffb643100d5c784351318b5a",
+      "pivot": [
+        276.0,
+        607.0
+      ],
+      "foreground_bounds": [
+        130,
+        28,
+        341,
+        607
+      ]
+    },
+    {
+      "pose": "a2",
+      "file": "probe-a-sheet.png",
+      "sha256": "88f83bf7292769c8e446786cc07bd2ba438aab95ffb643100d5c784351318b5a",
+      "pivot": [
+        361.0,
+        576.0
+      ],
+      "foreground_bounds": [
+        164,
+        17,
+        567,
+        576
+      ]
+    },
+    {
+      "pose": "a3",
+      "file": "probe-a-sheet.png",
+      "sha256": "88f83bf7292769c8e446786cc07bd2ba438aab95ffb643100d5c784351318b5a",
+      "pivot": [
+        277.0,
+        585.0
+      ],
+      "foreground_bounds": [
+        201,
+        17,
+        381,
+        585
+      ]
+    },
+    {
+      "pose": "b",
+      "file": "probe-b-passing.png",
+      "sha256": "df4a0eade145ea0cec2eb9ab31bc48a61d51ad242132d679448fbb18ba774834",
+      "pivot": [
+        278.0,
+        587.0
+      ],
+      "foreground_bounds": [
+        402,
+        34,
+        768,
+        1174
+      ]
+    },
+    {
+      "pose": "d",
+      "file": "probe-d-contact.png",
+      "sha256": "784a661cbb2e8998e01e901f98a9fbc8daf1cb07883b72cc46050db90378b9ba",
+      "pivot": [
+        355.0,
+        598.5
+      ],
+      "foreground_bounds": [
+        295,
+        53,
+        1113,
+        1197
+      ]
+    },
+    {
+      "pose": "e0",
+      "file": "probe-e-sheet.png",
+      "sha256": "afc3d1702af927a79c23167c59b9a47ef816b47c5a1f1cadfca4161715db56b6",
+      "pivot": [
+        348.0,
+        610.0
+      ],
+      "foreground_bounds": [
+        194,
+        31,
+        475,
+        610
+      ]
+    },
+    {
+      "pose": "e1",
+      "file": "probe-e-sheet.png",
+      "sha256": "afc3d1702af927a79c23167c59b9a47ef816b47c5a1f1cadfca4161715db56b6",
+      "pivot": [
+        324.0,
+        605.0
+      ],
+      "foreground_bounds": [
+        198,
+        32,
+        491,
+        605
+      ]
+    },
+    {
+      "pose": "e2",
+      "file": "probe-e-sheet.png",
+      "sha256": "afc3d1702af927a79c23167c59b9a47ef816b47c5a1f1cadfca4161715db56b6",
+      "pivot": [
+        356.0,
+        597.0
+      ],
+      "foreground_bounds": [
+        189,
+        22,
+        482,
+        597
+      ]
+    },
+    {
+      "pose": "e3",
+      "file": "probe-e-sheet.png",
+      "sha256": "afc3d1702af927a79c23167c59b9a47ef816b47c5a1f1cadfca4161715db56b6",
+      "pivot": [
+        323.0,
+        590.0
+      ],
+      "foreground_bounds": [
+        223,
+        22,
+        470,
+        590
+      ]
+    },
+    {
+      "pose": "f",
+      "file": "probe-f-arms.png",
+      "sha256": "f0d8eb18042eef0c121cbaa24a6cc2e3591631505042e7e7d406f1a0feb174eb",
+      "pivot": [
+        324.0,
+        605.5
+      ],
+      "foreground_bounds": [
+        395,
+        62,
+        984,
+        1211
+      ]
+    }
+  ]
+}
