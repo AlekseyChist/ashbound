@@ -1,0 +1,13 @@
+{
+  "version": "0.18.3-hud-input",
+  "androidCode": 43,
+  "base": "344096eb33e574ee43b5b7039eacde7a0fba5797",
+  "runtimeSHA256": "77b4739c9899b3adf8d0bf9df9b205f54e9cbfefaf1fd388e089d889179884b8",
+  "images": {
+    "pc-after-running.png": "0ed57e862c784218e655126896de34ffdc5f0f76159698ea12b3f3d221abd7fa",
+    "pc-before-running.png": "d8f7319277c1778f33f7431bec684f730832d2920b2d9e65d1854acf9a621958",
+    "s23-hud-motion.mp4": "8e5ea44305478088d518f7c9a9eae932d8fd0c305cc934877be676d7aa8def36",
+    "s23-resumed.png": "624f922e97715d0d90d3450fe2352a557dbdc9b7e7a04ecbf217d489fb5c3f00",
+    "s23-running.png": "56936284be21a0e37e146a930b6e6b7efbd6cc3c6ef1419ff5f27677de20f1f2"
+  }
+}
