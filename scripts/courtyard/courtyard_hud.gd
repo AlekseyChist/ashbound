@@ -22,8 +22,11 @@ var _run_enabled := false
 var _touch_move_index := -1
 var _touch_attack_index := -1
 var _touch_run_index := -1
-var _suppress_mouse_until_ms := 0
 var _message_visible := true
+const MOUSE_POINTER_ID := -2
+var _focus_out := false
+var _window_focus_out := false
+var _application_paused := false
 
 # --- Ссылки на дочерние узлы (заполняются в _ready) ---
 var _root: Control
@@ -95,12 +98,12 @@ func _ready() -> void:
 
 	_apply_styles()
 
-	# Кнопки: мышь (ПК) — button_down/button_up, тач обрабатывается в _input.
+	# One pointer path owns both real mouse and touch; GUI must not toggle twice.
 	for b in _all_buttons():
 		b.focus_mode = Control.FOCUS_NONE
 		b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-		b.button_down.connect(_on_button_down.bind(b))
-		b.button_up.connect(_on_button_up.bind(b))
+	for b in [_dpad_up, _dpad_down, _dpad_left, _dpad_right, _btn_attack, _btn_run]:
+		b.toggle_mode = true
 
 	_message_panel.gui_input.connect(_on_message_gui_input)
 
@@ -228,9 +231,6 @@ func reset_controls() -> void:
 	_touch_attack_index = -1
 	_touch_run_index = -1
 	_tracked_touches.clear()
-	# Рестарт синхронно очищает трек-состояние — не даём тачу рестарта
-	# породить дублирующий эмулированный клик мышью.
-	_suppress_mouse_until_ms = Time.get_ticks_msec() + 350
 	if not is_node_ready():
 		return
 	_set_dpad_pressed(false)
@@ -280,11 +280,35 @@ func _deep_copy_dict(d: Dictionary) -> Dictionary:
 # ---------------------------------------------------------------- Ввод
 
 func _notification(what: int) -> void:
-	if what == NOTIFICATION_APPLICATION_FOCUS_OUT and is_node_ready():
+	if not is_node_ready() or not is_inside_tree() or is_queued_for_deletion():
+		return
+	match what:
+		NOTIFICATION_APPLICATION_FOCUS_OUT: _focus_out = true
+		NOTIFICATION_APPLICATION_FOCUS_IN: _focus_out = false
+		NOTIFICATION_WM_WINDOW_FOCUS_OUT: _window_focus_out = true
+		NOTIFICATION_WM_WINDOW_FOCUS_IN: _window_focus_out = false
+		NOTIFICATION_APPLICATION_PAUSED: _application_paused = true
+		NOTIFICATION_APPLICATION_RESUMED: _application_paused = false
+	if what in [NOTIFICATION_PAUSED, NOTIFICATION_APPLICATION_FOCUS_OUT,
+			NOTIFICATION_WM_WINDOW_FOCUS_OUT, NOTIFICATION_APPLICATION_PAUSED]:
 		reset_controls()
 
 
+func _input_available() -> bool:
+	return visible and _root.is_visible_in_tree() and can_process() \
+		and not _focus_out and not _window_focus_out and not _application_paused
+
+
+func _button_available(b: Button) -> bool:
+	return b.is_visible_in_tree() and not b.disabled
+
+
 func _input(event: InputEvent) -> void:
+	if not _input_available():
+		# Do not let native Button GUI toggle while this HUD is inactive.
+		if event is InputEventMouseButton and _point_in_owned_control(event.position):
+			get_viewport().set_input_as_handled()
+		return
 	# Закрытие диалога: interact или Escape (не эмуляция), либо реальный
 	# левый клик мыши при захваченном курсоре.
 	if _message_visible and _message_panel.is_visible_in_tree():
@@ -298,7 +322,7 @@ func _input(event: InputEvent) -> void:
 					return
 		elif event is InputEventMouseButton:
 			var mb := event as InputEventMouseButton
-			if mb.device != InputEvent.DEVICE_ID_EMULATION and mb.pressed \
+			if mb.device != InputEvent.DEVICE_ID_EMULATION and mb.pressed and not mb.canceled \
 					and mb.button_index == MOUSE_BUTTON_LEFT \
 					and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 				clear_message()
@@ -309,9 +333,26 @@ func _input(event: InputEvent) -> void:
 	# чтобы GUI button_down не переключал состояние раньше/позже тача.
 	if event is InputEventMouseButton:
 		var mb := event as InputEventMouseButton
-		if mb.device == InputEvent.DEVICE_ID_EMULATION and _point_in_owned_control(_to_root_position(mb.position)):
-			get_viewport().set_input_as_handled()
+		var pos := _to_root_position(mb.position)
+		if mb.device == InputEvent.DEVICE_ID_EMULATION:
+			if _point_in_owned_control(pos):
+				get_viewport().set_input_as_handled()
 			return
+		if mb.button_index != MOUSE_BUTTON_LEFT:
+			return
+		var owned := _is_tracked(MOUSE_POINTER_ID) or _point_in_owned_control(pos)
+		if owned:
+			if mb.canceled or not mb.pressed:
+				_on_touch_up(MOUSE_POINTER_ID)
+			else:
+				_on_touch_down(pos, MOUSE_POINTER_ID)
+			get_viewport().set_input_as_handled()
+		return
+	if event is InputEventMouseMotion and event.device != InputEvent.DEVICE_ID_EMULATION:
+		if _is_tracked(MOUSE_POINTER_ID):
+			_drag_pointer(_to_root_position(event.position), MOUSE_POINTER_ID)
+			get_viewport().set_input_as_handled()
+		return
 	if event is InputEventScreenTouch:
 		var t := event as InputEventScreenTouch
 		var pos := _to_root_position(t.position)
@@ -319,7 +360,7 @@ func _input(event: InputEvent) -> void:
 		# синхронно очищает трек-состояние, поэтому was_tracked после
 		# обработки мог бы потерять обработанный press.
 		var was_tracked := _is_tracked(t.index)
-		if t.pressed:
+		if t.pressed and not t.canceled:
 			was_tracked = was_tracked or _point_in_owned_control(pos)
 			_on_touch_down(pos, t.index)
 		else:
@@ -329,19 +370,16 @@ func _input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 	elif event is InputEventScreenDrag:
 		var d := event as InputEventScreenDrag
-		if d.index == _touch_move_index:
-			_update_move_from_point(_to_root_position(d.position))
-		elif d.index == _touch_attack_index:
-			# Палец удара ушёл за пределы — считаем отпусканием.
-			if not _point_in_attack(_to_root_position(d.position)):
-				_release_attack()
+		_drag_pointer(_to_root_position(d.position), d.index)
 		if _is_tracked(d.index):
 			get_viewport().set_input_as_handled()
 
 
-func _unhandled_input(event: InputEvent) -> void:
-	# Клавиатура остаётся в общем потоке; здесь только защита от дублей мыши.
-	pass
+func _drag_pointer(pos: Vector2, index: int) -> void:
+	if index == _touch_move_index:
+		_update_move_from_point(pos)
+	elif index == _touch_attack_index and not _point_in_attack(pos):
+		_release_attack()
 
 
 # ---------------------------------------------------------------- Тач-логика
@@ -359,32 +397,30 @@ func _is_tracked(index: int) -> bool:
 func _track(index: int) -> void:
 	if not _tracked_touches.has(index):
 		_tracked_touches.append(index)
-	_suppress_mouse_until_ms = Time.get_ticks_msec() + 350
 
 
 func _untrack(index: int) -> void:
 	_tracked_touches.erase(index)
-	_suppress_mouse_until_ms = Time.get_ticks_msec() + 350
 
 
 func _point_in_dpad(p: Vector2) -> int:
-	if _dpad_up.is_visible_in_tree() and _dpad_up.get_global_rect().has_point(p):
+	if _button_available(_dpad_up) and _dpad_up.get_global_rect().has_point(p):
 		return Dir.UP
-	if _dpad_down.is_visible_in_tree() and _dpad_down.get_global_rect().has_point(p):
+	if _button_available(_dpad_down) and _dpad_down.get_global_rect().has_point(p):
 		return Dir.DOWN
-	if _dpad_left.is_visible_in_tree() and _dpad_left.get_global_rect().has_point(p):
+	if _button_available(_dpad_left) and _dpad_left.get_global_rect().has_point(p):
 		return Dir.LEFT
-	if _dpad_right.is_visible_in_tree() and _dpad_right.get_global_rect().has_point(p):
+	if _button_available(_dpad_right) and _dpad_right.get_global_rect().has_point(p):
 		return Dir.RIGHT
 	return Dir.NONE
 
 
 func _point_in_attack(p: Vector2) -> bool:
-	return _btn_attack.is_visible_in_tree() and _btn_attack.get_global_rect().has_point(p)
+	return _button_available(_btn_attack) and _btn_attack.get_global_rect().has_point(p)
 
 
 func _point_in_run(p: Vector2) -> bool:
-	return _btn_run.is_visible_in_tree() and _btn_run.get_global_rect().has_point(p)
+	return _button_available(_btn_run) and _btn_run.get_global_rect().has_point(p)
 
 
 func _point_in_owned_control(p: Vector2) -> bool:
@@ -401,6 +437,8 @@ func _point_in_owned_control(p: Vector2) -> bool:
 
 
 func _on_touch_down(pos: Vector2, index: int) -> void:
+	if _is_tracked(index):
+		return
 	var dir := _point_in_dpad(pos)
 	if dir != Dir.NONE and _touch_move_index == -1:
 		_touch_move_index = index
@@ -423,14 +461,14 @@ func _on_touch_down(pos: Vector2, index: int) -> void:
 		_track(index)
 		_toggle_run_mode()
 		return
-	if _btn_interact.is_visible_in_tree() and _btn_interact.get_global_rect().has_point(pos):
+	if _button_available(_btn_interact) and _btn_interact.get_global_rect().has_point(pos):
 		_track(index)
 		if _message_visible:
 			clear_message()
 		else:
 			interact_pressed.emit()
 		return
-	if _btn_restart.is_visible_in_tree() and _btn_restart.get_global_rect().has_point(pos):
+	if _button_available(_btn_restart) and _btn_restart.get_global_rect().has_point(pos):
 		_track(index)
 		restart_pressed.emit()
 		return
@@ -475,7 +513,7 @@ func _nearest_dpad_dir(p: Vector2) -> int:
 	for b in _all_buttons():
 		if b == _btn_interact or b == _btn_attack or b == _btn_run or b == _btn_restart:
 			continue
-		if not b.is_visible_in_tree():
+		if not _button_available(b):
 			continue
 		var r := b.get_global_rect()
 		if r.grow(40).has_point(p):
@@ -517,42 +555,6 @@ func _emit_move() -> void:
 		Dir.RIGHT:
 			v = Vector2(1, 0)
 	move_changed.emit(v)
-
-
-# ---------------------------------------------------------------- Кнопки (мышь/ПК)
-
-func _on_button_down(b: Button) -> void:
-	if Time.get_ticks_msec() < _suppress_mouse_until_ms:
-		return
-	match b:
-		_dpad_up, _dpad_down, _dpad_left, _dpad_right:
-			var dir := _dir_of_button(b)
-			_held_dir = dir
-			_set_dpad_pressed(true, dir)
-			_emit_move()
-		_btn_interact:
-			interact_pressed.emit()
-		_btn_attack:
-			attack_pressed.emit()
-		_btn_run:
-			# Единственная точка переключения режима: эмулированные
-			# мышиные события не должны переключать его второй раз.
-			if _touch_run_index == -1:
-				_toggle_run_mode()
-		_btn_restart:
-			restart_pressed.emit()
-
-
-func _on_button_up(b: Button) -> void:
-	# Эмулированный mouse release от второго пальца не должен сбивать
-	# движение, удерживаемое первым (и наоборот).
-	if Time.get_ticks_msec() < _suppress_mouse_until_ms or _touch_move_index != -1:
-		return
-	if b == _dpad_up or b == _dpad_down or b == _dpad_left or b == _dpad_right:
-		if _held_dir == _dir_of_button(b):
-			_held_dir = Dir.NONE
-			_set_dpad_pressed(false)
-			_emit_move()
 
 
 # ---------------------------------------------------------------- Режим бега
