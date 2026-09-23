@@ -27,7 +27,7 @@ if(fs.existsSync(checkpointPath)){
 }
 const cache=path.join(root,'.tools/export-staging/walk-phone-preview/.godot/imported');
 if(fs.existsSync(cache)&&!fs.existsSync(path.join(stage,'.godot/imported')))fs.cpSync(cache,path.join(stage,'.godot/imported'),{recursive:true});
-const version='0.21.1-world-exploration',code=51;
+const version='0.21.2-headwaters',code=52;
 const title=`AshBound World Graybox${qa?' QA':''}`;
 const scene=qa?'scripts/tools/validate_world_graybox.tscn':'scenes/world/world_graybox.tscn';
 const packageId=qa?'org.ashbound.worldgrayboxvalidation':'org.ashbound.worldgraybox';

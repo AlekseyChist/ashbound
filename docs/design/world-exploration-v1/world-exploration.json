@@ -1,5 +1,5 @@
 {
-  "version": "0.4-exploration-proposal",
+  "version": "0.5-headwaters-proposal",
   "status": "requested_content_working_coordinates_not_final_geography",
   "extent_m": [
     2000,
@@ -696,6 +696,82 @@
       ],
       "width_m": 3,
       "branch": true
+    },
+    {
+      "id": "lake_approach",
+      "from": "forest_snow",
+      "to": "lake_shore",
+      "width_m": 3,
+      "points": [
+        [
+          440,
+          570,
+          160
+        ],
+        [
+          510,
+          500,
+          181
+        ],
+        [
+          520,
+          400,
+          215
+        ],
+        [
+          495,
+          300,
+          250
+        ],
+        [
+          460,
+          270,
+          264
+        ],
+        [
+          425,
+          340,
+          264
+        ]
+      ]
+    },
+    {
+      "id": "spring_approach",
+      "from": "desert",
+      "to": "spring_cave",
+      "width_m": 3,
+      "points": [
+        [
+          1710,
+          420,
+          155
+        ],
+        [
+          1630,
+          430,
+          175
+        ],
+        [
+          1550,
+          445,
+          197
+        ],
+        [
+          1500,
+          540,
+          220
+        ],
+        [
+          1435,
+          580,
+          222
+        ],
+        [
+          1373,
+          552,
+          214
+        ]
+      ]
     }
   ],
   "rivers": [
@@ -759,9 +835,19 @@
       "joins": "main",
       "points": [
         [
-          350,
-          400,
+          330,
+          418,
           260
+        ],
+        [
+          330,
+          426,
+          260
+        ],
+        [
+          310,
+          465,
+          235
         ],
         [
           240,
@@ -789,6 +875,8 @@
         12,
         12,
         12,
+        12,
+        12,
         12
       ]
     },
@@ -796,6 +884,11 @@
       "id": "east",
       "joins": "main",
       "points": [
+        [
+          1345.23001,
+          532.368017,
+          210
+        ],
         [
           1350,
           540,
@@ -833,6 +926,7 @@
         ]
       ],
       "widths_m": [
+        2,
         2,
         2,
         2.5,
@@ -1249,6 +1343,46 @@
         0,
         60
       ]
+    },
+    {
+      "id": "lake_shore",
+      "number": 15,
+      "kind": "lake",
+      "point": [
+        425,
+        340,
+        264
+      ],
+      "key": "WORLD_SITE_LAKE_SHORE",
+      "label_ru": "Горное озеро",
+      "label_en": "Mountain lake",
+      "early_access": true,
+      "interior_implemented": false,
+      "facing": [
+        95,
+        0,
+        -20
+      ]
+    },
+    {
+      "id": "spring_cave",
+      "number": 16,
+      "kind": "spring_cave",
+      "point": [
+        1373,
+        552,
+        214
+      ],
+      "key": "WORLD_SITE_SPRING_CAVE",
+      "label_ru": "Пещера источника",
+      "label_en": "Spring cave",
+      "early_access": false,
+      "interior_implemented": false,
+      "facing": [
+        23,
+        0,
+        12
+      ]
     }
   ],
   "progression": {
@@ -1284,5 +1418,52 @@
     "Добавлены четыре малых поселения, две таверны, три ранние пещеры и отдельная горная шахта.",
     "Боковые тропы образуют две новые петли; главный граф и две горные седловины сохранены.",
     "Верхняя восточная река сужена до 2–3 м, плавно расширяется в низины до 12 м."
+  ],
+  "lakes": [
+    {
+      "id": "mountain_lake",
+      "center": [
+        330,
+        360,
+        260
+      ],
+      "radii_m": [
+        85,
+        60
+      ],
+      "outlet": [
+        330,
+        420,
+        260
+      ],
+      "river_id": "west",
+      "site_id": "lake_shore"
+    }
+  ],
+  "springs": [
+    {
+      "id": "desert_spring",
+      "mouth": [
+        1350,
+        540,
+        210
+      ],
+      "facing": [
+        100,
+        0,
+        160
+      ],
+      "river_id": "east",
+      "site_id": "spring_cave",
+      "interior_implemented": false,
+      "planned_interior": [
+        "branching_passages",
+        "steam",
+        "geysers",
+        "deep_lava_zones"
+      ],
+      "world_premise": "hot_magmatic_depths_beneath_desert",
+      "ancient_mine_connection": false
+    }
   ]
 }

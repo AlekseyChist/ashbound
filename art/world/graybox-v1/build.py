@@ -105,6 +105,13 @@ heights=heights*(1-w)+(dh-.5)*w
 for px,pz,ph in plazas:
     dist=np.hypot(x-px,z-pz);w=1-smooth((dist-24)/14)
     heights=heights*(1-w)+ph*w
+# A level lake basin with a continuous shoreline; its outlet joins the river profile.
+for lake in D['lakes']:
+    px,pz,level=lake['center'];rx,rz=lake['radii_m']
+    q=np.hypot((x-px)/rx,(z-pz)/rz)
+    bed=level-7*(1-np.minimum(q,1)**2)+10*smooth((q-1)/.35)
+    influence=1-smooth((q-1.08)/.45)
+    heights=heights*(1-influence)+bed*influence
 # Actual channel is below water; road strips cross it as decks.
 river_weight=1-smooth((water_distance-(water_width*.5+3))/14)
 river_depth=1+1.8*np.clip((water_width-2)/10,0,1)
@@ -164,13 +171,14 @@ def water_record(r):
     assert len(widths)==len(points)
     return {**r,'world_points':points,'world_widths':widths}
 
-layout={'version':'0.21.1-world-exploration','width':WIDTH,'spacing':STEP,'extent_m':2000,
+layout={'version':'0.21.2-headwaters','width':WIDTH,'spacing':STEP,'extent_m':2000,
         'source_sha256':hashlib.sha256(SOURCE.read_bytes()).hexdigest(),
         'cities':[{**c,'spawn':[c['plaza'][0]-HALF,max(c['plaza'][2],sample(*c['plaza'][:2]))+.12,c['plaza'][1]-HALF]} for c in cities],
         'sites':[{**s,'spawn':[s['point'][0]-HALF,max(s['point'][2],sample(*s['point'][:2]))+.12,s['point'][1]-HALF]} for s in sites],
         'progression':D['progression'],
         'roads':[{**r,'world_points':dense(r['geometry_points'],True)} for r in roads],
         'rivers':[water_record(r) for r in D['rivers']],
+        'lakes':D['lakes'],'springs':D['springs'],
         'gates':D['gates'],'peaks':D['peaks'],'source_ridge':ridge,
         'limits':'Graybox hypothesis. No vegetation, swimming, NPC, campaign or streaming.'}
 (OUT/'layout.json').write_text(json.dumps(layout,ensure_ascii=False,separators=(',',':'))+'\n',encoding='utf8',newline='\n')

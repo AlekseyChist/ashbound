@@ -5,7 +5,7 @@ import json, math, hashlib, subprocess, sys
 R=Path(__file__).resolve().parents[1]
 D=json.loads((R/'docs/design/world-exploration-v1/world-exploration.json').read_text(encoding='utf8'))
 L=json.loads((R/'assets/world/graybox-v1/layout.json').read_text(encoding='utf8'))
-assert Counter(s['kind'] for s in D['sites'])==dict(settlement=4,tavern=2,cave=3,mine=1)
+assert Counter(s['kind'] for s in D['sites'])==dict(settlement=4,tavern=2,cave=3,mine=1,lake=1,spring_cave=1)
 assert all(s['early_access'] for s in D['sites'] if s['kind']=='cave')
 assert all(set(s['planned_services'])=={'rest_stop','healing','sleep','drink','quests','save'} for s in D['sites'] if s['kind']=='tavern')
 sites={s['id']:s for s in D['sites']}
@@ -34,12 +34,30 @@ for r in L['rivers']:
     assert r['world_widths'][0]==(2 if r['id']=='east' else 12)
     assert r['world_widths'][-1]==12
     assert all(a[1]>=b[1] for a,b in zip(r['world_points'],r['world_points'][1:])),r['id']
-assert len(L['roads'])==21
+assert len(L['roads'])==23
 for lang in ['en','ru']:
     catalog=(R/f'localization/{lang}.po').read_text(encoding='utf8')
     for s in D['sites']:assert f'msgid "{s["key"]}"\nmsgstr "{s["label_"+lang]}"' in catalog
+# Hydrology requirements independent of mesh implementation.
+import numpy as np
+assert len(D['lakes'])==1 and len(D['springs'])==1
+lake=D['lakes'][0];lake_x,lake_z,level=lake['center'];rx,rz=lake['radii_m']
+terrain=np.fromfile(R/'assets/world/graybox-v1/heights.bin',dtype='<f4').reshape(401,401)
+zz,xx=np.mgrid[0:401,0:401]*5
+radius=np.hypot((xx-lake_x)/rx,(zz-lake_z)/rz)
+assert np.max(terrain[radius<.85]) < level-.3,'lake bed breaches water'
+west=next(r for r in D['rivers'] if r['id']=='west')
+assert west['points'][0][2]==level and west['points'][1][2]==level
+assert math.hypot((west['points'][0][0]-lake_x)/rx,(west['points'][0][1]-lake_z)/rz)<1
+assert math.hypot((west['points'][1][0]-lake_x)/rx,(west['points'][1][1]-lake_z)/rz)>1
+assert sites['lake_shore']['point'][2]>=level+3
+spring=D['springs'][0];east=next(r for r in D['rivers'] if r['id']=='east')
+assert east['points'][0][2]==spring['mouth'][2]==east['points'][1][2]
+assert not spring['interior_implemented'] and not spring['ancient_mine_connection']
+assert set(spring['planned_interior'])=={'branching_passages','steam','geysers','deep_lava_zones'}
+assert sites['spring_cave']['point'][2] >= spring['mouth'][2]+3
 files=[R/'assets/world/graybox-v1'/f for f in ['heights.bin','colors.bin','layout.json']]
 before=[hashlib.sha256(p.read_bytes()).hexdigest() for p in files]
 subprocess.run([sys.executable,'-X','utf8',str(R/'art/world/graybox-v1/build.py')],check=True,cwd=R)
 assert before==[hashlib.sha256(p.read_bytes()).hexdigest() for p in files],'non-deterministic bake'
-print('WORLD_EXPLORATION_DATA_OK sites=10 connected_routes=21 loops>=4 repeatable=true')
+print('WORLD_EXPLORATION_DATA_OK sites=12 connected_routes=23 loops>=4 repeatable=true')

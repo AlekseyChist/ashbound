@@ -663,3 +663,11 @@ msgstr ""
 #. World exploration graybox; working place label.
 msgid "WORLD_SITE_HINT"
 msgstr ""
+
+#. WORLD-GRAYBOX-03 destination
+msgid "WORLD_SITE_LAKE_SHORE"
+msgstr ""
+
+#. WORLD-GRAYBOX-03 destination
+msgid "WORLD_SITE_SPRING_CAVE"
+msgstr ""

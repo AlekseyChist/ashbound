@@ -665,3 +665,11 @@ msgstr "Places"
 #. World exploration graybox; working place label.
 msgid "WORLD_SITE_HINT"
 msgstr "Graybox entrances; services and interiors are planned."
+
+#. WORLD-GRAYBOX-03 destination
+msgid "WORLD_SITE_LAKE_SHORE"
+msgstr "Mountain lake"
+
+#. WORLD-GRAYBOX-03 destination
+msgid "WORLD_SITE_SPRING_CAVE"
+msgstr "Spring cave"
