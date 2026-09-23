@@ -5,8 +5,8 @@
 [ext_resource type="Texture2D" path="res://assets/characters/courtyard/traveler-front-v1.png" id="3_fh5jc"]
 [ext_resource type="Texture2D" path="res://assets/characters/courtyard/traveler-run-back-v3.png" id="4_mh2p7"]
 [ext_resource type="Texture2D" path="res://assets/characters/courtyard/traveler-run-front-v3.png" id="5_f27ee"]
-[ext_resource type="Texture2D" path="res://assets/characters/courtyard/side-gait-v1/run-bare.png" id="6_f27ee"]
-[ext_resource type="Texture2D" path="res://assets/characters/courtyard/side-gait-v1/walk-bare.png" id="7_l4k3v"]
+[ext_resource type="Texture2D" path="res://assets/characters/courtyard/painted-motion-v2/run.png" id="6_f27ee"]
+[ext_resource type="Texture2D" path="res://assets/characters/courtyard/painted-motion-v2/walk.png" id="7_l4k3v"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_mh2p7"]
 atlas = ExtResource("1_bt2qd")
@@ -296,82 +296,82 @@ region = Rect2(1004, 335, 152, 278)
 margin = Rect2(116.5, 96, 232, 106)
 filter_clip = true
 
-[sub_resource type="AtlasTexture" id="SideGait_run_side_0"]
+[sub_resource type="AtlasTexture" id="PaintedMotion_run_side_0"]
 atlas = ExtResource("6_f27ee")
 region = Rect2(0, 0, 384, 384)
 filter_clip = true
 
-[sub_resource type="AtlasTexture" id="SideGait_run_side_1"]
+[sub_resource type="AtlasTexture" id="PaintedMotion_run_side_1"]
 atlas = ExtResource("6_f27ee")
 region = Rect2(384, 0, 384, 384)
 filter_clip = true
 
-[sub_resource type="AtlasTexture" id="SideGait_run_side_2"]
+[sub_resource type="AtlasTexture" id="PaintedMotion_run_side_2"]
 atlas = ExtResource("6_f27ee")
 region = Rect2(768, 0, 384, 384)
 filter_clip = true
 
-[sub_resource type="AtlasTexture" id="SideGait_run_side_3"]
+[sub_resource type="AtlasTexture" id="PaintedMotion_run_side_3"]
 atlas = ExtResource("6_f27ee")
 region = Rect2(1152, 0, 384, 384)
 filter_clip = true
 
-[sub_resource type="AtlasTexture" id="SideGait_run_side_4"]
+[sub_resource type="AtlasTexture" id="PaintedMotion_run_side_4"]
 atlas = ExtResource("6_f27ee")
 region = Rect2(0, 384, 384, 384)
 filter_clip = true
 
-[sub_resource type="AtlasTexture" id="SideGait_run_side_5"]
+[sub_resource type="AtlasTexture" id="PaintedMotion_run_side_5"]
 atlas = ExtResource("6_f27ee")
 region = Rect2(384, 384, 384, 384)
 filter_clip = true
 
-[sub_resource type="AtlasTexture" id="SideGait_run_side_6"]
+[sub_resource type="AtlasTexture" id="PaintedMotion_run_side_6"]
 atlas = ExtResource("6_f27ee")
 region = Rect2(768, 384, 384, 384)
 filter_clip = true
 
-[sub_resource type="AtlasTexture" id="SideGait_run_side_7"]
+[sub_resource type="AtlasTexture" id="PaintedMotion_run_side_7"]
 atlas = ExtResource("6_f27ee")
 region = Rect2(1152, 384, 384, 384)
 filter_clip = true
 
-[sub_resource type="AtlasTexture" id="SideGait_walk_0"]
+[sub_resource type="AtlasTexture" id="PaintedMotion_walk_0"]
 atlas = ExtResource("7_l4k3v")
 region = Rect2(0, 0, 384, 384)
 filter_clip = true
 
-[sub_resource type="AtlasTexture" id="SideGait_walk_1"]
+[sub_resource type="AtlasTexture" id="PaintedMotion_walk_1"]
 atlas = ExtResource("7_l4k3v")
 region = Rect2(384, 0, 384, 384)
 filter_clip = true
 
-[sub_resource type="AtlasTexture" id="SideGait_walk_2"]
+[sub_resource type="AtlasTexture" id="PaintedMotion_walk_2"]
 atlas = ExtResource("7_l4k3v")
 region = Rect2(768, 0, 384, 384)
 filter_clip = true
 
-[sub_resource type="AtlasTexture" id="SideGait_walk_3"]
+[sub_resource type="AtlasTexture" id="PaintedMotion_walk_3"]
 atlas = ExtResource("7_l4k3v")
 region = Rect2(1152, 0, 384, 384)
 filter_clip = true
 
-[sub_resource type="AtlasTexture" id="SideGait_walk_4"]
+[sub_resource type="AtlasTexture" id="PaintedMotion_walk_4"]
 atlas = ExtResource("7_l4k3v")
 region = Rect2(0, 384, 384, 384)
 filter_clip = true
 
-[sub_resource type="AtlasTexture" id="SideGait_walk_5"]
+[sub_resource type="AtlasTexture" id="PaintedMotion_walk_5"]
 atlas = ExtResource("7_l4k3v")
 region = Rect2(384, 384, 384, 384)
 filter_clip = true
 
-[sub_resource type="AtlasTexture" id="SideGait_walk_6"]
+[sub_resource type="AtlasTexture" id="PaintedMotion_walk_6"]
 atlas = ExtResource("7_l4k3v")
 region = Rect2(768, 384, 384, 384)
 filter_clip = true
 
-[sub_resource type="AtlasTexture" id="SideGait_walk_7"]
+[sub_resource type="AtlasTexture" id="PaintedMotion_walk_7"]
 atlas = ExtResource("7_l4k3v")
 region = Rect2(1152, 384, 384, 384)
 filter_clip = true
@@ -472,42 +472,42 @@ region = Rect2(1033, 321, 132, 306)
 margin = Rect2(127.5, 68, 252, 78)
 filter_clip = true
 
-[sub_resource type="AtlasTexture" id="SideGait_walk_side_0"]
+[sub_resource type="AtlasTexture" id="PaintedMotion_walk_side_0"]
 atlas = ExtResource("7_l4k3v")
 region = Rect2(0, 0, 384, 384)
 filter_clip = true
 
-[sub_resource type="AtlasTexture" id="SideGait_walk_side_1"]
+[sub_resource type="AtlasTexture" id="PaintedMotion_walk_side_1"]
 atlas = ExtResource("7_l4k3v")
 region = Rect2(384, 0, 384, 384)
 filter_clip = true
 
-[sub_resource type="AtlasTexture" id="SideGait_walk_side_2"]
+[sub_resource type="AtlasTexture" id="PaintedMotion_walk_side_2"]
 atlas = ExtResource("7_l4k3v")
 region = Rect2(768, 0, 384, 384)
 filter_clip = true
 
-[sub_resource type="AtlasTexture" id="SideGait_walk_side_3"]
+[sub_resource type="AtlasTexture" id="PaintedMotion_walk_side_3"]
 atlas = ExtResource("7_l4k3v")
 region = Rect2(1152, 0, 384, 384)
 filter_clip = true
 
-[sub_resource type="AtlasTexture" id="SideGait_walk_side_4"]
+[sub_resource type="AtlasTexture" id="PaintedMotion_walk_side_4"]
 atlas = ExtResource("7_l4k3v")
 region = Rect2(0, 384, 384, 384)
 filter_clip = true
 
-[sub_resource type="AtlasTexture" id="SideGait_walk_side_5"]
+[sub_resource type="AtlasTexture" id="PaintedMotion_walk_side_5"]
 atlas = ExtResource("7_l4k3v")
 region = Rect2(384, 384, 384, 384)
 filter_clip = true
 
-[sub_resource type="AtlasTexture" id="SideGait_walk_side_6"]
+[sub_resource type="AtlasTexture" id="PaintedMotion_walk_side_6"]
 atlas = ExtResource("7_l4k3v")
 region = Rect2(768, 384, 384, 384)
 filter_clip = true
 
-[sub_resource type="AtlasTexture" id="SideGait_walk_side_7"]
+[sub_resource type="AtlasTexture" id="PaintedMotion_walk_side_7"]
 atlas = ExtResource("7_l4k3v")
 region = Rect2(1152, 384, 384, 384)
 filter_clip = true
@@ -710,28 +710,28 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
-"texture": SubResource("SideGait_run_side_0")
+"texture": SubResource("PaintedMotion_run_side_0")
 }, {
 "duration": 1.0,
-"texture": SubResource("SideGait_run_side_1")
+"texture": SubResource("PaintedMotion_run_side_1")
 }, {
 "duration": 1.0,
-"texture": SubResource("SideGait_run_side_2")
+"texture": SubResource("PaintedMotion_run_side_2")
 }, {
 "duration": 1.0,
-"texture": SubResource("SideGait_run_side_3")
+"texture": SubResource("PaintedMotion_run_side_3")
 }, {
 "duration": 1.0,
-"texture": SubResource("SideGait_run_side_4")
+"texture": SubResource("PaintedMotion_run_side_4")
 }, {
 "duration": 1.0,
-"texture": SubResource("SideGait_run_side_5")
+"texture": SubResource("PaintedMotion_run_side_5")
 }, {
 "duration": 1.0,
-"texture": SubResource("SideGait_run_side_6")
+"texture": SubResource("PaintedMotion_run_side_6")
 }, {
 "duration": 1.0,
-"texture": SubResource("SideGait_run_side_7")
+"texture": SubResource("PaintedMotion_run_side_7")
 }],
 "loop": 1,
 "name": &"run_side",
@@ -739,28 +739,28 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
-"texture": SubResource("SideGait_walk_0")
+"texture": SubResource("PaintedMotion_walk_0")
 }, {
 "duration": 1.0,
-"texture": SubResource("SideGait_walk_1")
+"texture": SubResource("PaintedMotion_walk_1")
 }, {
 "duration": 1.0,
-"texture": SubResource("SideGait_walk_2")
+"texture": SubResource("PaintedMotion_walk_2")
 }, {
 "duration": 1.0,
-"texture": SubResource("SideGait_walk_3")
+"texture": SubResource("PaintedMotion_walk_3")
 }, {
 "duration": 1.0,
-"texture": SubResource("SideGait_walk_4")
+"texture": SubResource("PaintedMotion_walk_4")
 }, {
 "duration": 1.0,
-"texture": SubResource("SideGait_walk_5")
+"texture": SubResource("PaintedMotion_walk_5")
 }, {
 "duration": 1.0,
-"texture": SubResource("SideGait_walk_6")
+"texture": SubResource("PaintedMotion_walk_6")
 }, {
 "duration": 1.0,
-"texture": SubResource("SideGait_walk_7")
+"texture": SubResource("PaintedMotion_walk_7")
 }],
 "loop": 1,
 "name": &"walk",
@@ -826,28 +826,28 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
-"texture": SubResource("SideGait_walk_side_0")
+"texture": SubResource("PaintedMotion_walk_side_0")
 }, {
 "duration": 1.0,
-"texture": SubResource("SideGait_walk_side_1")
+"texture": SubResource("PaintedMotion_walk_side_1")
 }, {
 "duration": 1.0,
-"texture": SubResource("SideGait_walk_side_2")
+"texture": SubResource("PaintedMotion_walk_side_2")
 }, {
 "duration": 1.0,
-"texture": SubResource("SideGait_walk_side_3")
+"texture": SubResource("PaintedMotion_walk_side_3")
 }, {
 "duration": 1.0,
-"texture": SubResource("SideGait_walk_side_4")
+"texture": SubResource("PaintedMotion_walk_side_4")
 }, {
 "duration": 1.0,
-"texture": SubResource("SideGait_walk_side_5")
+"texture": SubResource("PaintedMotion_walk_side_5")
 }, {
 "duration": 1.0,
-"texture": SubResource("SideGait_walk_side_6")
+"texture": SubResource("PaintedMotion_walk_side_6")
 }, {
 "duration": 1.0,
-"texture": SubResource("SideGait_walk_side_7")
+"texture": SubResource("PaintedMotion_walk_side_7")
 }],
 "loop": 1,
 "name": &"walk_side",

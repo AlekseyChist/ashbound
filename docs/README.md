@@ -2,7 +2,7 @@
 
 **Новые решения D-057/058:** [инвентарь без рюкзака, защищённый кошелёк и второй шанс](design/INVENTORY_AND_SECOND_CHANCE.md); [границы обновления плана](production/INVENTORY_SECOND_CHANCE_PLAN_TASK.md). Игровая реализация ещё не изменена.
 
-23 сентября 2026. **D-056: Blender-проба отвергнута; возвращаемся к рисованным 2D-спрайтам.** [Текущая лаборатория](production/SPRITE_GAIT_LAB_TASK.md), [исследование](art/SPRITE_GAIT_RESEARCH.md), [очередь](production/STATUS.md). Исправление SIDE-GAIT-02 ещё не готово; игровая 0.19.2/code47 прежняя.
+23 сентября 2026. **PAINTED-MOTION-04:** цельные рисованные боковые ходьба/бег подключены; Forest Route 0.19.3/code48 установлена на S23. [Проверки ПК/Android и ограничения](production/PAINTED_MOTION_04_CHECKS.md), [исходники/запись телефона](../art/characters/painted-motion-v2/README.md), [очередь](production/STATUS.md). Личная оценка движения открыта.
 
 Локальная опора интерфейса по D-049: **[книга UI 1.0](art/ui/README.md)**, [PDF](art/ui/AshBound-UI-Book.pdf), [автономный HTML](art/ui/index.html), [параметры](art/ui/tokens.json). UI-BOOK-02 применил книгу к HUD/защите в 0.18.4; [проверки ПК/S23](production/UI_BOOK_02_CHECKS.md). Новый лесной макет использует ту же Theme.
 
