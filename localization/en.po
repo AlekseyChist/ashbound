@@ -577,3 +577,43 @@ msgstr "Path to the lookout"
 # Forest route prototype: location heading or reset button; no canonical place name.
 msgid "FOREST_LOOKOUT"
 msgstr "City overlook"
+
+#: scripts/world/world_graybox.gd
+msgid "WORLD_CITY_FOREST"
+msgstr "Forest city"
+
+#: scripts/world/world_graybox.gd
+msgid "WORLD_CITY_SNOW"
+msgstr "Mountain city"
+
+#: scripts/world/world_graybox.gd
+msgid "WORLD_CITY_DESERT"
+msgstr "Desert city"
+
+#: scripts/world/world_graybox.gd
+msgid "WORLD_CITY_LOWLAND"
+msgstr "Lowland city"
+
+#: scripts/world/world_graybox.gd
+msgid "WORLD_WALK"
+msgstr "Walk here"
+
+#: scripts/world/world_graybox.gd
+msgid "WORLD_OVERVIEW"
+msgstr "World view"
+
+#: scripts/world/world_graybox.gd
+msgid "WORLD_ALL"
+msgstr "Whole world"
+
+#: scripts/world/world_graybox.gd
+msgid "WORLD_RESET"
+msgstr "City square"
+
+#: scripts/world/world_graybox.gd
+msgid "WORLD_OVERVIEW_HELP"
+msgstr "2 × 2 km · Drag to orbit · + / − zoom · Arrows move · Tab: walk"
+
+#: scripts/world/world_graybox.gd
+msgid "WORLD_WALK_HELP"
+msgstr "Terrain prototype · Arrows / WASD: move · Shift: run · Drag right: look · Tab: overview"

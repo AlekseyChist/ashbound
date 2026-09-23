@@ -575,3 +575,43 @@ msgstr ""
 # Forest route prototype: location heading or reset button; no canonical place name.
 msgid "FOREST_LOOKOUT"
 msgstr ""
+
+#: scripts/world/world_graybox.gd
+msgid "WORLD_CITY_FOREST"
+msgstr ""
+
+#: scripts/world/world_graybox.gd
+msgid "WORLD_CITY_SNOW"
+msgstr ""
+
+#: scripts/world/world_graybox.gd
+msgid "WORLD_CITY_DESERT"
+msgstr ""
+
+#: scripts/world/world_graybox.gd
+msgid "WORLD_CITY_LOWLAND"
+msgstr ""
+
+#: scripts/world/world_graybox.gd
+msgid "WORLD_WALK"
+msgstr ""
+
+#: scripts/world/world_graybox.gd
+msgid "WORLD_OVERVIEW"
+msgstr ""
+
+#: scripts/world/world_graybox.gd
+msgid "WORLD_ALL"
+msgstr ""
+
+#: scripts/world/world_graybox.gd
+msgid "WORLD_RESET"
+msgstr ""
+
+#: scripts/world/world_graybox.gd
+msgid "WORLD_OVERVIEW_HELP"
+msgstr ""
+
+#: scripts/world/world_graybox.gd
+msgid "WORLD_WALK_HELP"
+msgstr ""

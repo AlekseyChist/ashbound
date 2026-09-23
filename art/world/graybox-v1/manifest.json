@@ -1,0 +1,17 @@
+{
+  "grid": 401,
+  "spacing_m": 5.0,
+  "triangles": 320000,
+  "height_range_m": [
+    -2.8,
+    512.9552039638174
+  ],
+  "source": "docs/design/world-connections-v1/world-connections.json",
+  "files": {
+    "assets/world/graybox-v1/colors.bin": "2590f737254fc859b1e3a2436346a0262a269be16af2cfde65248e1b0421635e",
+    "assets/world/graybox-v1/heights.bin": "83c3b0a03a13ccd2b0213da67343058d7cb69561475197e81d1dd7fe8dbe43bf",
+    "assets/world/graybox-v1/layout.json": "9da9a9e68ddb8ab0bb26ae4ea4b2c7a36d178939e5f48f5f8ca034c43bc108a0",
+    "assets/characters/world-graybox-v1/walk.png": "2d4ca6894099fc7a2b7e3f8f38348aca487cf521ab2bf27b65c62dab8d1ed2cc",
+    "assets/characters/world-graybox-v1/traveler_frames.tres": "3c3ead6903e9099d033856c82d7632634efb9c151293c01cb1e975ce6974f63b"
+  }
+}
