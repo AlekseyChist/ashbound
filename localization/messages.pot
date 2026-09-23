@@ -615,3 +615,51 @@ msgstr ""
 #: scripts/world/world_graybox.gd
 msgid "WORLD_WALK_HELP"
 msgstr ""
+
+#. World exploration graybox; working place label.
+msgid "WORLD_SITE_START_HAMLET"
+msgstr ""
+
+#. World exploration graybox; working place label.
+msgid "WORLD_SITE_WEST_HAMLET"
+msgstr ""
+
+#. World exploration graybox; working place label.
+msgid "WORLD_SITE_LOWLAND_HAMLET"
+msgstr ""
+
+#. World exploration graybox; working place label.
+msgid "WORLD_SITE_DESERT_HAMLET"
+msgstr ""
+
+#. World exploration graybox; working place label.
+msgid "WORLD_SITE_FOREST_INN"
+msgstr ""
+
+#. World exploration graybox; working place label.
+msgid "WORLD_SITE_CROSSROADS_INN"
+msgstr ""
+
+#. World exploration graybox; working place label.
+msgid "WORLD_SITE_FOREST_CAVE"
+msgstr ""
+
+#. World exploration graybox; working place label.
+msgid "WORLD_SITE_FOOTHILL_CAVE"
+msgstr ""
+
+#. World exploration graybox; working place label.
+msgid "WORLD_SITE_LOWLAND_CAVE"
+msgstr ""
+
+#. World exploration graybox; working place label.
+msgid "WORLD_SITE_CROWN_MINE"
+msgstr ""
+
+#. World exploration graybox; working place label.
+msgid "WORLD_LOCATIONS"
+msgstr ""
+
+#. World exploration graybox; working place label.
+msgid "WORLD_SITE_HINT"
+msgstr ""

@@ -31,7 +31,7 @@ func _run() -> void:
 	check(world.player.get_node("Visual/Body").sprite_frames == world.AcceptedFrames, "accepted hero resource")
 	await _geometry_fixture()
 	await _surfaces_and_ui()
-	if not args.has("--screens-only"):
+	if not args.has("--screens-only") and not ProjectSettings.get_setting("ashbound/qa/screens_only", false):
 		await _cross_road()
 		await _routes()
 	Engine.time_scale = 1.0
@@ -133,12 +133,35 @@ func _surfaces_and_ui() -> void:
 		for control in [world.mode_button, world.city_picker, world.language_button, world.hud.get_node("RootControl/TopRightPanel/RestartButton")]:
 			check(bounds.encloses(control.get_global_rect()), "toolbar within safe area " + language)
 		await _screenshot("overview-" + language)
-	for city in range(4):
+	check(world.locations.size() == 14, "four cities plus ten requested sites")
+	for site in world.layout.sites:
+		check(world.has_node(NodePath(site.id)), "landmark exists " + str(site.id))
+		check(not str(Localization.text(site.key)).begins_with("WORLD_"), "translated site " + str(site.id))
+	for river in world.layout.rivers:
+		var river_mesh: MeshInstance3D = world.shapes.get_node(NodePath(river.id))
+		var vertices: PackedVector3Array = river_mesh.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+		var actual_width := vertices[0].distance_to(vertices[1])
+		check(absf(actual_width - (2.0 if river.id == "east" else 12.0)) < 0.01, "visible upstream water width " + str(river.id))
+		check(absf(vertices[-2].distance_to(vertices[-1]) - 12.0) < 0.01, "water widens into lowlands " + str(river.id))
+	for city in range(world.locations.size()):
 		world.select_city(city)
 		world.set_overview(false)
 		await get_tree().create_timer(0.3).timeout
 		check(world.player.is_on_floor(), "city grounded " + str(city))
 		await _screenshot("city-" + str(city))
+	world.show_locations(true)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var bounds: Rect2 = world.hud.get_node("RootControl").get_global_rect()
+	check(bounds.encloses(world.locations_panel.get_global_rect()) and world.location_buttons.size() == 14, "bounded scrollable location picker")
+	check(not world.player.input_enabled and not world.camera_rig.input_enabled, "location chooser owns input")
+	world.locations_scroll.ensure_control_visible(world.location_buttons[-1])
+	await get_tree().process_frame
+	check(world.locations_scroll.get_global_rect().intersects(world.location_buttons[-1].get_global_rect()), "last destination visible after scroll")
+	await _screenshot("locations-popup")
+	world.location_buttons[-1].pressed.emit()
+	check(world.selected_city == 13 and not world.locations_overlay.visible, "last destination selection closes chooser")
+	await _location_gestures()
 	world.player.set_run_input(true)
 	world.player.set_move_input(Vector2(1, 0))
 	world.set_overview(true)
@@ -153,6 +176,49 @@ func _surfaces_and_ui() -> void:
 	world.zoom_overview(10000)
 	check(world.overview_distance == 3000, "maximum zoom")
 	world.reset_overview()
+
+func _location_gestures() -> void:
+	world.select_city(4)
+	world.show_locations(true)
+	world.locations_scroll.scroll_vertical = 0
+	await get_tree().process_frame
+	var touch := InputEventScreenTouch.new()
+	touch.index = 17
+	touch.pressed = true
+	touch.position = world.locations_scroll.get_global_rect().get_center() + Vector2(0, 100)
+	world._input(touch)
+	var drag := InputEventScreenDrag.new()
+	drag.index = 17
+	drag.position = touch.position - Vector2(0, 220)
+	drag.relative = Vector2(0, -220)
+	world._input(drag)
+	touch.position = drag.position
+	touch.pressed = false
+	world._input(touch)
+	check(world.locations_scroll.scroll_vertical >= 200, "finger drag scrolls choices")
+	check(world.selected_city == 4 and world.locations_overlay.visible, "drag does not choose a destination")
+	check(not world.hud.is_processing_input(), "modal suspends shared HUD touch dispatcher")
+	# Outside tap over the Run area closes without toggling the control underneath.
+	touch.position = world.hud.get_node("RootControl/BottomRight").get_global_rect().get_center()
+	touch.pressed = true
+	world._input(touch)
+	check(world.locations_overlay.visible, "outside press does not fall through")
+	touch.pressed = false
+	world._input(touch)
+	check(not world.locations_overlay.visible and not world.player._touch_run, "outside release closes without run")
+	world.show_locations(true)
+	world.locations_scroll.ensure_control_visible(world.location_buttons[-1])
+	await get_tree().process_frame
+	touch.position = world.location_buttons[-1].get_global_rect().get_center()
+	touch.pressed = true
+	world._input(touch)
+	touch.pressed = false
+	world._input(touch)
+	check(world.selected_city == 13 and not world.locations_overlay.visible and world.hud.is_processing_input(), "finger tap chooses last place and restores HUD")
+	world.show_locations(true)
+	world._notification(NOTIFICATION_APPLICATION_FOCUS_OUT)
+	check(world.location_touch == -1 and not world.locations_overlay.visible, "focus loss closes modal gesture")
+	world._notification(NOTIFICATION_APPLICATION_FOCUS_IN)
 
 func _cross_road() -> void:
 	world.set_overview(false)

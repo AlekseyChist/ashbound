@@ -617,3 +617,51 @@ msgstr "2 × 2 km · Drag to orbit · + / − zoom · Arrows move · Tab: walk"
 #: scripts/world/world_graybox.gd
 msgid "WORLD_WALK_HELP"
 msgstr "Terrain prototype · Arrows / WASD: move · Shift: run · Drag right: look · Tab: overview"
+
+#. World exploration graybox; working place label.
+msgid "WORLD_SITE_START_HAMLET"
+msgstr "Forest hamlet"
+
+#. World exploration graybox; working place label.
+msgid "WORLD_SITE_WEST_HAMLET"
+msgstr "Cliffside hamlet"
+
+#. World exploration graybox; working place label.
+msgid "WORLD_SITE_LOWLAND_HAMLET"
+msgstr "Lowland hamlet"
+
+#. World exploration graybox; working place label.
+msgid "WORLD_SITE_DESERT_HAMLET"
+msgstr "Dry camp"
+
+#. World exploration graybox; working place label.
+msgid "WORLD_SITE_FOREST_INN"
+msgstr "Forest inn"
+
+#. World exploration graybox; working place label.
+msgid "WORLD_SITE_CROSSROADS_INN"
+msgstr "Crossroads inn"
+
+#. World exploration graybox; working place label.
+msgid "WORLD_SITE_FOREST_CAVE"
+msgstr "Forest cave"
+
+#. World exploration graybox; working place label.
+msgid "WORLD_SITE_FOOTHILL_CAVE"
+msgstr "Foothill cave"
+
+#. World exploration graybox; working place label.
+msgid "WORLD_SITE_LOWLAND_CAVE"
+msgstr "Lowland cave"
+
+#. World exploration graybox; working place label.
+msgid "WORLD_SITE_CROWN_MINE"
+msgstr "Mountain mine"
+
+#. World exploration graybox; working place label.
+msgid "WORLD_LOCATIONS"
+msgstr "Places"
+
+#. World exploration graybox; working place label.
+msgid "WORLD_SITE_HINT"
+msgstr "Graybox entrances; services and interiors are planned."

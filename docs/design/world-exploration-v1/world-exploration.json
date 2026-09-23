@@ -1,0 +1,1288 @@
+{
+  "version": "0.4-exploration-proposal",
+  "status": "requested_content_working_coordinates_not_final_geography",
+  "extent_m": [
+    2000,
+    2000
+  ],
+  "axes": "x east, z south, h relative to lowland outlet; not sea level",
+  "speeds_m_s": {
+    "walk": 4.2,
+    "run": 6.4
+  },
+  "cities": [
+    {
+      "id": "forest",
+      "number": 1,
+      "label": "Лесной город",
+      "point": [
+        400,
+        900,
+        110
+      ],
+      "key": "WORLD_CITY_FOREST"
+    },
+    {
+      "id": "snow",
+      "number": 2,
+      "label": "Снежный город",
+      "point": [
+        980,
+        360,
+        310
+      ],
+      "key": "WORLD_CITY_SNOW"
+    },
+    {
+      "id": "desert",
+      "number": 3,
+      "label": "Пустынный город",
+      "point": [
+        1710,
+        420,
+        155
+      ],
+      "key": "WORLD_CITY_DESERT"
+    },
+    {
+      "id": "lowland",
+      "number": 4,
+      "label": "Город низин",
+      "point": [
+        1030,
+        1640,
+        12
+      ],
+      "key": "WORLD_CITY_LOWLAND"
+    }
+  ],
+  "start": {
+    "id": "start_hamlet",
+    "label": "Лесной посёлок",
+    "point": [
+      155,
+      1420,
+      52
+    ]
+  },
+  "pass": {
+    "label": "Перевал",
+    "point": [
+      1180,
+      650,
+      260
+    ]
+  },
+  "roads": [
+    {
+      "id": "forest_snow",
+      "label": "1 → 2  Лес / снежный город",
+      "from": "forest",
+      "to": "snow",
+      "points": [
+        [
+          400,
+          900,
+          110
+        ],
+        [
+          350,
+          750,
+          120
+        ],
+        [
+          500,
+          720,
+          135
+        ],
+        [
+          440,
+          570,
+          160
+        ],
+        [
+          660,
+          600,
+          180
+        ],
+        [
+          630,
+          470,
+          205
+        ],
+        [
+          840,
+          520,
+          235
+        ],
+        [
+          820,
+          370,
+          265
+        ],
+        [
+          1050,
+          460,
+          290
+        ],
+        [
+          980,
+          360,
+          310
+        ]
+      ],
+      "width_m": 6
+    },
+    {
+      "id": "snow_desert",
+      "label": "2 → 3  Перевал / сухая сторона",
+      "from": "snow",
+      "to": "desert_gate",
+      "points": [
+        [
+          980,
+          360,
+          310
+        ],
+        [
+          1100,
+          480,
+          300
+        ],
+        [
+          1040,
+          650,
+          275
+        ],
+        [
+          1180,
+          650,
+          260
+        ],
+        [
+          1280,
+          520,
+          240
+        ],
+        [
+          1370,
+          680,
+          220
+        ],
+        [
+          1280,
+          820,
+          195
+        ],
+        [
+          1450,
+          870,
+          170
+        ],
+        [
+          1390,
+          1050,
+          140
+        ],
+        [
+          1510,
+          1000,
+          120
+        ],
+        [
+          1590,
+          1010,
+          111
+        ],
+        [
+          1650,
+          985.2941176470588,
+          107
+        ],
+        [
+          1650,
+          930,
+          100
+        ]
+      ],
+      "width_m": 6
+    },
+    {
+      "id": "desert_lowland",
+      "label": "3 → 4  Сухая долина / низины",
+      "from": "desert_gate",
+      "to": "lowland",
+      "points": [
+        [
+          1650,
+          930,
+          100
+        ],
+        [
+          1770,
+          1100,
+          95
+        ],
+        [
+          1600,
+          1340,
+          62
+        ],
+        [
+          1350,
+          1490,
+          33
+        ],
+        [
+          1256.341463414634,
+          1533.9024390243903,
+          38
+        ],
+        [
+          1030,
+          1640,
+          12
+        ]
+      ],
+      "width_m": 6
+    },
+    {
+      "id": "lowland_forest",
+      "label": "4 → 1  Низины / лес",
+      "from": "lowland",
+      "to": "forest",
+      "points": [
+        [
+          1030,
+          1640,
+          12
+        ],
+        [
+          710,
+          1550,
+          22
+        ],
+        [
+          590,
+          1360,
+          42
+        ],
+        [
+          420,
+          1210,
+          70
+        ],
+        [
+          400,
+          900,
+          110
+        ]
+      ],
+      "width_m": 6
+    },
+    {
+      "id": "forest_desert",
+      "label": "1 → 3  Обход через долину",
+      "from": "forest",
+      "to": "desert_gate",
+      "alternative": true,
+      "points": [
+        [
+          400,
+          900,
+          110
+        ],
+        [
+          560,
+          1060,
+          90
+        ],
+        [
+          800,
+          1140,
+          70
+        ],
+        [
+          1010,
+          1130,
+          78
+        ],
+        [
+          1240,
+          1150,
+          92
+        ],
+        [
+          1470,
+          1090,
+          105
+        ],
+        [
+          1590,
+          1010,
+          111
+        ],
+        [
+          1650,
+          985.2941176470588,
+          107
+        ],
+        [
+          1650,
+          930,
+          100
+        ]
+      ],
+      "width_m": 6
+    },
+    {
+      "id": "desert_interior",
+      "from": "desert_gate",
+      "to": "desert",
+      "points": [
+        [
+          1650,
+          930,
+          100
+        ],
+        [
+          1790,
+          800,
+          108
+        ],
+        [
+          1810,
+          630,
+          128
+        ],
+        [
+          1710,
+          420,
+          155
+        ]
+      ],
+      "width_m": 6,
+      "branch": false
+    },
+    {
+      "id": "start_trail",
+      "from": "forest_turn",
+      "to": "start_hamlet",
+      "points": [
+        [
+          420,
+          1210,
+          70
+        ],
+        [
+          300,
+          1240,
+          67
+        ],
+        [
+          230,
+          1340,
+          60
+        ],
+        [
+          155,
+          1420,
+          52
+        ]
+      ],
+      "width_m": 3,
+      "branch": true
+    },
+    {
+      "id": "west_trail",
+      "from": "west_turn",
+      "to": "west_hamlet",
+      "points": [
+        [
+          350,
+          750,
+          120
+        ],
+        [
+          260,
+          690,
+          140
+        ],
+        [
+          165,
+          680,
+          153
+        ],
+        [
+          145,
+          760,
+          145
+        ]
+      ],
+      "width_m": 3,
+      "branch": true
+    },
+    {
+      "id": "lowland_trail",
+      "from": "east_turn",
+      "to": "lowland_hamlet",
+      "points": [
+        [
+          1600,
+          1340,
+          62
+        ],
+        [
+          1760,
+          1470,
+          44
+        ],
+        [
+          1770,
+          1640,
+          32
+        ],
+        [
+          1670,
+          1730,
+          24
+        ]
+      ],
+      "width_m": 3,
+      "branch": true
+    },
+    {
+      "id": "desert_trail",
+      "from": "desert_turn",
+      "to": "desert_hamlet",
+      "points": [
+        [
+          1770,
+          1100,
+          95
+        ],
+        [
+          1860,
+          1080,
+          86
+        ],
+        [
+          1870,
+          1120,
+          80
+        ]
+      ],
+      "width_m": 3,
+      "branch": true
+    },
+    {
+      "id": "forest_inn_approach",
+      "from": "forest_turn",
+      "to": "forest_inn",
+      "points": [
+        [
+          420,
+          1210,
+          70
+        ],
+        [
+          450,
+          1270,
+          70
+        ]
+      ],
+      "width_m": 3,
+      "branch": true
+    },
+    {
+      "id": "crossroads_inn_approach",
+      "from": "valley_turn",
+      "to": "crossroads_inn",
+      "points": [
+        [
+          1470,
+          1090,
+          105
+        ],
+        [
+          1460,
+          1140,
+          101
+        ],
+        [
+          1450,
+          1190,
+          97
+        ]
+      ],
+      "width_m": 3,
+      "branch": true
+    },
+    {
+      "id": "forest_cave_trail",
+      "from": "start_hamlet",
+      "to": "forest_cave",
+      "points": [
+        [
+          155,
+          1420,
+          52
+        ],
+        [
+          95,
+          1330,
+          64
+        ],
+        [
+          75,
+          1230,
+          77
+        ],
+        [
+          115,
+          1170,
+          82
+        ]
+      ],
+      "width_m": 3,
+      "branch": true
+    },
+    {
+      "id": "forest_cave_loop",
+      "from": "forest_cave",
+      "to": "forest_turn",
+      "points": [
+        [
+          115,
+          1170,
+          82
+        ],
+        [
+          205,
+          1110,
+          91
+        ],
+        [
+          305,
+          1160,
+          81
+        ],
+        [
+          420,
+          1210,
+          70
+        ]
+      ],
+      "width_m": 3,
+      "branch": true
+    },
+    {
+      "id": "foothill_cave_trail",
+      "from": "west_hamlet",
+      "to": "foothill_cave",
+      "points": [
+        [
+          145,
+          760,
+          145
+        ],
+        [
+          110,
+          630,
+          165
+        ],
+        [
+          200,
+          530,
+          190
+        ],
+        [
+          310,
+          525,
+          195
+        ]
+      ],
+      "width_m": 3,
+      "branch": true
+    },
+    {
+      "id": "lowland_cave_trail",
+      "from": "lowland_turn",
+      "to": "lowland_cave",
+      "points": [
+        [
+          710,
+          1550,
+          22
+        ],
+        [
+          590,
+          1640,
+          24
+        ],
+        [
+          640,
+          1770,
+          20
+        ]
+      ],
+      "width_m": 3,
+      "branch": true
+    },
+    {
+      "id": "lowland_loop",
+      "from": "lowland_hamlet",
+      "to": "lowland",
+      "points": [
+        [
+          1670,
+          1730,
+          24
+        ],
+        [
+          1500,
+          1820,
+          17
+        ],
+        [
+          1280,
+          1830,
+          10
+        ],
+        [
+          1160,
+          1760,
+          11
+        ],
+        [
+          1030,
+          1640,
+          12
+        ]
+      ],
+      "width_m": 3,
+      "branch": true
+    },
+    {
+      "id": "mine_approach",
+      "from": "snow",
+      "to": "crown_mine",
+      "points": [
+        [
+          980,
+          360,
+          310
+        ],
+        [
+          1070,
+          330,
+          328
+        ],
+        [
+          1150,
+          340,
+          348
+        ],
+        [
+          1190,
+          280,
+          370
+        ],
+        [
+          1100,
+          220,
+          385
+        ]
+      ],
+      "width_m": 3,
+      "branch": true
+    }
+  ],
+  "rivers": [
+    {
+      "id": "main",
+      "points": [
+        [
+          880,
+          480,
+          300
+        ],
+        [
+          790,
+          620,
+          230
+        ],
+        [
+          740,
+          820,
+          140
+        ],
+        [
+          600,
+          1000,
+          85
+        ],
+        [
+          650,
+          1250,
+          50
+        ],
+        [
+          850,
+          1450,
+          22
+        ],
+        [
+          1030,
+          1690,
+          6
+        ],
+        [
+          1120,
+          1990,
+          0
+        ]
+      ],
+      "widths_m": [
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12
+      ]
+    },
+    {
+      "id": "west",
+      "joins": "main",
+      "points": [
+        [
+          350,
+          400,
+          260
+        ],
+        [
+          240,
+          610,
+          150
+        ],
+        [
+          280,
+          800,
+          110
+        ],
+        [
+          500,
+          980,
+          90
+        ],
+        [
+          600,
+          1000,
+          85
+        ]
+      ],
+      "widths_m": [
+        12,
+        12,
+        12,
+        12,
+        12
+      ]
+    },
+    {
+      "id": "east",
+      "joins": "main",
+      "points": [
+        [
+          1350,
+          540,
+          210
+        ],
+        [
+          1450,
+          700,
+          160
+        ],
+        [
+          1550,
+          850,
+          120
+        ],
+        [
+          1720,
+          1080,
+          90
+        ],
+        [
+          1560,
+          1320,
+          70
+        ],
+        [
+          1320,
+          1490,
+          40
+        ],
+        [
+          1030,
+          1690,
+          6
+        ]
+      ],
+      "widths_m": [
+        2,
+        2,
+        2.5,
+        3,
+        5,
+        8,
+        12
+      ]
+    }
+  ],
+  "peaks": [
+    [
+      900,
+      190,
+      510
+    ],
+    [
+      390,
+      230,
+      430
+    ],
+    [
+      1290,
+      430,
+      460
+    ]
+  ],
+  "open_decisions": [
+    "world_extent",
+    "city_positions",
+    "relative_heights",
+    "faction_assignments",
+    "jungle_or_swamp",
+    "start_location",
+    "streaming_boundaries",
+    "site_names_and_positions",
+    "ore_type",
+    "tavern_service_rules",
+    "mine_deep_access"
+  ],
+  "notes": [
+    "Road elevations are design constraints, not sampled gameplay geometry.",
+    "Contour bands are schematic; this JSON is not a heightmap or navigation mesh.",
+    "Travel times exclude slope speed changes, stops, combat and exploration."
+  ],
+  "source_sha256": "5c8da589c5c5084bf52373db2748a4401d66b5cc6f6df5784bee8ae11b8d812c",
+  "ridges": [
+    {
+      "id": "north",
+      "label": "Северный хребет и восточный отрог",
+      "points": [
+        [
+          100,
+          260
+        ],
+        [
+          390,
+          230
+        ],
+        [
+          480,
+          350
+        ],
+        [
+          630,
+          470
+        ],
+        [
+          760,
+          330
+        ],
+        [
+          900,
+          190
+        ],
+        [
+          1130,
+          285
+        ],
+        [
+          1290,
+          430
+        ],
+        [
+          1180,
+          650
+        ],
+        [
+          1230,
+          840
+        ],
+        [
+          1180,
+          1020
+        ]
+      ]
+    }
+  ],
+  "gates": [
+    {
+      "id": "P1",
+      "label": "Западная седловина",
+      "point": [
+        630,
+        470,
+        205
+      ],
+      "road": "forest_snow",
+      "role": "Подъём из хвойного леса к снежным террасам."
+    },
+    {
+      "id": "P2",
+      "label": "Восточный перевал",
+      "point": [
+        1180,
+        650,
+        260
+      ],
+      "road": "snow_desert",
+      "role": "Выход из снежной чаши на сухую сторону."
+    },
+    {
+      "id": "D1",
+      "label": "Нижняя долина",
+      "point": [
+        1010,
+        1130,
+        78
+      ],
+      "road": "forest_desert",
+      "role": "Обход южнее конца отрога, без снежного города."
+    }
+  ],
+  "bridge_labels": [
+    {
+      "id": "B1",
+      "near": [
+        399,
+        898
+      ],
+      "label": "Высокий лесной берег"
+    },
+    {
+      "id": "B2",
+      "near": [
+        616,
+        1079
+      ],
+      "label": "Мост нижней долины"
+    },
+    {
+      "id": "B3",
+      "near": [
+        1650,
+        985
+      ],
+      "label": "Общий подход к тракту пустыни"
+    },
+    {
+      "id": "B4",
+      "near": [
+        1256,
+        1534
+      ],
+      "label": "Восточная переправа низин"
+    },
+    {
+      "id": "B5",
+      "near": [
+        983,
+        1627
+      ],
+      "label": "Западная переправа низин"
+    }
+  ],
+  "junctions": [
+    {
+      "id": "J1",
+      "point": [
+        1590,
+        1010,
+        111
+      ],
+      "label": "Общий западный подход к B3"
+    }
+  ],
+  "extra_ridges": [
+    [
+      [
+        1290,
+        430,
+        460
+      ],
+      [
+        1440,
+        500,
+        330
+      ],
+      [
+        1530,
+        660,
+        260
+      ],
+      [
+        1510,
+        790,
+        180
+      ]
+    ]
+  ],
+  "sites": [
+    {
+      "id": "start_hamlet",
+      "kind": "settlement",
+      "point": [
+        155,
+        1420,
+        52
+      ],
+      "key": "WORLD_SITE_START_HAMLET",
+      "label_ru": "Лесной посёлок",
+      "label_en": "Forest hamlet",
+      "early_access": true,
+      "interior_implemented": false,
+      "facing": [
+        75,
+        0,
+        -80
+      ]
+    },
+    {
+      "id": "west_hamlet",
+      "kind": "settlement",
+      "point": [
+        145,
+        760,
+        145
+      ],
+      "key": "WORLD_SITE_WEST_HAMLET",
+      "label_ru": "Посёлок у скал",
+      "label_en": "Cliffside hamlet",
+      "early_access": true,
+      "interior_implemented": false,
+      "facing": [
+        20,
+        0,
+        -80
+      ]
+    },
+    {
+      "id": "lowland_hamlet",
+      "kind": "settlement",
+      "point": [
+        1670,
+        1730,
+        24
+      ],
+      "key": "WORLD_SITE_LOWLAND_HAMLET",
+      "label_ru": "Посёлок низин",
+      "label_en": "Lowland hamlet",
+      "early_access": false,
+      "interior_implemented": false,
+      "facing": [
+        100,
+        0,
+        -90
+      ]
+    },
+    {
+      "id": "desert_hamlet",
+      "kind": "settlement",
+      "point": [
+        1870,
+        1120,
+        80
+      ],
+      "key": "WORLD_SITE_DESERT_HAMLET",
+      "label_ru": "Сухой привал",
+      "label_en": "Dry camp",
+      "early_access": false,
+      "interior_implemented": false,
+      "facing": [
+        -10,
+        0,
+        -40
+      ]
+    },
+    {
+      "id": "forest_inn",
+      "kind": "tavern",
+      "point": [
+        450,
+        1270,
+        70
+      ],
+      "key": "WORLD_SITE_FOREST_INN",
+      "label_ru": "Лесная таверна",
+      "label_en": "Forest inn",
+      "early_access": true,
+      "interior_implemented": false,
+      "facing": [
+        -30,
+        0,
+        -60
+      ],
+      "planned_services": [
+        "rest_stop",
+        "healing",
+        "sleep",
+        "drink",
+        "quests",
+        "save"
+      ]
+    },
+    {
+      "id": "crossroads_inn",
+      "kind": "tavern",
+      "point": [
+        1450,
+        1190,
+        97
+      ],
+      "key": "WORLD_SITE_CROSSROADS_INN",
+      "label_ru": "Таверна у развилки",
+      "label_en": "Crossroads inn",
+      "early_access": false,
+      "interior_implemented": false,
+      "facing": [
+        10,
+        0,
+        -50
+      ],
+      "planned_services": [
+        "rest_stop",
+        "healing",
+        "sleep",
+        "drink",
+        "quests",
+        "save"
+      ]
+    },
+    {
+      "id": "forest_cave",
+      "kind": "cave",
+      "point": [
+        115,
+        1170,
+        82
+      ],
+      "key": "WORLD_SITE_FOREST_CAVE",
+      "label_ru": "Лесная пещера",
+      "label_en": "Forest cave",
+      "early_access": true,
+      "interior_implemented": false,
+      "facing": [
+        -40,
+        0,
+        60
+      ]
+    },
+    {
+      "id": "foothill_cave",
+      "kind": "cave",
+      "point": [
+        310,
+        525,
+        195
+      ],
+      "key": "WORLD_SITE_FOOTHILL_CAVE",
+      "label_ru": "Пещера предгорий",
+      "label_en": "Foothill cave",
+      "early_access": true,
+      "interior_implemented": false,
+      "facing": [
+        -110,
+        0,
+        5
+      ]
+    },
+    {
+      "id": "lowland_cave",
+      "kind": "cave",
+      "point": [
+        640,
+        1770,
+        20
+      ],
+      "key": "WORLD_SITE_LOWLAND_CAVE",
+      "label_ru": "Пещера низин",
+      "label_en": "Lowland cave",
+      "early_access": true,
+      "interior_implemented": false,
+      "facing": [
+        -50,
+        0,
+        -130
+      ]
+    },
+    {
+      "id": "crown_mine",
+      "kind": "mine",
+      "point": [
+        1100,
+        220,
+        385
+      ],
+      "key": "WORLD_SITE_CROWN_MINE",
+      "label_ru": "Горная шахта",
+      "label_en": "Mountain mine",
+      "early_access": false,
+      "interior_implemented": false,
+      "facing": [
+        90,
+        0,
+        60
+      ]
+    }
+  ],
+  "progression": {
+    "start_site": "start_hamlet",
+    "soft_gate": {
+      "center": [
+        300,
+        1240,
+        67
+      ],
+      "rule": "Stronger creatures beyond local forest; evasion is allowed; no level wall",
+      "implemented": false
+    },
+    "mine": {
+      "site": "crown_mine",
+      "control": "who_holds_throne_controls_mine",
+      "valuable_resource": "undecided",
+      "ancient_encounter": "late_deep_section_not_early_caves",
+      "implemented": false
+    }
+  },
+  "source_path": "docs/design/world-connections-v1/world-connections.json",
+  "previous_changes_v03": [
+    "Три проектных пересечения v0.2 имели дорогу ниже воды; исправлены отметки/подходы.",
+    "Два близких перехода перед пустынным городом сведены к одному B3; город сохранён на +100 м.",
+    "У восточной переправы низин B4 предложен настил +38 м; старый интерполированный профиль был ниже реки.",
+    "Габарит, координаты/высоты городов, русла и общий граф из пяти дорог сохранены.",
+    "Хребет дополнен западной седловиной P1; P2 использует прежний перевал, D1 проходит южнее отрога.",
+    "Перед B3 добавлена общая развилка J1 на западном берегу; северный подход разведен с долинной дорогой, чтобы убрать случайное пересечение."
+  ],
+  "changes": [
+    "Пустынный город перенесён с (1650,930,+100) на (1710,420,+155); прежний узел сохранён как подход к внутренней дороге пустыни.",
+    "Добавлены четыре малых поселения, две таверны, три ранние пещеры и отдельная горная шахта.",
+    "Боковые тропы образуют две новые петли; главный граф и две горные седловины сохранены.",
+    "Верхняя восточная река сужена до 2–3 м, плавно расширяется в низины до 12 м."
+  ]
+}
