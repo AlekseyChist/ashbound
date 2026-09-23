@@ -6,7 +6,7 @@ import {createHash} from 'node:crypto';
 const root=path.resolve(import.meta.dirname,'..'),args=process.argv.slice(2);
 const opt=(key,fallback)=>args.includes(key)?args[args.indexOf(key)+1]:fallback;
 const baseline=path.resolve(opt('--baseline-root',root));
-const gait=args.includes('--side-gait'),motion=args.includes('--side-run'),qa=args.includes('--validate')||motion||gait,name=gait?'side-gait-validation':motion?'side-run-validation':qa?'forest-route-validation':'forest-route-preview';
+const painted=args.includes('--painted-motion'),gait=args.includes('--side-gait'),motion=args.includes('--side-run'),qa=args.includes('--validate')||motion||gait||painted,name=painted?'painted-motion-validation':gait?'side-gait-validation':motion?'side-run-validation':qa?'forest-route-validation':'forest-route-preview';
 const stage=path.join(root,'.tools/export-staging',name),out=path.join(root,'.tools/forest-route-checks');
 const sha=p=>createHash('sha256').update(fs.readFileSync(p)).digest('hex');
 const files=execFileSync('git',['ls-files','--cached','--others','--exclude-standard'],{cwd:root,encoding:'utf8',windowsHide:true}).trim().split(/\r?\n/);
@@ -24,9 +24,9 @@ for(const[f,h]of Object.entries(checkpoint.savedLocalFiles))if(f.endsWith('.impo
 }
 const cache=path.join(baseline,'.tools/export-staging/dodge-preview/.godot/imported');
 if(fs.existsSync(cache)&&!fs.existsSync(path.join(stage,'.godot/imported')))fs.cpSync(cache,path.join(stage,'.godot/imported'),{recursive:true});
-const version='0.19.2-side-gait',code=47;
-const scene=gait?'scripts/tools/validate_side_gait.tscn':motion?'scripts/tools/validate_side_run.tscn':qa?'scripts/tools/validate_forest_route.tscn':'scenes/world/forest_route.tscn';
-const packageId=gait?'org.ashbound.gaitvalidation':motion?'org.ashbound.motionvalidation':qa?'org.ashbound.forestvalidation':'org.ashbound.forestroute';
+const version='0.19.3-painted-motion',code=48;
+const scene=painted?'scripts/tools/validate_painted_motion.tscn':gait?'scripts/tools/validate_side_gait.tscn':motion?'scripts/tools/validate_side_run.tscn':qa?'scripts/tools/validate_forest_route.tscn':'scenes/world/forest_route.tscn';
+const packageId=painted?'org.ashbound.paintedmotionvalidation':gait?'org.ashbound.gaitvalidation':motion?'org.ashbound.motionvalidation':qa?'org.ashbound.forestvalidation':'org.ashbound.forestroute';
 let project=fs.readFileSync(path.join(stage,'project.godot'),'utf8')
  .replace(/run\/main_scene="[^"]+"/,`run/main_scene="res://${scene}"`)
  .replace('config/name="ASHBOUND"',`config/name="AshBound Forest Route${qa?' QA':''}"`)
