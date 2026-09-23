@@ -11,6 +11,7 @@ signal run_changed(enabled: bool)
 
 const MIN_SIZE := Vector2(960, 540)
 const ROOT_RES := Vector2(1920, 1080)
+const UI_THEME := preload("res://assets/ui/ashbound_ui.tres")
 
 @export var force_touch_controls: bool = false
 
@@ -97,6 +98,7 @@ func _ready() -> void:
 		_legend_label.position = Vector2(0, 320)
 
 	_apply_styles()
+	_btn_run.draw.connect(_draw_run_marker)
 
 	# One pointer path owns both real mouse and touch; GUI must not toggle twice.
 	for b in _all_buttons():
@@ -121,53 +123,9 @@ func _all_buttons() -> Array[Button]:
 
 
 func _apply_styles() -> void:
-	var charcoal := Color(0.13, 0.14, 0.16, 0.92)
-	var gold := Color(0.72, 0.58, 0.32)
-	var body := Color(0.93, 0.90, 0.84)
-
-	var panel_style := StyleBoxFlat.new()
-	panel_style.bg_color = charcoal
-	panel_style.border_width_left = 1
-	panel_style.border_width_top = 1
-	panel_style.border_width_right = 1
-	panel_style.border_width_bottom = 1
-	panel_style.border_color = gold
-	panel_style.set_corner_radius_all(6)
-	panel_style.content_margin_left = 14.0
-	panel_style.content_margin_top = 10.0
-	panel_style.content_margin_right = 14.0
-	panel_style.content_margin_bottom = 10.0
-
-	for p in [$RootControl/TopLeftPanel, $RootControl/MessagePanel]:
-		p.add_theme_stylebox_override("panel", panel_style)
-
-	var btn_style := StyleBoxFlat.new()
-	btn_style.bg_color = Color(0.17, 0.18, 0.21, 0.95)
-	btn_style.border_width_left = 1
-	btn_style.border_width_top = 1
-	btn_style.border_width_right = 1
-	btn_style.border_width_bottom = 1
-	btn_style.border_color = gold
-	btn_style.set_corner_radius_all(8)
-	btn_style.content_margin_left = 12.0
-	btn_style.content_margin_top = 8.0
-	btn_style.content_margin_right = 12.0
-	btn_style.content_margin_bottom = 8.0
-
-	var btn_hover := btn_style.duplicate()
-	btn_hover.bg_color = Color(0.22, 0.23, 0.27, 0.95)
-
-	var btn_pressed := btn_style.duplicate()
-	btn_pressed.bg_color = Color(0.28, 0.26, 0.22, 1.0)
-
-	for b in _all_buttons():
-		b.add_theme_stylebox_override("normal", btn_style)
-		b.add_theme_stylebox_override("hover", btn_hover)
-		b.add_theme_stylebox_override("pressed", btn_pressed)
-		b.add_theme_color_override("font_color", body)
-		b.add_theme_color_override("font_hover_color", body)
-		b.add_theme_color_override("font_pressed_color", body)
-		b.add_theme_font_size_override("font_size", 30)
+	_root.theme = UI_THEME
+	var gold: Color = (UI_THEME.get_stylebox("normal", "Button") as StyleBoxFlat).border_color
+	var body := UI_THEME.get_color("font_color", "Button")
 
 	# Заголовок: приглушённое золото, разрядка букв.
 	var title := $RootControl/TopLeftPanel/VBox/TitleLabel
@@ -265,7 +223,7 @@ func _refresh_localized_texts() -> void:
 	if _btn_restart:
 		_btn_restart.text = Localization.text("UI_RESTART")
 	if _btn_run:
-		_btn_run.text = Localization.text("UI_ACTION_RUN" if _run_enabled else "UI_ACTION_WALK")
+		_btn_run.text = Localization.text("UI_ACTION_RUN")
 	if _speaker_label:
 		_speaker_label.text = Localization.text(_speaker_key) if not _speaker_key.is_empty() else ""
 	# Обновляем текст открытого сообщения; закрытое не открываем.
@@ -568,10 +526,20 @@ func _set_run_mode(enabled: bool, emit_change: bool) -> void:
 		return
 	_run_enabled = enabled
 	if is_node_ready() and _btn_run:
-		_btn_run.text = Localization.text("UI_ACTION_RUN" if enabled else "UI_ACTION_WALK")
+		_btn_run.text = Localization.text("UI_ACTION_RUN")
 		_btn_run.button_pressed = enabled
+		_btn_run.queue_redraw()
 	if emit_change:
 		run_changed.emit(enabled)
+
+
+func _draw_run_marker() -> void:
+	if not _run_enabled or not is_instance_valid(_btn_run):
+		return
+	# Geometry keeps the selected marker independent of font glyph coverage.
+	var x := _btn_run.size.x - 26.0
+	var ink := _btn_run.get_theme_color("font_disabled_color" if _btn_run.disabled else "font_color")
+	_btn_run.draw_polyline(PackedVector2Array([Vector2(x - 7, 23), Vector2(x - 2, 28), Vector2(x + 8, 16)]), ink, 2.0, true)
 
 
 func _on_message_gui_input(event: InputEvent) -> void:

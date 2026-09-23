@@ -3,7 +3,6 @@ extends SceneTree
 var _errors: PackedStringArray = []
 var _strikes: int = 0
 var _run_text := "Бег"
-var _walk_text := "Ходьба"
 
 func _initialize() -> void:
 	_run.call_deferred()
@@ -12,7 +11,6 @@ func _run() -> void:
 	var language := "en" if OS.get_cmdline_user_args().has("--locale=en") else "ru"
 	root.get_node("Localization").load_preferences("res://.tools/courtyard-touch-qa.cfg", language)
 	_run_text = "Run" if language == "en" else "Бег"
-	_walk_text = "Walk" if language == "en" else "Ходьба"
 	root.size = Vector2i(1920, 1080)
 	var scene: Node = load("res://scenes/courtyard/first_courtyard.tscn").instantiate()
 	var hud: Node = scene.get_node("HUD")
@@ -51,8 +49,8 @@ func _run() -> void:
 	await _frames(2)
 	if player._touch_run:
 		_errors.append("second tap did not toggle off")
-	if str(run_btn.text) != _walk_text:
-		_errors.append("second tap text not Ходьба")
+	if str(run_btn.text) != _run_text:
+		_errors.append("second tap changed stable Run label")
 
 	# --- 2. Right hold + run tap, speed, release ---
 	touch(10, right_center, true)
@@ -136,8 +134,8 @@ func _run() -> void:
 	# --- 5. reset_lesson + focus out ---
 	scene.reset_lesson()
 	await _frames(2)
-	if str(run_btn.text) != _walk_text:
-		_errors.append("reset: text not Ходьба")
+	if str(run_btn.text) != _run_text:
+		_errors.append("reset changed stable Run label")
 	if hud._run_enabled:
 		_errors.append("reset: _run_enabled true")
 	if player._touch_run:
@@ -152,8 +150,8 @@ func _run() -> void:
 	await _frames(2)
 	if hud._run_enabled:
 		_errors.append("focus out: _run_enabled true")
-	if str(run_btn.text) != _walk_text:
-		_errors.append("focus out: text not Ходьба")
+	if str(run_btn.text) != _run_text:
+		_errors.append("focus out changed stable Run label")
 	if player._touch_run:
 		_errors.append("focus out: run stuck")
 	if player._touch_move != Vector2.ZERO:
