@@ -3,10 +3,13 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {execFileSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
+import {stageWalkPhonePreview} from './walk-phone-preview.mjs';
 const root=path.resolve(import.meta.dirname,'..'),args=process.argv.slice(2);
 const opt=(key,fallback)=>args.includes(key)?args[args.indexOf(key)+1]:fallback;
 const baseline=path.resolve(opt('--baseline-root',root));
-const painted=args.includes('--painted-motion'),gait=args.includes('--side-gait'),motion=args.includes('--side-run'),qa=args.includes('--validate')||motion||gait||painted,name=painted?'painted-motion-validation':gait?'side-gait-validation':motion?'side-run-validation':qa?'forest-route-validation':'forest-route-preview';
+const walk=args.includes('--walk-preview');
+if(walk && ['--validate','--painted-motion','--side-gait','--side-run'].some(v=>args.includes(v)))throw Error('Walk preview is a playable app; validation modes must be separate.');
+const painted=args.includes('--painted-motion'),gait=args.includes('--side-gait'),motion=args.includes('--side-run'),qa=args.includes('--validate')||motion||gait||painted,name=walk?'walk-phone-preview':painted?'painted-motion-validation':gait?'side-gait-validation':motion?'side-run-validation':qa?'forest-route-validation':'forest-route-preview';
 const stage=path.join(root,'.tools/export-staging',name),out=path.join(root,'.tools/forest-route-checks');
 const sha=p=>createHash('sha256').update(fs.readFileSync(p)).digest('hex');
 const files=execFileSync('git',['ls-files','--cached','--others','--exclude-standard'],{cwd:root,encoding:'utf8',windowsHide:true}).trim().split(/\r?\n/);
@@ -24,36 +27,39 @@ for(const[f,h]of Object.entries(checkpoint.savedLocalFiles))if(f.endsWith('.impo
 }
 const cache=path.join(baseline,'.tools/export-staging/dodge-preview/.godot/imported');
 if(fs.existsSync(cache)&&!fs.existsSync(path.join(stage,'.godot/imported')))fs.cpSync(cache,path.join(stage,'.godot/imported'),{recursive:true});
-const version='0.19.3-painted-motion',code=48;
+const preview=walk?stageWalkPhonePreview(root,stage):null;
+const version=walk?'0.19.4-walk-preview':'0.19.3-painted-motion',code=walk?49:48;
+const title=walk?'AshBound Walk Preview':`AshBound Forest Route${qa?' QA':''}`;
 const scene=painted?'scripts/tools/validate_painted_motion.tscn':gait?'scripts/tools/validate_side_gait.tscn':motion?'scripts/tools/validate_side_run.tscn':qa?'scripts/tools/validate_forest_route.tscn':'scenes/world/forest_route.tscn';
-const packageId=painted?'org.ashbound.paintedmotionvalidation':gait?'org.ashbound.gaitvalidation':motion?'org.ashbound.motionvalidation':qa?'org.ashbound.forestvalidation':'org.ashbound.forestroute';
+const packageId=walk?'org.ashbound.walkpreview':painted?'org.ashbound.paintedmotionvalidation':gait?'org.ashbound.gaitvalidation':motion?'org.ashbound.motionvalidation':qa?'org.ashbound.forestvalidation':'org.ashbound.forestroute';
 let project=fs.readFileSync(path.join(stage,'project.godot'),'utf8')
  .replace(/run\/main_scene="[^"]+"/,`run/main_scene="res://${scene}"`)
- .replace('config/name="ASHBOUND"',`config/name="AshBound Forest Route${qa?' QA':''}"`)
+ .replace('config/name="ASHBOUND"',`config/name="${title}"`)
  .replace(/config\/version="[^"]+"/,`config/version="${version}"`)
  .replace('version_control/autoload_on_startup=true','version_control/autoload_on_startup=false')
  .replace('window/size/mode=2','window/size/mode=0')
- .replace('[application]',`[application]\nconfig/use_custom_user_dir=true\nconfig/custom_user_dir_name="AshBound_Forest_Route${qa?'_QA':''}"`);
+ .replace('[application]',`[application]\nconfig/use_custom_user_dir=true\nconfig/custom_user_dir_name="${walk?'AshBound_Walk_Preview':`AshBound_Forest_Route${qa?'_QA':''}`}"`);
 fs.writeFileSync(path.join(stage,'project.godot'),project);
 const resources=[scene,'scenes/world/forest_route.tscn',...['forest_route','forest_route_layout','forest_route_environment'].map(n=>'scripts/world/'+n+'.gd')];
 let presets=fs.readFileSync(path.join(stage,'export_presets.cfg'),'utf8')
  .replaceAll('export_files=PackedStringArray(',`export_files=PackedStringArray(${resources.map(v=>JSON.stringify('res://'+v)).join(', ')}, `)
  .replaceAll('org.ashbound.courtyard',packageId)
- .replaceAll('package/name="AshBound Courtyard"',`package/name="AshBound Forest Route${qa?' QA':''}"`)
+ .replaceAll('package/name="AshBound Courtyard"',`package/name="${title}"`)
  .replace(/version\/code=\d+/,`version/code=${code}`)
  .replace(/version\/name="[^"]+"/,`version/name="${version}"`);
 fs.writeFileSync(path.join(stage,'export_presets.cfg'),presets);
 fs.mkdirSync(path.join(stage,'.tools'),{recursive:true});
 fs.writeFileSync(path.join(out,name+'-sources.json'),JSON.stringify(manifest,null,2));
+if(preview)fs.writeFileSync(path.join(out,name+'-preview.json'),JSON.stringify(preview,null,2));
 const godot=process.env.ASHBOUND_GODOT||path.join(baseline,'.tools/godot/Godot_v4.7.2-stable_win64_console.exe');
 run('import',['--editor','--import','--quit']);
 if(!args.includes('--stage-only')){
  const android=path.join(root,`.tools/builds/android/ashbound-${name}.apk`);
- const windows=path.join(root,'.tools/builds/forest-route/AshBound-Forest-Route.exe');
+ const windows=path.join(root,walk?'.tools/builds/walk-phone-preview/AshBound-Walk-Preview.exe':'.tools/builds/forest-route/AshBound-Forest-Route.exe');
  fs.mkdirSync(path.dirname(android),{recursive:true});fs.mkdirSync(path.dirname(windows),{recursive:true});
  run('android',['--export-debug','Android Courtyard',android]);
  if(!qa)run('windows',['--export-debug','Windows Courtyard',windows]);
- const result={version,code,packageId,android,apkSHA256:sha(android),...(!qa?{windows,exeSHA256:sha(windows)}:{})};
+ const result={version,code,packageId,android,apkSHA256:sha(android),...(preview?{preview}:{}),...(!qa?{windows,exeSHA256:sha(windows)}:{})};
  fs.writeFileSync(path.join(out,name+'-artifacts.json'),JSON.stringify(result,null,2));console.log(JSON.stringify(result));
 }
 function run(label,options){
