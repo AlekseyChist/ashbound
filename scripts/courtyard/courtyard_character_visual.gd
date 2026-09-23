@@ -10,6 +10,45 @@ signal inventory_access_finished()
 var _current_action: StringName = &""
 var _current_view: StringName = &"back"
 
+# Only presentation is interpolated; collisions, facing and combat stay on physics ticks.
+var _previous_position := Vector3.ZERO
+var _physics_position := Vector3.ZERO
+var _motion_ready := false
+var _ground_shadow: Node3D
+var _ground_shadow_offset := Vector3.ZERO
+
+
+func reset_motion_interpolation() -> void:
+	var actor := get_parent() as Node3D
+	if actor == null:
+		return
+	_physics_position = actor.global_position
+	_previous_position = _physics_position
+	_motion_ready = true
+
+
+func _physics_process(_delta: float) -> void:
+	var actor := get_parent() as Node3D
+	if actor == null:
+		return
+	# Sample after the actor (including dodge/hitstop overrides). Large relocations
+	# must snap; ordinary scene resets also call reset via camera.snap_to_target().
+	if not _motion_ready or actor.global_position.distance_to(_physics_position) > 1.0:
+		reset_motion_interpolation()
+	else:
+		_previous_position = _physics_position
+		_physics_position = actor.global_position
+
+
+func get_render_position() -> Vector3:
+	var actor := get_parent() as Node3D
+	if actor == null:
+		return global_position
+	if not _motion_ready or not actor.is_physics_processing() or not actor.can_process() \
+			or not actor.global_position.is_equal_approx(_physics_position):
+		reset_motion_interpolation()
+	return _previous_position.lerp(_physics_position, Engine.get_physics_interpolation_fraction())
+
 # --- Pocket gesture state ---
 var _pocket_active := false
 var _pocket_finished := false
@@ -85,6 +124,12 @@ func _ready() -> void:
 	# Камера обрабатывается на priority 0, рюкзак — на 10;
 	# визуал героя должен обновляться после обоих.
 	process_priority = 100
+	process_physics_priority = 100
+	reset_motion_interpolation()
+	_ground_shadow = get_parent().get_node_or_null("GroundShadow") as Node3D
+	if _ground_shadow != null:
+		_ground_shadow_offset = _ground_shadow.position
+		_ground_shadow.top_level = true
 	# Тени-прокси создаются напрямую: _make_shadow_proxy добавляет детей
 	# в этот Visual во время собственного _ready, а не в занятого родителя.
 	_make_shadow_proxy($Body, "BodyShadow")
@@ -96,6 +141,9 @@ func _ready() -> void:
 
 
 func _process(_delta: float) -> void:
+	global_position = get_render_position()
+	if _ground_shadow != null:
+		_ground_shadow.global_position = global_position + get_parent().global_basis * _ground_shadow_offset
 	var camera := get_viewport().get_camera_3d()
 	if camera != null:
 		# Поворачиваем весь Visual целиком (якорь — ноги, origin 0):
@@ -166,7 +214,9 @@ func _sync_shadow(source: AnimatedSprite3D, shadow: AnimatedSprite3D) -> void:
 	shadow.axis = source.axis
 	# Глобальная позиция: тень остаётся вертикальной под актором,
 	# несмотря на вращение самого Visual.
-	shadow.global_transform = get_parent().global_transform * Transform3D(Basis.IDENTITY, source.position)
+	var upright_transform: Transform3D = get_parent().global_transform
+	upright_transform.origin = global_position
+	shadow.global_transform = upright_transform * Transform3D(Basis.IDENTITY, source.position)
 
 
 ## Текущее визуальное направление.

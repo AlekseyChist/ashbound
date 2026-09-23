@@ -46,7 +46,9 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if target == null or not is_instance_valid(target):
 		return
-	var desired := target.global_position + Vector3(0.0, follow_height, 0.0)
+	var visual := target.get_node_or_null("Visual") as CourtyardCharacterVisual
+	var follow_position := visual.get_render_position() if visual != null else target.global_position
+	var desired := follow_position + Vector3(0.0, follow_height, 0.0)
 	var t: float = clampf(1.0 - exp(-follow_speed * delta), 0.0, 1.0)
 	global_position = global_position.lerp(desired, t)
 
@@ -62,6 +64,9 @@ func set_target(node: Node3D) -> void:
 func snap_to_target() -> void:
 	if target == null or not is_instance_valid(target):
 		return
+	var visual := target.get_node_or_null("Visual") as CourtyardCharacterVisual
+	if visual != null:
+		visual.reset_motion_interpolation()
 	global_position = target.global_position + Vector3(0.0, follow_height, 0.0)
 
 
