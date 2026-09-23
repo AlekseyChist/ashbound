@@ -1,0 +1,19 @@
+Edit target: the supplied 8-pose walking sprite sheet. Supporting model sheet: the supplied single complete walking man is the ONLY approved model for the face, hair, head dimensions, shoulders, torso and outfit.
+
+Repair the whole walking cycle for a finished 2D character in a 3D RPG. Return ONE true transparent RGBA sprite sheet, width:height exactly 2:1, FOUR equal square columns by TWO equal square rows, exactly EIGHT whole-body poses ordered chronologically. Keep the same handmade detailed dark brown/cream illustration style. This is not pixel art, no 3D mannequin, no outlines or captions outside the man. No backpack or weapon.
+
+The important defect to fix: the input walking sheet is stitched together from different drawings, so his face and head volume change, his chest suddenly narrows/widens, and his torso rotates toward the camera between frames. REPAINT all eight COMPLETE figures as ONE CONSISTENT ANIMATOR'S MODEL. Every head must look exactly like the supporting single-pose man's head: same swept tousled dark hair silhouette and locks, same hair volume, jaw, nose, beard, eyes, ears, same looking-right direction, same skin tone and lighting. Keep the head angle and camera azimuth unchanged throughout the cycle. Keep the neck length, shoulder width, sternum position and belt-to-neck length constant. Chest stays facing the exact same near-side view as the anchor, no switch to front view or back view on the second half of the step. Subtle shoulder counter-motion is fine but not different perspective. Keep the same boots, pants, split brown leather coat, cream rolled sleeves, belt and buckle, texture density, consistent flat diffuse light. Do not make a new face or change costumes.
+
+A relaxed grounded natural WALK, not running or high-knee marching. Upright torso, legs stepping underneath the pelvis, low knee lift on passing pose, heel-to-toe roll, at least one foot in contact with a consistent ground line in each frame. Almost steady head/shoulder height with only a small natural vertical oscillation, under 1% of body height. Same anatomical scale and root position in every cell, equal margins and a generous transparent border. Same apparent head size in all cells. Do not normalize frames by fitting a different bounding box. Arms alternate naturally opposite to the legs; hands loosely relaxed, not fists. Both HALF-STEPS MUST be present, swapping which anatomical leg and arm are in front (not flipping the whole body). The man faces right in all eight cells.
+
+Animation order, read left to right in top row then bottom row:
+1 near/visible leg reaches forward with heel contacting ground, far leg extended behind on toes, near arm behind and far arm in front;
+2 weight goes onto near leg, near sole flattens, far foot leaves the ground, arms move slightly toward neutral;
+3 near leg supports vertically under the pelvis, far lower leg passes it with a LOW bent knee, arms near their middle;
+4 near leg pushes off behind on toes, far heel travels forward just above ground, near arm moving forward;
+5 opposite contact: far leg forward with heel on ground, near leg extended back on toes, near arm in front, far arm behind;
+6 weight onto far leg, near foot leaves ground;
+7 far leg supports under pelvis, near lower leg passes with a LOW bent knee;
+8 far leg pushes behind, near heel reaches ahead just above ground, arms return toward phase 1 so phase 8 to phase 1 is continuous.
+
+Each figure is a coherent complete finished drawing. Keep the first source model's face/head/torso proportions and paint discipline, but make the eight poses consistent across the ENTIRE sheet. All 8 heads should be recognizably the very same drawing/model with no morphing, no squashing, no baldness/hair-volume changes. Genuine alpha background, NO background color, checkerboard, floor, cast shadows, text, grid borders, motion trails or FX.
