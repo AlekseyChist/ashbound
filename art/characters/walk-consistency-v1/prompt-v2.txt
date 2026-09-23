@@ -1,0 +1,11 @@
+Targeted correction of this single sprite sheet. Keep its exact 4-column / 2-row layout, same sheet aspect ratio 2:1, same complete man facing right in all eight cells, and transparent RGBA background.
+
+The HEADS, FACES, HAIR, NECKS, SHOULDERS, CHEST, BELT, costume, scale, and camera angle in this sheet are now CONSISTENT and APPROVED FOR THIS EDIT. Preserve all of those regions faithfully with no redrawing, no restyling, no change of the man's face, no chest width changes. Keep the existing distinct arm movements as much as possible. Do not move the head or torso or change their scale. Do not adjust individual figure sizes.
+
+Correct ONLY the walking LEG/FOOT motion below the coat:
+- Every frame is a WALK, so at least one foot must touch the same horizontal ground level relative to its cell. No jumping, no both-feet airborne.
+- Last cell (bottom row, column four / frame 8): keep upper body exactly where it is, but extend the supporting BACK leg down naturally until its toe touches the same floor baseline as frame 5. The forward heel should be just above the baseline, ready for frame 1 contact. Currently the whole man is visibly floating too high above the floor in that cell.
+- Passing poses in top and bottom row, column three / frames 3 and 7: relax and LOWER the lifted knee. The swinging foot should pass LOW beside the grounded ankle, toes slightly up, not raised almost to the opposite knee. This is ordinary relaxed walking, not a high-knee march. Maintain the opposite leg as a straight-ish weight-bearing support.
+- Preserve the actual alternation of near and far anatomical legs between the first and second half of the cycle. Keep opposite contact poses in frame 1 and 5.
+
+Retain all eight COMPLETE whole-body drawings, alpha and generous borders. Keep all heads and torso widths truly identical in proportion and fixed perspective across frames. No grid lines, no text, no ground shadows, no background. Do not touch any other action or invent extra characters.

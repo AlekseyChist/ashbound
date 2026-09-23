@@ -1,0 +1,166 @@
+{
+  "rows": [
+    {
+      "frame": 0,
+      "source_rect": [
+        0,
+        0,
+        444,
+        444
+      ],
+      "whole_cell_scale": 0.75,
+      "whole_cell_offset": [
+        0,
+        56
+      ],
+      "alpha_bounds": [
+        75,
+        73,
+        291,
+        376
+      ]
+    },
+    {
+      "frame": 1,
+      "source_rect": [
+        444,
+        0,
+        887,
+        444
+      ],
+      "whole_cell_scale": 0.75,
+      "whole_cell_offset": [
+        0,
+        56
+      ],
+      "alpha_bounds": [
+        99,
+        73,
+        259,
+        376
+      ]
+    },
+    {
+      "frame": 2,
+      "source_rect": [
+        887,
+        0,
+        1330,
+        444
+      ],
+      "whole_cell_scale": 0.75,
+      "whole_cell_offset": [
+        0,
+        56
+      ],
+      "alpha_bounds": [
+        145,
+        73,
+        246,
+        376
+      ]
+    },
+    {
+      "frame": 3,
+      "source_rect": [
+        1330,
+        0,
+        1774,
+        444
+      ],
+      "whole_cell_scale": 0.75,
+      "whole_cell_offset": [
+        0,
+        56
+      ],
+      "alpha_bounds": [
+        89,
+        73,
+        293,
+        376
+      ]
+    },
+    {
+      "frame": 4,
+      "source_rect": [
+        0,
+        444,
+        444,
+        887
+      ],
+      "whole_cell_scale": 0.75,
+      "whole_cell_offset": [
+        0,
+        56
+      ],
+      "alpha_bounds": [
+        74,
+        73,
+        301,
+        375
+      ]
+    },
+    {
+      "frame": 5,
+      "source_rect": [
+        444,
+        444,
+        887,
+        887
+      ],
+      "whole_cell_scale": 0.75,
+      "whole_cell_offset": [
+        0,
+        56
+      ],
+      "alpha_bounds": [
+        100,
+        72,
+        259,
+        374
+      ]
+    },
+    {
+      "frame": 6,
+      "source_rect": [
+        887,
+        444,
+        1330,
+        887
+      ],
+      "whole_cell_scale": 0.75,
+      "whole_cell_offset": [
+        0,
+        56
+      ],
+      "alpha_bounds": [
+        144,
+        73,
+        243,
+        374
+      ]
+    },
+    {
+      "frame": 7,
+      "source_rect": [
+        1330,
+        444,
+        1774,
+        887
+      ],
+      "whole_cell_scale": 0.75,
+      "whole_cell_offset": [
+        0,
+        56
+      ],
+      "alpha_bounds": [
+        94,
+        72,
+        294,
+        373
+      ]
+    }
+  ],
+  "per_pose_fitting": false,
+  "limb_transforms": false
+}
