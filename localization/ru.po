@@ -618,3 +618,51 @@ msgstr "2 × 2 км · Вращение пальцем · + / − масштаб
 #: scripts/world/world_graybox.gd
 msgid "WORLD_WALK_HELP"
 msgstr "Макет рельефа · Стрелки / WASD: шаг · Shift: бег · Справа: обзор · Tab: карта"
+
+#. World exploration graybox; working place label.
+msgid "WORLD_SITE_START_HAMLET"
+msgstr "Лесной посёлок"
+
+#. World exploration graybox; working place label.
+msgid "WORLD_SITE_WEST_HAMLET"
+msgstr "Посёлок у скал"
+
+#. World exploration graybox; working place label.
+msgid "WORLD_SITE_LOWLAND_HAMLET"
+msgstr "Посёлок низин"
+
+#. World exploration graybox; working place label.
+msgid "WORLD_SITE_DESERT_HAMLET"
+msgstr "Сухой привал"
+
+#. World exploration graybox; working place label.
+msgid "WORLD_SITE_FOREST_INN"
+msgstr "Лесная таверна"
+
+#. World exploration graybox; working place label.
+msgid "WORLD_SITE_CROSSROADS_INN"
+msgstr "Таверна у развилки"
+
+#. World exploration graybox; working place label.
+msgid "WORLD_SITE_FOREST_CAVE"
+msgstr "Лесная пещера"
+
+#. World exploration graybox; working place label.
+msgid "WORLD_SITE_FOOTHILL_CAVE"
+msgstr "Пещера предгорий"
+
+#. World exploration graybox; working place label.
+msgid "WORLD_SITE_LOWLAND_CAVE"
+msgstr "Пещера низин"
+
+#. World exploration graybox; working place label.
+msgid "WORLD_SITE_CROWN_MINE"
+msgstr "Горная шахта"
+
+#. World exploration graybox; working place label.
+msgid "WORLD_LOCATIONS"
+msgstr "Места"
+
+#. World exploration graybox; working place label.
+msgid "WORLD_SITE_HINT"
+msgstr "Макеты входов; услуги и интерьеры — в плане."

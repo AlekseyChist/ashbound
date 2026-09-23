@@ -27,7 +27,7 @@ if(fs.existsSync(checkpointPath)){
 }
 const cache=path.join(root,'.tools/export-staging/walk-phone-preview/.godot/imported');
 if(fs.existsSync(cache)&&!fs.existsSync(path.join(stage,'.godot/imported')))fs.cpSync(cache,path.join(stage,'.godot/imported'),{recursive:true});
-const version='0.21.0-world-graybox',code=50;
+const version='0.21.1-world-exploration',code=51;
 const title=`AshBound World Graybox${qa?' QA':''}`;
 const scene=qa?'scripts/tools/validate_world_graybox.tscn':'scenes/world/world_graybox.tscn';
 const packageId=qa?'org.ashbound.worldgrayboxvalidation':'org.ashbound.worldgraybox';
@@ -39,6 +39,7 @@ let project=fs.readFileSync(path.join(stage,'project.godot'),'utf8')
  .replace('window/size/mode=2','window/size/mode=0')
  .replace('[application]',`[application]\nconfig/use_custom_user_dir=true\nconfig/custom_user_dir_name="AshBound_World_Graybox${qa?'_QA':''}"`);
 fs.writeFileSync(path.join(stage,'project.godot'),project);
+if(qa&&args.includes('--ui-only'))fs.appendFileSync(path.join(stage,'project.godot'),'\n[ashbound]\nqa/screens_only=true\n');
 const resources=[scene,'scenes/world/world_graybox.tscn',...files.filter(f=>f.startsWith('scripts/world/world_graybox')||f.startsWith('assets/world/graybox-v1/')||f.startsWith('assets/characters/world-graybox-v1/')).filter(f=>!f.endsWith('.import')&&!f.endsWith('.uid'))];
 let presets=fs.readFileSync(path.join(stage,'export_presets.cfg'),'utf8')
  .replaceAll('export_files=PackedStringArray(',`export_files=PackedStringArray(${resources.map(v=>JSON.stringify('res://'+v)).join(', ')}, `)
@@ -57,7 +58,7 @@ if(!args.includes('--stage-only')){
  fs.mkdirSync(path.dirname(android),{recursive:true});fs.mkdirSync(path.dirname(windows),{recursive:true});
  run('android',['--export-debug','Android Courtyard',android]);
  if(!qa)run('windows',['--export-debug','Windows Courtyard',windows]);
- const result={version,code,packageId,android,apkSHA256:sha(android),...(!qa?{windows,exeSHA256:sha(windows)}:{})};
+ const result={version,code,packageId,android,apkSHA256:sha(android),...(qa?{qaMode:args.includes('--ui-only')?'ui-only':'full'}:{windows,exeSHA256:sha(windows)})};
  fs.writeFileSync(path.join(out,name+'-artifacts.json'),JSON.stringify(result,null,2));console.log(JSON.stringify(result));
 }
 function run(label,options){
