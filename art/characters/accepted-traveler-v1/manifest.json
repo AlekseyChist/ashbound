@@ -1,0 +1,224 @@
+{
+  "schema": 1,
+  "accepted_date": "2026-09-23",
+  "accepted_by": "owner, after manual S23 review",
+  "version": "0.19.4-walk-preview",
+  "code": 49,
+  "source_commit": "83445f7f856638eb2b8bbbaacf9f73e440024a4f",
+  "apk_sha256": "91ee400f355cef05716ed6bab6791503c3cc56dc85db2c13d3a51771b40ec084",
+  "python": "3.12.14",
+  "pillow": "12.3.0",
+  "godot": "4.7.2-stable",
+  "final_metadata": {
+    "pixel_size_side": 0.00593080724876441,
+    "pixel_size_back": 0.0059900166389351,
+    "pixel_size_front": 0.00577849117174959,
+    "baseline_offset_pixels": 182.0,
+    "pixel_size_run_back": 0.0059900166389351,
+    "pixel_size_run_front": 0.005778491171749589,
+    "pixel_size_run_side": 0.004803953871499164,
+    "pixel_size_walk_side": 0.005634266886326189
+  },
+  "files": [
+    {
+      "path": "art/characters/accepted-traveler-v1/traveler_frames.tres",
+      "hash_mode": "lf-text",
+      "sha256": "52add1bf4d6600168d01196f6c33b57c519f22cb5808c41c3f41acddf1685f64"
+    },
+    {
+      "path": "art/characters/motion-scale-v1/capture.gd",
+      "hash_mode": "lf-text",
+      "sha256": "b29a0bb609ce09a64656ea67356a59bcd013b73143ddd8a6b86c8fa7f0a84530"
+    },
+    {
+      "path": "art/characters/motion-scale-v1/metrics.json",
+      "hash_mode": "lf-text",
+      "sha256": "12d9a50e6e951bd8caad8e3cffd914adb6a7a0f1672000cdf34ecb0f62b90a5b"
+    },
+    {
+      "path": "art/characters/painted-motion-v2/build.py",
+      "hash_mode": "lf-text",
+      "sha256": "825233119ebecacb47836ec9a188c02c89ce9c9825c412fbfc9dff15154e6353"
+    },
+    {
+      "path": "art/characters/painted-motion-v2/manifest.json",
+      "hash_mode": "lf-text",
+      "sha256": "5ddc62ff5ccdf69e5a18d641643d728e2bb04f074d0bcdaee3ec5cb4deff3455"
+    },
+    {
+      "path": "art/characters/painted-motion-v2/pins.json",
+      "hash_mode": "lf-text",
+      "sha256": "2d2c2f6022ac826bd53595f6b58219c376cc33c8d4de774612c9942c4c8a7db7"
+    },
+    {
+      "path": "art/characters/painted-motion-v2/run-source.png",
+      "hash_mode": "binary",
+      "sha256": "a32ba222ce317ee4fef8fe4ab0919ed9f84aef17792fee1a58d22cb357068cda"
+    },
+    {
+      "path": "art/characters/sprite-gait-lab/frames.js",
+      "hash_mode": "lf-text",
+      "sha256": "bc5ef3d5ef2ce10223a424a8cf9fc22cc12d54711a7b30630f9f519605f05c75"
+    },
+    {
+      "path": "art/characters/sprite-gait-lab/probe-a-sheet.png",
+      "hash_mode": "binary",
+      "sha256": "88f83bf7292769c8e446786cc07bd2ba438aab95ffb643100d5c784351318b5a"
+    },
+    {
+      "path": "art/characters/sprite-gait-lab/probe-b-passing.png",
+      "hash_mode": "binary",
+      "sha256": "df4a0eade145ea0cec2eb9ab31bc48a61d51ad242132d679448fbb18ba774834"
+    },
+    {
+      "path": "art/characters/sprite-gait-lab/probe-d-contact.png",
+      "hash_mode": "binary",
+      "sha256": "784a661cbb2e8998e01e901f98a9fbc8daf1cb07883b72cc46050db90378b9ba"
+    },
+    {
+      "path": "art/characters/sprite-gait-lab/probe-e-sheet.png",
+      "hash_mode": "binary",
+      "sha256": "afc3d1702af927a79c23167c59b9a47ef816b47c5a1f1cadfca4161715db56b6"
+    },
+    {
+      "path": "art/characters/sprite-gait-lab/probe-f-arms.png",
+      "hash_mode": "binary",
+      "sha256": "f0d8eb18042eef0c121cbaa24a6cc2e3591631505042e7e7d406f1a0feb174eb"
+    },
+    {
+      "path": "art/characters/walk-consistency-v1/anchor-walk.png",
+      "hash_mode": "binary",
+      "sha256": "ae7f475ddb1b0bf692d71d2f86ed30dda46870fe55a6b72d4702563d08962970"
+    },
+    {
+      "path": "art/characters/walk-consistency-v1/build.py",
+      "hash_mode": "lf-text",
+      "sha256": "547d640e23626189d8a472bcb652cecd391dcae45ee0f311e90a29ef2e853ab1"
+    },
+    {
+      "path": "art/characters/walk-consistency-v1/capture.gd",
+      "hash_mode": "lf-text",
+      "sha256": "9d6b38bd227f90c9286154ac06eda8f679ce715db176d2186a8b5856d7495b22"
+    },
+    {
+      "path": "art/characters/walk-consistency-v1/capture.tscn",
+      "hash_mode": "lf-text",
+      "sha256": "779707c67a86426efb51f395e6d65969719d6b9dd8d975082fa71be49ed20889"
+    },
+    {
+      "path": "art/characters/walk-consistency-v1/comparison-slow.gif",
+      "hash_mode": "binary",
+      "sha256": "d5f9885968b68b1c3aeb87d02b1c176895a60b230b7582b263f1905180c3f31b"
+    },
+    {
+      "path": "art/characters/walk-consistency-v1/comparison.gif",
+      "hash_mode": "binary",
+      "sha256": "166424e9ae7e479807579a86f6c10b1f734877557cfbd90b7bdf72707f8f640f"
+    },
+    {
+      "path": "art/characters/walk-consistency-v1/packing.json",
+      "hash_mode": "lf-text",
+      "sha256": "05540cb6b9ab8408636d6611181faf57b61486f505093a79a795e7b5615f8fa7"
+    },
+    {
+      "path": "art/characters/walk-consistency-v1/preview.py",
+      "hash_mode": "lf-text",
+      "sha256": "b23c4e44d4333445940bf8787aba344e8fde0c6b742480583b401c95ef477d45"
+    },
+    {
+      "path": "art/characters/walk-consistency-v1/prompt-v1.txt",
+      "hash_mode": "lf-text",
+      "sha256": "ba1c71042a64386748a20e895a923f77529dfba4adf2349078a760184b166327"
+    },
+    {
+      "path": "art/characters/walk-consistency-v1/prompt-v2.txt",
+      "hash_mode": "lf-text",
+      "sha256": "6d7f31e527d35c0b6f244b012a5e7984ffcc9e61126e858d3dd02e27564a6922"
+    },
+    {
+      "path": "art/characters/walk-consistency-v1/set-comparison.png",
+      "hash_mode": "binary",
+      "sha256": "0dd85fb66690916f9103a4e864d3e0b07d745301b872dd1878daaa6abb3f6553"
+    },
+    {
+      "path": "art/characters/walk-consistency-v1/source-pins.json",
+      "hash_mode": "lf-text",
+      "sha256": "5880fdd2bb8efe7d2ddf48cbe73c99adb52608f438d7371f45604c7f19a1f866"
+    },
+    {
+      "path": "art/characters/walk-consistency-v1/upper-body-strip.png",
+      "hash_mode": "binary",
+      "sha256": "8ecab7b0704febce67705f68cf74bdf7f9f3c4814ee6ffa7b2273a2c0c0f2ee2"
+    },
+    {
+      "path": "art/characters/walk-consistency-v1/walk-atlas.png",
+      "hash_mode": "binary",
+      "sha256": "2d4ca6894099fc7a2b7e3f8f38348aca487cf521ab2bf27b65c62dab8d1ed2cc"
+    },
+    {
+      "path": "art/characters/walk-consistency-v1/walk-source-v1.png",
+      "hash_mode": "binary",
+      "sha256": "896772321be81bccc723cc10c5f191ab462b474e8c023bada8b2d10b2036c49d"
+    },
+    {
+      "path": "art/characters/walk-consistency-v1/walk-source-v2.png",
+      "hash_mode": "binary",
+      "sha256": "559bd3ce95bca1a8dcd6f02eb15ca2a58b219a38354ca385bb7146b266ebea3a"
+    },
+    {
+      "path": "assets/characters/courtyard/painted-motion-v2/run.png",
+      "hash_mode": "binary",
+      "sha256": "4542047eedb79512f114c01897fcf23ed3421b3bfffaf0b328b2b61dba16b06d"
+    },
+    {
+      "path": "assets/characters/courtyard/traveler-back-v1.png",
+      "hash_mode": "binary",
+      "sha256": "84f4d257c87d4f60ca2fed41f312ee15387a03ededb9c7abacfefe9bbe6dd88e"
+    },
+    {
+      "path": "assets/characters/courtyard/traveler-front-v1.png",
+      "hash_mode": "binary",
+      "sha256": "d8d78d4d83c5b776c517492130a26fa45a7af452db077369319abf385bd91d6f"
+    },
+    {
+      "path": "assets/characters/courtyard/traveler-run-back-v3.png",
+      "hash_mode": "binary",
+      "sha256": "ff4f35bca89bf21b6b9f2431e0e7e4f680a66796348ddd7abfe90e73f14b356b"
+    },
+    {
+      "path": "assets/characters/courtyard/traveler-run-front-v3.png",
+      "hash_mode": "binary",
+      "sha256": "a0fcc596a9b536b46149982ec93c339fb2cb962b8605c0792f5fd206701a9022"
+    },
+    {
+      "path": "assets/characters/courtyard/traveler-v1.png",
+      "hash_mode": "binary",
+      "sha256": "2dff296e1781ddc6195a9a3f5f4cf32aa1d8a973e0442e766b9e9d43288cd8d5"
+    },
+    {
+      "path": "assets/characters/courtyard/traveler_frames.tres",
+      "hash_mode": "lf-text",
+      "sha256": "2c471d1617f887ff6eb43c7f135f382c632314621f043ee9b9f59b9bd3e402c3"
+    },
+    {
+      "path": "scripts/courtyard/courtyard_character_visual.gd",
+      "hash_mode": "lf-text",
+      "sha256": "2b9b0d6d72ba195ce92c91530fc9b057b330e494287b71ea3df39da1c10bae3c"
+    },
+    {
+      "path": "scripts/courtyard/third_person_camera.gd",
+      "hash_mode": "lf-text",
+      "sha256": "6b8c4833e68a04db32917275ac4f4414e12aa9723d9cb83744ab563b1ab6114c"
+    },
+    {
+      "path": "tools/build-forest-route.mjs",
+      "hash_mode": "lf-text",
+      "sha256": "93bacd1071988397a93f2c4492a3f84e9a448c468f8ed12f02e6de75b1e069db"
+    },
+    {
+      "path": "tools/walk-phone-preview.mjs",
+      "hash_mode": "lf-text",
+      "sha256": "0ab507fceb648dcc5f927d8285092c4ae7ca3ac5476e75458875391b870095b1"
+    }
+  ]
+}
