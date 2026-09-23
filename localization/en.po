@@ -549,3 +549,31 @@ msgstr "Face the strike and hold Block."
 
 msgid "COMBAT_HINT_CUE"
 msgstr "Press Block on the flash!"
+
+# Forest route prototype: location heading or reset button; no canonical place name.
+msgid "FOREST_RETURN_START"
+msgstr "Back to start"
+
+# Forest route prototype: location heading or reset button; no canonical place name.
+msgid "FOREST_OUTSKIRTS"
+msgstr "Forest outskirts"
+
+# Forest route prototype: location heading or reset button; no canonical place name.
+msgid "FOREST_ROAD"
+msgstr "Pine road"
+
+# Forest route prototype: location heading or reset button; no canonical place name.
+msgid "FOREST_FORK"
+msgstr "Forest fork"
+
+# Forest route prototype: location heading or reset button; no canonical place name.
+msgid "FOREST_BRIDGE"
+msgstr "River bridge"
+
+# Forest route prototype: location heading or reset button; no canonical place name.
+msgid "FOREST_ASCENT"
+msgstr "Path to the lookout"
+
+# Forest route prototype: location heading or reset button; no canonical place name.
+msgid "FOREST_LOOKOUT"
+msgstr "City overlook"

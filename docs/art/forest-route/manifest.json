@@ -1,0 +1,17 @@
+{
+  "version": "0.19.0-forest-route",
+  "androidVersionCode": 45,
+  "device": "Samsung S23 SM-S911B / Android 16",
+  "resolution": [
+    2340,
+    1080
+  ],
+  "qa": "native APK continuous controller-driven traversal",
+  "files": {
+    "s23-start.png": "db0aa2e1015aeb427b236f080a5f9b65f794d5119827eed7026457c75fb2d414",
+    "s23-fork.png": "4a194a158fe739b8c57c20f0e2720f65048a90cfd897e42ebac65913bbb804fa",
+    "s23-bridge.png": "c6a8f087e56474a09322e35388a24d8fcfb968fa3d512faf8b7d9257848d374f",
+    "s23-lookout.png": "76d7ab09f0d8c48e08f0bbf6d571942574316fbdc087a1146cb4c5b522663c22",
+    "s23-motion.mp4": "3cda45b64a9a556f67cc1051f59d64737ee12078b99eca7bdd03239e856f5068"
+  }
+}
