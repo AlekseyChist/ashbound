@@ -550,3 +550,31 @@ msgstr "Повернись к удару и держи блок."
 
 msgid "COMBAT_HINT_CUE"
 msgstr "Нажми «Блок» на вспышке!"
+
+# Forest route prototype: location heading or reset button; no canonical place name.
+msgid "FOREST_RETURN_START"
+msgstr "На исходную"
+
+# Forest route prototype: location heading or reset button; no canonical place name.
+msgid "FOREST_OUTSKIRTS"
+msgstr "Лесная окраина"
+
+# Forest route prototype: location heading or reset button; no canonical place name.
+msgid "FOREST_ROAD"
+msgstr "Хвойная дорога"
+
+# Forest route prototype: location heading or reset button; no canonical place name.
+msgid "FOREST_FORK"
+msgstr "Лесная развилка"
+
+# Forest route prototype: location heading or reset button; no canonical place name.
+msgid "FOREST_BRIDGE"
+msgstr "Речной мост"
+
+# Forest route prototype: location heading or reset button; no canonical place name.
+msgid "FOREST_ASCENT"
+msgstr "Подъём к смотровой"
+
+# Forest route prototype: location heading or reset button; no canonical place name.
+msgid "FOREST_LOOKOUT"
+msgstr "Вид на город"
