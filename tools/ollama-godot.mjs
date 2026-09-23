@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Local orchestration only: all game code and scene content come from Ollama.
+// Local bridge for explicitly delegated Ollama tasks; project rules choose the implementer.
 import fs from 'node:fs/promises';
 import http from 'node:http';
 import path from 'node:path';
