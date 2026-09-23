@@ -1,0 +1,103 @@
+{
+  "roads": [
+    {
+      "id": "forest_snow",
+      "length_m": 1578.4400055078293,
+      "cumulative_m": [
+        0.0,
+        158.4297951775486,
+        312.13405666694257,
+        475.6118839096607,
+        698.5468520057402,
+        834.2855716107225,
+        1052.2305187877562,
+        1206.5030049931713,
+        1454.7468367392994,
+        1578.4400055078293
+      ],
+      "ascent_m": 200.0,
+      "descent_m": 0.0,
+      "max_grade_percent": 19.824558013652695,
+      "walk_seconds": 375.81904893043554,
+      "run_seconds": 246.6312508605983
+    },
+    {
+      "id": "snow_desert",
+      "length_m": 1732.040484867782,
+      "cumulative_m": [
+        0.0,
+        170.0,
+        352.00274723201295,
+        492.80402563530015,
+        658.0311420538832,
+        842.6929951800771,
+        1010.9933219771455,
+        1189.9486236588782,
+        1382.0423507818637,
+        1556.4699862069876,
+        1732.040484867782
+      ],
+      "ascent_m": 0.0,
+      "descent_m": 210.0,
+      "max_grade_percent": 15.811388300841896,
+      "walk_seconds": 412.3905916351862,
+      "run_seconds": 270.6313257605909
+    },
+    {
+      "id": "desert_lowland",
+      "length_m": 1151.1226281210177,
+      "cumulative_m": [
+        0.0,
+        208.1465829649865,
+        504.10097134265527,
+        797.0873191474634,
+        1151.1226281210177
+      ],
+      "ascent_m": 0.0,
+      "descent_m": 88.0,
+      "max_grade_percent": 11.220336615147758,
+      "walk_seconds": 274.0768162192899,
+      "run_seconds": 179.862910643909
+    },
+    {
+      "id": "lowland_forest",
+      "length_m": 1099.8234371308017,
+      "cumulative_m": [
+        0.0,
+        332.56578296631784,
+        558.1760664198874,
+        786.6142418634853,
+        1099.8234371308017
+      ],
+      "ascent_m": 98.0,
+      "descent_m": 0.0,
+      "max_grade_percent": 12.87645559959301,
+      "walk_seconds": 261.86272312638135,
+      "run_seconds": 171.84741205168777
+    },
+    {
+      "id": "forest_desert",
+      "length_m": 1401.5463263094598,
+      "cumulative_m": [
+        0.0,
+        227.15633383201094,
+        480.92788464100136,
+        691.3179984771795,
+        922.6100216859361,
+        1160.6625369005417,
+        1401.5463263094598
+      ],
+      "ascent_m": 35.0,
+      "descent_m": 45.0,
+      "max_grade_percent": 8.838834764831843,
+      "walk_seconds": 333.7015062641571,
+      "run_seconds": 218.9916134858531
+    }
+  ],
+  "ring_length_m": 5561.42655562743,
+  "assumptions": [
+    "Road elevations are design constraints, not sampled gameplay geometry.",
+    "Contour bands are schematic; this JSON is not a heightmap or navigation mesh.",
+    "Travel times exclude slope speed changes, stops, combat and exploration."
+  ]
+}

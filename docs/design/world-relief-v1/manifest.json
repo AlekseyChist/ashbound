@@ -1,0 +1,16 @@
+{
+  "version": "0.2-proposal",
+  "baseline": "7aac5ca3f3ced8e36cf1ae7da04e646307797834",
+  "status": "not_approved_geography",
+  "pdfPages": 2,
+  "files": {
+    "world-relief.json": "089e9c591f6b318b09f292eb76709604c1763f841d8204d06a0887b745435372",
+    "route-metrics.json": "d4b8a4125a444286ba55d3db0d8ab1ddb7046b2883d37492d96ccc96ab326cd7",
+    "build.py": "10bc19589ba62fb573eddcf527971c4ed93910f8c84c650bdbd4a84c2ccba03b",
+    "AshBound-World-Relief-v0.2.pdf": "81740df133979aabb6df3ab65a2b3c308a17e094de0876e1f3469c9f34080e8d",
+    "world-relief-map.svg": "61eeec5daca382607a880a1d11c91a6491a9b89e2714dd9a847ffbe275559f93",
+    "world-relief-profiles.svg": "9d754726038403c0744120c9a5f3c34fdb6b100604d9ab6a17bfdc05302141c8",
+    "world-relief-map.png": "5d166e6422ee3a6de250f012981452c7417b27f5052eb3ea865b6d0e7f0f184a",
+    "world-relief-profiles.png": "6893e7944442f45434805a0a9a647711f6c701631fe40d58f1177e841f1ef32b"
+  }
+}
