@@ -22,6 +22,7 @@ func build(data: Dictionary) -> void:
 		if role == "foundation" and record.id != "B01": continue
 		var body := StaticBody3D.new()
 		body.name = "StaticCollision"
+		body.set_meta("footstep_surface", "stone" if role=="foundation" else "wood")
 		body.collision_layer = 1 | Door.OBSTACLE_LAYER if role == "furniture" else 1
 		body.collision_mask = 0
 		mesh.add_child(body)
@@ -66,6 +67,7 @@ func _stair_proxy() -> void:
 func _add_shape(label: String, shape: Shape3D, at: Vector3) -> void:
 	var body := StaticBody3D.new()
 	body.name = label
+	body.set_meta("footstep_surface", "stone")
 	body.position = at
 	body.collision_layer = 1
 	body.collision_mask = 0

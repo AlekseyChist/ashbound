@@ -28,6 +28,7 @@ func configure(layout: Dictionary) -> void:
 	ground.material_override = material
 	add_child(ground)
 	ground.create_trimesh_collision()
+	for body in ground.find_children("*","StaticBody3D",true,false): body.set_meta("footstep_surface","ground")
 	ground.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 
 func map_point(pair: Array) -> Vector2:

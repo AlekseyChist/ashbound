@@ -9,6 +9,10 @@ var environment: Environment
 var sun: DirectionalLight3D
 var assembled := false
 var atmosphere: Node
+var settings: RefCounted
+var settings_menu: Control
+var audio: Node
+var pocket: CanvasLayer
 
 func _ready() -> void:
 	super._ready()
@@ -26,8 +30,22 @@ func _ready() -> void:
 	camera_rig.get_camera().far = 220.0
 	select_building(0)
 	atmosphere=Atmosphere.new();atmosphere.name="Atmosphere";add_child(atmosphere);atmosphere.configure(self)
-	DisplayServer.window_set_title("AshBound — Forest Village 0.23.5")
-	print("VILLAGE_SETTLEMENT_READY version=0.23.5 houses=3 trees=",dressing.tree_positions.size())
+	settings=preload("res://scripts/world/village_settings.gd").new()
+	settings.load_settings();settings.apply_distance(self)
+	audio=preload("res://scripts/world/village_audio.gd").new();audio.name="VillageAudio";add_child(audio);audio.configure(self,settings)
+	pocket=preload("res://scenes/courtyard/courtyard_inventory_menu.tscn").instantiate()
+	pocket.set_script(preload("res://scripts/world/village_pocket_menu.gd"))
+	pocket.world=self;pocket.player_path=^"../Player";pocket.access_path=^"../Player/PocketAccess"
+	pocket.get_node("RootControl/Overlay/Window").set_script(preload("res://scripts/world/village_inventory_panel.gd"))
+	add_child(pocket)
+	settings_menu=preload("res://scripts/world/village_settings_menu.gd").new()
+	settings_menu.name="VillageSettings"
+	pocket._window.get_node("Margin/RootVBox").add_child(settings_menu);settings_menu.configure(self,settings)
+	pocket._window._sections._settings_view.page.hide()
+	pocket._window._sections._settings_view.page=settings_menu
+	pocket._window.native_settings=settings_menu
+	DisplayServer.window_set_title("AshBound — Forest Village 0.23.6")
+	print("VILLAGE_SETTLEMENT_READY version=0.23.6 houses=3 trees=",dressing.tree_positions.size())
 
 func _environment() -> void:
 	layout = JSON.parse_string(FileAccess.get_file_as_string("res://assets/world/village-layout-v1.json"))
@@ -70,3 +88,6 @@ func select_building(index: int) -> void:
 	camera_rig._apply_rotation()
 	camera_rig.snap_to_target()
 	player.get_node("Visual").reset_motion_interpolation()
+
+func is_input_available() -> bool:
+	return super.is_input_available() and (pocket==null or pocket.state==pocket.State.CLOSED)

@@ -201,6 +201,9 @@ func _notification(what: int) -> void:
 		NOTIFICATION_APPLICATION_PAUSED: app_active = false
 		NOTIFICATION_APPLICATION_RESUMED: app_active = true
 		_: return
+	sync_input_state()
+
+func sync_input_state() -> void:
 	if player == null or camera_rig == null or hud == null: return
 	var available := is_input_available()
 	player.input_enabled = available

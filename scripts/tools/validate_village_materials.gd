@@ -2,8 +2,9 @@ extends "res://scripts/tools/validate_village_surfaces.gd"
 const HouseCatalog=preload("res://scripts/world/village_house_material_catalog.gd")
 
 func run_checks() -> void:
-	validation_version="0.23.5"
-	validation_output="user://material-qa"
+	if get_script().resource_path.ends_with("validate_village_materials.gd"):
+		validation_version="0.23.5"
+		validation_output="user://material-qa"
 	await super.run_checks()
 
 func state_checks() -> void:

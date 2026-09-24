@@ -8,3 +8,6 @@ docs/narrative/LORE_ORIGINAL.txt -text whitespace=-blank-at-eol,cr-at-eol
 assets/environment/village-props-v1/*.bin binary
 assets/environment/village-props-v1/*.gltf -text
 assets/environment/village-props-v1/License_Standard.txt -text -whitespace
+
+# Preserve the upstream audio license verbatim, including its original line endings.
+art/audio/village-v1/Kenney-License.txt -text -whitespace
