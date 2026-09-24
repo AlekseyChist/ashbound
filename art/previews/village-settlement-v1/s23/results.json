@@ -1,0 +1,12 @@
+{
+	"checks": 388,
+	"failures": [],
+	"platform": "Android",
+	"renderer": "mobile",
+	"timings": {
+		"frames": 4309,
+		"p50_ms": 8.33333333333333,
+		"p95_ms": 11.1111111111111
+	},
+	"version": "0.23.0"
+}

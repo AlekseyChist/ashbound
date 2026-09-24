@@ -1,0 +1,12 @@
+{
+	"checks": 388,
+	"failures": [],
+	"platform": "Windows",
+	"renderer": "mobile",
+	"timings": {
+		"frames": 2239,
+		"p50_ms": 16.666,
+		"p95_ms": 16.6666666666667
+	},
+	"version": "0.23.0"
+}
