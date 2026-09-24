@@ -1,0 +1,110 @@
+{
+  "date": "2026-09-24",
+  "decision": "D-073",
+  "items": [
+    {
+      "id": "props",
+      "title": "Fantasy Props MegaKit — Standard",
+      "role": "Жизнь дворов и комнат",
+      "fit": "Первый кандидат для следующего шага",
+      "free": "94 бесплатных предмета по листу Standard; весь набор — 211. Готовые проекты движков и потёртые варианты относятся к платным версиям.",
+      "url": "https://quaternius.itch.io/fantasy-props-megakit",
+      "license": "CC0 1.0",
+      "preview": "https://quaternius.com/assets/images/fullres/fantasypropsmegakit/standard.jpg",
+      "adapt": "Выбрать телегу, верёвки, мешки, вёдра, столярный инструмент и посуду; приглушить чистые яркие ткани общим материалом. Проверить масштаб, pivot, коллизии и материалы. Набор целиком не тащить в APK.",
+      "status": "Отобран, не импортирован",
+      "reviewed": "2026-09-24"
+    },
+    {
+      "id": "ground",
+      "title": "Forest Ground 04 — Poly Haven",
+      "role": "Каменистая земля и тропы",
+      "fit": "Проверен в деревне на ПК и S23",
+      "free": "Полный материал бесплатный; взяты только цвет, normal GL и roughness в 1K.",
+      "url": "https://polyhaven.com/a/forest_ground_04",
+      "license": "CC0 1.0",
+      "preview": "../../../assets/environment/village-surfaces-v1/forest_ground_04_diff_1k.jpg",
+      "adapt": "Тайл 3.2 м. Деталь сведена с текущей палитрой в шейдере; исходные JPG сохранены без редактирования. Без displacement и дополнительных полигонов.",
+      "status": "В сцене 0.23.2",
+      "reviewed": "2026-09-24"
+    },
+    {
+      "id": "grass",
+      "title": "Grass001 — ambientCG",
+      "role": "Почвенный покров полян",
+      "fit": "Проверен в деревне на ПК и S23",
+      "free": "Полный материал бесплатный; 1K Color, NormalGL и Roughness. Автор Lennart Demes.",
+      "url": "https://ambientcg.com/view?id=Grass001",
+      "license": "CC0 1.0",
+      "preview": "../../../assets/environment/village-surfaces-v1/Grass001_1K-JPG_Color.jpg",
+      "adapt": "Тайл примерно 1.4 м; мелкая фактура под имеющимися объёмными травой и папоротником. При дальнейшей отделке разбить регулярный вид опадом и редкими кустами.",
+      "status": "В сцене 0.23.2",
+      "reviewed": "2026-09-24"
+    },
+    {
+      "id": "buildings",
+      "title": "Medieval Village MegaKit — Standard",
+      "role": "Стены, крыши, лестницы и детали",
+      "fit": "Хорошая база деталей; архитектуру согласовывать отдельно",
+      "free": "176 бесплатных модулей по листу Standard; 304 — число полного семейства. Standard ZIP доступен бесплатно; Godot-проект и готовые коллизии — Source.",
+      "url": "https://quaternius.itch.io/medieval-village-megakit",
+      "license": "CC0 1.0",
+      "preview": "https://quaternius.com/assets/images/fullres/medievalvillagemegakit/standard.jpg",
+      "adapt": "Стены имеют внешнюю и внутреннюю стороны. Взять деревянные/каменные детали; яркую красную черепицу не переносить автоматически. Сохранить размеры проходов и наши двери от игрока.",
+      "status": "Для обсуждения будущих домов",
+      "reviewed": "2026-09-24"
+    },
+    {
+      "id": "nature",
+      "title": "Ultimate Stylized Nature — Quaternius",
+      "role": "Разнообразие деревьев и подлеска",
+      "fit": "Выборочно после сравнения с нашим лесом",
+      "free": "63 модели, текстуры и normal maps; FBX/OBJ/glTF/Blend.",
+      "url": "https://quaternius.com/packs/ultimatestylizednature.html",
+      "license": "CC0 1.0",
+      "preview": "https://quaternius.com/assets/images/fullres/ultimatestylizednature.jpg",
+      "adapt": "Хороши формы берёз, кусты и текстурированная кора. На авторском рендере слишком светлая сказочная палитра; потребуется наш свет/тон, ветер, простые коллизии и проверка прозрачных крон на телефоне.",
+      "status": "Отобран, не импортирован",
+      "reviewed": "2026-09-24"
+    },
+    {
+      "id": "household",
+      "title": "Free CC0 Medieval Props — 3dmodelscc0",
+      "role": "Мелкий бытовой реквизит",
+      "fit": "Кружка и мешки близки нашему направлению",
+      "free": "10 предметов, архив RAR 67 МБ; кружка, кубок, мешок зерна, свиток, ключ и прилавок. Также есть не нужные деревне пушка/эшафот.",
+      "url": "https://3dmodelscc0.itch.io/free-cc0-medieval-props",
+      "license": "CC0 public domain",
+      "preview": "https://img.itch.zone/aW1hZ2UvMjM4Mjk3MC8xNDEwODI3Mi5qcGc=/794x1000/gZhg9z.jpg",
+      "adapt": "По превью фактура грубого дерева/металла подходит. Формат отдельных моделей, количество треугольников и размер текстур не проверены: сперва разобрать архив, затем импортировать несколько предметов.",
+      "status": "Кандидат на кружку/мешки",
+      "reviewed": "2026-09-24"
+    },
+    {
+      "id": "mud",
+      "title": "Brown Mud 02 — Poly Haven",
+      "role": "Мокрые колеи и низины",
+      "fit": "Запасной материал",
+      "free": "Весь PBR-материал бесплатный, автор Rob Tuytel.",
+      "url": "https://polyhaven.com/a/brown_mud_02",
+      "license": "CC0 1.0",
+      "preview": "brown_mud_02_diff_1k.jpg",
+      "adapt": "Физический тайл 1.3 м. Для сырой земли у амбара/колодца; сначала маска размещения и сравнение под нашим дождём. Не закрашивать этим всю деревню.",
+      "status": "Только выборка",
+      "reviewed": "2026-09-24"
+    },
+    {
+      "id": "kaykit",
+      "title": "KayKit Forest Nature Pack — Free",
+      "role": "Резерв простых форм",
+      "fit": "Низкий приоритет для текущего стиля",
+      "free": "Free: 100+ моделей. 200+ и восемь цветовых вариантов — Extra, не бесплатная часть; Blend — Source.",
+      "url": "https://kaylousberg.itch.io/kaykit-forest",
+      "license": "CC0",
+      "preview": "https://img.itch.zone/aW1nLzIwNzIzMjUzLnBuZw==/original/n1fYX1.png",
+      "adapt": "Очень чистые округлые деревья и градиентные материалы выглядят игрушечными рядом с героем. Может пригодиться геометрия сухостоя/камней после обработки, но замена нашего леса этим набором сейчас не оправдана.",
+      "status": "Резерв, не импортировать целиком",
+      "reviewed": "2026-09-24"
+    }
+  ]
+}
