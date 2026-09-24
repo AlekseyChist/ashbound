@@ -1,0 +1,25 @@
+{
+  "task": "VILLAGE-ARCH-01",
+  "date": "2026-09-24",
+  "status": "PASS-document-and-asset-QA",
+  "generated_originals_equal": 7,
+  "valid_png": 7,
+  "unique_openings": 6,
+  "dimensions_and_opening_bounds": "PASS",
+  "floor_steps_hinge_canopy_roof_zones": "PASS",
+  "diagram_byte_identical_rebuild": {
+    "h01-dimensions.png": "de643c3b496bb20f14b067659ac39cea0f8b6a0e9b2f0f8dae313fc8e53b738b",
+    "h01-dimensions.svg": "0efdb4cfee9494b11438f4f2401a2a626cea71b3fab2bda22d00e39ad4843a96"
+  },
+  "svg_xml": "PASS",
+  "offline_gallery_targets": 32,
+  "document_path_links": 332,
+  "broken_links": [],
+  "environment": {
+    "python": "3.12.14",
+    "matplotlib": "3.11.2"
+  },
+  "visual_review": "Codex inspected current exterior, cutaway, family, street and final measured diagram. Known mismatches recorded in README/manifest. H01 art accepted by owner under D-068; future models not yet reviewed.",
+  "browser_review": "Not performed: browser policy blocked file:// navigation. Static local-file/anchor/font validation completed; no bypass or local server used.",
+  "game_qa": "Not applicable: art and documents only. No Godot changes, no APK, no new PC/S23 gameplay claims."
+}

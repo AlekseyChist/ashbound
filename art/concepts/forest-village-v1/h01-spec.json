@@ -1,0 +1,224 @@
+{
+  "id": "H01",
+  "revision": "2-lived-proposal",
+  "status": "H01-art-accepted-D068; dimensions-initial-model-contract",
+  "units": "metres",
+  "coordinate_system": "Blender: X right, Y toward rear, Z up; front wall Y=-4. Origin at footprint centre on ground. Godot export converts axes.",
+  "body": {
+    "width": 6.0,
+    "depth": 8.0,
+    "wall_top_z": 3.2,
+    "plinth_top_z": 0.45,
+    "floor_z": 0.36,
+    "wall_thickness": 0.25
+  },
+  "roof": {
+    "type": "gable",
+    "ridge_axis": "Y",
+    "ridge_z": 6.2,
+    "pitch_degrees": 45.0,
+    "overhang_side": 0.6,
+    "overhang_gable": 0.45,
+    "surface_thickness": 0.1,
+    "material": "dark_weathered_wood_shingles"
+  },
+  "chimney": {
+    "centre_xy": [
+      -1.6,
+      2.65
+    ],
+    "footprint_xy": [
+      0.65,
+      0.75
+    ],
+    "top_z": 6.65,
+    "location_reason": "rear-left kitchen hearth"
+  },
+  "openings": [
+    {
+      "id": "entry",
+      "face": "front",
+      "horizontal_center": -1.25,
+      "bottom_z": 0.36,
+      "width": 1.15,
+      "height": 2.2,
+      "kind": "door"
+    },
+    {
+      "id": "living_front",
+      "face": "front",
+      "horizontal_center": 1.5,
+      "bottom_z": 1.25,
+      "width": 1.1,
+      "height": 1.1,
+      "kind": "window"
+    },
+    {
+      "id": "attic_front",
+      "face": "front",
+      "horizontal_center": 0.0,
+      "bottom_z": 4.05,
+      "width": 0.75,
+      "height": 0.85,
+      "kind": "window"
+    },
+    {
+      "id": "living_right",
+      "face": "right",
+      "horizontal_center": -1.9,
+      "bottom_z": 1.25,
+      "width": 0.95,
+      "height": 1.1,
+      "kind": "window"
+    },
+    {
+      "id": "sleeping_right",
+      "face": "right",
+      "horizontal_center": 1.8,
+      "bottom_z": 1.25,
+      "width": 0.95,
+      "height": 1.1,
+      "kind": "window"
+    },
+    {
+      "id": "kitchen_left",
+      "face": "left",
+      "horizontal_center": 1.1,
+      "bottom_z": 1.4,
+      "width": 0.7,
+      "height": 0.85,
+      "kind": "window"
+    }
+  ],
+  "entry": {
+    "steps": 2,
+    "rise_each": 0.18,
+    "width": 1.8,
+    "clear_landing_depth": 0.8,
+    "canopy_width": 2.1,
+    "canopy_projection": 1.0,
+    "canopy_wall_z": 2.95,
+    "canopy_front_z": 2.68,
+    "bracket_supported": true,
+    "future_external_clear_zone_width": 1.5,
+    "future_external_clear_zone_depth": 2.0
+  },
+  "door_proposal": {
+    "hinge_xy": [
+      -1.825,
+      -4.0
+    ],
+    "bottom_z": 0.36,
+    "leaf_width": 1.15,
+    "open_angle_degrees_blender_z": -90,
+    "swing": "outward, as visible on the retained cutaway; keep external sweep clear, validate on player collider before approval"
+  },
+  "rear_wall_note": "Rear wall is solid behind hearth and bed headboard. Sleeping daylight comes from right window. This replaces an early unshown rear-window proposal after the cutaway review.",
+  "habitation_zones": [
+    {
+      "id": "entry_zone",
+      "rect_xy": [
+        -2.65,
+        -3.65,
+        2.05,
+        1.7
+      ],
+      "purpose": "wet clothing, shoes, small storage by protected entrance"
+    },
+    {
+      "id": "living_zone",
+      "rect_xy": [
+        0.15,
+        -3.65,
+        2.5,
+        3.4
+      ],
+      "purpose": "table and everyday work near front and right daylight"
+    },
+    {
+      "id": "kitchen_zone",
+      "rect_xy": [
+        -2.65,
+        0.65,
+        2.05,
+        3.0
+      ],
+      "purpose": "hearth and preparation; chimney directly above hearth, window beside work surface"
+    },
+    {
+      "id": "sleeping_zone",
+      "rect_xy": [
+        0.35,
+        0.65,
+        2.3,
+        3.0
+      ],
+      "purpose": "sleeping area away from entrance; curtain or partition remains a proposal"
+    }
+  ],
+  "zone_note": "Functional zoning only, not a furnished interior or approved interior-transition implementation. Attic access and exact partitions need interior design later.",
+  "entry_mode_proposal": "seamless: continuous player movement through opening and an animated physical door; no fade/scene teleport for H01",
+  "interior_proposal": {
+    "clear_ground_floor_ceiling_z": 2.95,
+    "furniture": [
+      "rear-left hearth with matching flue",
+      "table and two chairs by front-right window",
+      "rear-right bed",
+      "chest beside sleeping area",
+      "small preparation surface near left window",
+      "entry coat pegs"
+    ],
+    "separate_objects": [
+      "door leaf with hinge pivot",
+      "lock state in game script later",
+      "chest body and lid",
+      "chairs and table",
+      "bed",
+      "hearth",
+      "interior floor and wall surfaces",
+      "removable roof and attic floor for authoring"
+    ],
+    "rules": [
+      "Actual entrance hole, wall thickness and interior-facing surfaces; no solid whole-house box collider",
+      "Keep clear circulation from doorway to each usable object",
+      "Chest ownership/theft, lockpicking, NPC witnesses and saving remain future systems, not functionality supplied by a model",
+      "A sleeping-platform stove is reserved as a future alternate dwelling module, not combined with every hearth and bed"
+    ]
+  },
+  "kit": [
+    {
+      "id": "H01",
+      "purpose": "dwelling",
+      "wall_footprint_m": [
+        6,
+        8
+      ]
+    },
+    {
+      "id": "W01",
+      "purpose": "local workshop, profession not fixed",
+      "wall_footprint_m": [
+        7,
+        9
+      ],
+      "side_canopy_projection_m": 2
+    },
+    {
+      "id": "B01",
+      "purpose": "common barn",
+      "wall_footprint_m": [
+        8,
+        10
+      ]
+    }
+  ],
+  "future_model_rules": [
+    "Confirm image and dimensions with owner before production Blender.",
+    "Dimensions and opening IDs resolve AI-view ambiguities; never claim automatic image-to-mesh precision.",
+    "Main wall and roof volumes are separate; window shutters, entry door and movable props remain independent.",
+    "Fine shingle, grain and mortar detail belongs in shared materials; silhouette geometry only where it matters.",
+    "Do not bake clothing lines, gardens and yard items into every house mesh.",
+    "Keep entrance approach and future hinge/door-interaction anchors clear; seamless door behavior is a separate feature.",
+    "Qwen authors Blender geometry/scripts, Codex reviews and runs them; no script is commissioned before concept approval."
+  ]
+}
