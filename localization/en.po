@@ -700,3 +700,6 @@ msgstr "Step clear of the door"
 
 msgid "VILLAGE_DOOR_MOVING"
 msgstr "Door moving…"
+
+msgid "VILLAGE_DOOR_BLOCKED"
+msgstr "Door obstructed"

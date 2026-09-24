@@ -1,0 +1,12 @@
+{
+  "device": "Samsung SM-S911B (S23)",
+  "packageId": "org.ashbound.villagepreview",
+  "version": "0.22.1",
+  "versionCode": 55,
+  "installedAPK_SHA256": "19f06b7dd3b530f96e5f8f011cba59d509f32259f39820149945bd014c5c116d",
+  "processAfterHomeResume": 25508,
+  "normalTouchRoutes": [
+    "H01 close-contact inward/inside/outward/exit",
+    "W01 close-contact inward, Home/resume, walk inside"
+  ]
+}

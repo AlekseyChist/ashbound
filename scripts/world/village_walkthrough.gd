@@ -21,7 +21,7 @@ var app_active := true
 var feedback_time := 0.0
 
 func _ready() -> void:
-	DisplayServer.window_set_title("AshBound — Village Houses 0.22.0")
+	DisplayServer.window_set_title("AshBound — Village Houses 0.22.1")
 	_environment()
 	for record in Catalog.all():
 		var building := Building.new()
@@ -49,7 +49,7 @@ func _ready() -> void:
 	_configure_hud()
 	Localization.language_changed.connect(_refresh_text)
 	select_building(0)
-	print("VILLAGE_WALKTHROUGH_READY version=0.22.0 buildings=3")
+	print("VILLAGE_WALKTHROUGH_READY version=0.22.1 buildings=3")
 
 func _environment() -> void:
 	var floor_mesh := MeshInstance3D.new()
@@ -178,12 +178,15 @@ func _update_prompt() -> void:
 	hud.set_objective("VILLAGE_OUTSIDE" if inside_key.is_empty() else inside_key)
 	interact_button.disabled = current_door == null
 	var key := "VILLAGE_OPEN"
-	if current_door != null and current_door.fraction > 0.5: key = "VILLAGE_CLOSE"
+	if current_door != null:
+		var would_close: bool = current_door.goal > 0.5 if current_door.moving else current_door.fraction > 0.0
+		if would_close:
+			key = "VILLAGE_CLOSE"
 	interact_button.text = Localization.text(key)
 	if current_door == null:
 		hud.set_prompt("")
 	elif feedback_time > 0.0 or current_door.blocked and current_door.moving:
-		hud.set_prompt(Localization.text("VILLAGE_CLEAR_DOOR"))
+		hud.set_prompt(Localization.text("VILLAGE_DOOR_BLOCKED"))
 	elif current_door.moving:
 		hud.set_prompt(Localization.text("VILLAGE_DOOR_MOVING"))
 	else:

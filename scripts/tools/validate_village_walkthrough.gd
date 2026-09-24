@@ -60,15 +60,33 @@ func tap(button: Button) -> void:
 	await touch(at, true)
 	await touch(at, false)
 
-func key_interact() -> void:
+func key_interact(cyrillic: bool = false) -> void:
 	var event := InputEventKey.new()
-	event.keycode = KEY_E
+	event.keycode = 1059 if cyrillic else KEY_E
 	event.physical_keycode = KEY_E
 	event.pressed = true
 	get_viewport().push_input(event, true)
 	await get_tree().process_frame
 	event.pressed = false
 	get_viewport().push_input(event, true)
+
+func click_interact() -> void:
+	var event := InputEventMouseButton.new()
+	event.button_index = MOUSE_BUTTON_LEFT
+	event.position = world.interact_button.get_global_rect().get_center()
+	event.pressed = true
+	get_viewport().push_input(event, true)
+	await get_tree().process_frame
+	event.pressed = false
+	get_viewport().push_input(event, true)
+
+func check_leaf_side(building: Node3D, outside: bool, label: String) -> void:
+	# Independent observation of rendered geometry, not the controller's chosen sign.
+	for leaf in building.door.leaves:
+		var mesh: MeshInstance3D = leaf.mesh
+		var center: Vector3 = building.to_local(mesh.to_global(mesh.get_aabb().get_center()))
+		var side: float = center.z - building.record.entry.z
+		check(side > 0.35 if outside else side < -0.35, str(building.record.id) + label)
 
 func _run() -> void:
 	var args := OS.get_cmdline_user_args()
@@ -107,7 +125,7 @@ func _run() -> void:
 	await screen("ready")
 	frame_ms.sort()
 	var timings := {} if frame_ms.is_empty() else {"frames": frame_ms.size(), "p50_ms": frame_ms[frame_ms.size()/2], "p95_ms": frame_ms[int(frame_ms.size()*0.95)], "static_memory_bytes": OS.get_static_memory_usage()}
-	var report := {"failures": failures, "checks": checks, "completed": completed, "platform": OS.get_name(), "rendering": RenderingServer.get_current_rendering_method(), "version": "0.22.0", "walk_timings": timings}
+	var report := {"failures": failures, "checks": checks, "completed": completed, "platform": OS.get_name(), "rendering": RenderingServer.get_current_rendering_method(), "version": "0.22.1", "walk_timings": timings}
 	var file := FileAccess.open(output.path_join("results.json"), FileAccess.WRITE)
 	file.store_string(JSON.stringify(report, "\t"))
 	file.close()
@@ -121,6 +139,15 @@ func building_route(index: int) -> void:
 	var id: String = building.record.id
 	var entry: Vector3 = building.to_global(building.record.entry)
 	check(door.leaves.size() == (1 if index == 0 else 2), id + " imported hinges")
+	var furniture_count := 0
+	for mesh in building.model.find_children("*", "MeshInstance3D", true, false):
+		var metadata: Dictionary = mesh.get_meta("extras", {})
+		if metadata.get("part_role", "") == "furniture":
+			furniture_count += 1
+			check(mesh.get_node("StaticCollision").collision_layer == 9, id + " furniture obstructs leaf " + str(mesh.name))
+		if index < 2 and metadata.get("part_role", "") == "foundation":
+			check(not mesh.has_node("StaticCollision"), id + " stair proxy replaces original foundation collision")
+	check(furniture_count > 0, id + " imported furniture roles available")
 	await place(entry + Vector3(0, 0, 3.4))
 	check(not door.try_toggle(world.player), id + " rejects distant interaction")
 	await place(entry + Vector3(0, 0, 2.5))
@@ -128,18 +155,31 @@ func building_route(index: int) -> void:
 	# Attempt to walk through a closed door; a real collider must stop the actor.
 	await walk(Vector2.UP, 1.1)
 	check(world.player.global_position.z > entry.z + 0.2, id + " closed door blocks actor")
-	await place(entry + Vector3(0, 0, 2.5))
-	await tap(world.interact_button)
-	check(door.moving, id + " touch starts door")
+	check(world.player.global_position.z < entry.z + 0.45, id + " fixture touches closed door")
+	var contact: Vector3 = world.player.global_position
+	var previous_mode := Input.mouse_mode
+	if index == 0:
+		if capture and OS.get_name() != "Android": Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+		await key_interact(true)
+	elif index == 1:
+		if capture: Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+		await click_interact()
+	else:
+		await tap(world.interact_button)
+	if capture: Input.mouse_mode = previous_mode
+	check(door.moving, id + " input starts door at contact")
 	check(not door.try_toggle(world.player), id + " repeated press does not reverse")
 	await settle(0.85)
 	check(door.fraction > 0.99 and not door.moving, id + " fully open")
+	check_leaf_side(building, false, " opens inward from outside")
+	check(world.player.global_position.distance_to(contact) < 0.03, id + " opening does not push actor")
 	await screen(id + "-open")
-	await walk(Vector2.UP, 1.15)
+	await walk(Vector2.UP, 0.6)
 	var inside: Vector3 = building.to_local(world.player.global_position)
 	check(inside.z < building.record.entry.z - 1.5, id + " walks inside, actual=" + str(inside))
 	check(world.player.is_on_floor() and absf(inside.y - float(building.record.floor_height)) < 0.08, id + " interior grounded")
 	check(building.contains(world.player.global_position), id + " interior state")
+	check_leaf_side(building, false, " keeps direction after crossing")
 	# Inspect three camera headings; ray to camera must not cross solid walls.
 	for heading in range(3):
 		world.camera_rig.rotate_view(Vector2(450,0))
@@ -154,9 +194,15 @@ func building_route(index: int) -> void:
 	check(door.moving, id + " inside interaction")
 	await settle(0.85)
 	check(door.fraction < 0.01, id + " closes from inside")
-	world.player.request_interaction()
+	await walk(Vector2.DOWN, 0.7)
+	check(world.player.global_position.z > entry.z - 0.45 and world.player.global_position.z < entry.z - 0.2, id + " inside contact fixture")
+	contact = world.player.global_position
+	await tap(world.interact_button)
 	await settle(0.85)
 	check(door.fraction > 0.99, id + " reopens from inside")
+	check_leaf_side(building, true, " opens outward from inside")
+	check(world.player.global_position.distance_to(contact) < 0.03, id + " inside opening does not push actor before=" + str(contact) + " after=" + str(world.player.global_position))
+	await screen(id + "-inside-open")
 	await walk(Vector2.DOWN, 1.35)
 	check(world.player.global_position.z > entry.z + 2.2, id + " exits without transition")
 	check(world.player.is_on_floor(), id + " exterior grounded")
@@ -173,12 +219,6 @@ func focus_and_occupancy() -> void:
 	var building: Node3D = world.buildings[0]
 	var door: Node3D = building.door
 	var entry: Vector3 = building.to_global(building.record.entry)
-	# At the leaf's outgoing arc, refuse to open instead of pushing the capsule.
-	await place(entry + Vector3(0, 0, 0.6))
-	var before: Vector3 = world.player.global_position
-	check(not door.try_toggle(world.player) and door.blocked, "occupied swing refused")
-	await settle()
-	check(world.player.global_position.distance_to(before) < 0.04, "door does not push actor")
 	await place(entry + Vector3(0, 0, 2.5))
 	check(door.try_toggle(world.player), "free swing starts")
 	await settle(0.12)
@@ -194,14 +234,64 @@ func focus_and_occupancy() -> void:
 	# Walk into the arc after a closing swing has begun. It must stop and resume.
 	check(door.try_toggle(world.player), "closing starts with free arc")
 	await settle(0.10)
-	await place(entry + Vector3(0, 0, 0.55))
-	before = world.player.global_position
+	await place(entry + Vector3(0, 0, -0.55))
+	var before: Vector3 = world.player.global_position
 	check(door.moving and door.blocked and door.fraction > 0.1, "late occupant stops moving door")
 	await settle(0.3)
 	check(world.player.global_position.distance_to(before) < 0.04, "stopped swing does not displace occupant")
 	await place(entry + Vector3(0, 0, 2.5))
 	await settle(0.8)
 	check(door.fraction < 0.01 and not door.moving, "swing resumes when path is free")
+	# Occupants and furniture beyond the portal stop an already moving leaf.
+	for layer in [2, 4, 8]:
+		var obstacle := StaticBody3D.new()
+		obstacle.collision_layer = layer
+		obstacle.collision_mask = 0
+		world.add_child(obstacle)
+		obstacle.global_position = entry + Vector3(-0.1, 0.8, -0.62)
+		var shape := CollisionShape3D.new()
+		var box := BoxShape3D.new()
+		box.size = Vector3(0.3, 1.2, 0.3)
+		shape.shape = box
+		obstacle.add_child(shape)
+		await settle()
+		check(door.try_toggle(world.player), "starts toward obstruction layer=" + str(layer))
+		await settle(0.9)
+		check(door.blocked and door.moving and door.fraction > 0.05 and door.fraction < 0.95, "stops before obstruction layer=" + str(layer))
+		var side: float = door.opening_sign
+		if layer == 2:
+			check(door.try_toggle(world.player), "blocked swing can return")
+			await settle(0.85)
+			check(door.fraction < 0.01 and door.opening_sign == side, "return preserves chosen side")
+			obstacle.queue_free()
+			await settle()
+		else:
+			obstacle.queue_free()
+			await settle(0.85)
+			check(door.fraction > 0.99 and not door.blocked, "continues when obstacle removed layer=" + str(layer))
+			check(door.try_toggle(world.player), "closes after obstacle removal")
+			await settle(0.85)
+			check(door.fraction < 0.01, "closed after obstacle tests")
+	# A blocked first step can be cancelled without remaining in a moving state.
+	var initial_obstacle := StaticBody3D.new()
+	initial_obstacle.collision_layer = 8
+	initial_obstacle.collision_mask = 0
+	world.add_child(initial_obstacle)
+	initial_obstacle.global_position = entry + Vector3(0, 1, 0)
+	var initial_shape := CollisionShape3D.new()
+	var initial_box := BoxShape3D.new()
+	initial_box.size = Vector3(0.2, 1.0, 0.2)
+	initial_shape.shape = initial_box
+	initial_obstacle.add_child(initial_shape)
+	await settle()
+	check(door.try_toggle(world.player), "initial obstruction accepts action")
+	await settle()
+	check(door.blocked and is_zero_approx(door.fraction), "initial obstruction blocks first step")
+	check(door.try_toggle(world.player), "initial obstruction can cancel opening")
+	await settle()
+	check(not door.moving and not door.blocked and is_zero_approx(door.fraction), "cancel at rest completes")
+	initial_obstacle.queue_free()
+	await settle()
 	await place(building.to_global(Vector3(-3.5, 0, 3.0)))
 	check(Vector2(world.player.global_position.x-entry.x,world.player.global_position.z-entry.z).length() < 2.8, "LOS fixture within range")
 	check(not door.can_interact(world.player), "nearby door cannot be used through side wall")
@@ -229,6 +319,8 @@ func focus_and_occupancy() -> void:
 	check(world.selected == 0, "application pause prevents scene selection")
 	world._notification(NOTIFICATION_APPLICATION_RESUMED)
 	check(world.is_input_available() and not door.suspended, "application resume restores controls")
+	await place(entry + Vector3(0,0,2.5))
+	check(door.can_interact(world.player), "pause fixture in reach")
 	get_tree().paused = true
 	check(not world.is_input_available(), "tree pause rejects interaction")
 	world.interact()

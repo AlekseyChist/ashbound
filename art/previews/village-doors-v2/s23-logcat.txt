@@ -1,0 +1,14 @@
+--------- beginning of main
+I/godot   (24931): Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+I/godot   (24931): Vulkan 1.3.128 - Forward Mobile - Using Device #0: Qualcomm - Adreno (TM) 740
+I/godot   (24931):
+I/godot   (24931): [ASHBOUND] GameManager инициализирован
+I/godot   (24931): [ASHBOUND] FactionManager инициализирован
+I/godot   (24931): [ASHBOUND] QuestManager инициализирован
+I/godot   (24931): [ASHBOUND] DialogueSystem инициализирован
+I/godot   (24931): [ASHBOUND] InventorySystem инициализирован
+I/godot   (24931): VILLAGE_WALKTHROUGH_READY version=0.22.1 buildings=3
+I/godot   (24931): VILLAGE_ROUTE_DONE H01
+I/godot   (24931): VILLAGE_ROUTE_DONE W01
+I/godot   (24931): VILLAGE_ROUTE_DONE B01
+I/godot   (24931): VILLAGE_QA_COMPLETE failures=0 buildings=3 checks=227 output=/data/data/org.ashbound.villagevalidation/files/village-qa

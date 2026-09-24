@@ -1,0 +1,19 @@
+{
+  "preview": {
+    "version": "0.22.1",
+    "code": 55,
+    "packageId": "org.ashbound.villagepreview",
+    "android": "C:\\Users\\prost\\Documents\\AshBound\\.tools\\worktrees\\sprite-gait-lab\\.tools\\builds\\android\\ashbound-village-walkthrough-preview.apk",
+    "apkSHA256": "19f06b7dd3b530f96e5f8f011cba59d509f32259f39820149945bd014c5c116d",
+    "windows": "C:\\Users\\prost\\Documents\\AshBound\\.tools\\worktrees\\sprite-gait-lab\\.tools\\builds\\village-walkthrough\\AshBound-Village-Houses.exe",
+    "exeSHA256": "e8e5d065b2a15dd0ab779729abf0c470c5ec105f45ef28fd00c4b80e876c4160"
+  },
+  "validation": {
+    "version": "0.22.1",
+    "code": 55,
+    "packageId": "org.ashbound.villagevalidation",
+    "android": "C:\\Users\\prost\\Documents\\AshBound\\.tools\\worktrees\\sprite-gait-lab\\.tools\\builds\\android\\ashbound-village-walkthrough-validation.apk",
+    "apkSHA256": "2d5bfd09b682e0a3d5c9981fea7fa38c8f69db342847c040cd96a8c30490d7ce",
+    "qaMode": "full"
+  }
+}
