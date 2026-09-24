@@ -674,3 +674,30 @@ msgstr "Горное озеро"
 #. WORLD-GRAYBOX-03 destination
 msgid "WORLD_SITE_SPRING_CAVE"
 msgstr "Пещера источника"
+
+msgid "VILLAGE_HOUSE"
+msgstr "Дом лесника"
+
+msgid "VILLAGE_WORKSHOP"
+msgstr "Мастерская"
+
+msgid "VILLAGE_BARN"
+msgstr "Амбар"
+
+msgid "VILLAGE_NEXT"
+msgstr "Другой дом"
+
+msgid "VILLAGE_OUTSIDE"
+msgstr "Лесные дворы"
+
+msgid "VILLAGE_OPEN"
+msgstr "Открыть дверь"
+
+msgid "VILLAGE_CLOSE"
+msgstr "Закрыть дверь"
+
+msgid "VILLAGE_CLEAR_DOOR"
+msgstr "Отойди от двери"
+
+msgid "VILLAGE_DOOR_MOVING"
+msgstr "Дверь движется…"

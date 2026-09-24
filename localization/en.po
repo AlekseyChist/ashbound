@@ -673,3 +673,30 @@ msgstr "Mountain lake"
 #. WORLD-GRAYBOX-03 destination
 msgid "WORLD_SITE_SPRING_CAVE"
 msgstr "Spring cave"
+
+msgid "VILLAGE_HOUSE"
+msgstr "Forester's home"
+
+msgid "VILLAGE_WORKSHOP"
+msgstr "Workshop"
+
+msgid "VILLAGE_BARN"
+msgstr "Barn"
+
+msgid "VILLAGE_NEXT"
+msgstr "Next building"
+
+msgid "VILLAGE_OUTSIDE"
+msgstr "Forest homesteads"
+
+msgid "VILLAGE_OPEN"
+msgstr "Open door"
+
+msgid "VILLAGE_CLOSE"
+msgstr "Close door"
+
+msgid "VILLAGE_CLEAR_DOOR"
+msgstr "Step clear of the door"
+
+msgid "VILLAGE_DOOR_MOVING"
+msgstr "Door moving…"
