@@ -1,0 +1,6 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+VILLAGE_GLB_INSPECTED h01 {"asset":"h01","bounds":{"position":"(-3.638942, -0.000024, -4.525)","size":"(7.277833, 6.650024, 9.925)"},"hinges":12,"meshes":51,"preview_nodes":0,"textured_surfaces":46}
+VILLAGE_GLB_INSPECTED w01 {"asset":"w01","bounds":{"position":"(-4.138923, -0.009159, -5.025)","size":"(9.713923, 6.84355, 10.925)"},"hinges":15,"meshes":52,"preview_nodes":0,"textured_surfaces":49}
+VILLAGE_GLB_INSPECTED b01 {"asset":"b01","bounds":{"position":"(-4.638932, 0.0, -5.525)","size":"(10.31393, 7.835641, 14.025)"},"hinges":3,"meshes":38,"preview_nodes":0,"textured_surfaces":36}
+VILLAGE_GLB_COMPLETE assets=3 failures=0

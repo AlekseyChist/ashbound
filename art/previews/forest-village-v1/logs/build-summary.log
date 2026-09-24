@@ -1,0 +1,19 @@
+Info: Saved as "h01.blend"
+INFO Draco is available, use library at C:\Program Files\Blender Foundation\Blender 5.2\5.2\scripts\addons_core\io_scene_gltf2\bf_intern_draco_bridge.dll
+INFO MeshOptimizer is available, use library at C:\Program Files\Blender Foundation\Blender 5.2\5.2\scripts\addons_core\io_scene_gltf2\bf_intern_meshopt_bridge.dll
+VILLAGE_ASSET_BUILT id=H01
+Info: Saved as "w01.blend"
+VILLAGE_ASSET_BUILT id=W01
+Info: Saved as "b01.blend"
+01:05.734  render           | Saved: 'C:\Users\prost\Documents\AshBound\.tools\worktrees\sprite-gait-lab\art\previews\forest-village-v1\h01-exterior.png'
+01:08.578  render           | Saved: 'C:\Users\prost\Documents\AshBound\.tools\worktrees\sprite-gait-lab\art\previews\forest-village-v1\h01-interior.png'
+01:11.594  render           | Saved: 'C:\Users\prost\Documents\AshBound\.tools\worktrees\sprite-gait-lab\art\previews\forest-village-v1\w01-exterior.png'
+01:14.594  render           | Saved: 'C:\Users\prost\Documents\AshBound\.tools\worktrees\sprite-gait-lab\art\previews\forest-village-v1\w01-interior.png'
+01:17.625  render           | Saved: 'C:\Users\prost\Documents\AshBound\.tools\worktrees\sprite-gait-lab\art\previews\forest-village-v1\b01-exterior.png'
+01:20.687  render           | Saved: 'C:\Users\prost\Documents\AshBound\.tools\worktrees\sprite-gait-lab\art\previews\forest-village-v1\b01-interior.png'
+VILLAGE_ASSET_BUILT id=B01
+VILLAGE_PREVIEWS_READY id=H01
+VILLAGE_PREVIEWS_READY id=W01
+VILLAGE_PREVIEWS_READY id=B01
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:37:04)
+Blender quit

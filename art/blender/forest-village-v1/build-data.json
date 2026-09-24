@@ -1,0 +1,286 @@
+{
+  "revision": "D068-first-model",
+  "units": "metres",
+  "buildings": [
+    {
+      "id": "H01",
+      "width": 6,
+      "depth": 8,
+      "floor": 0.36,
+      "wall_top": 3.2,
+      "ridge": 6.2,
+      "thickness": 0.25,
+      "overhang_side": 0.6,
+      "overhang_gable": 0.45,
+      "openings": [
+        {
+          "id": "entry",
+          "face": "front",
+          "center": -1.25,
+          "bottom": 0.36,
+          "width": 1.15,
+          "height": 2.2,
+          "kind": "door"
+        },
+        {
+          "id": "living_front",
+          "face": "front",
+          "center": 1.5,
+          "bottom": 1.25,
+          "width": 1.1,
+          "height": 1.1,
+          "kind": "window"
+        },
+        {
+          "id": "attic_front",
+          "face": "front",
+          "center": 0.0,
+          "bottom": 4.05,
+          "width": 0.75,
+          "height": 0.85,
+          "kind": "window"
+        },
+        {
+          "id": "living_right",
+          "face": "right",
+          "center": -1.9,
+          "bottom": 1.25,
+          "width": 0.95,
+          "height": 1.1,
+          "kind": "window"
+        },
+        {
+          "id": "sleeping_right",
+          "face": "right",
+          "center": 1.8,
+          "bottom": 1.25,
+          "width": 0.95,
+          "height": 1.1,
+          "kind": "window"
+        },
+        {
+          "id": "kitchen_left",
+          "face": "left",
+          "center": 1.1,
+          "bottom": 1.4,
+          "width": 0.7,
+          "height": 0.85,
+          "kind": "window"
+        }
+      ],
+      "chimney": {
+        "centre_xy": [
+          -1.6,
+          2.65
+        ],
+        "footprint_xy": [
+          0.65,
+          0.75
+        ],
+        "top_z": 6.65,
+        "location_reason": "rear-left kitchen hearth"
+      },
+      "ceiling_z": 2.95,
+      "attic_hatch": {
+        "center_xy": [
+          -2.1,
+          0
+        ],
+        "size_xy": [
+          0.9,
+          1.4
+        ]
+      },
+      "entrance_style": "steps",
+      "approach_width": 1.8,
+      "entrance_canopy": {
+        "width": 2.1,
+        "projection": 1,
+        "z_inner": 2.95,
+        "z_outer": 2.68
+      },
+      "wall_material": "plaster"
+    },
+    {
+      "id": "W01",
+      "width": 7,
+      "depth": 9,
+      "floor": 0.36,
+      "wall_top": 3.2,
+      "ridge": 6.7,
+      "thickness": 0.25,
+      "overhang_side": 0.6,
+      "overhang_gable": 0.45,
+      "openings": [
+        {
+          "id": "entry",
+          "face": "front",
+          "center": 0.5,
+          "bottom": 0.36,
+          "width": 2.4,
+          "height": 2.6,
+          "kind": "double_door"
+        },
+        {
+          "id": "front_work",
+          "face": "front",
+          "center": -2.25,
+          "bottom": 1.3,
+          "width": 0.9,
+          "height": 1,
+          "kind": "window"
+        },
+        {
+          "id": "attic",
+          "face": "front",
+          "center": 0,
+          "bottom": 4.2,
+          "width": 0.8,
+          "height": 0.85,
+          "kind": "window"
+        },
+        {
+          "id": "right_front",
+          "face": "right",
+          "center": -1.8,
+          "bottom": 1.3,
+          "width": 1,
+          "height": 1,
+          "kind": "window"
+        },
+        {
+          "id": "right_rear",
+          "face": "right",
+          "center": 2,
+          "bottom": 1.3,
+          "width": 1,
+          "height": 1,
+          "kind": "window"
+        },
+        {
+          "id": "left_work",
+          "face": "left",
+          "center": -1.8,
+          "bottom": 1.3,
+          "width": 1.2,
+          "height": 1,
+          "kind": "window"
+        },
+        {
+          "id": "rear_work",
+          "face": "rear",
+          "center": -1.5,
+          "bottom": 1.3,
+          "width": 1,
+          "height": 1,
+          "kind": "window"
+        }
+      ],
+      "canopy": {
+        "x_start": 3.5,
+        "x_end": 5.5,
+        "y_start": -3.8,
+        "y_end": 3.8,
+        "z_inner": 3.2,
+        "z_outer": 2.5
+      },
+      "ceiling_z": 3.03,
+      "attic_hatch": {
+        "center_xy": [
+          -2.6,
+          1
+        ],
+        "size_xy": [
+          0.9,
+          1.4
+        ]
+      },
+      "entrance_style": "steps",
+      "approach_width": 3.0,
+      "wall_material": "plaster"
+    },
+    {
+      "id": "B01",
+      "width": 8,
+      "depth": 10,
+      "floor": 0.24,
+      "wall_top": 3.7,
+      "ridge": 7.7,
+      "thickness": 0.25,
+      "overhang_side": 0.6,
+      "overhang_gable": 0.45,
+      "openings": [
+        {
+          "id": "entry",
+          "face": "front",
+          "center": 0,
+          "bottom": 0.24,
+          "width": 3,
+          "height": 3,
+          "kind": "double_door"
+        },
+        {
+          "id": "hay_hatch",
+          "face": "front",
+          "center": 0,
+          "bottom": 4.5,
+          "width": 1.4,
+          "height": 1.8,
+          "kind": "loft_door"
+        },
+        {
+          "id": "left-2",
+          "face": "left",
+          "center": -2,
+          "bottom": 2.2,
+          "width": 0.65,
+          "height": 0.6,
+          "kind": "vent"
+        },
+        {
+          "id": "left2",
+          "face": "left",
+          "center": 2,
+          "bottom": 2.2,
+          "width": 0.65,
+          "height": 0.6,
+          "kind": "vent"
+        },
+        {
+          "id": "right-2",
+          "face": "right",
+          "center": -2,
+          "bottom": 2.2,
+          "width": 0.65,
+          "height": 0.6,
+          "kind": "vent"
+        },
+        {
+          "id": "right2",
+          "face": "right",
+          "center": 2,
+          "bottom": 2.2,
+          "width": 0.65,
+          "height": 0.6,
+          "kind": "vent"
+        }
+      ],
+      "canopy": {
+        "x_start": 4,
+        "x_end": 5.6,
+        "y_start": 0.5,
+        "y_end": 4.4,
+        "z_inner": 3,
+        "z_outer": 2.4
+      },
+      "loft": {
+        "front_y": 1,
+        "rear_y": 4.75,
+        "floor_z": 3.3
+      },
+      "entrance_style": "ramp",
+      "approach_width": 3.5,
+      "wall_material": "oak"
+    }
+  ]
+}
