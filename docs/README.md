@@ -2,7 +2,7 @@
 
 **Актуальное правило D-064:** [концепт мира → согласование → план → реализация](production/WORLD_CONCEPT_WORKFLOW.md). Схемы и экспорты хранятся в проекте; конкретная планировка согласуется до игровой геометрии. [Карточка изменения процесса и сохранённая непринятая проба](production/WORLD_CONCEPT_WORKFLOW_TASK.md).
 
-**D-065 — выбран Б, «Лесные дворы»:** [два концепта и лесные связи](design/starter-village-concepts-v1/README.md), [автономная галерея](design/starter-village-concepts-v1/index.html), [граница выбора](design/starter-village-concepts-v1/DECISION.md). Дальше — вид с уровня героя и уточнение художественных нюансов, затем ограниченный план.
+**D-065–067 — «Лесные дворы»:** [план Б выбран основой](design/starter-village-concepts-v1/DECISION.md). Подготовлены [архитектура и бытовой план H01](../art/concepts/forest-village-v1/README.md), [автономная галерея дома, интерьера, семейства и улицы](../art/concepts/forest-village-v1/index.html); H01 принят по [D-068](../art/concepts/forest-village-v1/DECISION.md); далее интерьеры W01/B01 и Blender для трёх зданий. [Карточка/проверки](production/VILLAGE_ARCH_01_TASK.md), [новый контракт бесшовных домов и дверей](design/INTERIORS_AND_ACCESS.md). Следующий ограниченный шаг — семейство H01/W01/B01 в Blender.
 
 **D-063:** текущая планировка — [мир v0.5: места, пути и истоки](design/world-exploration-v1/README.md), [карточка реализации](production/WORLD_GRAYBOX_03_TASK.md). Здесь разделены готовые подходы в макете и будущие услуги таверн/пещеры/шахта; прежние карты сохранены как история.
 

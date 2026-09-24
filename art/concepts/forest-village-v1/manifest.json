@@ -1,0 +1,212 @@
+{
+  "task": "VILLAGE-ARCH-01",
+  "date": "2026-09-24",
+  "base_dev": "c3b9a9b172ff47913ae622f617624dcbc9691dd4",
+  "status": "H01-art-accepted-D068; family-models-authorized",
+  "assets": [
+    {
+      "file": "h01-house-concept.png",
+      "sha256": "748d65a64f3ccb9653fd2d7b4284595ff6a99927e116180fca6e31d568b30366",
+      "bytes": 2617410,
+      "size_px": [
+        1536,
+        1024
+      ],
+      "image_mode": "RGB",
+      "source_tool_file": "exec-1473bbf8-b649-4c30-9568-d4f293d192c7.png",
+      "tool": "image_gen.imagegen",
+      "execution_mode": "built-in",
+      "intent": "generate",
+      "role": "historical-closed-study",
+      "prompt_file": "PROMPTS.md",
+      "prompt_sha256": "b91f50413f9a65bfdcb6eb799669e76a834970de6c826667da507e49ca9b2509",
+      "references": [
+        {
+          "file": "../buildings/house-v1.png",
+          "sha256": "85ba4d16ed5b055269d3127f7a165ef3a3a9932df115e9e2b638cde9fa8b8bca"
+        },
+        {
+          "file": "../first-courtyard/courtyard-v1.png",
+          "sha256": "c7537a93b485d262cd5c63665034e0ab8982f8f9c848772968e86375e9faace8"
+        }
+      ]
+    },
+    {
+      "file": "family-massing-study.png",
+      "sha256": "e54c7a3b0d1530588284c1a02d5480db8ef3abfb8a284c59393b32eeed91482f",
+      "bytes": 2038477,
+      "size_px": [
+        1881,
+        836
+      ],
+      "image_mode": "RGB",
+      "source_tool_file": "exec-6bf842f7-2841-4278-a0c6-8d7066389211.png",
+      "tool": "image_gen.imagegen",
+      "execution_mode": "built-in",
+      "intent": "generate",
+      "role": "historical-massing-study",
+      "prompt_file": "PROMPTS.md",
+      "prompt_sha256": "b91f50413f9a65bfdcb6eb799669e76a834970de6c826667da507e49ca9b2509",
+      "references": [
+        {
+          "file": "h01-house-concept.png",
+          "sha256": "748d65a64f3ccb9653fd2d7b4284595ff6a99927e116180fca6e31d568b30366"
+        }
+      ]
+    },
+    {
+      "file": "h01-lived-study.png",
+      "sha256": "7ff8fc4094c4851e4889b62ce110bdbdcaa2af42c2ebf80b5cb976477ca02355",
+      "bytes": 2886853,
+      "size_px": [
+        1536,
+        1024
+      ],
+      "image_mode": "RGB",
+      "source_tool_file": "exec-ed4f9ff5-73ee-4c34-bbf1-3741a4b52512.png",
+      "tool": "image_gen.imagegen",
+      "execution_mode": "built-in",
+      "intent": "edit",
+      "role": "historical-inconsistent-study",
+      "prompt_file": "PROMPT_H01_LIVED.md",
+      "prompt_sha256": "47d1e97922b2e67f08eab1951ace1f9a819f41b2d292053c62d8163e76c879be",
+      "references": [
+        {
+          "file": "h01-house-concept.png",
+          "sha256": "748d65a64f3ccb9653fd2d7b4284595ff6a99927e116180fca6e31d568b30366"
+        }
+      ]
+    },
+    {
+      "file": "h01-lived-concept.png",
+      "sha256": "cdb91876d4655f273979d61f773b3064314775d8130397df3f3e95bffc9ec1d7",
+      "bytes": 2728266,
+      "size_px": [
+        1536,
+        1024
+      ],
+      "image_mode": "RGB",
+      "source_tool_file": "exec-f8ce6cf0-85c9-49d3-997c-45e5c0b8adef.png",
+      "tool": "image_gen.imagegen",
+      "execution_mode": "built-in",
+      "intent": "edit",
+      "role": "current-exterior-proposal",
+      "prompt_file": "PROMPT_H01_CORRECTION.md",
+      "prompt_sha256": "85be2e640698d783fc6b42c3b7df5c0fb8d62771cbabe57d0b812ff1cd1cf9a2",
+      "references": [
+        {
+          "file": "h01-lived-study.png",
+          "sha256": "7ff8fc4094c4851e4889b62ce110bdbdcaa2af42c2ebf80b5cb976477ca02355"
+        }
+      ]
+    },
+    {
+      "file": "family-lived-concept.png",
+      "sha256": "e39774820170b5f6acad5829b9da0f81db2bbc5429177c65fca0ade9d87e471c",
+      "bytes": 2222746,
+      "size_px": [
+        1881,
+        836
+      ],
+      "image_mode": "RGB",
+      "source_tool_file": "exec-cf31a98c-83a8-4169-b223-0f29eae24c8b.png",
+      "tool": "image_gen.imagegen",
+      "execution_mode": "built-in",
+      "intent": "edit",
+      "role": "current-family-massing-proposal",
+      "prompt_file": "PROMPT_FAMILY_LIVED.md",
+      "prompt_sha256": "b0cc8cb454a1bc7559400bd1473ab229be87f945e442ed406cf51f1d4ade7ea2",
+      "references": [
+        {
+          "file": "family-massing-study.png",
+          "sha256": "e54c7a3b0d1530588284c1a02d5480db8ef3abfb8a284c59393b32eeed91482f"
+        },
+        {
+          "file": "h01-lived-concept.png",
+          "sha256": "cdb91876d4655f273979d61f773b3064314775d8130397df3f3e95bffc9ec1d7"
+        }
+      ]
+    },
+    {
+      "file": "h01-interior-concept.png",
+      "sha256": "f89d3595cdff36d9baa1c685818ba3efb15781fda8d5de3cf03e2cae9cfc94b3",
+      "bytes": 3030652,
+      "size_px": [
+        1536,
+        1024
+      ],
+      "image_mode": "RGB",
+      "source_tool_file": "exec-27f4102e-1ea4-4970-9e89-5bd688fd084f.png",
+      "tool": "image_gen.imagegen",
+      "execution_mode": "built-in",
+      "intent": "generate",
+      "role": "current-interior-proposal",
+      "prompt_file": "PROMPT_INTERIOR.md",
+      "prompt_sha256": "a462ef9d8d511dec77db54c69006978516ded17114f9569996846940aa0a2959",
+      "references": [
+        {
+          "file": "h01-lived-concept.png",
+          "sha256": "cdb91876d4655f273979d61f773b3064314775d8130397df3f3e95bffc9ec1d7"
+        }
+      ]
+    },
+    {
+      "file": "street-lived-concept.png",
+      "sha256": "b94de3d85b676b1af5453d45ee72068089bbf032c2a428bd73b7d3e393ef60c1",
+      "bytes": 3661256,
+      "size_px": [
+        1536,
+        1024
+      ],
+      "image_mode": "RGB",
+      "source_tool_file": "exec-a7fef7a5-41b3-4587-a2c7-3d48900f179b.png",
+      "tool": "image_gen.imagegen",
+      "execution_mode": "built-in",
+      "intent": "generate",
+      "role": "current-street-mood-proposal",
+      "prompt_file": "PROMPT_STREET.md",
+      "prompt_sha256": "d6ed3a3757ab3eaccc2d5902e2d801dca9c791937a514bad341090f2312d8682",
+      "references": [
+        {
+          "file": "h01-lived-concept.png",
+          "sha256": "cdb91876d4655f273979d61f773b3064314775d8130397df3f3e95bffc9ec1d7"
+        },
+        {
+          "file": "family-lived-concept.png",
+          "sha256": "e39774820170b5f6acad5829b9da0f81db2bbc5429177c65fca0ade9d87e471c"
+        },
+        {
+          "file": "../../../docs/design/starter-village-concepts-v1/sheet-2.png",
+          "sha256": "27e8178badb92cf012b2de4f2b671b95ab7697ae04d27fa929f4a8e8bddfd8a1"
+        }
+      ]
+    }
+  ],
+  "measured_documents": [
+    {
+      "file": "h01-spec.json",
+      "sha256": "63083a565860aa87c4bbdc31dc480adf15c94c95201997d8861390b69785c1eb"
+    },
+    {
+      "file": "draw_h01_spec.py",
+      "sha256": "6e0a5de6241562c1778e06163c7f5e0bc2b52ab155c8ebc424b217802cdf95d7"
+    },
+    {
+      "file": "h01-dimensions.png",
+      "sha256": "de643c3b496bb20f14b067659ac39cea0f8b6a0e9b2f0f8dae313fc8e53b738b"
+    },
+    {
+      "file": "h01-dimensions.svg",
+      "sha256": "0efdb4cfee9494b11438f4f2401a2a626cea71b3fab2bda22d00e39ad4843a96"
+    }
+  ],
+  "reproducibility": "Generated PNG originals preserved byte-for-byte. Regeneration with ImageGen is not deterministic. Measured SVG/PNG rebuilt from JSON with identical SHA in the recorded local environment.",
+  "precedence": "Dedicated exterior + h01-spec.json resolve inconsistent chimney projection in family/street art; interior is a furnishing concept, not a metric furniture plan.",
+  "known_art_limits": [
+    "Family and street H01 chimney placement is not authoritative.",
+    "Cutaway door opens outward despite inward prompt; outward swing retained as a proposal in JSON.",
+    "Rear wall is solid; sleeping daylight comes from right window."
+  ],
+  "actual_game_changes": false,
+  "owner_art_acceptance": "H01 accepted; W01/B01 interiors and three Blender models commissioned; see DECISION.md"
+}
