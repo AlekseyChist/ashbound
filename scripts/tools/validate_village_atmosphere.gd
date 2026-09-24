@@ -1,4 +1,6 @@
 extends "res://scripts/tools/validate_village_settlement.gd"
+var validation_version := "0.23.1"
+var validation_output := "user://atmosphere-qa"
 var atmosphere: Node
 var metrics: Dictionary={}
 var completed: Array[String]=[]
@@ -8,7 +10,7 @@ func shot(name: String) -> void:
 	check(get_viewport().get_texture().get_image().save_png(output.path_join(name+".png"))==OK,"capture "+name)
 
 func run_checks() -> void:
-	output="user://atmosphere-qa"
+	output=validation_output
 	var args:=OS.get_cmdline_user_args()
 	if args.has("--output"):output=args[args.find("--output")+1]
 	DirAccess.make_dir_recursive_absolute(output)
@@ -42,7 +44,7 @@ func run_checks() -> void:
 		await performance_route(4,"storm")
 		world.select_building(0);atmosphere.set_hour(15.5);atmosphere.set_weather(0,false,true)
 		atmosphere.force_pause=true;atmosphere.apply_look()
-	var report: Dictionary={"version":"0.23.1","checks":checks,"failures":failures,"completed":completed,"platform":OS.get_name(),"renderer":RenderingServer.get_current_rendering_method(),"metrics":metrics}
+	var report: Dictionary={"version":validation_version,"checks":checks,"failures":failures,"completed":completed,"platform":OS.get_name(),"renderer":RenderingServer.get_current_rendering_method(),"metrics":metrics}
 	var file:=FileAccess.open(output.path_join("results.json"),FileAccess.WRITE);file.store_string(JSON.stringify(report,"\t"));file.close()
 	print("ATMOSPHERE_QA_COMPLETE ",JSON.stringify(report))
 	get_tree().quit(0 if failures.is_empty() else 1)

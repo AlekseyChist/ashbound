@@ -24,6 +24,7 @@ func configure(layout: Dictionary) -> void:
 	ground.mesh = Grid.build(-95,-95,130,80,2.0,height_at,color_at)
 	material = ShaderMaterial.new()
 	material.shader = preload("res://assets/shaders/village_ground.gdshader")
+	preload("res://scripts/world/village_surface_catalog.gd").apply_to(material)
 	ground.material_override = material
 	add_child(ground)
 	ground.create_trimesh_collision()
@@ -85,4 +86,6 @@ func color_at(x: float,z: float) -> Color:
 	var well_distance := (Vector2(x,z)+ORIGIN).distance_to(Vector2(data.well.x,data.well.y))
 	road = maxf(road,1.0-smoothstep(2.4,3.6,well_distance))
 	var grass := Color("27392b").lerp(Color("405038"),.5+.5*sin(x*.27)*cos(z*.21))
-	return grass.lerp(Color("554837"),road).srgb_to_linear()
+	var color := grass.lerp(Color("554837"),road).srgb_to_linear()
+	color.a = road # Material blend only; the ground remains opaque.
+	return color

@@ -27,9 +27,9 @@ if(fs.existsSync(checkpointPath)){
 }
 const cache=path.join(root,'.tools/export-staging',qa?'village-walkthrough-preview':'walk-phone-preview','.godot/imported');
 if(fs.existsSync(cache)&&!fs.existsSync(path.join(stage,'.godot/imported')))fs.cpSync(cache,path.join(stage,'.godot/imported'),{recursive:true});
-const version='0.23.1',code=57;
+const version='0.23.2',code=58;
 const title=`AshBound Forest Village${qa?' QA':''}`;
-const scene=qa?'scripts/tools/validate_village_atmosphere.tscn':'scenes/world/village_settlement.tscn';
+const scene=qa?'scripts/tools/validate_village_surfaces.tscn':'scenes/world/village_settlement.tscn';
 const packageId=qa?'org.ashbound.villagevalidation':'org.ashbound.villagepreview';
 let project=fs.readFileSync(path.join(stage,'project.godot'),'utf8')
  .replace(/run\/main_scene="[^"]+"/,`run/main_scene="res://${scene}"`)
@@ -39,10 +39,10 @@ let project=fs.readFileSync(path.join(stage,'project.godot'),'utf8')
  .replace('window/size/mode=2','window/size/mode=0')
  .replace('[application]',`[application]\nconfig/use_custom_user_dir=true\nconfig/custom_user_dir_name="AshBound_Village_Houses${qa?'_QA':''}"`);
 fs.writeFileSync(path.join(stage,'project.godot'),project);
-const resources=[scene,'scenes/world/village_settlement.tscn','scenes/world/village_walkthrough.tscn','assets/buildings/ashbound/courtyard_well.glb','assets/environment/medieval_kit/detail-barrel.glb','assets/environment/medieval_kit/detail-crate.glb','assets/environment/medieval_kit/fence-wood.glb',...files.filter(f=>f.startsWith('scripts/world/village_')||f.startsWith('assets/environment/village-forest-v1/')||f.startsWith('assets/shaders/village_')||f.startsWith('assets/buildings/forest-village-v1/')||f.startsWith('assets/characters/world-graybox-v1/')).filter(f=>!f.endsWith('.import')&&!f.endsWith('.uid'))];
+const resources=[scene,'scenes/world/village_settlement.tscn','scenes/world/village_walkthrough.tscn','assets/buildings/ashbound/courtyard_well.glb','assets/environment/medieval_kit/detail-barrel.glb','assets/environment/medieval_kit/detail-crate.glb','assets/environment/medieval_kit/fence-wood.glb',...files.filter(f=>f.startsWith('scripts/world/village_')||f.startsWith('assets/environment/village-forest-v1/')||(f.startsWith('assets/environment/village-surfaces-v1/')&&f.endsWith('.jpg'))||f.startsWith('assets/shaders/village_')||f.startsWith('assets/buildings/forest-village-v1/')||f.startsWith('assets/characters/world-graybox-v1/')).filter(f=>!f.endsWith('.import')&&!f.endsWith('.uid'))];
 // External GLB image references are not inferred reliably by the selected-resource exporter.
 resources.push(...files.filter(f=>f.startsWith('assets/environment/medieval_kit/Textures/')&&f.endsWith('.png')));
-if(qa)resources.push('scripts/tools/validate_village_settlement.gd');
+if(qa)resources.push('scripts/tools/validate_village_settlement.gd','scripts/tools/validate_village_atmosphere.gd');
 let presets=fs.readFileSync(path.join(stage,'export_presets.cfg'),'utf8')
  .replaceAll('export_files=PackedStringArray(',`export_files=PackedStringArray(${resources.map(v=>JSON.stringify('res://'+v)).join(', ')}, `)
  .replaceAll('include_filter="localization/*.po,assets/ui/fonts/OFL.txt"','include_filter="localization/*.po,assets/ui/fonts/OFL.txt,assets/world/*.json"')
@@ -56,7 +56,7 @@ const godot=process.env.ASHBOUND_GODOT||path.join(baseline,'.tools/godot/Godot_v
 run('import',['--editor','--import','--quit']);
 if(!args.includes('--stage-only')){
  const android=path.join(root,`.tools/builds/android/ashbound-${name}.apk`);
- const windows=path.join(root,'.tools/builds/village-settlement/AshBound-Forest-Village.exe');
+ const windows=path.join(root,'.tools/builds/village-settlement',version,'AshBound-Forest-Village.exe');
  fs.mkdirSync(path.dirname(android),{recursive:true});fs.mkdirSync(path.dirname(windows),{recursive:true});
  run('android',['--export-debug','Android Courtyard',android]);
  if(!qa)run('windows',['--export-debug','Windows Courtyard',windows]);

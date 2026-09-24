@@ -1,0 +1,19 @@
+{
+  "preview": {
+    "version": "0.23.2",
+    "code": 58,
+    "packageId": "org.ashbound.villagepreview",
+    "android": "C:\\Users\\prost\\Documents\\AshBound\\.tools\\worktrees\\sprite-gait-lab\\.tools\\builds\\android\\ashbound-village-settlement-preview.apk",
+    "apkSHA256": "21c1d81b248c49b4dec3c6cb1695e97323953dbd5d70d8eb7e79061ffd92ed29",
+    "windows": "C:\\Users\\prost\\Documents\\AshBound\\.tools\\worktrees\\sprite-gait-lab\\.tools\\builds\\village-settlement\\0.23.2\\AshBound-Forest-Village.exe",
+    "exeSHA256": "66cd38c1b0b6a6ef38f8815150fe7c95acf46a8566d6997a89e81d1c64b5e8dd"
+  },
+  "validation": {
+    "version": "0.23.2",
+    "code": 58,
+    "packageId": "org.ashbound.villagevalidation",
+    "android": "C:\\Users\\prost\\Documents\\AshBound\\.tools\\worktrees\\sprite-gait-lab\\.tools\\builds\\android\\ashbound-village-settlement-validation.apk",
+    "apkSHA256": "21885db6514a4c08c6cca2512bc35e1df86ad8aa100bdc442e9cf04cc8ff728f",
+    "qaMode": "full"
+  }
+}
