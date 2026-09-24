@@ -1,0 +1,10 @@
+--------- beginning of main
+I/godot   (25508): Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+I/godot   (25508): Vulkan 1.3.128 - Forward Mobile - Using Device #0: Qualcomm - Adreno (TM) 740
+I/godot   (25508):
+I/godot   (25508): [ASHBOUND] GameManager инициализирован
+I/godot   (25508): [ASHBOUND] FactionManager инициализирован
+I/godot   (25508): [ASHBOUND] QuestManager инициализирован
+I/godot   (25508): [ASHBOUND] DialogueSystem инициализирован
+I/godot   (25508): [ASHBOUND] InventorySystem инициализирован
+I/godot   (25508): VILLAGE_WALKTHROUGH_READY version=0.22.1 buildings=3

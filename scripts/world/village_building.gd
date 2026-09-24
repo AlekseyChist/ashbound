@@ -14,11 +14,12 @@ func build(data: Dictionary) -> void:
 	for child in model.find_children("*", "MeshInstance3D", true, false):
 		var mesh := child as MeshInstance3D
 		if "entry_leaf" in mesh.name: continue
-		var role := str(mesh.get_meta("part_role", ""))
+		var metadata: Dictionary = mesh.get_meta("extras", {})
+		var role := str(metadata.get("part_role", ""))
 		if role == "foundation" and record.id != "B01": continue
 		var body := StaticBody3D.new()
 		body.name = "StaticCollision"
-		body.collision_layer = 1
+		body.collision_layer = 1 | Door.OBSTACLE_LAYER if role == "furniture" else 1
 		body.collision_mask = 0
 		mesh.add_child(body)
 		var collider := CollisionShape3D.new()

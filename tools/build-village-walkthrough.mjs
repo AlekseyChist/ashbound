@@ -27,7 +27,7 @@ if(fs.existsSync(checkpointPath)){
 }
 const cache=path.join(root,'.tools/export-staging',qa?'village-walkthrough-preview':'walk-phone-preview','.godot/imported');
 if(fs.existsSync(cache)&&!fs.existsSync(path.join(stage,'.godot/imported')))fs.cpSync(cache,path.join(stage,'.godot/imported'),{recursive:true});
-const version='0.22.0',code=54;
+const version='0.22.1',code=55;
 const title=`AshBound Village Houses${qa?' QA':''}`;
 const scene=qa?'scripts/tools/validate_village_walkthrough.tscn':'scenes/world/village_walkthrough.tscn';
 const packageId=qa?'org.ashbound.villagevalidation':'org.ashbound.villagepreview';

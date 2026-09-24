@@ -701,3 +701,6 @@ msgstr "Отойди от двери"
 
 msgid "VILLAGE_DOOR_MOVING"
 msgstr "Дверь движется…"
+
+msgid "VILLAGE_DOOR_BLOCKED"
+msgstr "Дверь упёрлась"

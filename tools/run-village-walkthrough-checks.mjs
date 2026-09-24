@@ -7,7 +7,7 @@ const args=process.argv.slice(2),arg=(k,d)=>args.includes(k)?args[args.indexOf(k
 const baseline=path.resolve(arg('--baseline-root',root));
 const godot=process.env.ASHBOUND_GODOT||path.join(baseline,'.tools/godot/Godot_v4.7.2-stable_win64_console.exe');
 const stage=path.join(root,'.tools/export-staging/village-walkthrough-preview');
-const out=path.join(root,'.tools/village-walkthrough-checks');
+const out=path.join(root,'.tools/village-doors-v2-checks');
 fs.mkdirSync(out,{recursive:true});
 for(const [name,options] of [
  ['pc-headless',['--headless','--fixed-fps','120']],
@@ -19,6 +19,6 @@ for(const [name,options] of [
  const text=fs.readFileSync(log,'utf8');
  if(error||/SCRIPT ERROR:|^ERROR:|VILLAGE_QA_FAIL/m.test(text)||!text.includes('VILLAGE_QA_COMPLETE failures=0 buildings=3'))throw Error(name+' failed; inspect '+log);
  const report=JSON.parse(fs.readFileSync(path.join(dir,'results.json'),'utf8'));
- if(report.failures.length||report.completed.join(',')!=='H01,W01,B01'||report.checks<100)throw Error(name+' incomplete report');
+ if(report.version!=='0.22.1'||report.failures.length||report.completed.join(',')!=='H01,W01,B01'||report.checks<206)throw Error(name+' incomplete report');
  console.log('PASS '+name+' checks='+report.checks);
 }
