@@ -1,0 +1,32 @@
+{
+  "pine_tall": {
+    "dimensions": [
+      6.34,
+      6.09,
+      10.0
+    ],
+    "mesh_count": 2,
+    "material_count": 2,
+    "triangles": 3314
+  },
+  "spruce": {
+    "dimensions": [
+      4.65,
+      4.59,
+      8.0
+    ],
+    "mesh_count": 2,
+    "material_count": 2,
+    "triangles": 3580
+  },
+  "pine_young": {
+    "dimensions": [
+      2.66,
+      2.84,
+      4.5
+    ],
+    "mesh_count": 2,
+    "material_count": 2,
+    "triangles": 2326
+  }
+}
