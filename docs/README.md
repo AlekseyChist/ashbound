@@ -1,6 +1,6 @@
 # AshBound — документы разработки
 
-**24 сентября / D-077:** [А принят для отделки H01](../art/concepts/village-materials-v1/README.md), [концепт и QA](production/VILLAGE_MATERIAL_STUDY_01_CHECKS.md); далее один дом в игре.
+**24 сентября / D-077:** [отделка А одного H01, 0.23.5/code61, ПК/S23 408/408](production/VILLAGE_MATERIAL_01_CHECKS.md); [сравнение до/после](../art/previews/village-materials-v1/README.md). Обычная APK установлена, далее личная оценка.
 
 **24 сентября / D-075:** [порывы растительности, 0.23.4/code60 и QA ПК/S23](production/VILLAGE_WIND_01_CHECKS.md), [временное сравнение и видео](../art/previews/village-wind-v1/README.md).
 

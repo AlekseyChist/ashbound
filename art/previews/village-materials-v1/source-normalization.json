@@ -1,0 +1,16 @@
+{
+  "rule": "Git LF normalization; trailing empty lines only. No code token changes after QA. Generated importer UID/path fields excluded; source import settings separately audited.",
+  "files": [
+    "assets/shaders/village_foliage.gdshader",
+    "assets/shaders/village_ground.gdshader",
+    "scripts/tools/validate_village_atmosphere.gd",
+    "scripts/tools/validate_village_materials.gd",
+    "scripts/tools/validate_village_props.gd",
+    "scripts/tools/validate_village_surfaces.gd",
+    "scripts/tools/validate_village_wind.gd",
+    "scripts/world/village_atmosphere.gd",
+    "scripts/world/village_settlement.gd",
+    "scripts/world/village_terrain.gd",
+    "tools/build-village-settlement.mjs"
+  ]
+}

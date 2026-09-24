@@ -27,9 +27,9 @@ if(fs.existsSync(checkpointPath)){
 }
 const cache=path.join(root,'.tools/export-staging',qa?'village-walkthrough-preview':'walk-phone-preview','.godot/imported');
 if(fs.existsSync(cache)&&!fs.existsSync(path.join(stage,'.godot/imported')))fs.cpSync(cache,path.join(stage,'.godot/imported'),{recursive:true});
-const version='0.23.4',code=60;
+const version='0.23.5',code=61;
 const title=`AshBound Forest Village${qa?' QA':''}`;
-const scene=qa?'scripts/tools/validate_village_wind.tscn':'scenes/world/village_settlement.tscn';
+const scene=qa?'scripts/tools/validate_village_materials.tscn':'scenes/world/village_settlement.tscn';
 const packageId=qa?'org.ashbound.villagevalidation':'org.ashbound.villagepreview';
 let project=fs.readFileSync(path.join(stage,'project.godot'),'utf8')
  .replace(/run\/main_scene="[^"]+"/,`run/main_scene="res://${scene}"`)
@@ -39,7 +39,7 @@ let project=fs.readFileSync(path.join(stage,'project.godot'),'utf8')
  .replace('window/size/mode=2','window/size/mode=0')
  .replace('[application]',`[application]\nconfig/use_custom_user_dir=true\nconfig/custom_user_dir_name="AshBound_Village_Houses${qa?'_QA':''}"`);
 fs.writeFileSync(path.join(stage,'project.godot'),project);
-const resources=[scene,'scenes/world/village_settlement.tscn','scenes/world/village_walkthrough.tscn','assets/buildings/ashbound/courtyard_well.glb','assets/environment/medieval_kit/detail-barrel.glb','assets/environment/medieval_kit/detail-crate.glb','assets/environment/medieval_kit/fence-wood.glb',...files.filter(f=>f.startsWith('scripts/world/village_')||f.startsWith('assets/environment/village-forest-v1/')||(f.startsWith('assets/environment/village-surfaces-v1/')&&f.endsWith('.jpg'))||f.startsWith('assets/shaders/village_')||f.startsWith('assets/buildings/forest-village-v1/')||f.startsWith('assets/characters/world-graybox-v1/')).filter(f=>!f.endsWith('.import')&&!f.endsWith('.uid'))];
+const resources=[scene,'scenes/world/village_settlement.tscn','scenes/world/village_walkthrough.tscn','assets/buildings/ashbound/courtyard_well.glb','assets/environment/medieval_kit/detail-barrel.glb','assets/environment/medieval_kit/detail-crate.glb','assets/environment/medieval_kit/fence-wood.glb',...files.filter(f=>f.startsWith('scripts/world/village_')||f.startsWith('assets/environment/village-forest-v1/')||(f.startsWith('assets/environment/village-house-materials-v1/')&&f.endsWith('.jpg'))||(f.startsWith('assets/environment/village-surfaces-v1/')&&f.endsWith('.jpg'))||f.startsWith('assets/shaders/village_')||f.startsWith('assets/buildings/forest-village-v1/')||f.startsWith('assets/characters/world-graybox-v1/')).filter(f=>!f.endsWith('.import')&&!f.endsWith('.uid'))];
 // External GLB image references are not inferred reliably by the selected-resource exporter.
 resources.push(...files.filter(f=>f.startsWith('assets/environment/medieval_kit/Textures/')&&f.endsWith('.png')));
 resources.push(...files.filter(f=>f.startsWith('assets/environment/village-props-v1/')&&/\.(gltf|bin|png)$/.test(f)));

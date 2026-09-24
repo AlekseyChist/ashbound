@@ -1,0 +1,153 @@
+{
+  "downloaded": "2026-09-24",
+  "license_url": "https://polyhaven.com/license",
+  "files": [
+    {
+      "file": "fine_grained_wood_col_1k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/fine_grained_wood/fine_grained_wood_col_1k.jpg",
+      "sha256": "d171f45ef01bc6e239b00dfaa4961bcd27f7d8e93e3962da3bd3d0ce703d802c",
+      "asset": "fine_grained_wood",
+      "authors": {
+        "Rob Tuytel": "All"
+      },
+      "source": "https://polyhaven.com/a/fine_grained_wood",
+      "license": "CC0-1.0",
+      "dimensions": [
+        1024,
+        1024
+      ],
+      "map": "Diffuse"
+    },
+    {
+      "file": "fine_grained_wood_nor_gl_1k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/fine_grained_wood/fine_grained_wood_nor_gl_1k.jpg",
+      "sha256": "ba95eadc009818e161d0f753191f1bacc3fc861e593be0bc6d82b437f9ec8044",
+      "asset": "fine_grained_wood",
+      "authors": {
+        "Rob Tuytel": "All"
+      },
+      "source": "https://polyhaven.com/a/fine_grained_wood",
+      "license": "CC0-1.0",
+      "dimensions": [
+        1024,
+        1024
+      ],
+      "map": "nor_gl"
+    },
+    {
+      "file": "fine_grained_wood_rough_1k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/fine_grained_wood/fine_grained_wood_rough_1k.jpg",
+      "sha256": "f281f682e62fe322303dfeaa13dac18b5cb9e113617fe0aca43605b49161d82b",
+      "asset": "fine_grained_wood",
+      "authors": {
+        "Rob Tuytel": "All"
+      },
+      "source": "https://polyhaven.com/a/fine_grained_wood",
+      "license": "CC0-1.0",
+      "dimensions": [
+        1024,
+        1024
+      ],
+      "map": "Rough"
+    },
+    {
+      "file": "plaster_grey_04_diff_1k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/plaster_grey_04/plaster_grey_04_diff_1k.jpg",
+      "sha256": "e78df7d6e762fe767634278e14316564e0d4510031986239458994ec9fc5410d",
+      "asset": "plaster_grey_04",
+      "authors": {
+        "Rob Tuytel": "All"
+      },
+      "source": "https://polyhaven.com/a/plaster_grey_04",
+      "license": "CC0-1.0",
+      "dimensions": [
+        1024,
+        1024
+      ],
+      "map": "Diffuse"
+    },
+    {
+      "file": "plaster_grey_04_nor_gl_1k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/plaster_grey_04/plaster_grey_04_nor_gl_1k.jpg",
+      "sha256": "9d0eb5299f797c07eb841737eb7164755a2c8a2363540e175a76188a2aa5a2dc",
+      "asset": "plaster_grey_04",
+      "authors": {
+        "Rob Tuytel": "All"
+      },
+      "source": "https://polyhaven.com/a/plaster_grey_04",
+      "license": "CC0-1.0",
+      "dimensions": [
+        1024,
+        1024
+      ],
+      "map": "nor_gl"
+    },
+    {
+      "file": "plaster_grey_04_rough_1k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/plaster_grey_04/plaster_grey_04_rough_1k.jpg",
+      "sha256": "0d8cc6216ac3dc9dc4339cb17a08d249f7341961f432ae1451c35cdff222869b",
+      "asset": "plaster_grey_04",
+      "authors": {
+        "Rob Tuytel": "All"
+      },
+      "source": "https://polyhaven.com/a/plaster_grey_04",
+      "license": "CC0-1.0",
+      "dimensions": [
+        1024,
+        1024
+      ],
+      "map": "Rough"
+    },
+    {
+      "file": "stone_wall_02_diff_1k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/stone_wall_02/stone_wall_02_diff_1k.jpg",
+      "sha256": "546c51130575b57db1c9690766c55df19e80bf122bd3630f25f82f2832998fa8",
+      "asset": "stone_wall_02",
+      "authors": {
+        "Dario Barresi": "Processing",
+        "Charlotte Baglioni": "Photography"
+      },
+      "source": "https://polyhaven.com/a/stone_wall_02",
+      "license": "CC0-1.0",
+      "dimensions": [
+        1024,
+        1024
+      ],
+      "map": "Diffuse"
+    },
+    {
+      "file": "stone_wall_02_nor_gl_1k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/stone_wall_02/stone_wall_02_nor_gl_1k.jpg",
+      "sha256": "47c4ee16834a755da49feafe920161db2fd5147be97dd9d24f3b659d9b462c1e",
+      "asset": "stone_wall_02",
+      "authors": {
+        "Dario Barresi": "Processing",
+        "Charlotte Baglioni": "Photography"
+      },
+      "source": "https://polyhaven.com/a/stone_wall_02",
+      "license": "CC0-1.0",
+      "dimensions": [
+        1024,
+        1024
+      ],
+      "map": "nor_gl"
+    },
+    {
+      "file": "stone_wall_02_rough_1k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/stone_wall_02/stone_wall_02_rough_1k.jpg",
+      "sha256": "b857cb67f7dd2c439f8e6d31ef3e279fa18ae2cec66b320382d03a83593178e5",
+      "asset": "stone_wall_02",
+      "authors": {
+        "Dario Barresi": "Processing",
+        "Charlotte Baglioni": "Photography"
+      },
+      "source": "https://polyhaven.com/a/stone_wall_02",
+      "license": "CC0-1.0",
+      "dimensions": [
+        1024,
+        1024
+      ],
+      "map": "Rough"
+    }
+  ]
+}
