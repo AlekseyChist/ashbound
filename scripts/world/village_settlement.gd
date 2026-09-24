@@ -1,12 +1,14 @@
 extends "res://scripts/world/village_walkthrough.gd"
 const Terrain = preload("res://scripts/world/village_terrain.gd")
 const Dressing = preload("res://scripts/world/village_dressing.gd")
+const Atmosphere = preload("res://scripts/world/village_atmosphere.gd")
 var layout: Dictionary
 var terrain: Node3D
 var dressing: Node3D
 var environment: Environment
 var sun: DirectionalLight3D
 var assembled := false
+var atmosphere: Node
 
 func _ready() -> void:
 	super._ready()
@@ -23,8 +25,9 @@ func _ready() -> void:
 	dressing.build(terrain,buildings)
 	camera_rig.get_camera().far = 220.0
 	select_building(0)
-	DisplayServer.window_set_title("AshBound — Forest Village 0.23.0")
-	print("VILLAGE_SETTLEMENT_READY version=0.23.0 houses=3 trees=",dressing.tree_positions.size())
+	atmosphere=Atmosphere.new();atmosphere.name="Atmosphere";add_child(atmosphere);atmosphere.configure(self)
+	DisplayServer.window_set_title("AshBound — Forest Village 0.23.1")
+	print("VILLAGE_SETTLEMENT_READY version=0.23.1 houses=3 trees=",dressing.tree_positions.size())
 
 func _environment() -> void:
 	layout = JSON.parse_string(FileAccess.get_file_as_string("res://assets/world/village-layout-v1.json"))

@@ -704,3 +704,27 @@ msgstr "Дверь движется…"
 
 msgid "VILLAGE_DOOR_BLOCKED"
 msgstr "Дверь упёрлась"
+
+msgid "VILLAGE_TIME"
+msgstr "Время"
+
+msgid "VILLAGE_WEATHER_CLEAR"
+msgstr "Ясно"
+
+msgid "VILLAGE_WEATHER_RAIN"
+msgstr "Дождь"
+
+msgid "VILLAGE_WEATHER_WIND"
+msgstr "Сильный ветер"
+
+msgid "VILLAGE_WEATHER_FOG"
+msgstr "Туман"
+
+msgid "VILLAGE_WEATHER_STORM"
+msgstr "Ливень"
+
+msgid "VILLAGE_WEATHER_AUTO"
+msgstr "Погода меняется автоматически"
+
+msgid "VILLAGE_WEATHER_MANUAL"
+msgstr "Выбрана погода для проверки"

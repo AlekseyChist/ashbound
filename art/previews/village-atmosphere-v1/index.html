@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="ru"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AshBound · Атмосфера деревни 0.23.1</title>
+<style>
+@font-face{font-family:Ash;src:url('../../../docs/art/ui/fonts/OpenSans-SemiBold.woff2')}*{box-sizing:border-box}body{font:17px Ash,system-ui;margin:0;background:#17191c;color:#ede6d6}main{max-width:1380px;margin:auto;padding:24px}h1{font-size:28px}p{line-height:1.6;color:#c4c2b8}nav{display:flex;flex-wrap:wrap;gap:12px;margin:20px 0}button,select{font:inherit;color:inherit;background:#2b2e36;border:1px solid #b89452;border-radius:8px;padding:12px 18px;cursor:pointer}button[aria-pressed=true]{background:#474238}figure{margin:0}img{width:100%;display:block;border:1px solid #6c6046}figcaption{margin:12px 0;color:#bfc8c7}a{color:#d2ae69}.note{max-width:950px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px}input{width:100%;accent-color:#b89452}details{margin:20px 0}summary{cursor:pointer}
+</style><main>
+<h1>AshBound · Лесные дворы</h1>
+<p class="note">Проба атмосферы 0.23.1: насыщенная земля и лес, холодные глубокие тени, тёплые комнаты. Все шесть состояний сняты в одной сцене с одной позиции камеры. Это реальные кадры Godot Mobile, а не концепт-арт. Художественная оценка владельца ещё впереди.</p>
+<label>Платформа <select id="platform"><option value="pc">ПК</option><option value="s23">Samsung S23</option></select></label>
+<nav id="states" aria-label="Время и погода"></nav>
+<figure><img id="view" src="pc/day.png" alt="Деревня при дневном освещении"><figcaption id="caption"></figcaption></figure>
+<details><summary>Интерьеры под ливнем</summary><p>Капли и брызги остаются снаружи. Через дверь и окна погода продолжает быть видна; холодная улица отделяется от тёплой комнаты.</p><div class="grid" id="rooms"></div></details>
+<p class="note">В игре: «Время» перебирает утро → день → сумерки → ночь. «Погода»: ясно → дождь → сильный ветер → туман → ливень → автоматическая смена. Переход погоды занимает 12 секунд, намокание и высыхание — дольше. Сутки идут 24 реальные минуты. На ПК Esc освобождает курсор для кнопок.</p>
+<p><a href="../../../docs/production/VILLAGE_ATMOSPHERE_01_CHECKS.md">Проверки, параметры и ограничения</a> · <a href="../village-settlement-v1/pc/overview.png">Общая расстановка</a></p>
+</main><script>
+const states=[['day','День','12:00 · ясно'],['dusk','Сумерки','18:30 · ясно'],['night','Ночь','23:00 · ясно'],['rain','Дождь','07:00 · дождь'],['storm','Ливень','15:00 · сильный дождь и ветер'],['fog','Туман','08:00 · туман']];
+let selected='day';const view=document.getElementById('view'),platform=document.getElementById('platform');
+function refresh(){const entry=states.find(s=>s[0]===selected);view.src=platform.value+'/'+selected+'.png';view.alt='Лесные дворы: '+entry[1];document.getElementById('caption').textContent=entry[2]+' · '+platform.selectedOptions[0].text;document.querySelectorAll('nav button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.state===selected)));document.querySelectorAll('#rooms img').forEach(img=>img.src=platform.value+'/'+img.dataset.room+'-rain-from-room.png');}
+states.forEach(([id,label])=>{const b=document.createElement('button');b.textContent=label;b.dataset.state=id;b.onclick=()=>{selected=id;refresh()};document.getElementById('states').append(b)});
+['H01','W01','B01'].forEach(id=>{const fig=document.createElement('figure');const img=document.createElement('img');img.dataset.room=id;img.alt=id+' · вид из сухой комнаты';fig.append(img);const caption=document.createElement('figcaption');caption.textContent=id;fig.append(caption);document.getElementById('rooms').append(fig)});
+platform.onchange=refresh;refresh();
+</script></html>

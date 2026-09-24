@@ -703,3 +703,27 @@ msgstr "Door moving…"
 
 msgid "VILLAGE_DOOR_BLOCKED"
 msgstr "Door obstructed"
+
+msgid "VILLAGE_TIME"
+msgstr "Time"
+
+msgid "VILLAGE_WEATHER_CLEAR"
+msgstr "Clear"
+
+msgid "VILLAGE_WEATHER_RAIN"
+msgstr "Rain"
+
+msgid "VILLAGE_WEATHER_WIND"
+msgstr "Strong wind"
+
+msgid "VILLAGE_WEATHER_FOG"
+msgstr "Fog"
+
+msgid "VILLAGE_WEATHER_STORM"
+msgstr "Storm"
+
+msgid "VILLAGE_WEATHER_AUTO"
+msgstr "Weather changes automatically"
+
+msgid "VILLAGE_WEATHER_MANUAL"
+msgstr "Test weather selected"

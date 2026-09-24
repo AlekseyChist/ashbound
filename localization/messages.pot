@@ -671,3 +671,27 @@ msgstr ""
 #. WORLD-GRAYBOX-03 destination
 msgid "WORLD_SITE_SPRING_CAVE"
 msgstr ""
+
+msgid "VILLAGE_TIME"
+msgstr ""
+
+msgid "VILLAGE_WEATHER_CLEAR"
+msgstr ""
+
+msgid "VILLAGE_WEATHER_RAIN"
+msgstr ""
+
+msgid "VILLAGE_WEATHER_WIND"
+msgstr ""
+
+msgid "VILLAGE_WEATHER_FOG"
+msgstr ""
+
+msgid "VILLAGE_WEATHER_STORM"
+msgstr ""
+
+msgid "VILLAGE_WEATHER_AUTO"
+msgstr ""
+
+msgid "VILLAGE_WEATHER_MANUAL"
+msgstr ""
