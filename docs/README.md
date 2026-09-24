@@ -1,5 +1,7 @@
 # AshBound — документы разработки
 
+**D-079 — единственный главный герой:** [фиксированная принятая внешность](design/LIFE_AND_ECONOMY.md), CHAR-01 исключена; [карточка и проверка согласованности](production/FIXED_PROTAGONIST_TASK.md). Цельные сеты и оружие сохраняют лицо/волосы/бороду и пропорции героя.
+
 Звук деревни: [карточка AUDIO-01](production/VILLAGE_AUDIO_01_TASK.md), [исходники/лицензии и музыка](../art/audio/village-v1/README.md), [снимки меню и записи микса](../art/previews/village-audio-v1/README.md).
 
 
