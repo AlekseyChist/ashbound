@@ -1,0 +1,88 @@
+{
+  "pc-headless": {
+    "checks": 108,
+    "completed": [
+      "H01",
+      "W01",
+      "B01"
+    ],
+    "failures": [],
+    "platform": "Windows",
+    "rendering": "mobile",
+    "version": "0.22.0",
+    "walk_timings": {}
+  },
+  "pc-visual": {
+    "checks": 126,
+    "completed": [
+      "H01",
+      "W01",
+      "B01"
+    ],
+    "failures": [],
+    "platform": "Windows",
+    "rendering": "mobile",
+    "version": "0.22.0",
+    "walk_timings": {
+      "frames": 836,
+      "p50_ms": 16.6666666666667,
+      "p95_ms": 16.873,
+      "static_memory_bytes": 75821051
+    }
+  },
+  "pc-4by3": {
+    "checks": 126,
+    "completed": [
+      "H01",
+      "W01",
+      "B01"
+    ],
+    "failures": [],
+    "platform": "Windows",
+    "rendering": "mobile",
+    "version": "0.22.0",
+    "walk_timings": {
+      "frames": 835,
+      "p50_ms": 16.6666666666667,
+      "p95_ms": 16.852,
+      "static_memory_bytes": 75820715
+    }
+  },
+  "s23": {
+    "checks": 126,
+    "completed": [
+      "H01",
+      "W01",
+      "B01"
+    ],
+    "failures": [],
+    "platform": "Android",
+    "rendering": "mobile",
+    "version": "0.22.0",
+    "walk_timings": {
+      "frames": 1589,
+      "p50_ms": 8.33333333333333,
+      "p95_ms": 10.7470000000004,
+      "static_memory_bytes": 70082818
+    }
+  },
+  "builds": {
+    "preview": {
+      "version": "0.22.0",
+      "code": 54,
+      "packageId": "org.ashbound.villagepreview",
+      "android": "ashbound-village-walkthrough-preview.apk",
+      "apkSHA256": "c560a7ed36e86c7fc79104d7161f71c0fca34f9b7a100c110bde5aa002647561",
+      "windows": "AshBound-Village-Houses.exe",
+      "exeSHA256": "798c657cd90b9df1a6fbe399b0935d277ade8be10c74a7e81c59de4f266c2387"
+    },
+    "validation": {
+      "version": "0.22.0",
+      "code": 54,
+      "packageId": "org.ashbound.villagevalidation",
+      "android": "ashbound-village-walkthrough-validation.apk",
+      "apkSHA256": "e7c5f7b5dcff75d8d3519c526e3bc8ab72e0cdcb642bcf8c31734c1adfe0e783",
+      "qaMode": "full"
+    }
+  }
+}
