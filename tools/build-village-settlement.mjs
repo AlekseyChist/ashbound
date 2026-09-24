@@ -27,9 +27,9 @@ if(fs.existsSync(checkpointPath)){
 }
 const cache=path.join(root,'.tools/export-staging',qa?'village-walkthrough-preview':'walk-phone-preview','.godot/imported');
 if(fs.existsSync(cache)&&!fs.existsSync(path.join(stage,'.godot/imported')))fs.cpSync(cache,path.join(stage,'.godot/imported'),{recursive:true});
-const version='0.23.3',code=59;
+const version='0.23.4',code=60;
 const title=`AshBound Forest Village${qa?' QA':''}`;
-const scene=qa?'scripts/tools/validate_village_props.tscn':'scenes/world/village_settlement.tscn';
+const scene=qa?'scripts/tools/validate_village_wind.tscn':'scenes/world/village_settlement.tscn';
 const packageId=qa?'org.ashbound.villagevalidation':'org.ashbound.villagepreview';
 let project=fs.readFileSync(path.join(stage,'project.godot'),'utf8')
  .replace(/run\/main_scene="[^"]+"/,`run/main_scene="res://${scene}"`)

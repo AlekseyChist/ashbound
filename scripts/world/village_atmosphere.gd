@@ -160,6 +160,7 @@ func _setup_foliage() -> void:
 			material.set_shader_parameter("amplitude",.55 if tree else .16)
 			foliage_materials.append(material);cache[key]=material
 		batch.material_override=cache[key]
+		batch.extra_cull_margin=2.0 if tree else .6
 
 func _controls() -> void:
 	var bar:=VBoxContainer.new();bar.name="AtmosphereControls";bar.position=Vector2(24,176)
