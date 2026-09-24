@@ -84,5 +84,5 @@ func color_at(x: float,z: float) -> Color:
 	var road := 1.0-smoothstep(info.y*.42,info.y*.65+0.5,info.x)
 	var well_distance := (Vector2(x,z)+ORIGIN).distance_to(Vector2(data.well.x,data.well.y))
 	road = maxf(road,1.0-smoothstep(2.4,3.6,well_distance))
-	var grass := Color("384829").lerp(Color("526037"),.5+.5*sin(x*.27)*cos(z*.21))
-	return grass.lerp(Color("65523c"),road)
+	var grass := Color("27392b").lerp(Color("405038"),.5+.5*sin(x*.27)*cos(z*.21))
+	return grass.lerp(Color("554837"),road).srgb_to_linear()

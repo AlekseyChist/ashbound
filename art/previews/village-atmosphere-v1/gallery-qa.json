@@ -1,0 +1,11 @@
+{
+  "checks": 18,
+  "states": 12,
+  "rooms": 3,
+  "widths": [
+    1280,
+    800,
+    390
+  ],
+  "errors": []
+}
