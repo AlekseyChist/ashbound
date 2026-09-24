@@ -1,5 +1,7 @@
 # AshBound — документы разработки
 
+**24 сентября / D-074:** [принятый свет/цвет деревни](art/VILLAGE_LOOK_REFERENCE.md); [VILLAGE-PROPS-01, 0.23.3/code59 и QA ПК/S23](production/VILLAGE_PROPS_01_CHECKS.md), [прямые снимки](../art/previews/village-props-v1/README.md).
+
 **Актуально, D-073:** [выборка бесплатных ассетов](art/free-assets-v1/README.md), [визуальный лист](art/free-assets-v1/index.html). Два CC0-материала земли уже в деревне [0.23.2/code58, ПК/S23 201/201](production/VILLAGE_SURFACES_01_CHECKS.md), обычная APK установлена. Следующая предложенная проба — небольшой бытовой набор для существующих дворов.
 
 **Основа, D-072:** собрана тестовая деревня Б v1.1: три дома, дороги, колодец и новый лесной набор. [0.23.1/code57 — свет, сутки и погода, ПК/S23](production/VILLAGE_ATMOSPHERE_01_CHECKS.md); [автономное сравнение и интерьеры](../art/previews/village-atmosphere-v1/index.html), [видео обычной APK](../art/previews/village-atmosphere-v1/s23/normal-weather-motion.mp4). Обычная APK установлена. Следующая точка — личная оценка текущего вида; финальная отделка и кампания остаются впереди.

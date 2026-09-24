@@ -4,6 +4,7 @@ var tree_positions: Array[Vector3] = []
 var terrain: Node3D
 var foliage_batches: Array[MultiMeshInstance3D] = []
 var rng := RandomNumberGenerator.new()
+var household: Node3D
 
 func build(ground: Node3D, buildings: Array[Node3D]) -> void:
 	terrain = ground
@@ -60,6 +61,10 @@ func build(ground: Node3D, buildings: Array[Node3D]) -> void:
 	_prop("res://assets/buildings/ashbound/courtyard_well.glb",at,0,Vector3.ONE,true)
 	for building in buildings:
 		_dress_yard(building)
+	household = preload("res://scripts/world/village_props.gd").new()
+	household.name = "Household"
+	add_child(household)
+	household.build(terrain, buildings)
 	print("VILLAGE_DRESSING trees=",tree_positions.size()," grass=",grass.size()," fern=",ferns.size())
 
 func _batch(asset: String, transforms: Array, shadows: bool, distance: float) -> void:
@@ -106,11 +111,6 @@ func _prop(path: String, at: Vector3, yaw: float, size: Vector3, collision: bool
 func _dress_yard(building: Node3D) -> void:
 	var width: float = building.record.width
 	var depth: float = building.record.depth
-	var decorations := [Vector3(width*.5+1.1,0,-depth*.25),Vector3(-width*.5-1.0,0,-depth*.4)]
-	for i in range(decorations.size()):
-		var at: Vector3 = building.to_global(decorations[i])
-		at.y=terrain.height_at(at.x,at.z)
-		_prop("res://assets/environment/medieval_kit/detail-barrel.glb" if i==0 else "res://assets/environment/medieval_kit/detail-crate.glb",at,building.rotation.y,Vector3.ONE,true)
 	# Side and back fences retain a wide open frontage and the reviewed entry clearance.
 	for side in [-1,1]:
 		for segment in range(4):
