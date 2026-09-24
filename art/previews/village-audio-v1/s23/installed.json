@@ -1,0 +1,16 @@
+{
+  "package": "org.ashbound.villagepreview",
+  "version": "0.23.6",
+  "code": 62,
+  "sha256": "5cc986b3e97564585fdb79c80848c7c44e8de20612326bacc426d6e6b8f0ce1e",
+  "pid": "15906",
+  "physical_sliders": true,
+  "back_button": true,
+  "home_resume": true,
+  "restart_persistence": true,
+  "settings": {
+    "music": 45,
+    "sound": 80,
+    "distance": 220
+  }
+}

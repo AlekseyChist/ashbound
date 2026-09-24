@@ -1,0 +1,312 @@
+{
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "suno_rights": "https://help.suno.com/en/articles/9601665",
+  "files": [
+    {
+      "file": "footstep_grass_000.ogg",
+      "output": "village-v1/step_grass_0.ogg",
+      "kind": "one-shot",
+      "source": "https://kenney.nl/assets/impact-sounds",
+      "author": "Kenney",
+      "license": "CC0-1.0",
+      "sha256": "9d49497777405d78d7cf7f2888e28277f3a23192300cfd1d79d54876b20f479f"
+    },
+    {
+      "file": "footstep_grass_001.ogg",
+      "output": "village-v1/step_grass_1.ogg",
+      "kind": "one-shot",
+      "source": "https://kenney.nl/assets/impact-sounds",
+      "author": "Kenney",
+      "license": "CC0-1.0",
+      "sha256": "fb28781bd22b2eefdc14077f1adf5c94d7fe9c3a130194633b55f3e0d39d9f04"
+    },
+    {
+      "file": "footstep_grass_002.ogg",
+      "output": "village-v1/step_grass_2.ogg",
+      "kind": "one-shot",
+      "source": "https://kenney.nl/assets/impact-sounds",
+      "author": "Kenney",
+      "license": "CC0-1.0",
+      "sha256": "73a520139f5be716a403bfe9c80e0e94d1e61d8e9de04a354b336392164b53dc"
+    },
+    {
+      "file": "footstep_grass_003.ogg",
+      "output": "village-v1/step_grass_3.ogg",
+      "kind": "one-shot",
+      "source": "https://kenney.nl/assets/impact-sounds",
+      "author": "Kenney",
+      "license": "CC0-1.0",
+      "sha256": "0546e1d8ab2def714425701a18bd34c5ee2794b12e858e5b595aabcf38a34137"
+    },
+    {
+      "file": "footstep_concrete_000.ogg",
+      "output": "village-v1/step_stone_0.ogg",
+      "kind": "one-shot",
+      "source": "https://kenney.nl/assets/impact-sounds",
+      "author": "Kenney",
+      "license": "CC0-1.0",
+      "sha256": "d7267e183067757c92c169de2a379abea592cfca6b39bb2e8feea15221ad79fe"
+    },
+    {
+      "file": "footstep_concrete_001.ogg",
+      "output": "village-v1/step_stone_1.ogg",
+      "kind": "one-shot",
+      "source": "https://kenney.nl/assets/impact-sounds",
+      "author": "Kenney",
+      "license": "CC0-1.0",
+      "sha256": "507a75eb19b897087855a3be3cf11a12d7fa37d143ad535eeebe0b8031c7325d"
+    },
+    {
+      "file": "footstep_concrete_002.ogg",
+      "output": "village-v1/step_stone_2.ogg",
+      "kind": "one-shot",
+      "source": "https://kenney.nl/assets/impact-sounds",
+      "author": "Kenney",
+      "license": "CC0-1.0",
+      "sha256": "b21fa546d74941196b25da8a20b7010abd8c05c4fcf93545d1f344e66a664e13"
+    },
+    {
+      "file": "footstep_concrete_003.ogg",
+      "output": "village-v1/step_stone_3.ogg",
+      "kind": "one-shot",
+      "source": "https://kenney.nl/assets/impact-sounds",
+      "author": "Kenney",
+      "license": "CC0-1.0",
+      "sha256": "8b513c2f0316324060b9174b8f28df6c2147418c506e6a53b77f18e149a5547b"
+    },
+    {
+      "file": "footstep_wood_000.ogg",
+      "output": "village-v1/step_wood_0.ogg",
+      "kind": "one-shot",
+      "source": "https://kenney.nl/assets/impact-sounds",
+      "author": "Kenney",
+      "license": "CC0-1.0",
+      "sha256": "5f1c252942a220d658121bd9417448cd19649ded9fff2ff15f6e50899373ce8e"
+    },
+    {
+      "file": "footstep_wood_001.ogg",
+      "output": "village-v1/step_wood_1.ogg",
+      "kind": "one-shot",
+      "source": "https://kenney.nl/assets/impact-sounds",
+      "author": "Kenney",
+      "license": "CC0-1.0",
+      "sha256": "e4f68e1c9fd55b4dc8ca89ed2bbab6f200171bc54bdc18aa96b80d8e7336f462"
+    },
+    {
+      "file": "footstep_wood_002.ogg",
+      "output": "village-v1/step_wood_2.ogg",
+      "kind": "one-shot",
+      "source": "https://kenney.nl/assets/impact-sounds",
+      "author": "Kenney",
+      "license": "CC0-1.0",
+      "sha256": "9ff095b05cee5eec40b081defe3f0eef7232bb16d4865ce03b9f6dbab875cfdd"
+    },
+    {
+      "file": "footstep_wood_003.ogg",
+      "output": "village-v1/step_wood_3.ogg",
+      "kind": "one-shot",
+      "source": "https://kenney.nl/assets/impact-sounds",
+      "author": "Kenney",
+      "license": "CC0-1.0",
+      "sha256": "2a68a083daa9eda08fed0ea5da5280dfbe0de226196c576be02f95259dd139d9"
+    },
+    {
+      "file": "footstep_snow_000.ogg",
+      "output": "village-v1/step_snow_0.ogg",
+      "kind": "one-shot",
+      "source": "https://kenney.nl/assets/impact-sounds",
+      "author": "Kenney",
+      "license": "CC0-1.0",
+      "sha256": "c05fa4a9dc9a7aabc04996466fb589537e49af76de9998d8f9e6270ec92dcef7"
+    },
+    {
+      "file": "footstep_snow_001.ogg",
+      "output": "village-v1/step_snow_1.ogg",
+      "kind": "one-shot",
+      "source": "https://kenney.nl/assets/impact-sounds",
+      "author": "Kenney",
+      "license": "CC0-1.0",
+      "sha256": "980fb9a1c9227aed7995067b0357f373053337f2416316db8ea0438418542fb4"
+    },
+    {
+      "file": "footstep_snow_002.ogg",
+      "output": "village-v1/step_snow_2.ogg",
+      "kind": "one-shot",
+      "source": "https://kenney.nl/assets/impact-sounds",
+      "author": "Kenney",
+      "license": "CC0-1.0",
+      "sha256": "db52bafdc66304f3b999f2c29227826c65993916e630ac2ffbca17d07b263178"
+    },
+    {
+      "file": "footstep_snow_003.ogg",
+      "output": "village-v1/step_snow_3.ogg",
+      "kind": "one-shot",
+      "source": "https://kenney.nl/assets/impact-sounds",
+      "author": "Kenney",
+      "license": "CC0-1.0",
+      "sha256": "68272e3f1cabcabd02d328fd344454d7c04cb58b5a86972fcdd858f845e3d007"
+    },
+    {
+      "file": "footstep00.ogg",
+      "output": "village-v1/step_dirt_0.ogg",
+      "kind": "one-shot",
+      "source": "https://kenney.nl/assets/rpg-audio",
+      "author": "Kenney",
+      "license": "CC0-1.0",
+      "sha256": "6fe61ef1fc3bcf0e253bf2eb64759db6cb69e2fe452f4d88cc597ecf78a3d601"
+    },
+    {
+      "file": "footstep01.ogg",
+      "output": "village-v1/step_dirt_1.ogg",
+      "kind": "one-shot",
+      "source": "https://kenney.nl/assets/rpg-audio",
+      "author": "Kenney",
+      "license": "CC0-1.0",
+      "sha256": "313472dba31fd0c855376069fa368bb5a198c27251cc8398ef464578b7047a4c"
+    },
+    {
+      "file": "footstep02.ogg",
+      "output": "village-v1/step_dirt_2.ogg",
+      "kind": "one-shot",
+      "source": "https://kenney.nl/assets/rpg-audio",
+      "author": "Kenney",
+      "license": "CC0-1.0",
+      "sha256": "2d9575b7dead6e1217ca113991fc5229e9b6d998ea0726ebbb277e7398ab888f"
+    },
+    {
+      "file": "footstep03.ogg",
+      "output": "village-v1/step_dirt_3.ogg",
+      "kind": "one-shot",
+      "source": "https://kenney.nl/assets/rpg-audio",
+      "author": "Kenney",
+      "license": "CC0-1.0",
+      "sha256": "a86756b9af9f370455ab47844239bb07fd1bee7a113068c91f0fcd9b72703fae"
+    },
+    {
+      "file": "impactPunch_medium_000.ogg",
+      "output": "village-v1/hit.ogg",
+      "kind": "one-shot",
+      "source": "https://kenney.nl/assets/impact-sounds",
+      "author": "Kenney",
+      "license": "CC0-1.0",
+      "sha256": "486988aa2d6440ffc4c62a0e8ccf3c23673ba84424bd4723378d451b7255eb5c"
+    },
+    {
+      "file": "impactSoft_heavy_000.ogg",
+      "output": "village-v1/block.ogg",
+      "kind": "one-shot",
+      "source": "https://kenney.nl/assets/impact-sounds",
+      "author": "Kenney",
+      "license": "CC0-1.0",
+      "sha256": "49e7ca88743fca974bb8676ea138b751cfd8f9033b5e7af8736c2a215d6edbc1"
+    },
+    {
+      "file": "swing-source.ogg",
+      "output": "village-v1/swing.ogg",
+      "kind": "one-shot",
+      "source": "https://opengameart.org/content/100-cc0-sfx-2",
+      "author": "rubberduck",
+      "license": "CC0-1.0",
+      "sha256": "bb292a9fc082557e65199d01abe124459d910519b39c913ecb6c6f2207576d6f"
+    },
+    {
+      "file": "thunder-source.ogg",
+      "output": "village-v1/thunder.ogg",
+      "kind": "one-shot",
+      "source": "https://opengameart.org/content/100-cc0-sfx-2",
+      "author": "rubberduck",
+      "license": "CC0-1.0",
+      "sha256": "8a4f1dee999546b363f989eff92174375eeae7c241dc9beaa0892fb131ef12a9"
+    },
+    {
+      "file": "wind-source.wav",
+      "output": "village-v1/wind.ogg",
+      "kind": "loop",
+      "source": "https://opengameart.org/content/wind1",
+      "author": "Luke.RUSTLTD",
+      "license": "CC0-1.0",
+      "sha256": "a2856f794fbf77e05f8241dc4adeade7f62fa21c3c9dc49f7725b6c6218060c3"
+    },
+    {
+      "file": "rain-source.ogg",
+      "output": "village-v1/rain.ogg",
+      "kind": "loop",
+      "source": "https://opengameart.org/content/rain-ambient-not-loopable-2-versions-available",
+      "author": "OveMelaa",
+      "license": "CC0-1.0",
+      "sha256": "5083851776c2b3ff56b81550672d7f697efcdb88f605f83402d7dfc91c56b476"
+    },
+    {
+      "file": "fire-source.wav",
+      "output": "village-v1/fire.ogg",
+      "kind": "loop",
+      "source": "https://opengameart.org/content/fire-crackling",
+      "author": "AntumDeluge",
+      "license": "CC0-1.0",
+      "sha256": "26702de8a195bcbafeae72034861d875a1b7917168a25106f4e1957ecdddf7e5"
+    },
+    {
+      "file": "Catacomb Oath.mp3",
+      "output": "soundtrack-v1/catacomb-oath.ogg",
+      "kind": "music",
+      "source": "https://suno.com/create",
+      "author": "AshBound owner / Suno",
+      "license": "Owner-supplied; paid subscription confirmed 2026-09-24; project use authorized",
+      "sha256": "c1badd45da89c141b433c25b4814101c701e384a15734e2445cee2f9d8eaab72"
+    },
+    {
+      "file": "Dusty Sands.mp3",
+      "output": "soundtrack-v1/dusty-sands.ogg",
+      "kind": "music",
+      "source": "https://suno.com/create",
+      "author": "AshBound owner / Suno",
+      "license": "Owner-supplied; paid subscription confirmed 2026-09-24; project use authorized",
+      "sha256": "28019597e6f5b1c163525c89668d766b3d2a42a693f7732327806968b483e0b3"
+    },
+    {
+      "file": "Forest Watch.mp3",
+      "output": "soundtrack-v1/forest-watch.ogg",
+      "kind": "music",
+      "source": "https://suno.com/create",
+      "author": "AshBound owner / Suno",
+      "license": "Owner-supplied; paid subscription confirmed 2026-09-24; project use authorized",
+      "sha256": "5965f7aa979e251c103bdceab4625572f021e63af9e1b70fcc299137aa1f4ad4"
+    },
+    {
+      "file": "Highland Stone.mp3",
+      "output": "soundtrack-v1/highland-stone.ogg",
+      "kind": "music",
+      "source": "https://suno.com/create",
+      "author": "AshBound owner / Suno",
+      "license": "Owner-supplied; paid subscription confirmed 2026-09-24; project use authorized",
+      "sha256": "c0a27c1c7ee364431294125142cc0d03379a06f2fbf9fd71f5eeb7313064e1fd"
+    },
+    {
+      "file": "Swamp Rituals.mp3",
+      "output": "soundtrack-v1/swamp-rituals.ogg",
+      "kind": "music",
+      "source": "https://suno.com/create",
+      "author": "AshBound owner / Suno",
+      "license": "Owner-supplied; paid subscription confirmed 2026-09-24; project use authorized",
+      "sha256": "87fb4dc764983d8f9f2b4b46d0b60ec559de4e98a51c33d7c1fc6f7fd106e771"
+    },
+    {
+      "file": "creak1.ogg",
+      "output": "village-v1/door-creak.ogg",
+      "kind": "one-shot",
+      "source": "https://kenney.nl/assets/rpg-audio",
+      "author": "Kenney",
+      "license": "CC0-1.0",
+      "sha256": "8a346186fd297254248cab8e8117060a52a5cf2a84f603153a762108550ea95e"
+    },
+    {
+      "file": "doorClose_1.ogg",
+      "output": "village-v1/door-close.ogg",
+      "kind": "one-shot",
+      "source": "https://kenney.nl/assets/rpg-audio",
+      "author": "Kenney",
+      "license": "CC0-1.0",
+      "sha256": "834d29c60a8a8bfb50b158cdb6b7dfa8f02812a408a1ee9703d038dfab0b1aeb"
+    }
+  ]
+}

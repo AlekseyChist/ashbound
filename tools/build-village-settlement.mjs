@@ -27,9 +27,9 @@ if(fs.existsSync(checkpointPath)){
 }
 const cache=path.join(root,'.tools/export-staging',qa?'village-walkthrough-preview':'walk-phone-preview','.godot/imported');
 if(fs.existsSync(cache)&&!fs.existsSync(path.join(stage,'.godot/imported')))fs.cpSync(cache,path.join(stage,'.godot/imported'),{recursive:true});
-const version='0.23.5',code=61;
+const version='0.23.6',code=62;
 const title=`AshBound Forest Village${qa?' QA':''}`;
-const scene=qa?'scripts/tools/validate_village_materials.tscn':'scenes/world/village_settlement.tscn';
+const scene=qa?'scripts/tools/validate_village_audio.tscn':'scenes/world/village_settlement.tscn';
 const packageId=qa?'org.ashbound.villagevalidation':'org.ashbound.villagepreview';
 let project=fs.readFileSync(path.join(stage,'project.godot'),'utf8')
  .replace(/run\/main_scene="[^"]+"/,`run/main_scene="res://${scene}"`)
@@ -43,7 +43,8 @@ const resources=[scene,'scenes/world/village_settlement.tscn','scenes/world/vill
 // External GLB image references are not inferred reliably by the selected-resource exporter.
 resources.push(...files.filter(f=>f.startsWith('assets/environment/medieval_kit/Textures/')&&f.endsWith('.png')));
 resources.push(...files.filter(f=>f.startsWith('assets/environment/village-props-v1/')&&/\.(gltf|bin|png)$/.test(f)));
-if(qa)resources.push('scripts/tools/validate_village_surfaces.gd','scripts/tools/validate_village_settlement.gd','scripts/tools/validate_village_atmosphere.gd');
+resources.push(...files.filter(f=>(f.startsWith('assets/audio/village-v1/')||f.startsWith('assets/audio/soundtrack-v1/'))&&f.endsWith('.ogg')));
+if(qa)resources.push('scripts/tools/validate_village_materials.gd','scripts/tools/validate_village_surfaces.gd','scripts/tools/validate_village_settlement.gd','scripts/tools/validate_village_atmosphere.gd');
 let presets=fs.readFileSync(path.join(stage,'export_presets.cfg'),'utf8')
  .replaceAll('export_files=PackedStringArray(',`export_files=PackedStringArray(${resources.map(v=>JSON.stringify('res://'+v)).join(', ')}, `)
  .replaceAll('include_filter="localization/*.po,assets/ui/fonts/OFL.txt"','include_filter="localization/*.po,assets/ui/fonts/OFL.txt,assets/world/*.json"')

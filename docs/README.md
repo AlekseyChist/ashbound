@@ -1,5 +1,8 @@
 # AshBound — документы разработки
 
+Звук деревни: [карточка AUDIO-01](production/VILLAGE_AUDIO_01_TASK.md), [исходники/лицензии и музыка](../art/audio/village-v1/README.md), [снимки меню и записи микса](../art/previews/village-audio-v1/README.md).
+
+
 **24 сентября / D-077:** [отделка А одного H01, 0.23.5/code61, ПК/S23 408/408](production/VILLAGE_MATERIAL_01_CHECKS.md); [сравнение до/после](../art/previews/village-materials-v1/README.md). Обычная APK установлена, далее личная оценка.
 
 **24 сентября / D-075:** [порывы растительности, 0.23.4/code60 и QA ПК/S23](production/VILLAGE_WIND_01_CHECKS.md), [временное сравнение и видео](../art/previews/village-wind-v1/README.md).

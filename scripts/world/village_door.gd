@@ -3,6 +3,8 @@ extends Node3D
 const DURATION := 0.7
 const STEPS := 90
 const OBSTACLE_LAYER := 8
+const CREAK = preload("res://assets/audio/village-v1/door-creak.ogg")
+const CLOSE = preload("res://assets/audio/village-v1/door-close.ogg")
 var building_id := ""
 var entry := Vector3.ZERO
 var leaves: Array[Dictionary] = []
@@ -48,8 +50,9 @@ func configure(model: Node3D, identity: String, entry_point: Vector3) -> void:
 	audio = AudioStreamPlayer3D.new()
 	audio.position = entry + Vector3.UP
 	audio.max_distance = 12.0
-	audio.volume_db = -16.0
-	audio.stream = _hinge_sound()
+	audio.unit_size = 2.0
+	audio.volume_db = -8.0
+	audio.stream = CREAK
 	add_child(audio)
 
 func target_point() -> Vector3:
@@ -81,6 +84,8 @@ func try_toggle(actor: CharacterBody3D) -> bool:
 		goal = 0.0
 	blocked = false
 	moving = true
+	audio.stream = CREAK
+	audio.pitch_scale = randf_range(.96,1.04)
 	if DisplayServer.get_name() != "headless": audio.play()
 	return true
 
@@ -114,26 +119,17 @@ func _physics_process(delta: float) -> void:
 		return
 	var next := move_toward(fraction, goal, delta / DURATION)
 	blocked = not _arc_clear(fraction, next)
-	if blocked: return
+	if blocked:
+		audio.stop()
+		return
 	fraction = next
 	for leaf in leaves:
 		leaf.pivot.transform = _pose(leaf, fraction)
-	if is_equal_approx(fraction, goal): moving = false
-
-func _hinge_sound() -> AudioStreamWAV:
-	# Small synthetic wood/hinge cue, no external audio dependency.
-	var stream := AudioStreamWAV.new()
-	stream.format = AudioStreamWAV.FORMAT_16_BITS
-	stream.mix_rate = 16000
-	var data := PackedByteArray()
-	data.resize(6400 * 2)
-	for i in range(6400):
-		var t := float(i) / 16000.0
-		var envelope := sin(PI * float(i) / 6400.0)
-		var sample := (sin(TAU * (135.0 * t + 75.0 * t * t)) + 0.22 * sin(TAU * 527.0 * t)) * envelope * 0.16
-		data.encode_s16(i * 2, int(sample * 32767))
-	stream.data = data
-	return stream
+	if is_equal_approx(fraction, goal):
+		moving = false
+		if is_zero_approx(goal):
+			audio.stream = CLOSE
+			if DisplayServer.get_name() != "headless": audio.play()
 
 func _exit_tree() -> void:
 	if is_instance_valid(audio): audio.stop()

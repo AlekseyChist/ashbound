@@ -1,0 +1,27 @@
+--------- beginning of main
+I/godot   (14390): Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+I/godot   (14390): Vulkan 1.3.128 - Forward Mobile - Using Device #0: Qualcomm - Adreno (TM) 740
+I/godot   (14390):
+I/godot   (14390): [ASHBOUND] GameManager инициализирован
+I/godot   (14390): [ASHBOUND] FactionManager инициализирован
+I/godot   (14390): [ASHBOUND] QuestManager инициализирован
+I/godot   (14390): [ASHBOUND] DialogueSystem инициализирован
+I/godot   (14390): [ASHBOUND] InventorySystem инициализирован
+I/godot   (14390): VILLAGE_WALKTHROUGH_READY version=0.22.1 buildings=3
+I/godot   (14390): VILLAGE_PROPS_READY count=14
+I/godot   (14390): VILLAGE_DRESSING trees=280 grass=2015 fern=206
+I/godot   (14390): VILLAGE_SETTLEMENT_READY version=0.23.6 houses=3 trees=280
+I/godot   (14390): VILLAGE_RAIN_READY cover=226x176 drops=1100 splashes=180
+I/godot   (14390): ATMOSPHERE_STATE_COMPLETE
+I/godot   (14390): VILLAGE_SURFACES_CONTRACT_COMPLETE
+I/godot   (14390): VILLAGE_MATERIALS_CONTRACT_COMPLETE
+I/godot   (14390): AUDIO_STATE_COMPLETE
+I/godot   (14390): ATMOSPHERE_COVER_COMPLETE
+I/godot   (14390): ATMOSPHERE_INPUT_COMPLETE
+I/godot   (14390): AUDIO_INPUT_COMPLETE
+I/godot   (14390): ATMOSPHERE_ROUTE_COMPLETE H01
+I/godot   (14390): ATMOSPHERE_ROUTE_COMPLETE W01
+I/godot   (14390): ATMOSPHERE_ROUTE_COMPLETE B01
+I/godot   (14390): ATMOSPHERE_PERFORMANCE_COMPLETE clear {"frames":1020,"p50_ms":12.5,"p95_ms":13.9799999999984}
+I/godot   (14390): ATMOSPHERE_PERFORMANCE_COMPLETE storm {"frames":964,"p50_ms":13.3333333333333,"p95_ms":15.3957037037037}
+I/godot   (14390): ATMOSPHERE_QA_COMPLETE {"checks":537,"completed":["H01","W01","B01"],"failures":[],"metrics":{"clear":{"frames":1020,"p50_ms":12.5,"p95_ms":13.9799999999984},"storm":{"frames":964,"p50_ms":13.3333333333333,"p95_ms":15.3957037037037}},"platform":"Android","renderer":"mobile","version":"0.23.6"}

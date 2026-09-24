@@ -728,3 +728,28 @@ msgstr "Погода меняется автоматически"
 
 msgid "VILLAGE_WEATHER_MANUAL"
 msgstr "Выбрана погода для проверки"
+
+
+msgid "VILLAGE_SETTINGS"
+msgstr "Настройки"
+
+msgid "VILLAGE_SETTINGS_CLOSE"
+msgstr "Вернуться в игру"
+
+msgid "VILLAGE_SETTINGS_HINT"
+msgstr "Меньшая дальность снижает нагрузку. Настройки сохраняются на устройстве."
+
+msgid "VILLAGE_SETTINGS_ERROR"
+msgstr "Не удалось сохранить настройки."
+
+msgid "VILLAGE_MUSIC_VOLUME"
+msgstr "Музыка"
+
+msgid "VILLAGE_SOUND_VOLUME"
+msgstr "Звуки окружения"
+
+msgid "VILLAGE_DRAW_DISTANCE"
+msgstr "Дальность прорисовки"
+
+msgid "VILLAGE_METRES"
+msgstr "м"

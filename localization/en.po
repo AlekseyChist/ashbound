@@ -727,3 +727,28 @@ msgstr "Weather changes automatically"
 
 msgid "VILLAGE_WEATHER_MANUAL"
 msgstr "Test weather selected"
+
+
+msgid "VILLAGE_SETTINGS"
+msgstr "Settings"
+
+msgid "VILLAGE_SETTINGS_CLOSE"
+msgstr "Return to game"
+
+msgid "VILLAGE_SETTINGS_HINT"
+msgstr "Shorter distance reduces rendering load. Settings are saved on this device."
+
+msgid "VILLAGE_SETTINGS_ERROR"
+msgstr "Could not save settings."
+
+msgid "VILLAGE_MUSIC_VOLUME"
+msgstr "Music"
+
+msgid "VILLAGE_SOUND_VOLUME"
+msgstr "World sounds"
+
+msgid "VILLAGE_DRAW_DISTANCE"
+msgstr "Draw distance"
+
+msgid "VILLAGE_METRES"
+msgstr "m"
