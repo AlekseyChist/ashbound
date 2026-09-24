@@ -8,6 +8,7 @@ var failures: Array[String] = []
 var routes: Array[Dictionary] = []
 var output := "user://world-graybox-qa"
 var capture := false
+var starter_cases := 0
 
 func _ready() -> void:
 	call_deferred("_run")
@@ -32,6 +33,7 @@ func _run() -> void:
 	await _geometry_fixture()
 	await _surfaces_and_ui()
 	await _headwaters()
+	await _starter_region()
 	if not args.has("--screens-only") and not ProjectSettings.get_setting("ashbound/qa/screens_only", false):
 		await _cross_road()
 		await _routes()
@@ -62,7 +64,7 @@ func _run() -> void:
 	check(world.drag_touch == -1, "touch release over UI clears orbit")
 	world.reset_overview()
 	await _screenshot("overview-final")
-	var report := {"failures": failures, "routes": routes, "platform": OS.get_name(), "rendering": RenderingServer.get_current_rendering_method(), "version": world.layout.version}
+	var report := {"failures": failures, "routes": routes, "starter_cases": starter_cases, "platform": OS.get_name(), "rendering": RenderingServer.get_current_rendering_method(), "version": world.layout.version}
 	var f := FileAccess.open(output.path_join("results.json"), FileAccess.WRITE)
 	f.store_string(JSON.stringify(report, "\t"))
 	f.close()
@@ -72,6 +74,114 @@ func _run() -> void:
 func _ray(x: float, z: float, top: float = 900) -> Dictionary:
 	var q := PhysicsRayQueryParameters3D.create(Vector3(x, top, z), Vector3(x, -80, z), 1)
 	return world.get_world_3d().direct_space_state.intersect_ray(q)
+
+func _starter_region() -> void:
+	var region: Node3D = world.get_node("StarterRegion")
+	var forest: Node3D = region.get_node("Forest")
+	check(region.get_child_count() == 6 and not world.has_node("start_hamlet"), "five houses replace old hamlet")
+	check(forest.get_child_count() == 4, "three forest batches plus trunk collider body")
+	for name in ["Trunks", "LowerCrowns", "UpperCrowns"]:
+		var batch: MultiMeshInstance3D = forest.get_node(name)
+		check(batch.multimesh.instance_count == world.starter_layout.trees.size(), "complete batch " + name)
+	var empty: Node3D = region.add_forest([])
+	check(empty.get_child_count() == 0, "empty forest safe")
+	empty.queue_free()
+	await get_tree().physics_frame
+	world.set_overview(false)
+	for record in world.starter_layout.houses:
+		var house: Node3D = region.get_node(record.id)
+		var front := house.global_basis.z
+		var center: Vector3 = house.global_position + Vector3.UP * (float(record.foundation) + 1.2)
+		var from: Vector3 = center + front * (float(record.size[2]) * 0.5 + 2)
+		var q := PhysicsRayQueryParameters3D.create(from, center, 1)
+		var hit := world.get_world_3d().direct_space_state.intersect_ray(q)
+		check(not hit.is_empty() and hit.collider == house.get_node("Collision"), "solid house " + str(record.id))
+		# Extents of the roof must span the walls, meet at the ridge and remain close to the wall tops.
+		for roof_name in ["RoofA", "RoofB"]:
+			var roof: MeshInstance3D = house.get_node(roof_name)
+			check(roof.mesh.size.x > float(record.size[0]) * 0.5, "roof spans half house")
+			check(roof.position.y < float(record.foundation) + float(record.size[1]) + 2, "roof not floating")
+		starter_cases += 1
+	# Real actor approaches a wall, stops, then walks parallel beyond the corner.
+	var first: Dictionary = world.starter_layout.houses[0]
+	var house: Node3D = region.get_node(first.id)
+	var front := house.global_basis.z
+	var right := house.global_basis.x
+	var start: Vector3 = house.position + front * (float(first.size[2])*0.5 + 3)
+	start.y = world.ground_height(start.x, start.z) + .2
+	await _place_actor(start)
+	await _drive_direction(-front, 1.4)
+	var local: Vector3 = house.to_local(world.player.global_position)
+	check(local.z > float(first.size[2])*0.5+.2 and local.z < float(first.size[2])*0.5+.8, "actor stops at rotated house wall")
+	await _drive_direction(right, 2.0)
+	check(house.to_local(world.player.global_position).x > float(first.size[0])*0.5+1, "actor bypasses house corner")
+	starter_cases += 1
+	# Test an actual nearby trunk, including radius scaled with the mesh.
+	var tree: Array = world.starter_layout.trees[0]
+	var base := Vector3(tree[0], tree[1], tree[2])
+	start = base + Vector3(0, 0, 2)
+	start.y = world.ground_height(start.x, start.z) + .2
+	await _place_actor(start)
+	await _drive_direction(Vector3.FORWARD, 1.2)
+	var distance := Vector2(world.player.position.x-base.x, world.player.position.z-base.z).length()
+	check(distance > float(tree[3])*.28+.2 and distance < 1.0, "actor stops at scaled tree trunk")
+	await _drive_direction(Vector3.RIGHT, .5)
+	await _drive_direction(Vector3.FORWARD, 1.1)
+	check(world.player.position.z < base.z-1, "actor can go around tree")
+	starter_cases += 1
+	world.select_city(4)
+	await _screenshot("starter-hamlet")
+	# Local overhead inspection of the entire district; no production camera behavior changes.
+	world.set_overview(true)
+	world.overview_center = Vector3(-755, 65, 285)
+	world.overview_distance = 560
+	world._update_overview_camera()
+	await _screenshot("starter-district")
+	world.set_overview(false)
+	for location in [10, 8]:
+		world.select_city(location)
+		world.camera_rig.rotate_view(Vector2(PI / world.camera_rig.mouse_sensitivity, 0))
+		world.camera_rig.snap_to_target()
+		await _screenshot("starter-place-" + str(location+1))
+	if capture:
+		world.select_city(4)
+		var trail: Dictionary
+		for road in world.layout.roads:
+			if road.id == "start_trail": trail = road
+		var points: PackedVector3Array = world.points_of(trail)
+		var middle := int(points.size() * .65)
+		await _place_actor(points[middle] + Vector3.UP * .2)
+		var direction := (points[middle-1] - points[middle]).normalized()
+		direction.y = 0
+		direction = direction.normalized()
+		var yaw := atan2(-direction.x, -direction.z)
+		world.camera_rig.rotate_view(Vector2(-yaw / world.camera_rig.mouse_sensitivity, 0))
+		world.camera_rig.snap_to_target()
+		for i in range(6):
+			world.player.set_run_input(true)
+			await _drive_direction(direction, .3, false)
+			await _screenshot("starter-motion-" + str(i))
+		world.player.stop_input()
+	world.reset_overview()
+	print("WORLD_STARTER_COMPLETE cases=%d trees=%d" % [starter_cases, world.starter_layout.trees.size()])
+
+func _place_actor(position: Vector3) -> void:
+	world.player.stop_input()
+	world.player.position = position
+	world.player.velocity = Vector3.ZERO
+	world.camera_rig.reset_view()
+	for i in range(20): await get_tree().physics_frame
+
+func _drive_direction(direction: Vector3, seconds: float, stop_after: bool = true) -> void:
+	var elapsed := 0.0
+	while elapsed < seconds:
+		var cam: Camera3D = world.camera_rig.get_camera()
+		var right := Vector3(cam.global_basis.x.x, 0, cam.global_basis.x.z).normalized()
+		var back := Vector3(cam.global_basis.z.x, 0, cam.global_basis.z.z).normalized()
+		world.player.set_move_input(Vector2(direction.dot(right), direction.dot(back)))
+		await get_tree().physics_frame
+		elapsed += get_physics_process_delta_time()
+	if stop_after: world.player.stop_input()
 
 func _geometry_fixture() -> void:
 	var g := Geometry.new()
@@ -137,7 +247,8 @@ func _surfaces_and_ui() -> void:
 	check(world.locations.size() == 16, "four cities, ten exploration sites and two headwaters")
 	for site in world.layout.sites:
 		if site.kind != "lake" and site.kind != "spring_cave":
-			check(world.has_node(NodePath(site.id)), "landmark exists " + str(site.id))
+			var path := "StarterRegion" if site.id == "start_hamlet" else str(site.id)
+			check(world.has_node(NodePath(path)), "landmark exists " + str(site.id))
 		check(not str(Localization.text(site.key)).begins_with("WORLD_"), "translated site " + str(site.id))
 	for river in world.layout.rivers:
 		var river_mesh: MeshInstance3D = world.shapes.get_node(NodePath(river.id))

@@ -20,6 +20,6 @@ for(const [name,options,userArgs,expected] of [
  const text=fs.readFileSync(log,'utf8');
  if(error||/SCRIPT ERROR:|^ERROR:|WORLD_QA_FAIL/m.test(text)||!text.includes(`WORLD_GRAYBOX_QA_COMPLETE failures=0 routes=${expected}`))throw Error(name+' failed; inspect '+log);
  const report=JSON.parse(fs.readFileSync(path.join(dir,'results.json'),'utf8'));
- if(report.failures.length||report.routes.length!==expected||report.routes.some(r=>!r.passed))throw Error(name+' incomplete report');
+ if(report.failures.length||report.starter_cases!==7||report.routes.length!==expected||report.routes.some(r=>!r.passed))throw Error(name+' incomplete report');
  console.log('PASS '+name+' routes='+expected);
 }

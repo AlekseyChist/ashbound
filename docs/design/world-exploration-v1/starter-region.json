@@ -1,0 +1,23 @@
+{
+  "version": "0.21.3-starter-region",
+  "status": "Coordinator layout proposal; coarse masses, owner review pending",
+  "seed": 24092026,
+  "bounds_xz": [35, 1080, 510, 1480],
+  "forest_grid_m": 12,
+  "forest_path_distance_m": [13, 74],
+  "routes": ["start_trail", "forest_cave_trail", "forest_cave_loop", "forest_inn_approach"],
+  "clearings": [
+    {"id": "hamlet_square", "center_xz": [155, 1420], "radius_m": 32},
+    {"id": "cave_forecourt", "center_xz": [115, 1170], "radius_m": 26},
+    {"id": "forest_junction", "center_xz": [420, 1210], "radius_m": 22},
+    {"id": "inn_court", "center_xz": [450, 1270], "radius_m": 32}
+  ],
+  "houses": [
+    {"id": "west_home", "center_xz": [134, 1420], "size": [6.5, 3.6, 8]},
+    {"id": "southwest_home", "center_xz": [138, 1434], "size": [7, 3.6, 8]},
+    {"id": "south_home", "center_xz": [153, 1442], "size": [6, 3.4, 7]},
+    {"id": "east_home", "center_xz": [169, 1438], "size": [7, 3.8, 9]},
+    {"id": "east_shed", "center_xz": [178, 1422], "size": [6, 3.2, 7]}
+  ],
+  "limits": "Closed house volumes; trees are static. No interiors, quests, NPC, services or harvesting. Existing world geography unchanged."
+}

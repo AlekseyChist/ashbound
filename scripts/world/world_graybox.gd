@@ -4,6 +4,7 @@ const Geometry = preload("res://scripts/world/world_graybox_geometry.gd")
 const Shapes = preload("res://scripts/world/world_graybox_shapes.gd")
 const Headwaters = preload("res://scripts/world/world_graybox_headwaters.gd")
 const Landmarks = preload("res://scripts/world/world_graybox_landmarks.gd")
+const Starter = preload("res://scripts/world/world_graybox_starter.gd")
 const PlayerScene = preload("res://scenes/courtyard/courtyard_player.tscn")
 const CameraScene = preload("res://scenes/courtyard/third_person_camera.tscn")
 const HudScene = preload("res://scenes/courtyard/courtyard_hud.tscn")
@@ -44,9 +45,10 @@ var zoom_controls: VBoxContainer
 var help_label: Label
 var city_labels: Array[Label3D] = []
 var locations: Array = []
+var starter_layout: Dictionary
 
 func _ready() -> void:
-	DisplayServer.window_set_title("AshBound — World Headwaters 0.21.2")
+	DisplayServer.window_set_title("AshBound — Starter Forest 0.21.3")
 	layout = JSON.parse_string(FileAccess.get_file_as_string("res://assets/world/graybox-v1/layout.json"))
 	locations = layout.cities + layout.sites
 	heights = FileAccess.get_file_as_bytes("res://assets/world/graybox-v1/heights.bin").to_float32_array()
@@ -83,6 +85,7 @@ func _ready() -> void:
 		strip.name = river.id
 	_build_headwaters()
 	_build_sites()
+	_build_starter()
 	_add_light()
 	player = PlayerScene.instantiate()
 	player.name = "Player"
@@ -171,7 +174,7 @@ func _build_sites() -> void:
 				var base: Vector3 = center + offset
 				base.y = ground_height(base.x, base.z)
 				shapes.add_marker(base + Vector3.UP * size.y * 0.5, size, Color("92938b"))
-		elif city.kind != "lake" and city.kind != "spring_cave":
+		elif city.kind != "lake" and city.kind != "spring_cave" and city.id != "start_hamlet":
 			var landmark := Landmarks.new()
 			landmark.name = city.id
 			add_child(landmark)
@@ -186,6 +189,20 @@ func _build_sites() -> void:
 		label.modulate = Color("ede6d6")
 		add_child(label)
 		city_labels.append(label)
+
+func _build_starter() -> void:
+	starter_layout = JSON.parse_string(FileAccess.get_file_as_string("res://assets/world/graybox-v1/starter-region.json"))
+	layout.version = starter_layout.version
+	var starter := Starter.new()
+	starter.name = "StarterRegion"
+	add_child(starter)
+	for house in starter_layout.houses:
+		var p: Array = house.origin
+		var size: Array = house.size
+		var model: Node3D = starter.add_house(Vector3(p[0], p[1], p[2]), float(house.yaw), Vector3(size[0], size[1], size[2]), float(house.foundation))
+		model.name = house.id
+	var forest: Node3D = starter.add_forest(starter_layout.trees)
+	forest.name = "Forest"
 
 func _add_light() -> void:
 	var world := WorldEnvironment.new()
