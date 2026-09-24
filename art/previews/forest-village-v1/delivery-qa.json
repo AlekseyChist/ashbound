@@ -1,0 +1,11 @@
+{
+  "status": "PASS",
+  "checks": {
+    "pngs": 22,
+    "hashes": 42,
+    "local_links": 347,
+    "python_sources": 6
+  },
+  "browser_visual_check": false,
+  "images_inspected_directly": true
+}

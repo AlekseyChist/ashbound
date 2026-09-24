@@ -180,6 +180,50 @@
           "sha256": "27e8178badb92cf012b2de4f2b671b95ab7697ae04d27fa929f4a8e8bddfd8a1"
         }
       ]
+    },
+    {
+      "file": "w01-interior-concept.png",
+      "sha256": "93dad4403b92f44325ab73e5fd41fd6d0bde35867be789ee936329ce46fdbcec",
+      "bytes": 3131721,
+      "source_tool_file": "exec-29ddc932-17cd-4af6-907a-3187c8f91dd3.png",
+      "tool": "image_gen.imagegen",
+      "execution_mode": "built-in",
+      "intent": "generate",
+      "role": "D068-commissioned-interior-concept",
+      "prompt_file": "PROMPT_W01_INTERIOR.md",
+      "prompt_sha256": "4cf5c00478717f5e67d2adcdf7aa7f84979c7061e096da350f039601ef050ff6",
+      "references": [
+        {
+          "file": "family-lived-concept.png",
+          "sha256": "e39774820170b5f6acad5829b9da0f81db2bbc5429177c65fca0ade9d87e471c"
+        },
+        {
+          "file": "h01-interior-concept.png",
+          "sha256": "f89d3595cdff36d9baa1c685818ba3efb15781fda8d5de3cf03e2cae9cfc94b3"
+        }
+      ]
+    },
+    {
+      "file": "b01-interior-concept.png",
+      "sha256": "c1fdc49491c8203a34ec575454e48156ef111039134d3240ffc8de6544ea91dc",
+      "bytes": 2904007,
+      "source_tool_file": "exec-cfe8155f-71c5-4626-b3f7-d2e45bb84f65.png",
+      "tool": "image_gen.imagegen",
+      "execution_mode": "built-in",
+      "intent": "generate",
+      "role": "D068-commissioned-interior-concept",
+      "prompt_file": "PROMPT_B01_INTERIOR.md",
+      "prompt_sha256": "87c6fa0094a71e5620ab3738f62a56c7c083e6270dc097c810ef834917d4d912",
+      "references": [
+        {
+          "file": "family-lived-concept.png",
+          "sha256": "e39774820170b5f6acad5829b9da0f81db2bbc5429177c65fca0ade9d87e471c"
+        },
+        {
+          "file": "h01-interior-concept.png",
+          "sha256": "f89d3595cdff36d9baa1c685818ba3efb15781fda8d5de3cf03e2cae9cfc94b3"
+        }
+      ]
     }
   ],
   "measured_documents": [

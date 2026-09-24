@@ -1,0 +1,160 @@
+{
+  "task": "VILLAGE-MODEL-01",
+  "date": "2026-09-24",
+  "base_dev": "fc0e1f1064f9c09db25fbc4378fa51e009655227",
+  "blender": "5.2.2 LTS",
+  "godot": "4.7.2 stable",
+  "local_worker": "qwen3.8-24k:latest via 127.0.0.1:11434",
+  "authorship": "Qwen initial modules; Codex residual corrections after one bounded return, QA and documentation. See task.",
+  "acceptance": "H01 concept accepted; first 3D family awaits owner art evaluation.",
+  "sources": [
+    {
+      "file": "art/blender/forest_village_kit.py",
+      "sha256": "adfb25f827e4ab61eff4ff79ec5a0e2aead51488f13498e3bcb6d66b424065f6"
+    },
+    {
+      "file": "art/blender/forest_village_materials.py",
+      "sha256": "a960b301bc480bff48e96a669599640ace2878aa1c0c65585ff91cdad5fec913"
+    },
+    {
+      "file": "art/blender/forest_village_shell.py",
+      "sha256": "cba164da286b3beb2c18743b9937a722c643bc3f24c585e749b828ffcd20c15d"
+    },
+    {
+      "file": "art/blender/forest_village_furniture.py",
+      "sha256": "7d8ca085b6fd3f541665d71e0e776064955f46f34f93683e1948e03df457cc8a"
+    },
+    {
+      "file": "art/blender/buildings_common.py",
+      "sha256": "d0bda29d5b4ac2eaee856a0eb2eb9574e2b585c4959ee7aa64da065ccae3e008"
+    },
+    {
+      "file": "art/blender/forest-village-v1/build-data.json",
+      "sha256": "17992f2360c97f2425de6d7ceb87ad8417ce633af7e6cfca75b16727b7b68b84"
+    }
+  ],
+  "outputs": [
+    {
+      "file": "art/blender/forest-village-v1/b01.blend",
+      "sha256": "3157ece91ee7a3d15fce0b2f7af97d78f6248c7202bed51884a5c6324c5ce021",
+      "bytes": 990572
+    },
+    {
+      "file": "art/blender/forest-village-v1/b01.glb",
+      "sha256": "ea243951f81e9fffa23620bb176277274a450635a0f3f3a8b100d79ef0831d63",
+      "bytes": 1363716
+    },
+    {
+      "file": "art/blender/forest-village-v1/h01.blend",
+      "sha256": "06678f814d9d7ade7181e729f6cc0ec40b7db6013f38815e45c977c6b06b3a30",
+      "bytes": 1009168
+    },
+    {
+      "file": "art/blender/forest-village-v1/h01.glb",
+      "sha256": "b295ef57acf9eab5087c10bbdc1608e440cf20892781eb302c990036fb1e5866",
+      "bytes": 1627656
+    },
+    {
+      "file": "art/blender/forest-village-v1/textures/cloth.png",
+      "sha256": "2bf4a30ffb8958f77ccec30792fd12f3f11e37a3fcc124e3c8d7524400108dcb",
+      "bytes": 150671
+    },
+    {
+      "file": "art/blender/forest-village-v1/textures/oak.png",
+      "sha256": "3c6edfca062cb7a48b3ae32c15ce6c111011439ca084495d501076324ea54ac5",
+      "bytes": 114770
+    },
+    {
+      "file": "art/blender/forest-village-v1/textures/plaster.png",
+      "sha256": "aff198d5cef8631379c9f31ec674dbd27d635440164fcb6e8e25d59d29e4f885",
+      "bytes": 153312
+    },
+    {
+      "file": "art/blender/forest-village-v1/textures/roof.png",
+      "sha256": "733cdab4b5d863640ae3c9e47ded5ab6a46ea6852a536421268994b6b6a236ce",
+      "bytes": 105786
+    },
+    {
+      "file": "art/blender/forest-village-v1/textures/stone.png",
+      "sha256": "2bdbeb3293366518cbc9aa478055af211a18c85d3f035cc415c431b50a15eafe",
+      "bytes": 122320
+    },
+    {
+      "file": "art/blender/forest-village-v1/textures/straw.png",
+      "sha256": "cd46736aee205913c5e8a796eb9aac0de96b00d78d60ec80c45d149db050409e",
+      "bytes": 144690
+    },
+    {
+      "file": "art/blender/forest-village-v1/w01.blend",
+      "sha256": "dc401345ff3b395a40d5556d074fcd0fa1a7425f90453052877b1b71ce17d587",
+      "bytes": 1000838
+    },
+    {
+      "file": "art/blender/forest-village-v1/w01.glb",
+      "sha256": "1c0816dfbe4a99723b834ece731b92dbc0042664814a8b30035389662ebaabbe",
+      "bytes": 1455896
+    },
+    {
+      "file": "art/previews/forest-village-v1/b01-exterior.png",
+      "sha256": "75dcc62e0c446f072436de59c491f7d2851be6b612fc461a880b72c3f970a520",
+      "bytes": 1193464
+    },
+    {
+      "file": "art/previews/forest-village-v1/b01-interior.png",
+      "sha256": "25c2c22eddfe64a528a623517baff093259b9954ea7d11137103a0b10b5e88f7",
+      "bytes": 1221452
+    },
+    {
+      "file": "art/previews/forest-village-v1/h01-exterior.png",
+      "sha256": "108f4376203e88d9f3e0c4bbbf44daa9780400c4f235e15cfad469d3f573ce7d",
+      "bytes": 1083297
+    },
+    {
+      "file": "art/previews/forest-village-v1/h01-interior.png",
+      "sha256": "4cc78751f9aca8a5399e7ee930a7549a87aa5869a66cdb42c91d50039a271d5e",
+      "bytes": 1114083
+    },
+    {
+      "file": "art/previews/forest-village-v1/w01-exterior.png",
+      "sha256": "f12f472d98f7a484ce6c0be48b7a0117937206c4ae760f2a693a42a402f7a46d",
+      "bytes": 1136187
+    },
+    {
+      "file": "art/previews/forest-village-v1/w01-interior.png",
+      "sha256": "edcd535d01d5b2ea2e670f02b234e80e567f1c5e76c4c86e80a30b159d60e7db",
+      "bytes": 1163627
+    }
+  ],
+  "worker_responses": [
+    {
+      "local_run": "2026-09-24T10-14-54-424Z-shell-generic",
+      "request_sha256": "028a8241c9f58c746ea8a69f6f642fb13d582f60cf8b1bedfbf34ba1cde9fc06",
+      "response_sha256": "6fb534eab932bb9b6d16d18bd25981d8c4f323f9baeb781ae2e42814c2274774"
+    },
+    {
+      "local_run": "2026-09-24T10-21-02-507Z-shell-repair",
+      "request_sha256": "fbb8d06315b7e64efa6f6691c9e5bcec47df416563957b03deb55e0bee5a2af7",
+      "response_sha256": "5a359307a82a03e9a846ae532c0bea5cc2dedbacf4c8398ddc39d64634fe3844"
+    },
+    {
+      "local_run": "2026-09-24T10-07-40-361Z-furniture",
+      "request_sha256": "3ef98254391db3f3c87dd32aab0ea821cf93ca6e53af0783c6968a3053e9ce6a",
+      "response_sha256": "e3d3606b3ddb15705d976ba8eef32ac24cc81bc570447276070e03b648e8193a"
+    },
+    {
+      "local_run": "2026-09-24T10-17-59-667Z-furniture-repair",
+      "request_sha256": "2ad10abc0dc88c1ffe8927a3c0be9e09ff7b31cbd84c71e2f6272db69a45a4f2",
+      "response_sha256": "f7c0cec1ffc0721df7b0a3d43c98522638ab6a740409068926f5c44dd1764444"
+    },
+    {
+      "local_run": "2026-09-24T10-22-07-077Z-runner",
+      "request_sha256": "36b517d1dfece84f1b30aa66ef4c8b79c04c8257d107de60d34d4a89ac8d21e6",
+      "response_sha256": "7e1925f3c9c437ca3306be2dfd1beabb6218cab5fca605a81e898fad56848636"
+    },
+    {
+      "local_run": "2026-09-24T10-29-22-116Z-runner-repair",
+      "request_sha256": "65c1acea890c46b82412b9c17c9366bbb3535872fe4fff723f3a854058ddd590",
+      "response_sha256": "09ff44bb729972810cad4a65445b204f8a0090191f9d25383f6af316adc9fd67"
+    }
+  ]
+}

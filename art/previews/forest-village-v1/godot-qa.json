@@ -1,0 +1,38 @@
+{
+  "failures": [],
+  "results": [
+    {
+      "asset": "h01",
+      "bounds": {
+        "position": "(-3.638942, -0.000024, -4.525)",
+        "size": "(7.277833, 6.650024, 9.925)"
+      },
+      "hinges": 12,
+      "meshes": 51,
+      "preview_nodes": 0,
+      "textured_surfaces": 46
+    },
+    {
+      "asset": "w01",
+      "bounds": {
+        "position": "(-4.138923, -0.009159, -5.025)",
+        "size": "(9.713923, 6.84355, 10.925)"
+      },
+      "hinges": 15,
+      "meshes": 52,
+      "preview_nodes": 0,
+      "textured_surfaces": 49
+    },
+    {
+      "asset": "b01",
+      "bounds": {
+        "position": "(-4.638932, 0.0, -5.525)",
+        "size": "(10.31393, 7.835641, 14.025)"
+      },
+      "hinges": 3,
+      "meshes": 38,
+      "preview_nodes": 0,
+      "textured_surfaces": 36
+    }
+  ]
+}
