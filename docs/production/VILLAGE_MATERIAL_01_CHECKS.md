@@ -28,6 +28,6 @@ Codex просмотрел реальные ПК/S23 кадры фасада, к
 
 Повторение: `node tools/build-village-settlement.mjs --baseline-root C:/Users/prost/Documents/AshBound --validate`, затем без `--validate` для обычных APK/EXE. QA сцена `scripts/tools/validate_village_materials.tscn` запускает весь набор; `--look-only` делает только серию сравнений, не приёмку маршрута. Телефонный QA пишет `files/material-qa/results.json`; обычный пакет — `org.ashbound.villagepreview`.
 
-Git-цикл: проверка и публикация PR в dev завершаются после записи протокола. Следующая точка — личная оценка H01; отделку W01/B01 не переносить автоматически.
+Git: [PR #96 в dev](https://github.com/AlekseyChist/ashbound/pull/96). Игровое изменение и свидетельства проверки сохранены коммитом `e9016f0`; последующая запись PR и кадр передачи телефона не меняют runtime. Точный окончательный head и результат слияния доступны в PR. Следующая точка — личная оценка H01; отделку W01/B01 не переносить автоматически.
 
 Проверка публикации: 375 локальных ссылок, 97 исходников. Git нормализует CRLF в LF; после QA удалена только лишняя пустая строка в конце QA-скрипта. Содержимое кода совпадает после нормализации окончаний строк — [хеши Git](../../art/previews/village-materials-v1/git-sources.json), [правило сравнения](../../art/previews/village-materials-v1/source-normalization.json).

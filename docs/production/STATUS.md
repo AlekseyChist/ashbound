@@ -1,6 +1,6 @@
 # AshBound — состояние и очередь
 
-**Сейчас: VILLAGE-MATERIAL-01 — А перенесён на H01, D-077.** [0.23.5/code61, ПК/S23 408/408](VILLAGE_MATERIAL_01_CHECKS.md), [до/после и рецепт](../../art/previews/village-materials-v1/README.md). Обычная APK установлена/SHA сверён. Следующая точка — личная оценка H01; W01/B01 и новые дома не отделывать автоматически. Ветер 0.23.4 принят D-076.
+**Сейчас: VILLAGE-MATERIAL-01 — А перенесён на H01, D-077, [PR #96](https://github.com/AlekseyChist/ashbound/pull/96).** [0.23.5/code61, ПК/S23 408/408](VILLAGE_MATERIAL_01_CHECKS.md), [до/после и рецепт](../../art/previews/village-materials-v1/README.md). Обычная APK установлена/SHA сверён. Следующая точка — личная оценка H01; W01/B01 и новые дома не отделывать автоматически. Ветер 0.23.4 принят D-076.
 
 **Предыдущий шаг: VILLAGE-WIND-01, D-075 — проверен, [PR #94](https://github.com/AlekseyChist/ashbound/pull/94).** [0.23.4/code60, ПК/S23 439/439](VILLAGE_WIND_01_CHECKS.md), усилены порывы крон/подлеска при сохранённой опоре. Обычная APK установлена и SHA сверён; [вид/видео](../../art/previews/village-wind-v1/README.md). Свет D-074 сохранён. Вид ветра принят D-076; продолжение — материалы H01.
 
