@@ -1,0 +1,24 @@
+{
+	"checks": 383,
+	"completed": [
+		"H01",
+		"W01",
+		"B01"
+	],
+	"failures": [],
+	"metrics": {
+		"clear": {
+			"frames": 934,
+			"p50_ms": 13.8888888888889,
+			"p95_ms": 14.2857142857143
+		},
+		"storm": {
+			"frames": 918,
+			"p50_ms": 14.2857142857143,
+			"p95_ms": 14.7224761904771
+		}
+	},
+	"platform": "Android",
+	"renderer": "mobile",
+	"version": "0.23.3"
+}

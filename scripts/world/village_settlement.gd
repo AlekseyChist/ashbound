@@ -26,8 +26,8 @@ func _ready() -> void:
 	camera_rig.get_camera().far = 220.0
 	select_building(0)
 	atmosphere=Atmosphere.new();atmosphere.name="Atmosphere";add_child(atmosphere);atmosphere.configure(self)
-	DisplayServer.window_set_title("AshBound — Forest Village 0.23.2")
-	print("VILLAGE_SETTLEMENT_READY version=0.23.2 houses=3 trees=",dressing.tree_positions.size())
+	DisplayServer.window_set_title("AshBound — Forest Village 0.23.3")
+	print("VILLAGE_SETTLEMENT_READY version=0.23.3 houses=3 trees=",dressing.tree_positions.size())
 
 func _environment() -> void:
 	layout = JSON.parse_string(FileAccess.get_file_as_string("res://assets/world/village-layout-v1.json"))
