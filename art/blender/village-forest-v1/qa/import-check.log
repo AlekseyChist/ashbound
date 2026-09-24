@@ -1,0 +1,10 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+ASSET_IMPORT pine_tall valid=true meshes=2 bounds=[P: (-3.143157, 0.0, -2.758387), S: (6.33799, 10.0, 6.092643)]
+ASSET_IMPORT spruce valid=true meshes=2 bounds=[P: (-2.229414, 0.0, -2.518564), S: (4.64887, 8.0, 4.592741)]
+ASSET_IMPORT pine_young valid=true meshes=2 bounds=[P: (-1.320008, 0.0, -1.440259), S: (2.664569, 4.5, 2.83922)]
+ASSET_IMPORT boulder valid=true meshes=1 bounds=[P: (-0.737617, 0.0, -0.659349), S: (1.452754, 1.075155, 1.472639)]
+ASSET_IMPORT stump valid=true meshes=1 bounds=[P: (-0.328825, 0.0, -0.323662), S: (0.648825, 0.65001, 0.643662)]
+ASSET_IMPORT fern valid=true meshes=1 bounds=[P: (-0.662578, 0.0, -0.576513), S: (1.416938, 0.667313, 1.177508)]
+ASSET_IMPORT grass valid=true meshes=1 bounds=[P: (-0.238354, 0.0, -0.220935), S: (0.582178, 0.298163, 0.364355)]
+FOREST_IMPORT_PASS assets=7
