@@ -1,0 +1,14 @@
+{
+  "assets/shaders/village_ground.gdshader": "621603c91e153e4ed33bd9128d72ae35b8b385c912064f79bb455048253c2e84",
+  "assets/world/village-layout-v1.json": "19e6cff9ade61d8f59dbe7ea75d4edad00758b9236f665ec36390f7fa27df3e1",
+  "scenes/world/village_settlement.tscn": "8f9ecd97a4749f2622ba2cee07f6483933ae4b62c805e155fa6f6efa07178f20",
+  "scripts/world/village_dressing.gd": "b0506bb4cce1012958cafcf6f792907d4597c9851659a895bfa64692bdaab85a",
+  "scripts/world/village_grid_mesh.gd": "3aa312efe50cebcb25567e057c9a86a4a2ab073e7c9dc6844b3a6a7f66e3ea98",
+  "scripts/world/village_settlement.gd": "18cd4fc35f648131b8441581410144e80ea5d580c919068939b61e42502e4b02",
+  "scripts/world/village_terrain.gd": "5ba6d00b2f358fe828a4b06f644f0840dddfbca42954da309da5b42df5a16bf1",
+  "scenes/world/village_walkthrough.tscn": "15a48cd71e41138780676c0bf41605007df832e1a7726fc16ee60ea24ce04afe",
+  "scripts/world/village_building.gd": "59ce9077be3032e830bb30aabe0e9ab7b70f5a8d0059ba135256b9befcb442f6",
+  "scripts/world/village_building_catalog.gd": "34b2f642c2ab5ea70abcd49133cd5078d66919babca93c244c80d43f13894b23",
+  "scripts/world/village_door.gd": "4700e6ad9012d05ce861b7dde7e491aaf04127f7d11097968fc8cae9b58b704e",
+  "scripts/world/village_walkthrough.gd": "8b59c08d44d890aeae42abf31f0058c9dff28d3419497d7fed25c3577bcb9bbb"
+}
