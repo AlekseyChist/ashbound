@@ -1,7 +1,10 @@
 {
-  "art/blender/village_forest_kit.py": "f9f28794a656dc54f09ca3990e721df7bd774ad24639de14e09d76b90f231a5a",
-  "art/blender/village_understory.py": "12f76d34d400bd895cdaf04d673aad71c97aa7ff8816c157f0cf6a5b2489caca",
-  "assets/environment/village-forest-v1/textures/pine-spray-v1.png": "ffa8988fefbc17bf0918a103f0ee982f83e0c39018612598d8bee4af39cdd750",
-  "art/blender/forest-village-v1/textures/oak.png": "3c6edfca062cb7a48b3ae32c15ce6c111011439ca084495d501076324ea54ac5",
-  "art/blender/forest-village-v1/textures/stone.png": "2bdbeb3293366518cbc9aa478055af211a18c85d3f035cc415c431b50a15eafe"
+  "hash_mode": "LF text for Python; exact bytes for PNG",
+  "files": {
+    "art/blender/village_forest_kit.py": "0fd10932e551ddc165d758c580e4f9eb24d6ccfeac062abb8b4fd49f35984178",
+    "art/blender/village_understory.py": "bcc7ce5cd2b4359134b61c1f7ca520f9313b55d52c5ea0b3c5aed0600f49eef7",
+    "assets/environment/village-forest-v1/textures/pine-spray-v1.png": "ffa8988fefbc17bf0918a103f0ee982f83e0c39018612598d8bee4af39cdd750",
+    "art/blender/forest-village-v1/textures/oak.png": "3c6edfca062cb7a48b3ae32c15ce6c111011439ca084495d501076324ea54ac5",
+    "art/blender/forest-village-v1/textures/stone.png": "2bdbeb3293366518cbc9aa478055af211a18c85d3f035cc415c431b50a15eafe"
+  }
 }
