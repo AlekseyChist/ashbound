@@ -1,5 +1,7 @@
 # AshBound — документы разработки
 
+**24 сентября / D-077:** [А принят для отделки H01](../art/concepts/village-materials-v1/README.md), [концепт и QA](production/VILLAGE_MATERIAL_STUDY_01_CHECKS.md); далее один дом в игре.
+
 **24 сентября / D-075:** [порывы растительности, 0.23.4/code60 и QA ПК/S23](production/VILLAGE_WIND_01_CHECKS.md), [временное сравнение и видео](../art/previews/village-wind-v1/README.md).
 
 **24 сентября / D-074:** [принятый свет/цвет деревни](art/VILLAGE_LOOK_REFERENCE.md); [VILLAGE-PROPS-01, 0.23.3/code59 и QA ПК/S23](production/VILLAGE_PROPS_01_CHECKS.md), [прямые снимки](../art/previews/village-props-v1/README.md).

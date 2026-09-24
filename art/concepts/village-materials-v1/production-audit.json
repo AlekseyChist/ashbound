@@ -1,0 +1,20 @@
+{
+  "runtime_glb": "assets/buildings/forest-village-v1/h01.glb",
+  "sha256": "b295ef57acf9eab5087c10bbdc1608e440cf20892781eb302c990036fb1e5866",
+  "materials": [
+    "Forest_oak",
+    "Forest_cloth",
+    "Forest_iron",
+    "Forest_stone",
+    "Forest_plaster",
+    "Forest_roof"
+  ],
+  "nodes": 71,
+  "findings": [
+    "Current shared procedural albedo is baked at 512px, with fixed material roughness.",
+    "Current UVs are projected from dominant local face axes before meshes are merged by role. Check grain direction and real scale before replacing tiles.",
+    "Roof already has geometric shingle rows; do not blindly add a second roof or resize the silhouette from the concept.",
+    "Exterior and interior can share material slots. Use explicit surface/role handling to keep exterior moisture out of rooms."
+  ],
+  "implementation_status": "not started; owner choice required"
+}
