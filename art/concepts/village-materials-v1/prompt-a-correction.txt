@@ -1,0 +1,6 @@
+Use case: precise-object-edit. EDIT TARGET is the first attached concept image. Second image is only the existing AshBound in-game lighting/palette reference.
+Keep the entire house, camera, material treatment, scale, roof, chimney, porch, stonework, windows, terrain shape and composition of image 1 unchanged.
+Two targeted corrections only:
+1. Remove the small human character and ALL of his backpack/bedroll near the front steps. Cleanly restore only the dirt ground and any already existing background surfaces behind him. There must be no humans or character substitutes anywhere; this is a HOUSE MATERIAL study.
+2. Match the sky and distant-forest color mood to image 2: muted grey-green sky and deep rich green trees. Remove the blue/cyan postcard sky from image 1. Preserve directional daylight, warm house surfaces and deep shadows; do not brighten or flatten the image.
+No new objects, windows, doors, vegetation, signage, labels or decorative design. Output the same composition and dimensions as image 1, clean single concept image.

@@ -1,0 +1,76 @@
+{
+  "task": "VILLAGE-MATERIAL-STUDY-01",
+  "version": "1",
+  "date": "2026-09-24",
+  "base_dev": "e8bb413d4dcf12f83b36d796a37f3440086867e1",
+  "status": "A-accepted-D077; B-comparison-only",
+  "assets": [
+    {
+      "file": "h01-material-a.png",
+      "sha256": "c60e2da6722363d50294fdf5ee28ae1ac572c5bbdfb9c100072a8dc8b4022ff8",
+      "bytes": 2699474,
+      "size_px": [
+        1536,
+        1024
+      ],
+      "image_mode": "RGB",
+      "source_tool_file": "exec-e58eccd4-e688-422a-a152-c12da0d76908.png",
+      "tool": "image_gen.imagegen",
+      "execution_mode": "built-in",
+      "prompts": [
+        "prompt-a.txt",
+        "prompt-a-correction.txt"
+      ]
+    },
+    {
+      "file": "h01-material-b.png",
+      "sha256": "74ec700da7e7f4d1b079a48e988942347909c17e632178131b77ec8596177ef9",
+      "bytes": 2557348,
+      "size_px": [
+        1536,
+        1024
+      ],
+      "image_mode": "RGB",
+      "source_tool_file": "exec-7fef1f79-01d1-492f-a99b-79d93f167734.png",
+      "tool": "image_gen.imagegen",
+      "execution_mode": "built-in",
+      "prompts": [
+        "prompt-b.txt"
+      ]
+    }
+  ],
+  "references": [
+    {
+      "file": "art/previews/village-props-v1/pc/H01-props-day.png",
+      "sha256": "4b019032f4a869624a6dad9e475544b7efaeefa2c38c23dd13f2c140de4b872b"
+    },
+    {
+      "file": "art/concepts/forest-village-v1/h01-lived-concept.png",
+      "sha256": "cdb91876d4655f273979d61f773b3064314775d8130397df3f3e95bffc9ec1d7"
+    }
+  ],
+  "prompts": [
+    {
+      "file": "prompt-a-correction.txt",
+      "sha256": "3d5cbfc61ad360af6aba685a17fd524d3800c738187d163aea32220070094963"
+    },
+    {
+      "file": "prompt-a.txt",
+      "sha256": "3dc68a43d7de664d8ffa2f0a458651f5a84223fc88b90226ec678cff25995668"
+    },
+    {
+      "file": "prompt-b.txt",
+      "sha256": "125fe7cd2debb145f505eba9d02cce5735fc1ce70b1e56ba825beda575077fbb"
+    }
+  ],
+  "rejected_first_pass": {
+    "source_tool_file": "exec-8fbcf9be-b4e5-448a-a486-9665e306e464.png",
+    "reason": "Generated figure had an unrequested backpack; sky shifted toward cyan. Targeted correction removed the entire figure and restored a muted grey-green background."
+  },
+  "scope": "Concept images only. Runtime, Blender geometry, APK and accepted character unchanged.",
+  "owner_decision": {
+    "id": "D-077",
+    "text": "вариант а мне нравиться больше",
+    "selection": "h01-material-a.png"
+  }
+}
