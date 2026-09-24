@@ -1,0 +1,63 @@
+{
+  "errors": [],
+  "records": [
+    {
+      "page": "offline gallery",
+      "width": 1440,
+      "overflow": false,
+      "images": [
+        {
+          "src": "layout.svg",
+          "ready": true
+        },
+        {
+          "src": "yard-and-relief.svg",
+          "ready": true
+        },
+        {
+          "src": "../../../art/concepts/forest-village-v1/street-lived-concept.png",
+          "ready": true
+        }
+      ]
+    },
+    {
+      "page": "offline gallery",
+      "width": 390,
+      "overflow": false,
+      "images": [
+        {
+          "src": "layout.svg",
+          "ready": true
+        },
+        {
+          "src": "yard-and-relief.svg",
+          "ready": true
+        },
+        {
+          "src": "../../../art/concepts/forest-village-v1/street-lived-concept.png",
+          "ready": true
+        }
+      ]
+    },
+    {
+      "page": "inline selector",
+      "width": 768,
+      "overflow": false,
+      "labels": 12,
+      "selected": "04",
+      "detail": "Мастерская · 7 × 9 м · первый участок. Рабочая площадка, поленница и проход к широким дверям. Шумная работа вынесена из жилого двора.",
+      "overlaps": [],
+      "clipped": []
+    },
+    {
+      "page": "inline selector",
+      "width": 358,
+      "overflow": false,
+      "labels": 12,
+      "selected": "04",
+      "detail": "Мастерская · 7 × 9 м · первый участок. Рабочая площадка, поленница и проход к широким дверям. Шумная работа вынесена из жилого двора.",
+      "overlaps": [],
+      "clipped": []
+    }
+  ]
+}
