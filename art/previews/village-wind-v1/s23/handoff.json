@@ -1,0 +1,12 @@
+{
+  "version": "0.23.4",
+  "state": {
+    "hour": 13.939452240740039,
+    "weather": 2,
+    "automatic": false,
+    "wetness": 0,
+    "weather_elapsed": 0
+  },
+  "pid": "25880",
+  "wind_recorded_seconds": 10
+}

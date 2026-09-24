@@ -11,10 +11,19 @@ uniform bool painted_weight = true;
 uniform float wetness = 0.0;
 void vertex(){
 	vec3 origin=MODEL_MATRIX[3].xyz;
-	float weight=painted_weight ? COLOR.a : clamp(VERTEX.y*1.4,0.0,1.0);
-	float gust=0.65+0.35*sin(effect_time*0.47+origin.z*0.13);
-	float sway=sin(effect_time*1.8+origin.x*0.39+origin.z*0.25)+0.23*sin(effect_time*4.1+VERTEX.y*2.0);
-	vec3 world_offset=vec3(wind_direction.x,0.0,wind_direction.y)*sway*gust*wind_strength*amplitude*weight*weight;
+	float weight=clamp(painted_weight ? COLOR.a : VERTEX.y*1.4,0.0,1.0);
+	float strength=clamp(wind_strength,0.0,1.0);
+	vec2 direction=wind_direction/max(length(wind_direction),0.0001);
+	// A slow wave crosses the whole grove; individual plants lag within it.
+	float gust=0.6+0.4*sin(effect_time*0.65-dot(origin.xz,direction)*0.07);
+	float phase=origin.x*0.39+origin.z*0.25;
+	float rate=painted_weight ? 0.95 : 2.4;
+	float sway=sin(effect_time*rate+phase)+0.18*sin(effect_time*rate*2.0+phase*1.3);
+	float flutter=0.10*sin(effect_time*(painted_weight ? 2.8 : 7.2)+VERTEX.y*2.0+phase)*weight;
+	float gain=1.0+1.1*smoothstep(0.25,1.0,strength);
+	// Bound: (0.35 + 1 + 0.18 + 0.10) * 2.1 = 3.423 amplitudes.
+	float bend=(0.35*strength+sway+flutter)*gust*strength*gain*amplitude*weight*weight;
+	vec3 world_offset=vec3(direction.x,0.0,direction.y)*bend;
 	VERTEX+=(inverse(MODEL_MATRIX)*vec4(world_offset,0.0)).xyz;
 }
 void fragment(){
