@@ -1,0 +1,15 @@
+{
+  "version": "B-1.1",
+  "base_commit": "7dc41c56f6b23dbed6dd66f205b39dd59d937484",
+  "status": "proposal-awaiting-owner-review",
+  "method": "Refinement of the preserved B composition; new vector diagrams, not fresh Watabou exports or a Godot rendering.",
+  "sources": {
+    "docs/design/starter-village-concepts-v1/build_concepts.py": "0d451ffa0b0f54e583ce02ea77c3648f3c0a9b603abf85649cbece352bec0477",
+    "docs/design/starter-village-concepts-v1/concept-b.svg": "8b31899cb30e9f326ecc6a76cea3689607b57baccc32bd2098cefd90544c1701",
+    "docs/design/starter-village-concepts-v1/watabou-b.png": "b90b8e1bbe9f21bbaf47e4f7423f674e1acd7674b2c8b7c511f3b6b2a5316848",
+    "docs/design/starter-village-concepts-v1/sources.json": "39d6813c863556a992c591cb5e8ffcf7ccda0282cb777b6091069470639d6241",
+    "art/concepts/forest-village-v1/street-lived-concept.png": "b94de3d85b676b1af5453d45ee72068089bbf032c2a428bd73b7d3e393ef60c1",
+    "scripts/world/village_building_catalog.gd": "34b2f642c2ab5ea70abcd49133cd5078d66919babca93c244c80d43f13894b23",
+    "assets/ui/fonts/OpenSans-SemiBold.ttf": "6ad63a1217e509de91b890f3e3a4be47dfc6823b79464fbe8db7657a4d3feee1"
+  }
+}

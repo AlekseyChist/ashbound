@@ -1,0 +1,58 @@
+<div id="ashbound-yards-b11">
+  <style>
+    #ashbound-yards-b11 .village-map {display:block; width:100%; overflow:visible;}
+    #ashbound-yards-b11 .village-map text {fill:var(--foreground); font-size:12px; font-weight:400;}
+    #ashbound-yards-b11 .selection-line {margin-top:8px;}
+  </style>
+  <h3>Лесные дворы · Б v1.1</h3>
+  <div class="text-small text-muted">Предложение · 225 × 175 м · 3 готовые модели и 5 мест в резерве</div>
+  <svg class="village-map" role="img" aria-label="Предлагаемая деревня: извилистая улица, восемь дворов, колодец и пешая петля"></svg>
+  <label class="form-label">Двор
+    <select class="form-select" aria-label="Выбрать двор">
+      <option value="01">01 · Первый дом</option><option value="02">02 · Жилой двор</option>
+      <option value="03">03 · Жилой двор</option><option value="04">04 · Мастерская</option>
+      <option value="05">05 · Верхний двор</option><option value="06">06 · Двор у рощи</option>
+      <option value="07">07 · Нижний двор</option><option value="08">08 · Общий амбар</option>
+    </select>
+  </label>
+  <div class="selection-line" aria-live="polite"></div>
+  <script type="application/json" id="ashbound-layout-data">LAYOUT_DATA_HERE</script>
+  <script>
+  (()=>{
+    const root=document.getElementById('ashbound-yards-b11');
+    const data=JSON.parse(root.querySelector('#ashbound-layout-data').textContent);
+    const svg=root.querySelector('svg'),select=root.querySelector('select'),detail=root.querySelector('.selection-line');
+    const ns='http://www.w3.org/2000/svg';
+    function node(tag,attributes,text){const e=document.createElementNS(ns,tag);for(const[k,v]of Object.entries(attributes))e.setAttribute(k,v);if(text)e.textContent=text;svg.appendChild(e);return e;}
+    function saved(s){const id=s?.modelContent?.yard;if(data.buildings.some(b=>b.id===id))select.value=id;draw();}
+    function draw(){
+      const width=root.clientWidth,scale=(width-44)/225,height=175*scale+60;
+      svg.setAttribute('viewBox',`0 0 ${width} ${height}`);svg.style.height=height+'px';svg.replaceChildren();
+      const p=([x,y])=>[22+x*scale,28+y*scale];
+      const pts=a=>a.map(v=>p(v).join(',')).join(' ');
+      const poly=(a,attrs)=>node('polygon',{points:pts(a),...attrs});
+      for(const a of data.forest_polygons)poly(a,{fill:'var(--viz-series-2)',opacity:'.16'});
+      for(const r of data.roads)node('polyline',{points:pts(r.points),fill:'none',stroke:'var(--muted-foreground)','stroke-width':r.width*scale,'stroke-linecap':'round',opacity:r.width<2?'.4':'.6'});
+      node('polyline',{points:pts(data.first_street),fill:'none',stroke:'var(--viz-series-1)','stroke-width':3.2*scale,'stroke-linecap':'round'});
+      for(const b of data.buildings){
+        const m=data.models[b.model],a=b.angle*Math.PI/180;
+        const pt=(x,y)=>[b.x+x*Math.cos(a)-y*Math.sin(a),b.y+x*Math.sin(a)+y*Math.cos(a)];
+        const corners=[[-m.width/2,-m.depth/2],[m.width/2,-m.depth/2],[m.width/2,m.depth/2],[-m.width/2,m.depth/2]].map(([x,y])=>pt(x,y));
+        node('polyline',{points:pts([pt(m.door_x,m.depth/2),b.gate]),fill:'none',stroke:'var(--muted-foreground)','stroke-width':Math.max(1,scale)});
+        poly(corners,{fill:b.phase===1?'var(--viz-series-1)':'var(--muted)',stroke:b.id===select.value?'var(--foreground)':'var(--muted-foreground)','stroke-width':b.id===select.value?2:1});
+        const [x,y]=p([b.x,b.y]);node('text',{x:x+9,y:y-9},b.id);
+      }
+      const [wx,wy]=p([data.well.x,data.well.y]);node('circle',{cx:wx,cy:wy,r:Math.max(2,scale),fill:'var(--viz-series-1)'});
+      node('text',{x:wx+7,y:wy+16},'Колодец');
+      node('text',{x:22,y:16},'↖ К пещере');node('text',{x:width-22,y:16,'text-anchor':'end'},'К тракту ↗');
+      node('line',{x1:22,y1:height-12,x2:22+25*scale,y2:height-12,stroke:'var(--foreground)','stroke-width':2});
+      node('text',{x:28+25*scale,y:height-8},'25 м');
+      const b=data.buildings.find(v=>v.id===select.value),m=data.models[b.model];
+      detail.textContent=`${b.name} · ${m.width} × ${m.depth} м · ${b.phase===1?'первый участок':'резерв'}. ${b.use}`;
+    }
+    select.addEventListener('change',()=>{draw();window.openai?.setWidgetState?.({modelContent:{concept:'B-1.1',yard:select.value},privateContent:null}).catch(()=>{});});
+    window.addEventListener('openai:set_globals',e=>saved(e.detail?.globals?.widgetState));
+    new ResizeObserver(draw).observe(root);saved(window.openai?.widgetState);
+  })();
+  </script>
+</div>
