@@ -1,0 +1,24 @@
+{
+	"checks": 408,
+	"completed": [
+		"H01",
+		"W01",
+		"B01"
+	],
+	"failures": [],
+	"metrics": {
+		"clear": {
+			"frames": 778,
+			"p50_ms": 16.6666666666667,
+			"p95_ms": 16.6666666666667
+		},
+		"storm": {
+			"frames": 778,
+			"p50_ms": 16.6666666666667,
+			"p95_ms": 16.6666666666667
+		}
+	},
+	"platform": "Windows",
+	"renderer": "mobile",
+	"version": "0.23.5"
+}

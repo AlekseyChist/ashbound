@@ -3,6 +3,7 @@ const Door = preload("res://scripts/world/village_door.gd")
 var record: Dictionary
 var model: Node3D
 var door: Node3D
+var house_materials: RefCounted
 
 func build(data: Dictionary) -> void:
 	record = data.duplicate(true)
@@ -11,6 +12,8 @@ func build(data: Dictionary) -> void:
 	model = (load(record.scene_path) as PackedScene).instantiate()
 	model.name = "Model"
 	add_child(model)
+	house_materials=preload("res://scripts/world/village_house_materials.gd").new()
+	house_materials.apply(model,str(record.id))
 	for child in model.find_children("*", "MeshInstance3D", true, false):
 		var mesh := child as MeshInstance3D
 		if "entry_leaf" in mesh.name: continue
