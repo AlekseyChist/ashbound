@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/items/item_data.gd" id="1_4b6oh"]
+
+[resource]
+script = ExtResource("1_4b6oh")
+id = "stamina_potion"
+type = 2
+name = "Зелье выносливости"
+description = "Восстанавливает всю стамину."
+value = 20
+stackable = true
+max_stack = 10
+effect = {
+"stamina": 100
+}
+category = "consumable"
+subtype = "potion"

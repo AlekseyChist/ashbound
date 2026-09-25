@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/items/item_data.gd" id="1_bxfgr"]
+
+[resource]
+script = ExtResource("1_bxfgr")
+id = "leather_armor"
+type = 1
+name = "Кожаная броня"
+description = "Простая защита из дублёной кожи."
+value = 30
+slot = "armor"
+stats = {
+"defense": 5
+}
+category = "clothing"
+subtype = "armor_set"
