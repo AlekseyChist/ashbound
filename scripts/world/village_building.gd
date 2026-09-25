@@ -20,6 +20,10 @@ func build(data: Dictionary) -> void:
 		var metadata: Dictionary = mesh.get_meta("extras", {})
 		var role := str(metadata.get("part_role", ""))
 		if role == "foundation" and record.id != "B01": continue
+		# A straight flight of stairs is walked on a hidden ramp: the hero does not step up 19 cm risers.
+		if "stairs" in str(metadata.get("item_id", "")):
+			_stairs_ramp(mesh)
+			continue
 		var body := StaticBody3D.new()
 		body.name = "StaticCollision"
 		body.set_meta("footstep_surface", "stone" if role=="foundation" else "wood")
@@ -63,6 +67,42 @@ func _stair_proxy() -> void:
 	var ramp := ConvexPolygonShape3D.new()
 	ramp.points = points
 	_add_shape("StairWalkingSurface", ramp, Vector3.ZERO)
+
+## A wedge under the treads of a straight flight: from the floor at the low end up to the top
+## step at the high end, across the flight's width. The flight runs along local x or z.
+func _stairs_ramp(mesh: MeshInstance3D) -> void:
+	var faces := mesh.mesh.get_faces()
+	if faces.is_empty():
+		return
+	var to_building: Transform3D = global_transform.affine_inverse() * mesh.global_transform
+	var low := Vector3(INF, INF, INF)
+	var high := Vector3(-INF, -INF, -INF)
+	var points: Array[Vector3] = []
+	for v in faces:
+		var p: Vector3 = to_building * v
+		points.append(p)
+		low = low.min(p)
+		high = high.max(p)
+	var along_z := (high.z - low.z) >= (high.x - low.x)
+	# The high end is the one whose points reach the top.
+	var top_at_max := 0.0
+	var top_at_min := 0.0
+	for p in points:
+		var t: float = (p.z - low.z) / maxf(high.z - low.z, .001) if along_z else (p.x - low.x) / maxf(high.x - low.x, .001)
+		if t > .9: top_at_max = maxf(top_at_max, p.y)
+		if t < .1: top_at_min = maxf(top_at_min, p.y)
+	var top_y := maxf(top_at_max, top_at_min)
+	var bottom_end := 0.0 if top_at_max >= top_at_min else 1.0
+	var top_end := 1.0 - bottom_end
+	var wedge := PackedVector3Array()
+	for side in [0.0, 1.0]:
+		for e in [[bottom_end, low.y], [top_end, low.y], [top_end, top_y]]:
+			var a: float = lerpf(low.z, high.z, e[0]) if along_z else lerpf(low.x, high.x, e[0])
+			var b: float = lerpf(low.x, high.x, side) if along_z else lerpf(low.z, high.z, side)
+			wedge.append(Vector3(b, e[1], a) if along_z else Vector3(a, e[1], b))
+	var ramp := ConvexPolygonShape3D.new()
+	ramp.points = wedge
+	_add_shape("StairsRamp", ramp, Vector3.ZERO)
 
 func _add_shape(label: String, shape: Shape3D, at: Vector3) -> void:
 	var body := StaticBody3D.new()

@@ -2,19 +2,19 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b8tb3yv7pigjn"
-path="res://.godot/imported/t02a_Forest_stone.png-625f314e6403f41fe1a62631a2368ca1.ctex"
+uid="uid://dmy1dtx3w7npl"
+path="res://.godot/imported/t03a_Forest_oak.png-8b9b50f02ff870cc2fad80c1bd71e503.ctex"
 metadata={
 "vram_texture": false
 }
 generator_parameters={
-"md5": "35757e5847f71e9d110e30f983c1be08"
+"md5": "31b3c81a5091cacf236acc62fe3714e2"
 }
 
 [deps]
 
-source_file="res://assets/buildings/forest-inn-v1/t02a_Forest_stone.png"
-dest_files=["res://.godot/imported/t02a_Forest_stone.png-625f314e6403f41fe1a62631a2368ca1.ctex"]
+source_file="res://assets/buildings/forest-inn-v1/t03a_Forest_oak.png"
+dest_files=["res://.godot/imported/t03a_Forest_oak.png-8b9b50f02ff870cc2fad80c1bd71e503.ctex"]
 
 [params]
 

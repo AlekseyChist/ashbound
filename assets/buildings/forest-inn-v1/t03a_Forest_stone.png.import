@@ -2,19 +2,19 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://schf8lh5j77l"
-path="res://.godot/imported/t02a_Forest_roof.png-c2a32a4d9edc0620f13fc39e8d93d934.ctex"
+uid="uid://cmcqj4nmjkh8n"
+path="res://.godot/imported/t03a_Forest_stone.png-9b4de86848ce695dde1a5210ac781b52.ctex"
 metadata={
 "vram_texture": false
 }
 generator_parameters={
-"md5": "339d4f01ff3139bd493d3b5afca0ac24"
+"md5": "35757e5847f71e9d110e30f983c1be08"
 }
 
 [deps]
 
-source_file="res://assets/buildings/forest-inn-v1/t02a_Forest_roof.png"
-dest_files=["res://.godot/imported/t02a_Forest_roof.png-c2a32a4d9edc0620f13fc39e8d93d934.ctex"]
+source_file="res://assets/buildings/forest-inn-v1/t03a_Forest_stone.png"
+dest_files=["res://.godot/imported/t03a_Forest_stone.png-9b4de86848ce695dde1a5210ac781b52.ctex"]
 
 [params]
 

@@ -266,6 +266,34 @@ def _vessel(spec, mats, item, x, y, bottom, radius, height):
     _tag(obj,spec,item)
 
 
+def _stairs(spec, mats, x, y0, width, steps, rise, tread, item="stairs"):
+    """A straight flight going up along +y from y0: solid oak steps from the floor, side stringers.
+    The game walks it on a hidden ramp; the steps are the look."""
+    root = _new_root(item, spec, x, y0)
+    for i in range(steps):
+        top = rise * (i + 1)
+        step = C.box(item + "_step%d" % i, (0, tread * (i + 0.5), top / 2), (width, tread, top), mats["oak"], bevel=0.0)
+        _tag(step, spec, item)
+        _parent_local(step, root)
+    length = tread * steps
+    for sx in (-width / 2 - 0.05, width / 2 + 0.05):
+        stringer = C.beam(item + "_stringer", (sx, 0.0, 0.12), (sx, length, rise * steps + 0.12), 0.08, 0.3, mats["oak"])
+        _tag(stringer, spec, item.replace("stairs", "stringer"))
+        _parent_local(stringer, root)
+
+
+def _rail(spec, mats, x0, y0, x1, y1, z, item="rail"):
+    """A loft railing from (x0, y0) to (x1, y1) at floor height z: posts every ~1 m and a top rail."""
+    length = math.hypot(x1 - x0, y1 - y0)
+    count = max(2, int(length) + 1)
+    for i in range(count):
+        t = i / (count - 1)
+        post = C.box(item + "_post%d" % i, (x0 + (x1 - x0) * t, y0 + (y1 - y0) * t, z + 0.5), (0.08, 0.08, 1.0), mats["oak"], bevel=0.0)
+        _tag(post, spec, item)
+    top = C.box(item + "_top", ((x0 + x1) / 2, (y0 + y1) / 2, z + 1.0), (abs(x1 - x0) + 0.08, abs(y1 - y0) + 0.08, 0.08), mats["oak"], bevel=0.0)
+    _tag(top, spec, item)
+
+
 def build_furniture(spec, mats):
     fid = spec["id"]
     if fid == "H01":
@@ -420,3 +448,36 @@ def build_furniture(spec, mats):
         for i, (bx, by) in enumerate([(-2.5, -5.0), (-2.5, -2.2), (-2.5, 0.6), (1.6, -5.0), (1.6, -2.2)]):
             _bed(spec, mats, bx, by, 1.0, 2.0, "loft_bed%d" % i, loft)
         _chest(spec, mats, -2.5, 3.0, 1.0, 0.6, 0.6, "loft_chest")
+    elif fid == "T03A":
+        # Forest inn v3, 13 x 21 m: x -6.5..6.5, y -10.5 (front door) .. 10.5 (rear).
+        floor = spec["floor"]
+        loft = spec["ceiling_z"] + 0.05
+        # Hearth at the back wall on the left, a bench in front of it.
+        _hearth(spec, mats, -3.5, 8.6, "inn_hearth")
+        _bench(spec, mats, -3.5, 7.3, 1.8, 0.4, 0.45, "hearth_bench")
+        # L-shaped bar on the right: long counter along y at x 2.8, short arm along x at y -1.5.
+        _table(spec, mats, 2.8, 1.5, 0.8, 5.2, 1.05, "bar_long")
+        _table(spec, mats, 4.3, -1.5, 2.2, 0.8, 1.05, "bar_short")
+        _shelf(spec, mats, 6.0, 1.5, 0.45, 3.2, 3, "bar_shelf")
+        for i, by in enumerate([-0.4, 3.6, 4.6]):
+            _barrel(spec, mats, 5.8, by, 0.35, 0.95, "bar_barrel%d" % i)
+        for i, (mx, my) in enumerate([(2.7, -0.2), (2.9, 1.2), (2.7, 2.8), (4.0, -1.5)]):
+            _vessel(spec, mats, "bar_mug%d" % i, mx, my, floor + 1.08, 0.055, 0.12)
+        # Five tables with benches along their long sides.
+        for i, (tx, ty) in enumerate([(-3.4, -7.0), (-3.4, -3.6), (-3.4, -0.3), (-0.2, -6.2), (-0.2, -2.8)]):
+            _table(spec, mats, tx, ty, 1.0, 2.0, 0.78, "table%d" % i)
+            _bench(spec, mats, tx - 0.85, ty, 0.35, 1.9, 0.45, "table%d_bench_l" % i)
+            _bench(spec, mats, tx + 0.85, ty, 0.35, 1.9, 0.45, "table%d_bench_r" % i)
+            _vessel(spec, mats, "table%d_bowl" % i, tx, ty - 0.4, floor + 0.81, 0.14, 0.07)
+        # Straight flight along the left wall up to the loft: 18 steps, 0.28 m treads.
+        _stairs(spec, mats, -3.6, 1.5, 1.2, 18, (loft - floor) / 18, 0.28, "inn_stairs")
+        # Railing on the loft around the stairwell (the wall closes the fourth side).
+        _rail(spec, mats, -2.85, 3.2, -2.85, 6.6, loft, "stair_rail_side")
+        _rail(spec, mats, -4.35, 3.2, -4.35, 6.6, loft, "stair_rail_side_outer")
+        _rail(spec, mats, -4.35, 3.2, -2.85, 3.2, loft, "stair_rail_end")
+        _crate(spec, mats, 5.6, 9.4, 0.55, "crate1")
+        _crate(spec, mats, 4.9, 9.6, 0.45, "crate2")
+        # Loft: eight beds either side of the walkway, a chest.
+        for i, (bx, by) in enumerate([(-3.0, -8.0), (-3.0, -5.2), (-3.0, -2.4), (3.0, -8.0), (3.0, -5.2), (3.0, -2.4), (3.0, 0.4), (3.0, 3.2)]):
+            _bed(spec, mats, bx, by, 1.0, 2.0, "loft_bed%d" % i, loft)
+        _chest(spec, mats, -3.0, 0.6, 1.0, 0.6, 0.6, "loft_chest")

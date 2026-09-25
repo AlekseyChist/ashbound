@@ -2,19 +2,19 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://24vct3mc5w6f"
-path="res://.godot/imported/t02a_Forest_oak.png-69533f084aa3a1a1f677278f184773ce.ctex"
+uid="uid://bcayqg84v5bwg"
+path="res://.godot/imported/t03a_Forest_cloth.png-b817d2ac3a8990b38372b871d244dc7c.ctex"
 metadata={
 "vram_texture": false
 }
 generator_parameters={
-"md5": "31b3c81a5091cacf236acc62fe3714e2"
+"md5": "4775215fe0747c2bdcacf4382bb2de31"
 }
 
 [deps]
 
-source_file="res://assets/buildings/forest-inn-v1/t02a_Forest_oak.png"
-dest_files=["res://.godot/imported/t02a_Forest_oak.png-69533f084aa3a1a1f677278f184773ce.ctex"]
+source_file="res://assets/buildings/forest-inn-v1/t03a_Forest_cloth.png"
+dest_files=["res://.godot/imported/t03a_Forest_cloth.png-b817d2ac3a8990b38372b871d244dc7c.ctex"]
 
 [params]
 

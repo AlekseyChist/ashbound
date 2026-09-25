@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://7rykoyp2klbk"
-path="res://.godot/imported/t02a.glb-afc6800070af4c216bb72d9eed4b9608.scn"
+uid="uid://dx77ya8ggkfud"
+path="res://.godot/imported/t03a.glb-f469db102b400d228e6dc491676cf019.scn"
 
 [deps]
 
-source_file="res://assets/buildings/forest-inn-v1/t02a.glb"
-dest_files=["res://.godot/imported/t02a.glb-afc6800070af4c216bb72d9eed4b9608.scn"]
+source_file="res://assets/buildings/forest-inn-v1/t03a.glb"
+dest_files=["res://.godot/imported/t03a.glb-f469db102b400d228e6dc491676cf019.scn"]
 
 [params]
 
