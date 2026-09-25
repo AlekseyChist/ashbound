@@ -28,6 +28,8 @@ var extent := Rect2()
 var _segments: Array = []
 var _yards: Array[Rect2] = []
 var _well := Vector2.ZERO
+## LANDSCAPE-01: (x, z, radius) around trunks, logs, stumps and rocks: no grass inside, short grass nearby.
+var _clearings: Array[Vector3] = []
 var _tick := 0.0
 
 func configure(scene: Node3D, amount: float = 1.0, reach: float = 30.0) -> void:
@@ -41,6 +43,9 @@ func configure(scene: Node3D, amount: float = 1.0, reach: float = 30.0) -> void:
 	for record in layout.buildings:
 		var yard: Array = record.yard
 		_yards.append(Rect2(Vector2(yard[0], yard[1]) - origin, Vector2(yard[2], yard[3])).grow(.3))
+	var dressing: Node = world.get("dressing")
+	if dressing != null and "clearings" in dressing:
+		_clearings = dressing.clearings
 	material = ShaderMaterial.new()
 	material.shader = preload("res://assets/shaders/village_grass_blades.gdshader")
 	material.set_shader_parameter("far_share", .2)
@@ -141,6 +146,10 @@ func chunk_points(key: Vector2i) -> Array:
 	for yard in _yards:
 		if yard.intersects(area):
 			yards.append(yard)
+	var clearings: Array[Vector3] = []
+	for clearing in _clearings:
+		if area.grow(clearing.z + 1.0).has_point(Vector2(clearing.x, clearing.y)):
+			clearings.append(clearing)
 	var step := 1.0 / sqrt(DENSITY)
 	var result: Array = []
 	var x := corner.x
@@ -170,6 +179,16 @@ func chunk_points(key: Vector2i) -> Array:
 			if margin < .1:
 				continue
 			size *= lerpf(.45, 1.0, smoothstep(.1, 1.4, margin))
+			for clearing in clearings:
+				var d := point.distance_to(Vector2(clearing.x, clearing.y))
+				if d < clearing.z * .55:
+					blocked = true
+					break
+				var short := lerpf(.3, 1.0, smoothstep(clearing.z * .55, clearing.z + 1.0, d))
+				size *= short
+				tall *= short
+			if blocked:
+				continue
 			result.append({"point": point, "keep": keep, "size": size, "tall": tall, "turn": turn, "variation": variation})
 		x += step
 	return result
