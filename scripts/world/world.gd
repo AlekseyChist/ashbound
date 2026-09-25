@@ -31,7 +31,7 @@ const INN_KEEPER_TALK: QuestData = preload("res://data/quests/forest_inn_keeper.
 const INN_TALK_RADIUS := 2.8
 const Pad = preload("res://scripts/world/world_settlement_pad.gd")
 
-const VERSION := "0.30.0"
+const VERSION := "0.31.0"
 const WORLD_LAYOUT := "res://assets/world/graybox-v1/layout.json"
 const WORLD_HEIGHTS := "res://assets/world/graybox-v1/heights.bin"
 const WORLD_COLORS := "res://assets/world/graybox-v1/colors.bin"
@@ -556,15 +556,11 @@ func _build_inn(site: Dictionary) -> void:
 		plinth.position = Vector3(0, -drop * 0.5 + 0.02, 0)
 		inn.add_child(plinth)
 	_add_inn_keeper()
-	# The hall is four times a village house and the loft is a second room: soft fills, no shadows.
-	for at in [Vector3(-2, 2.7, 5.5), Vector3(-2, 2.7, -5.5), Vector3(0, 5.6, 5.0), Vector3(0, 5.6, -5.0)]:
-		var fill := OmniLight3D.new()
-		fill.name = "InnFill"
-		fill.position = at
-		fill.omni_range = 8.5
-		fill.light_energy = .75
-		fill.light_color = Color(1.0, .8, .58)
-		inn.add_child(fill)
+	# TAVERN-03: props, rugs, lanterns and candles, the hearth fire with its light and crackle.
+	var dressing := preload("res://scripts/world/inn_dressing.gd").new()
+	dressing.name = "InnDressing"
+	inn.add_child(dressing)
+	dressing.build()
 
 
 ## The inn is not one of the village yards (the house picker and the yard tests stay three),
