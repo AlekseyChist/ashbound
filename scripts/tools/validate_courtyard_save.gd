@@ -62,13 +62,13 @@ func _run() -> void:
 	level.get_node("Interactions/MapStand").available_on_crate = false
 	inventory.add_gold(9223372036854775807)
 	check(progress.award_learning_points("save_qa_award",17),"award ledger fixture")
-	level._on_innkeeper_interact()
-	level._on_woodpile_interact()
-	level._on_innkeeper_interact()
-	level._on_watchman_interact()
+	level.talk_to(&"innkeeper")
+	level.talk_to(&"woodpile")
+	level.talk_to(&"innkeeper")
+	level.talk_to(&"watchman")
 	level.dummy_hits = 3
 	level._apply_state(5)
-	level._on_watchman_interact()
+	level.talk_to(&"watchman")
 	panel._quick_bindings[0] = str(item("bread").instance_id)
 	panel._quick_bindings[9] = str(inventory.get_equipped("weapon").instance_id)
 	player.global_position = Vector3(2,0,4)
@@ -141,7 +141,7 @@ func _run() -> void:
 	check(store_node.flush_now() and store_node.save_count==previous_count,"unchanged snapshot does not write")
 	level._apply_state(5); level.dummy_hits=3
 	# Burst completes synchronously before queued save, like real signal mutations.
-	level._on_watchman_interact()
+	level.talk_to(&"watchman")
 	await settle(3)
 	check(store_node.save_count==previous_count+1,"burst produces one complete deferred save")
 	var saved: Dictionary = schema.capture(level,inventory)
