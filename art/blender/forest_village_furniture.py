@@ -24,8 +24,8 @@ def _new_root(name, spec, x, y, z=None):
     return root
 
 
-def _chest(spec, mats, x, y, w=1.0, d=0.6, h=0.6, item="chest"):
-    root = _new_root(item, spec, x, y)
+def _chest(spec, mats, x, y, w=1.0, d=0.6, h=0.6, item="chest", z=None):
+    root = _new_root(item, spec, x, y, z)
     t = 0.06
     # Bottom
     bottom = C.box(item + "_bottom", (0, 0, t / 2), (w, d, t), mats["oak"], bevel=0.01)
@@ -131,8 +131,9 @@ def _bed(spec, mats, x, y, w, l, item="bed", z=None):
     _parent_local(pillow, root)
 
 
-def _hearth(spec, mats, x, y, item="hearth"):
+def _hearth(spec, mats, x, y, item="hearth", s=1.0):
     root = _new_root(item, spec, x, y)
+    root.scale = (s, s, s)
     base = C.box(item + "_base", (0, 0, 0.15), (1.35, 0.95, 0.3), mats["stone"], bevel=0.02)
     _tag(base, spec, item)
     _parent_local(base, root)
@@ -193,8 +194,8 @@ def _ladder(spec, mats, x, fy, ty, ztop, w, item="ladder"):
         _parent_local(rung, root)
 
 
-def _barrel(spec, mats, x, y, r, h, item="barrel"):
-    root = _new_root(item, spec, x, y)
+def _barrel(spec, mats, x, y, r, h, item="barrel", z=None):
+    root = _new_root(item, spec, x, y, z)
     n = 14
     # Create low-poly barrel with belly
     verts = []
@@ -292,6 +293,48 @@ def _rail(spec, mats, x0, y0, x1, y1, z, item="rail"):
         _tag(post, spec, item)
     top = C.box(item + "_top", ((x0 + x1) / 2, (y0 + y1) / 2, z + 1.0), (abs(x1 - x0) + 0.08, abs(y1 - y0) + 0.08, 0.08), mats["oak"], bevel=0.0)
     _tag(top, spec, item)
+
+
+def _spit_roast(spec, mats, x, y, z, item="spit_roast"):
+    """A pig on an iron spit between two forked posts (roasted colour = straw)."""
+    root = _new_root(item, spec, x, y, z)
+    for sx in (-1.0, 1.0):
+        post = C.box(item + "_post", (sx, 0, 0.45), (0.08, 0.08, 0.9), mats["iron"], bevel=0.0)
+        _tag(post, spec, item)
+        _parent_local(post, root)
+    rod = C.box(item + "_rod", (0, 0, 0.9), (2.2, 0.04, 0.04), mats["iron"], bevel=0.0)
+    _tag(rod, spec, item)
+    _parent_local(rod, root)
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=16, ring_count=10, radius=1.0, location=(0, 0, 0))
+    body = bpy.context.active_object
+    body.name = item + "_pig"
+    body.scale = (0.55, 0.24, 0.22)
+    bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+    body.location = (0, 0, 0.9)
+    body.data.materials.append(mats["straw"])
+    C._link(body)
+    _tag(body, spec, item)
+    _parent_local(body, root)
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=12, ring_count=8, radius=0.16, location=(0, 0, 0))
+    head = bpy.context.active_object
+    head.name = item + "_pig_head"
+    head.location = (0.6, 0, 0.93)
+    head.data.materials.append(mats["straw"])
+    C._link(head)
+    _tag(head, spec, item)
+    _parent_local(head, root)
+    snout = C.box(item + "_pig_snout", (0.76, 0, 0.9), (0.1, 0.1, 0.08), mats["straw"], bevel=0.02)
+    _tag(snout, spec, item)
+    _parent_local(snout, root)
+    for i, (lx, ly) in enumerate([(-0.3, -0.12), (-0.3, 0.12), (0.3, -0.12), (0.3, 0.12)]):
+        leg = C.box(item + "_pig_leg%d" % i, (lx, ly, 0.72), (0.07, 0.07, 0.2), mats["straw"], bevel=0.02)
+        _tag(leg, spec, item)
+        _parent_local(leg, root)
+
+
+def _hay(spec, mats, x, y, z, item="hay"):
+    bale = C.box(item, (x, y, z + 0.25), (0.9, 0.5, 0.5), mats["straw"], bevel=0.08)
+    _tag(bale, spec, item)
 
 
 def build_furniture(spec, mats):
@@ -453,8 +496,11 @@ def build_furniture(spec, mats):
         floor = spec["floor"]
         loft = spec["ceiling_z"] + 0.05
         # Hearth at the back wall on the left, a bench in front of it.
-        _hearth(spec, mats, -3.5, 8.6, "inn_hearth")
-        _bench(spec, mats, -3.5, 7.3, 1.8, 0.4, 0.45, "hearth_bench")
+        # A hearth twice the size between the two rear windows, a pig roasting in its mouth.
+        _hearth(spec, mats, 1.0, 9.3, "inn_hearth", 2.0)
+        _spit_roast(spec, mats, 1.0, 8.95, floor + 0.05, "spit_roast")
+        _bench(spec, mats, -0.4, 6.6, 1.4, 0.4, 0.45, "hearth_bench_l")
+        _bench(spec, mats, 2.4, 6.6, 1.4, 0.4, 0.45, "hearth_bench_r")
         # L-shaped bar on the right: long counter along y at x 2.8, short arm along x at y -1.5.
         _table(spec, mats, 2.8, 1.5, 0.8, 5.2, 1.05, "bar_long")
         _table(spec, mats, 4.3, -1.5, 2.2, 0.8, 1.05, "bar_short")
@@ -464,7 +510,7 @@ def build_furniture(spec, mats):
         for i, (mx, my) in enumerate([(2.7, -0.2), (2.9, 1.2), (2.7, 2.8), (4.0, -1.5)]):
             _vessel(spec, mats, "bar_mug%d" % i, mx, my, floor + 1.08, 0.055, 0.12)
         # Five tables with benches along their long sides.
-        for i, (tx, ty) in enumerate([(-3.4, -7.0), (-3.4, -3.6), (-3.4, -0.3), (-0.2, -6.2), (-0.2, -2.8)]):
+        for i, (tx, ty) in enumerate([(-3.4, -7.0), (-3.4, -3.6), (-0.2, 0.6), (-0.2, -6.2), (-0.2, -2.8)]):
             _table(spec, mats, tx, ty, 1.0, 2.0, 0.78, "table%d" % i)
             _bench(spec, mats, tx - 0.85, ty, 0.35, 1.9, 0.45, "table%d_bench_l" % i)
             _bench(spec, mats, tx + 0.85, ty, 0.35, 1.9, 0.45, "table%d_bench_r" % i)
@@ -480,4 +526,13 @@ def build_furniture(spec, mats):
         # Loft: eight beds either side of the walkway, a chest.
         for i, (bx, by) in enumerate([(-3.0, -8.0), (-3.0, -5.2), (-3.0, -2.4), (3.0, -8.0), (3.0, -5.2), (3.0, -2.4), (3.0, 0.4), (3.0, 3.2)]):
             _bed(spec, mats, bx, by, 1.0, 2.0, "loft_bed%d" % i, loft)
-        _chest(spec, mats, -3.0, 0.6, 1.0, 0.6, 0.6, "loft_chest")
+        # A chest at the foot of every bed, for a renter's things later.
+        for i, (bx, by) in enumerate([(-3.0, -8.0), (-3.0, -5.2), (-3.0, -2.4), (3.0, -8.0), (3.0, -5.2), (3.0, -2.4), (3.0, 0.4), (3.0, 3.2)]):
+            _chest(spec, mats, bx, by - 1.35, 0.8, 0.45, 0.45, "bed_chest%d" % i, loft)
+        # Loft clutter: hay in the far corner, barrels and crates at the sides.
+        for i, (hx, hy, hz) in enumerate([(-1.9, 9.2, 0.0), (-2.8, 9.2, 0.0), (-2.35, 9.2, 0.5), (-1.9, 8.6, 0.0)]):
+            _hay(spec, mats, hx, hy, loft + hz, "loft_hay%d" % i)
+        _barrel(spec, mats, 3.4, 6.2, 0.33, 0.85, "loft_barrel0", loft)
+        _barrel(spec, mats, 3.4, 7.0, 0.33, 0.85, "loft_barrel1", loft)
+        _crate(spec, mats, -2.9, 1.1, 0.55, "loft_crate0", loft - floor)
+        _crate(spec, mats, 2.9, -9.6, 0.5, "loft_crate1", loft - floor)

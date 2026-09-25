@@ -47,6 +47,21 @@ func build(data: Dictionary) -> void:
 	light.light_energy = 0.9
 	light.light_color = Color(1.0, 0.83, 0.64)
 	add_child(light)
+	# TAVERN-03 (owner 25 Sep): the room light comes from a visible lantern hanging on a rope.
+	var lantern: Node3D = (load("res://assets/props/tavern-v1/wooden_lantern_01.glb") as PackedScene).instantiate()
+	lantern.name = "Lantern"
+	lantern.position = light.position - Vector3(0, 0.2, 0)
+	add_child(lantern)
+	var rope := MeshInstance3D.new()
+	rope.name = "LanternRope"
+	var cord := BoxMesh.new()
+	cord.size = Vector3(0.02, 0.5, 0.02)
+	rope.mesh = cord
+	var cord_colour := StandardMaterial3D.new()
+	cord_colour.albedo_color = Color(0.25, 0.18, 0.1)
+	rope.material_override = cord_colour
+	rope.position = lantern.position + Vector3(0, 0.6, 0)
+	add_child(rope)
 
 func contains(point: Vector3) -> bool:
 	var local := to_local(point)

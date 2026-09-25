@@ -1,0 +1,91 @@
+{
+  "wine_bottles_01": {
+    "url": "https://polyhaven.com/a/wine_bottles_01",
+    "license": "CC0-1.0",
+    "file": "wine_bottles_01_1k.gltf",
+    "md5": "56ed090c274714cccafefe08f5b9c1a8"
+  },
+  "wine_barrel_01": {
+    "url": "https://polyhaven.com/a/wine_barrel_01",
+    "license": "CC0-1.0",
+    "file": "wine_barrel_01_1k.gltf",
+    "md5": "5397e6d959dd3ef20d1fc14436d0eb70"
+  },
+  "brass_goblets": {
+    "url": "https://polyhaven.com/a/brass_goblets",
+    "license": "CC0-1.0",
+    "file": "brass_goblets_1k.gltf",
+    "md5": "9e76131d099b3dcdadb82c1d2d8bd536"
+  },
+  "jug_01": {
+    "url": "https://polyhaven.com/a/jug_01",
+    "license": "CC0-1.0",
+    "file": "jug_01_1k.gltf",
+    "md5": "b8b3c0c9faf48e2370485a04288da9c4"
+  },
+  "carved_wooden_plate": {
+    "url": "https://polyhaven.com/a/carved_wooden_plate",
+    "license": "CC0-1.0",
+    "file": "carved_wooden_plate_1k.gltf",
+    "md5": "c4866bc4fcdf070b992f9b35acf8d13e"
+  },
+  "wooden_bowl_01": {
+    "url": "https://polyhaven.com/a/wooden_bowl_01",
+    "license": "CC0-1.0",
+    "file": "wooden_bowl_01_1k.gltf",
+    "md5": "d4fa6acadbae81c8f66f346381b11582"
+  },
+  "hamburger_buns": {
+    "url": "https://polyhaven.com/a/hamburger_buns",
+    "license": "CC0-1.0",
+    "file": "hamburger_buns_1k.gltf",
+    "md5": "d4564495c0c9dd9e1b73843aa7a08c56"
+  },
+  "food_apple_01": {
+    "url": "https://polyhaven.com/a/food_apple_01",
+    "license": "CC0-1.0",
+    "file": "food_apple_01_1k.gltf",
+    "md5": "222a8e136b40f36c1acb87a6036c1106"
+  },
+  "yellow_onion": {
+    "url": "https://polyhaven.com/a/yellow_onion",
+    "license": "CC0-1.0",
+    "file": "yellow_onion_1k.gltf",
+    "md5": "dae6fea89c74167e9140866b0b16201d"
+  },
+  "wicker_basket_01": {
+    "url": "https://polyhaven.com/a/wicker_basket_01",
+    "license": "CC0-1.0",
+    "file": "wicker_basket_01_1k.gltf",
+    "md5": "6910bb33f9b29c30e41c06342cba4f9b"
+  },
+  "wooden_lantern_01": {
+    "url": "https://polyhaven.com/a/wooden_lantern_01",
+    "license": "CC0-1.0",
+    "file": "wooden_lantern_01_1k.gltf",
+    "md5": "e31edca6461023e076183cb74721b0b9"
+  },
+  "wooden_stool_01": {
+    "url": "https://polyhaven.com/a/wooden_stool_01",
+    "license": "CC0-1.0",
+    "file": "wooden_stool_01_1k.gltf",
+    "md5": "6a3c9169ce7ade1796efca8b88c75c50"
+  },
+  "wooden_bucket_01": {
+    "url": "https://polyhaven.com/a/wooden_bucket_01",
+    "license": "CC0-1.0",
+    "file": "wooden_bucket_01_1k.gltf",
+    "md5": "d3a6ff00895b69406b203dc417113d9a"
+  },
+  "wooden_candlestick": {
+    "url": "https://polyhaven.com/a/wooden_candlestick",
+    "license": "CC0-1.0",
+    "file": "wooden_candlestick_1k.gltf",
+    "md5": "26894e96c7c914a995c3a5151c875a4e"
+  },
+  "fabric_pattern_05": {
+    "url": "https://polyhaven.com/a/fabric_pattern_05",
+    "license": "CC0-1.0",
+    "file": "rugs/fabric_pattern_05_diff_1k.jpg, rugs/fabric_pattern_05_nor_1k.jpg"
+  }
+}
