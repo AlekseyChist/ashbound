@@ -99,8 +99,8 @@ def _chair(spec, mats, x, y, face_y, item="chair"):
         _parent_local(leg, root)
 
 
-def _bed(spec, mats, x, y, w, l, item="bed"):
-    root = _new_root(item, spec, x, y)
+def _bed(spec, mats, x, y, w, l, item="bed", z=None):
+    root = _new_root(item, spec, x, y, z)
     # Frame legs
     leg_h = 0.35
     for i, (sx, sy) in enumerate([(-w / 2 + 0.05, -l / 2 + 0.05), (w / 2 - 0.05, -l / 2 + 0.05), (-w / 2 + 0.05, l / 2 - 0.05), (w / 2 - 0.05, l / 2 - 0.05)]):
@@ -395,3 +395,28 @@ def build_furniture(spec, mats):
         _crate(spec, mats, 2.6, 4.3, 0.45, "crate4")
         # ladder to loft: ztop=3.3 is absolute world height
         _ladder(spec, mats, -2.2, -0.35, 1.02, 3.38, 0.6, "loft_ladder")
+    elif fid == "T02A":
+        # Forest inn: common room below, beds on the loft (D-089). x: -4.5..4.5, y: -7.5 (front) .. 7.5.
+        _hearth(spec, mats, -2.6, 5.2, "inn_hearth")
+        _bench(spec, mats, -2.6, 3.9, 1.6, 0.4, 0.45, "hearth_bench")
+        # Counter on the right, barrels and a shelf behind it.
+        _table(spec, mats, 2.7, 0.2, 0.8, 3.0, 1.05, "counter")
+        _shelf(spec, mats, 4.0, 0.2, 0.45, 2.4, 3, "counter_shelf")
+        _barrel(spec, mats, 3.85, -1.9, 0.33, 0.9, "barrel1")
+        _barrel(spec, mats, 3.85, 2.3, 0.33, 0.9, "barrel2")
+        _vessel(spec, mats, "counter_mug1", 2.6, -0.6, spec["floor"] + 1.08, 0.055, 0.12)
+        _vessel(spec, mats, "counter_mug2", 2.8, 0.9, spec["floor"] + 1.08, 0.055, 0.12)
+        # Three tables with benches along their long sides.
+        for i, (tx, ty) in enumerate([(-2.3, -4.6), (-2.3, -1.3), (0.4, -3.2)]):
+            _table(spec, mats, tx, ty, 1.0, 2.0, 0.78, "table%d" % i)
+            _bench(spec, mats, tx - 0.85, ty, 0.35, 1.9, 0.45, "table%d_bench_l" % i)
+            _bench(spec, mats, tx + 0.85, ty, 0.35, 1.9, 0.45, "table%d_bench_r" % i)
+            _vessel(spec, mats, "table%d_bowl" % i, tx, ty - 0.4, spec["floor"] + 0.81, 0.14, 0.07)
+        # Ladder up through the loft hatch (hatch centre 2.9, 4.5).
+        _ladder(spec, mats, 2.9, 3.35, 4.9, spec["ceiling_z"], 0.6, "loft_ladder")
+        _crate(spec, mats, 3.9, 6.7, 0.5, "crate1")
+        # Beds on the loft floor.
+        loft = spec["ceiling_z"] + 0.12
+        for i, (bx, by) in enumerate([(-2.5, -5.0), (-2.5, -2.2), (-2.5, 0.6), (1.6, -5.0), (1.6, -2.2)]):
+            _bed(spec, mats, bx, by, 1.0, 2.0, "loft_bed%d" % i, loft)
+        _chest(spec, mats, -2.5, 3.0, 1.0, 0.6, 0.6, "loft_chest")
