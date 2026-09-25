@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/items/item_data.gd" id="1_7tnsc"]
+
+[resource]
+script = ExtResource("1_7tnsc")
+id = "cultist_blade"
+type = 0
+name = "Клинок культиста"
+description = "Зазубренное лезвие, покрытое странными символами."
+value = 80
+slot = "weapon"
+stats = {
+"damage": 18,
+"fire_damage": 5
+}
+faction_requirement = "ashen_order"
+category = "weapon"
+subtype = "sword"
+tags = ["magic"]

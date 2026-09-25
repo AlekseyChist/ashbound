@@ -1,0 +1,151 @@
+{
+"bread": {
+"category": "consumable",
+"description": "Чёрствый, но съедобный.",
+"effect": {
+"heal": 10
+},
+"id": "bread",
+"max_stack": 20,
+"name": "Хлеб",
+"stackable": true,
+"subtype": "food",
+"tags": [],
+"type": 2,
+"value": 3
+},
+"chain_mail": {
+"category": "clothing",
+"description": "Плетёная металлическая броня.",
+"id": "chain_mail",
+"name": "Кольчуга",
+"slot": "armor",
+"stackable": false,
+"stats": {
+"defense": 12
+},
+"subtype": "armor_set",
+"tags": [],
+"type": 1,
+"value": 100
+},
+"courtyard_sketch": {
+"category": "object",
+"description": "",
+"icon": "res://assets/ui/maps/courtyard-sketch-v1.png",
+"id": "courtyard_sketch",
+"name": "Схема двора",
+"stackable": false,
+"subtype": "map",
+"tags": [],
+"type": 4,
+"value": 0
+},
+"cultist_blade": {
+"category": "weapon",
+"description": "Зазубренное лезвие, покрытое странными символами.",
+"faction_requirement": "ashen_order",
+"id": "cultist_blade",
+"name": "Клинок культиста",
+"slot": "weapon",
+"stackable": false,
+"stats": {
+"damage": 18,
+"fire_damage": 5
+},
+"subtype": "sword",
+"tags": ["magic"],
+"type": 0,
+"value": 80
+},
+"health_potion": {
+"category": "consumable",
+"description": "Восстанавливает 50 здоровья.",
+"effect": {
+"heal": 50
+},
+"id": "health_potion",
+"max_stack": 10,
+"name": "Зелье здоровья",
+"stackable": true,
+"subtype": "potion",
+"tags": [],
+"type": 2,
+"value": 25
+},
+"iron_sword": {
+"category": "weapon",
+"description": "Надёжное оружие простого солдата.",
+"id": "iron_sword",
+"name": "Железный меч",
+"slot": "weapon",
+"stackable": false,
+"stats": {
+"damage": 15
+},
+"subtype": "sword",
+"tags": [],
+"type": 0,
+"value": 50
+},
+"leather_armor": {
+"category": "clothing",
+"description": "Простая защита из дублёной кожи.",
+"id": "leather_armor",
+"name": "Кожаная броня",
+"slot": "armor",
+"stackable": false,
+"stats": {
+"defense": 5
+},
+"subtype": "armor_set",
+"tags": [],
+"type": 1,
+"value": 30
+},
+"rusty_sword": {
+"category": "weapon",
+"description": "Едва держится вместе, но лучше, чем ничего.",
+"icon": "res://assets/textures/items/rusty_sword.png",
+"id": "rusty_sword",
+"name": "Ржавый меч",
+"slot": "weapon",
+"stackable": false,
+"stats": {
+"damage": 8
+},
+"subtype": "sword",
+"tags": [],
+"type": 0,
+"value": 5
+},
+"sacred_ash": {
+"category": "object",
+"description": "Пепел со священного алтаря Ордена.",
+"id": "sacred_ash",
+"max_stack": 5,
+"name": "Священный пепел",
+"quest_id": "order_trial_fire",
+"quest_locked": true,
+"stackable": true,
+"subtype": "quest_object",
+"tags": [],
+"type": 3,
+"value": 0
+},
+"stamina_potion": {
+"category": "consumable",
+"description": "Восстанавливает всю стамину.",
+"effect": {
+"stamina": 100
+},
+"id": "stamina_potion",
+"max_stack": 10,
+"name": "Зелье выносливости",
+"stackable": true,
+"subtype": "potion",
+"tags": [],
+"type": 2,
+"value": 20
+}
+}

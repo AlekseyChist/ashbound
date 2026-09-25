@@ -109,140 +109,15 @@ func _ready() -> void:
 	print("[ASHBOUND] InventorySystem инициализирован")
 
 
+## ITEM-DATA-01 (review 2.4): items are data — data/items/*.tres listed in data/items/catalog.tres.
+## The rest of the inventory keeps working with the same dictionaries as before.
+const ItemCatalogPath := "res://data/items/catalog.tres"
+
 func _init_item_database() -> void:
-	item_database["courtyard_sketch"] = {
-		"id": "courtyard_sketch",
-		"type": ItemType.MISC,
-		"name": "Схема двора",
-		"description": "",
-		"value": 0,
-		"stackable": false,
-		"icon": "res://assets/ui/maps/courtyard-sketch-v1.png"
-	}
-	# Оружие
-	item_database["rusty_sword"] = {
-		"id": "rusty_sword",
-		"name": "Ржавый меч",
-		"description": "Едва держится вместе, но лучше, чем ничего.",
-		"type": ItemType.WEAPON,
-		"slot": SLOT_WEAPON,
-		"icon": "res://assets/textures/items/rusty_sword.png",
-		"stats": {"damage": 8},
-		"value": 5,
-		"stackable": false,
-	}
-
-	item_database["iron_sword"] = {
-		"id": "iron_sword",
-		"name": "Железный меч",
-		"description": "Надёжное оружие простого солдата.",
-		"type": ItemType.WEAPON,
-		"slot": SLOT_WEAPON,
-		"stats": {"damage": 15},
-		"value": 50,
-		"stackable": false,
-	}
-
-	item_database["cultist_blade"] = {
-		"id": "cultist_blade",
-		"name": "Клинок культиста",
-		"description": "Зазубренное лезвие, покрытое странными символами.",
-		"type": ItemType.WEAPON,
-		"slot": SLOT_WEAPON,
-		"stats": {"damage": 18, "fire_damage": 5},
-		"value": 80,
-		"faction_requirement": FactionManager.FACTION_ASHEN_ORDER,
-		"stackable": false,
-	}
-
-	# Броня
-	item_database["leather_armor"] = {
-		"id": "leather_armor",
-		"name": "Кожаная броня",
-		"description": "Простая защита из дублёной кожи.",
-		"type": ItemType.ARMOR,
-		"slot": SLOT_ARMOR,
-		"stats": {"defense": 5},
-		"value": 30,
-		"stackable": false,
-	}
-
-	item_database["chain_mail"] = {
-		"id": "chain_mail",
-		"name": "Кольчуга",
-		"description": "Плетёная металлическая броня.",
-		"type": ItemType.ARMOR,
-		"slot": SLOT_ARMOR,
-		"stats": {"defense": 12},
-		"value": 100,
-		"stackable": false,
-	}
-
-	# Расходники
-	item_database["health_potion"] = {
-		"id": "health_potion",
-		"name": "Зелье здоровья",
-		"description": "Восстанавливает 50 здоровья.",
-		"type": ItemType.CONSUMABLE,
-		"effect": {"heal": 50},
-		"value": 25,
-		"stackable": true,
-		"max_stack": 10,
-	}
-
-	item_database["stamina_potion"] = {
-		"id": "stamina_potion",
-		"name": "Зелье выносливости",
-		"description": "Восстанавливает всю стамину.",
-		"type": ItemType.CONSUMABLE,
-		"effect": {"stamina": 100},
-		"value": 20,
-		"stackable": true,
-		"max_stack": 10,
-	}
-
-	item_database["bread"] = {
-		"id": "bread",
-		"name": "Хлеб",
-		"description": "Чёрствый, но съедобный.",
-		"type": ItemType.CONSUMABLE,
-		"effect": {"heal": 10},
-		"value": 3,
-		"stackable": true,
-		"max_stack": 20,
-	}
-
-	# Квестовые предметы
-	item_database["sacred_ash"] = {
-		"id": "sacred_ash",
-		"name": "Священный пепел",
-		"description": "Пепел со священного алтаря Ордена.",
-		"type": ItemType.QUEST,
-		"quest_id": "order_trial_fire",
-		"value": 0,
-		"stackable": true,
-		"max_stack": 5,
-	}
-
-	# Каталог: category/subtype/tags определяются каталогом, а не сохранёнными копиями
-	var _catalog_meta := {
-		"courtyard_sketch": {"category": "object", "subtype": "map", "tags": []},
-		"rusty_sword": {"category": "weapon", "subtype": "sword", "tags": []},
-		"iron_sword": {"category": "weapon", "subtype": "sword", "tags": []},
-		"cultist_blade": {"category": "weapon", "subtype": "sword", "tags": ["magic"]},
-		"leather_armor": {"category": "clothing", "subtype": "armor_set", "tags": []},
-		"chain_mail": {"category": "clothing", "subtype": "armor_set", "tags": []},
-		"bread": {"category": "consumable", "subtype": "food", "tags": []},
-		"health_potion": {"category": "consumable", "subtype": "potion", "tags": []},
-		"stamina_potion": {"category": "consumable", "subtype": "potion", "tags": []},
-		"sacred_ash": {"category": "object", "subtype": "quest_object", "tags": []},
-	}
-	for _catalog_id in _catalog_meta:
-		var _meta: Dictionary = _catalog_meta[_catalog_id]
-		item_database[_catalog_id]["category"] = _meta["category"]
-		item_database[_catalog_id]["subtype"] = _meta["subtype"]
-		item_database[_catalog_id]["tags"] = _meta["tags"]
-	item_database["sacred_ash"]["quest_locked"] = true
+	item_database.clear()
+	var catalog: ItemCatalog = load(ItemCatalogPath)
+	for item: ItemData in catalog.items:
+		item_database[item.id] = item.to_dict()
 
 
 # === ИНВЕНТАРЬ ===

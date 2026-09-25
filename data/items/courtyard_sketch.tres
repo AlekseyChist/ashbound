@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/items/item_data.gd" id="1_bcdqo"]
+
+[resource]
+script = ExtResource("1_bcdqo")
+id = "courtyard_sketch"
+name = "Схема двора"
+icon = "res://assets/ui/maps/courtyard-sketch-v1.png"
+category = "object"
+subtype = "map"
