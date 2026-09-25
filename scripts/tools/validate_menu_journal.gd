@@ -135,13 +135,13 @@ func _run() -> void:
 	check(not panel.get_node("%Hint").is_visible_in_tree(), "no drag hint in journal")
 	groups += 1
 	# Exercise the real local quest handlers, including live update while page remains open.
-	level._on_innkeeper_interact()
+	level.talk_to(&"innkeeper")
 	assert_entry(1)
-	level._on_woodpile_interact()
+	level.talk_to(&"woodpile")
 	assert_entry(2)
-	level._on_innkeeper_interact()
+	level.talk_to(&"innkeeper")
 	assert_entry(3)
-	level._on_watchman_interact()
+	level.talk_to(&"watchman")
 	assert_entry(4)
 	menu.close_menu()
 	level.get_node("HUD").clear_message()
@@ -174,7 +174,7 @@ func _run() -> void:
 	await open_menu()
 	await tap_tab("QuestsTab")
 	assert_entry(5)
-	level._on_watchman_interact()
+	level.talk_to(&"watchman")
 	assert_entry(6)
 	await capture("completed")
 	groups += 1
