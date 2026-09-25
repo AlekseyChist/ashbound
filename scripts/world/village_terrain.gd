@@ -6,6 +6,10 @@ var data: Dictionary
 var segments: Array[Dictionary] = []
 var ground: MeshInstance3D
 var material: ShaderMaterial
+## Ground mesh step. A world scene uses a step that divides its 5 m grid, so the seam has shared vertices.
+var grid_spacing := 2.0
+## Optional mesh-only height (world seam); placement and gameplay keep using height_at.
+var mesh_height: Callable
 
 func configure(layout: Dictionary) -> void:
 	data = layout
@@ -21,7 +25,7 @@ func configure(layout: Dictionary) -> void:
 	segments.append({"a":Vector2(data.well.x,data.well.y)-ORIGIN,"b":map_point(data.well.gate),"width":2.2})
 	ground = MeshInstance3D.new()
 	ground.name = "VillageGround"
-	ground.mesh = Grid.build(-95,-95,130,80,2.0,height_at,color_at)
+	ground.mesh = Grid.build(-95,-95,130,80,grid_spacing,mesh_height if mesh_height.is_valid() else height_at,color_at)
 	material = ShaderMaterial.new()
 	material.shader = preload("res://assets/shaders/village_ground.gdshader")
 	preload("res://scripts/world/village_surface_catalog.gd").apply_to(material)

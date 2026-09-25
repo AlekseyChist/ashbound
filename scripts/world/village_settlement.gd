@@ -49,9 +49,11 @@ func _ready() -> void:
 
 func _environment() -> void:
 	layout = JSON.parse_string(FileAccess.get_file_as_string("res://assets/world/village-layout-v1.json"))
+	_prepare_layout(layout)
 	terrain = Terrain.new()
 	terrain.name = "Terrain"
 	add_child(terrain)
+	_prepare_terrain(terrain)
 	terrain.configure(layout)
 	var world := WorldEnvironment.new()
 	world.name = "WorldEnvironment"
@@ -75,6 +77,14 @@ func _environment() -> void:
 	sun.shadow_enabled = true
 	sun.directional_shadow_max_distance = 80.0
 	add_child(sun)
+
+## Hook for a host scene (the world) to extend the plan before the ground is built.
+func _prepare_layout(_plan: Dictionary) -> void:
+	pass
+
+## Hook for a host scene to set ground mesh options before the ground is built.
+func _prepare_terrain(_ground: Node3D) -> void:
+	pass
 
 func select_building(index: int) -> void:
 	super.select_building(index)

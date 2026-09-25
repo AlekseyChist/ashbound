@@ -1,0 +1,377 @@
+extends "res://scripts/world/village_settlement.gd"
+## The game world: the starter village (D-072..078) placed on the 2x2 km world map (D-081, variant A).
+## The village keeps its own local frame at the scene origin; the world map is laid under it
+## with an offset, so every village system (doors, weather, sound, menu) works unchanged.
+
+const Geometry = preload("res://scripts/world/world_graybox_geometry.gd")
+const Shapes = preload("res://scripts/world/world_graybox_shapes.gd")
+const Headwaters = preload("res://scripts/world/world_graybox_headwaters.gd")
+const Landmarks = preload("res://scripts/world/world_graybox_landmarks.gd")
+const Pad = preload("res://scripts/world/world_settlement_pad.gd")
+
+const VERSION := "0.24.0"
+const WORLD_LAYOUT := "res://assets/world/graybox-v1/layout.json"
+const WORLD_HEIGHTS := "res://assets/world/graybox-v1/heights.bin"
+const WORLD_COLORS := "res://assets/world/graybox-v1/colors.bin"
+## Map point (metres) of the village's local origin, i.e. plan point (95, 95).
+const VILLAGE_ORIGIN_MAP := Vector2(140, 1430)
+## The 225 x 175 m plan on the map. Edges lie on the 5 m world grid.
+const VILLAGE_RECT := Rect2(45, 1335, 225, 175)
+## World height of village level 0 and width of the blend ring (measured: 95th percentile slope 32°).
+const BASE_HEIGHT := 46.0
+const RING := 100.0
+const GRID := 5.0
+## Village ground step that divides the world grid, so the seam shares its vertices.
+const VILLAGE_MESH_STEP := 5.0 / 3.0
+## Map half extent: map (x, z) is Godot (x - HALF, h, z - HALF) in the world frame.
+const HALF := 1000.0
+const SITE_SKIPPED := "start_hamlet"
+## Plan points where world trails meet the village paths.
+const STREET_EXIT_PLAN := Vector2(198, 0)
+const CAVE_EXIT_PLAN := Vector2(17.25, 0)
+const ROAD_TINT := Color("554837")
+
+var world_layout: Dictionary
+var world_width := 0
+var original_heights: PackedFloat32Array
+var world_heights: PackedFloat32Array
+var pad: RefCounted
+var world_root: Node3D
+var world_terrain: Node3D
+
+
+func _ready() -> void:
+	super._ready()
+	DisplayServer.window_set_title("AshBound — World %s" % VERSION)
+	print("WORLD_VILLAGE_READY version=%s base=%.1f ring=%.0f" % [VERSION, BASE_HEIGHT, RING])
+
+
+func _prepare_layout(plan: Dictionary) -> void:
+	# The cave path ended 13 m inside the plan; lead it to the north edge where the world trail starts.
+	plan.roads.append({"id": "world_cave_link", "name": "К лесной тропе", "width": 1.8,
+		"points": [[17.25, 13.0], [CAVE_EXIT_PLAN.x, CAVE_EXIT_PLAN.y]]})
+
+
+func _prepare_terrain(ground: Node3D) -> void:
+	ground.grid_spacing = VILLAGE_MESH_STEP
+	pad = Pad.new(VILLAGE_RECT, VILLAGE_ORIGIN_MAP, BASE_HEIGHT, RING, ground.height_at)
+	ground.mesh_height = _village_mesh_height
+
+
+func _environment() -> void:
+	super._environment()
+	_build_world()
+
+
+## Village ground heights; on the plan edge they follow the world grid exactly.
+func _village_mesh_height(x: float, z: float) -> float:
+	var map := Vector2(x, z) + VILLAGE_ORIGIN_MAP
+	if pad.is_on_border(map.x, map.y):
+		return pad.border_height(map.x, map.y, GRID) - BASE_HEIGHT
+	return terrain.height_at(x, z)
+
+
+func _build_world() -> void:
+	world_layout = JSON.parse_string(FileAccess.get_file_as_string(WORLD_LAYOUT))
+	world_width = int(world_layout.width)
+	original_heights = FileAccess.get_file_as_bytes(WORLD_HEIGHTS).to_float32_array()
+	world_heights = _raise_west_rim(pad.apply(original_heights, world_width, GRID))
+	world_root = Node3D.new()
+	world_root.name = "WorldMap"
+	world_root.position = Vector3(HALF - VILLAGE_ORIGIN_MAP.x, -BASE_HEIGHT, HALF - VILLAGE_ORIGIN_MAP.y)
+	add_child(world_root)
+	world_terrain = Geometry.new()
+	world_terrain.name = "Terrain"
+	world_terrain.skip_cell = func(x: int, z: int) -> bool: return pad.covers_cell(x, z, GRID)
+	world_terrain.material = terrain.material
+	world_terrain.surface_meta = "ground"
+	world_root.add_child(world_terrain)
+	world_terrain.build(world_heights, _world_colors(), world_width, GRID)
+	_build_roads()
+	_build_rivers()
+	_build_water_and_sites()
+
+
+## The map ends 45 m west of the village. A steep rise there (steeper than the hero can climb)
+## closes the world naturally instead of an edge into the void or an invisible wall.
+const RIM_WIDTH := 30.0
+const RIM_RISE := 45.0
+
+func _raise_west_rim(grid: PackedFloat32Array) -> PackedFloat32Array:
+	var columns := int(RIM_WIDTH / GRID)
+	for zi in range(world_width):
+		for xi in range(columns + 1):
+			grid[zi * world_width + xi] += RIM_RISE * (1.0 - smoothstep(0.0, RIM_WIDTH, xi * GRID))
+	return grid
+
+
+## Map colours brought to the village palette; near the village they become its own ground colour.
+func _world_colors() -> PackedColorArray:
+	var raw := FileAccess.get_file_as_bytes(WORLD_COLORS).to_float32_array()
+	var colors := PackedColorArray()
+	colors.resize(world_width * world_width)
+	var blend := 150.0
+	for zi in range(world_width):
+		for xi in range(world_width):
+			var i := zi * world_width + xi
+			var c := Color(raw[i * 4], raw[i * 4 + 1], raw[i * 4 + 2], 0.0)
+			# The baked map is linear clay; village grass is far darker under its texture detail.
+			var luminance := c.r * 0.2126 + c.g * 0.7152 + c.b * 0.0722
+			var scale := lerpf(0.24, 0.62, smoothstep(0.3, 0.7, luminance))
+			c = Color(c.r * scale, c.g * scale, c.b * scale, 0.0)
+			var x := xi * GRID
+			var z := zi * GRID
+			var d: float = pad.distance_to_rect(x, z)
+			if d < blend:
+				var local := Color(terrain.color_at(x - VILLAGE_ORIGIN_MAP.x, z - VILLAGE_ORIGIN_MAP.y))
+				c = c.lerp(local, 1.0 - smoothstep(0.0, blend, d))
+			colors[i] = c
+	return colors
+
+
+# --- Heights --------------------------------------------------------------------------------
+
+## Ground height of a grid at a point in the world frame (same triangles as the terrain mesh).
+func _grid_height(grid: PackedFloat32Array, x: float, z: float) -> float:
+	var gx := clampf((x + HALF) / GRID, 0.0, world_width - 1.0001)
+	var gz := clampf((z + HALF) / GRID, 0.0, world_width - 1.0001)
+	var ix := int(gx)
+	var iz := int(gz)
+	var u := gx - ix
+	var v := gz - iz
+	var a := grid[iz * world_width + ix]
+	var b := grid[iz * world_width + ix + 1]
+	var c := grid[(iz + 1) * world_width + ix]
+	var d := grid[(iz + 1) * world_width + ix + 1]
+	return a + u * (b - a) + v * (c - a) if u + v <= 1.0 else d + (1.0 - u) * (c - d) + (1.0 - v) * (b - d)
+
+
+## World-frame ground height after the village was pressed in.
+func world_ground(x: float, z: float) -> float:
+	return _grid_height(world_heights, x, z)
+
+
+## Ground height in the scene (village) frame at a scene point, inside or outside the village.
+func ground_height_local(x: float, z: float) -> float:
+	var map := Vector2(x, z) + VILLAGE_ORIGIN_MAP
+	if VILLAGE_RECT.has_point(map):
+		return terrain.height_at(x, z)
+	return world_ground(map.x - HALF, map.y - HALF) - BASE_HEIGHT
+
+
+func fall_limit() -> float:
+	if player == null or world_heights.is_empty():
+		return super.fall_limit()
+	return ground_height_local(player.global_position.x, player.global_position.z) - 8.0
+
+
+func _map_of(p: Vector3) -> Vector2:
+	return Vector2(p.x + HALF, p.z + HALF)
+
+
+func _world_of_plan(plan_point: Vector2, lift: float) -> Vector3:
+	var map := plan_point - Vector2(95, 95) + VILLAGE_ORIGIN_MAP
+	var p := Vector3(map.x - HALF, 0.0, map.y - HALF)
+	p.y = world_ground(p.x, p.z) + lift
+	return p
+
+
+## Keeps a deck point at the same height above ground after the ring reshaped the ground.
+func _follow_ground(p: Vector3) -> Vector3:
+	var map := _map_of(p)
+	if pad.distance_to_rect(map.x, map.y) > RING + 1.0:
+		return p
+	return Vector3(p.x, p.y + world_ground(p.x, p.z) - _grid_height(original_heights, p.x, p.z), p.z)
+
+
+# --- Roads ----------------------------------------------------------------------------------
+
+func _points_of(record: Dictionary) -> PackedVector3Array:
+	var points := PackedVector3Array()
+	for p in record.world_points:
+		points.append(Vector3(p[0], p[1], p[2]))
+	return points
+
+
+func _road_points(road: Dictionary) -> PackedVector3Array:
+	var source := _points_of(road)
+	var result := PackedVector3Array()
+	match str(road.id):
+		"start_trail":
+			# From the forest inn down to the village street; the old tail crossed the village.
+			for p in source:
+				if _map_of(p).y > 1318.0:
+					break
+				result.append(_follow_ground(p))
+			_append_tail(result, [_world_of_plan(STREET_EXIT_PLAN + Vector2(5.3, -10.0), 0.0),
+				_world_of_plan(STREET_EXIT_PLAN, 0.05)])
+		"forest_cave_trail":
+			# From the village north edge to the forest cave.
+			var head: Array = [_world_of_plan(CAVE_EXIT_PLAN, 0.05),
+				_world_of_plan(CAVE_EXIT_PLAN + Vector2(3.75, -15.0), 0.0)]
+			var kept := PackedVector3Array()
+			var started := false
+			for p in source:
+				if not started and _map_of(p).y > 1300.0:
+					continue
+				started = true
+				kept.append(_follow_ground(p))
+			result.append(head[0])
+			_append_tail(result, [head[1], kept[0]])
+			result.remove_at(result.size() - 1)
+			result.append_array(kept)
+		_:
+			for p in source:
+				var map := _map_of(p)
+				if pad.distance_to_rect(map.x, map.y) <= 0.0:
+					continue
+				result.append(_follow_ground(p))
+	return result
+
+
+## Appends straight pieces every 2 m; the height above ground eases from the last point's to the target's.
+func _append_tail(points: PackedVector3Array, targets: Array) -> void:
+	for target: Vector3 in targets:
+		var from := points[points.size() - 1]
+		var from_lift := from.y - world_ground(from.x, from.z)
+		var to_lift := target.y - world_ground(target.x, target.z)
+		var length := Vector2(target.x - from.x, target.z - from.z).length()
+		var steps := maxi(1, int(ceil(length / 2.0)))
+		for s in range(1, steps + 1):
+			var t := float(s) / steps
+			var p := from.lerp(target, t)
+			p.y = world_ground(p.x, p.z) + lerpf(from_lift, to_lift, t)
+			points.append(p)
+
+
+func _build_roads() -> void:
+	var roads := Shapes.new()
+	roads.name = "Roads"
+	world_root.add_child(roads)
+	var shoulders := Shapes.new()
+	shoulders.name = "Shoulders"
+	world_root.add_child(shoulders)
+	for road in world_layout.roads:
+		var points := _road_points(road)
+		if points.size() < 2:
+			continue
+		# Overlap end caps slightly so shared junctions have no open edge (same as the graybox).
+		points.insert(0, points[0] + (points[0] - points[1]).normalized() * 0.5)
+		points.append(points[-1] + (points[-1] - points[-2]).normalized() * 0.5)
+		var width: float = road.get("width_m", 6.0)
+		var strip: MeshInstance3D = roads.add_strip(points, width, ROAD_TINT, true)
+		if strip == null:
+			continue
+		strip.name = str(road.id)
+		_paint(strip, Color(ROAD_TINT.srgb_to_linear(), 1.0))
+		_build_shoulders(shoulders, points, width)
+	_mark_surfaces(roads, "dirt")
+	_mark_surfaces(shoulders, "ground")
+
+
+func _build_shoulders(shapes: Node3D, points: PackedVector3Array, width: float) -> void:
+	# Join land to the deck so the hero can leave a road without a step (graybox rule).
+	for side in [-1.0, 1.0]:
+		var inner := PackedVector3Array()
+		var outer := PackedVector3Array()
+		for i in range(points.size()):
+			var p := points[i]
+			var tangent := points[mini(i + 1, points.size() - 1)] - points[maxi(i - 1, 0)]
+			var perpendicular: Vector3 = Vector3(-tangent.z, 0, tangent.x).normalized() * side
+			var edge := p + perpendicular * width * 0.5
+			var bank := p + perpendicular * 8.0
+			var bank_map := _map_of(bank)
+			var on_land := p.y - world_ground(p.x, p.z) < 2.0 and not VILLAGE_RECT.has_point(bank_map)
+			bank.y = world_ground(bank.x, bank.z) + 0.02
+			if not on_land:
+				_add_shoulder(shapes, inner, outer, side)
+				inner.clear()
+				outer.clear()
+				continue
+			inner.append(edge)
+			outer.append(bank)
+		_add_shoulder(shapes, inner, outer, side)
+
+
+func _add_shoulder(shapes: Node3D, inner: PackedVector3Array, outer: PackedVector3Array, side: float) -> void:
+	if inner.size() < 2:
+		return
+	var band: MeshInstance3D = shapes.add_band(outer if side > 0 else inner, inner if side > 0 else outer, Color("8c836d"), true)
+	if band != null:
+		var map := _map_of(inner[0])
+		var grass := Color(terrain.color_at(map.x - VILLAGE_ORIGIN_MAP.x, map.y - VILLAGE_ORIGIN_MAP.y))
+		_paint(band, Color(grass.r, grass.g, grass.b, 0.0))
+
+
+## Gives a strip vertex colours and the village ground material, so roads share its textures.
+func _paint(instance: MeshInstance3D, color: Color) -> void:
+	var arrays: Array = instance.mesh.surface_get_arrays(0)
+	var colors := PackedColorArray()
+	colors.resize((arrays[Mesh.ARRAY_VERTEX] as PackedVector3Array).size())
+	colors.fill(color)
+	arrays[Mesh.ARRAY_COLOR] = colors
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	instance.mesh = mesh
+	instance.material_override = terrain.material
+	instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+
+
+func _mark_surfaces(root: Node, surface: String) -> void:
+	for body in root.find_children("*", "StaticBody3D", true, false):
+		body.set_meta("footstep_surface", surface)
+
+
+func _build_rivers() -> void:
+	var water := Shapes.new()
+	water.name = "Rivers"
+	world_root.add_child(water)
+	for river in world_layout.rivers:
+		var points := _points_of(river)
+		var left := PackedVector3Array()
+		var right := PackedVector3Array()
+		for i in range(points.size()):
+			var tangent := points[mini(i + 1, points.size() - 1)] - points[maxi(i - 1, 0)]
+			var side := Vector3(-tangent.z, 0, tangent.x).normalized() * float(river.world_widths[i]) * 0.5
+			left.append(points[i] + side)
+			right.append(points[i] - side)
+		var band: MeshInstance3D = water.add_band(left, right, Color("537d91"), false)
+		if band != null:
+			band.name = str(river.id)
+
+
+func _build_water_and_sites() -> void:
+	var water := Headwaters.new()
+	water.name = "Headwaters"
+	world_root.add_child(water)
+	for lake in world_layout.lakes:
+		var p: Array = lake.center
+		water.add_lake(Vector3(p[0] - HALF, p[2], p[1] - HALF), Vector2(lake.radii_m[0], lake.radii_m[1]))
+	for spring in world_layout.springs:
+		var p: Array = spring.mouth
+		var direction: Array = spring.facing
+		water.add_spring_cave(Vector3(p[0] - HALF, p[2] - 1, p[1] - HALF), Vector3(direction[0], 0, direction[2]))
+	for city in world_layout.cities:
+		var p: Array = city.spawn
+		for offset in [Vector3(-28, 0, 15), Vector3(26, 0, 18), Vector3(-20, 0, -25)]:
+			var size := Vector3(12, 12 + float(city.number) * 3, 16)
+			var base: Vector3 = Vector3(p[0], 0, p[2]) + offset
+			base.y = world_ground(base.x, base.z)
+			var marker := MeshInstance3D.new()
+			var box := BoxMesh.new()
+			box.size = size
+			marker.mesh = box
+			var material := StandardMaterial3D.new()
+			material.albedo_color = Color("92938b")
+			marker.material_override = material
+			marker.position = base + Vector3.UP * size.y * 0.5
+			world_root.add_child(marker)
+	for site in world_layout.sites:
+		if str(site.id) == SITE_SKIPPED or site.kind == "lake" or site.kind == "spring_cave":
+			continue
+		var landmark := Landmarks.new()
+		landmark.name = str(site.id)
+		world_root.add_child(landmark)
+		var direction: Array = site.facing
+		var s: Array = site.spawn
+		landmark.build(site.kind, Vector3(s[0], float(site.point[2]), s[2]), Vector3(direction[0], 0, direction[2]))

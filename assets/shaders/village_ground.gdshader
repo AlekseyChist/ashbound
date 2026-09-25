@@ -25,15 +25,17 @@ void fragment(){
 		vec2 guv=world.xz/max(grass_meters,.01);
 		vec2 puv=world.xz/max(path_meters,.01);
 		float road=smoothstep(.08,.92,COLOR.a);
+		// Far ground (the world map around the village) fades to its mean tone: no tiling moire.
+		float near=1.0-smoothstep(60.0,200.0,distance(world,CAMERA_POSITION_WORLD));
 		vec3 grass=texture(grass_albedo,guv).rgb;
 		vec3 dirt=texture(path_albedo,puv).rgb;
 		// Measured linear means of unchanged source images. Keep our palette and their surface detail.
 		vec3 detail=mix(grass/vec3(.060315,.109109,.022630),dirt/vec3(.152341,.108615,.063908),road);
-		float macro=.93+.14*noise(world.xz*.12);
-		ALBEDO=COLOR.rgb*mix(vec3(1.0),clamp(detail,vec3(.16),vec3(3.0)),.78)*macro*mix(1.0,.67,damp);
+		float macro=.93+.14*mix(.5,noise(world.xz*.12),near);
+		ALBEDO=COLOR.rgb*mix(vec3(1.0),clamp(detail,vec3(.16),vec3(3.0)),.78*near)*macro*mix(1.0,.67,damp);
 		vec3 n=mix(texture(grass_normal,guv).rgb,texture(path_normal,puv).rgb,road);
 		NORMAL_MAP=n;
-		NORMAL_MAP_DEPTH=mix(.38,.52,road);
+		NORMAL_MAP_DEPTH=mix(.38,.52,road)*near;
 		float rough=mix(texture(grass_roughness,guv).r,texture(path_roughness,puv).r,road);
 		ROUGHNESS=mix(clamp(rough,.72,1.0),.43,damp);
 	}else{

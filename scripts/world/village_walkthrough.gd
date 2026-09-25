@@ -159,8 +159,12 @@ func interact() -> void:
 func _physics_process(delta: float) -> void:
 	if player == null: return
 	feedback_time = maxf(0.0,feedback_time-delta)
-	if player.global_position.y < -8.0: select_building(selected)
+	if player.global_position.y < fall_limit(): select_building(selected)
 	_update_prompt()
+
+## Height below which the hero is considered lost and returned to the selected house.
+func fall_limit() -> float:
+	return -8.0
 
 func _update_prompt() -> void:
 	if hud == null or player == null: return
