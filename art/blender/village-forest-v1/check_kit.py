@@ -24,7 +24,7 @@ for name in NAMES:
     assert triangles <= (5000 if name.startswith('pine') or name=='spruce' else 1500), (name,triangles)
     assert len(g['meshes']) <= 3 and len(g.get('materials',[])) <= 3, name
     assert (ROOT/'art/blender/village-forest-v1'/f'{name}.blend').exists(), name
-    assert (ROOT/'art/previews/village-forest-v1'/f'{name}.png').exists(), name
+    assert (ROOT/'local/previews/village-forest-v1'/f'{name}.png').exists(), name
     out[name] = {'triangles':triangles,'mesh_count':len(g['meshes']),'materials':len(g.get('materials',[])), 'sha256':hashlib.sha256(b).hexdigest()}
 (ROOT/'art/blender/village-forest-v1/checks.json').write_text(json.dumps(out,indent=2),encoding='utf-8')
 print('FOREST_KIT_CHECKS_PASS assets=7',json.dumps(out))

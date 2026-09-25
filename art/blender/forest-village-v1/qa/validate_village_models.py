@@ -5,7 +5,7 @@ from mathutils import Vector
 
 ROOT=Path(__file__).resolve().parents[4]
 OUT=ROOT/'art/blender/forest-village-v1'
-REPORT=ROOT/'art/previews/forest-village-v1/model-qa.json'
+REPORT=ROOT/'local/previews/forest-village-v1/model-qa.json'
 cases={
  'H01':dict(width=6,depth=8,floor=.36,entry_x=-1.25,entry_width=1.15,entry_height=2.2),
  'W01':dict(width=7,depth=9,floor=.36,entry_x=.5,entry_width=2.4,entry_height=2.6),

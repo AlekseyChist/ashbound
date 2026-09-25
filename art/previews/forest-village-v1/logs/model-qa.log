@@ -1,7 +1,0 @@
-00:01.437  blend            | Read blend: "C:\Users\prost\Documents\AshBound\.tools\worktrees\sprite-gait-lab\art\blender\forest-village-v1\h01.blend"
-00:01.453  blend            | Read blend: "C:\Users\prost\Documents\AshBound\.tools\worktrees\sprite-gait-lab\art\blender\forest-village-v1\w01.blend"
-00:01.469  blend            | Read blend: "C:\Users\prost\Documents\AshBound\.tools\worktrees\sprite-gait-lab\art\blender\forest-village-v1\b01.blend"
-VILLAGE_MODEL_QA [{"asset": "H01", "status": "PASS", "failures": [], "measurements": {"meshes": 51, "triangles": 13672, "door_hinges": 1, "baked_images": 6, "closed_entry_hits": ["H01_entry_leaf0"], "central_aisle_hits": []}}, {"asset": "W01", "status": "PASS", "failures": [], "measurements": {"meshes": 52, "triangles": 13224, "door_hinges": 2, "baked_images": 6, "closed_entry_hits": ["W01_entry_leaf1"], "central_aisle_hits": []}}, {"asset": "B01", "status": "PASS", "failures": [], "measurements": {"meshes": 38, "triangles": 12344, "door_hinges": 3, "baked_images": 6, "closed_entry_hits": ["B01_entry_leaf1"], "central_aisle_hits": []}}]
-Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:37:04)
-
-Blender quit

@@ -1,27 +1,29 @@
 # AshBound — документы разработки
 
+**25 сентября / FILES-CLEANUP-01 (D-080):** снимки, QA-отчёты, PDF/HTML-экспорты и контактные листы (814 файлов, 544 МБ) убраны из Git в `local/` на ПК владельца: `art/previews/` → `local/previews/`, `docs/art/reviews/` → `local/previews/reviews/`, картинки из `docs/` → `local/previews/docs/`, QA-JSON/логи → `local/qa/<путь>`, PDF/HTML → `local/exports/<путь>`. Ссылки на них в документах заменены текстом; сами файлы остаются в истории Git.
+
 **D-079 — единственный главный герой:** [фиксированная принятая внешность](design/LIFE_AND_ECONOMY.md), CHAR-01 исключена; [карточка и проверка согласованности](production/FIXED_PROTAGONIST_TASK.md). Цельные сеты и оружие сохраняют лицо/волосы/бороду и пропорции героя.
 
-Звук деревни: [карточка AUDIO-01](production/VILLAGE_AUDIO_01_TASK.md), [исходники/лицензии и музыка](../art/audio/village-v1/README.md), [снимки меню и записи микса](../art/previews/village-audio-v1/README.md).
+Звук деревни: [карточка AUDIO-01](production/VILLAGE_AUDIO_01_TASK.md), [исходники/лицензии и музыка](../art/audio/village-v1/README.md), снимки меню и записи микса.
 
 
-**24 сентября / D-077:** [отделка А одного H01, 0.23.5/code61, ПК/S23 408/408](production/VILLAGE_MATERIAL_01_CHECKS.md); [сравнение до/после](../art/previews/village-materials-v1/README.md). Обычная APK установлена, далее личная оценка.
+**24 сентября / D-077:** [отделка А одного H01, 0.23.5/code61, ПК/S23 408/408](production/VILLAGE_MATERIAL_01_CHECKS.md); сравнение до/после. Обычная APK установлена, далее личная оценка.
 
-**24 сентября / D-075:** [порывы растительности, 0.23.4/code60 и QA ПК/S23](production/VILLAGE_WIND_01_CHECKS.md), [временное сравнение и видео](../art/previews/village-wind-v1/README.md).
+**24 сентября / D-075:** [порывы растительности, 0.23.4/code60 и QA ПК/S23](production/VILLAGE_WIND_01_CHECKS.md), временное сравнение и видео.
 
-**24 сентября / D-074:** [принятый свет/цвет деревни](art/VILLAGE_LOOK_REFERENCE.md); [VILLAGE-PROPS-01, 0.23.3/code59 и QA ПК/S23](production/VILLAGE_PROPS_01_CHECKS.md), [прямые снимки](../art/previews/village-props-v1/README.md).
+**24 сентября / D-074:** [принятый свет/цвет деревни](art/VILLAGE_LOOK_REFERENCE.md); [VILLAGE-PROPS-01, 0.23.3/code59 и QA ПК/S23](production/VILLAGE_PROPS_01_CHECKS.md), прямые снимки.
 
-**Актуально, D-073:** [выборка бесплатных ассетов](art/free-assets-v1/README.md), [визуальный лист](art/free-assets-v1/index.html). Два CC0-материала земли уже в деревне [0.23.2/code58, ПК/S23 201/201](production/VILLAGE_SURFACES_01_CHECKS.md), обычная APK установлена. Следующая предложенная проба — небольшой бытовой набор для существующих дворов.
+**Актуально, D-073:** [выборка бесплатных ассетов](art/free-assets-v1/README.md), визуальный лист. Два CC0-материала земли уже в деревне [0.23.2/code58, ПК/S23 201/201](production/VILLAGE_SURFACES_01_CHECKS.md), обычная APK установлена. Следующая предложенная проба — небольшой бытовой набор для существующих дворов.
 
-**Основа, D-072:** собрана тестовая деревня Б v1.1: три дома, дороги, колодец и новый лесной набор. [0.23.1/code57 — свет, сутки и погода, ПК/S23](production/VILLAGE_ATMOSPHERE_01_CHECKS.md); [автономное сравнение и интерьеры](../art/previews/village-atmosphere-v1/index.html), [видео обычной APK](../art/previews/village-atmosphere-v1/s23/normal-weather-motion.mp4). Обычная APK установлена. Следующая точка — личная оценка текущего вида; финальная отделка и кампания остаются впереди.
+**Основа, D-072:** собрана тестовая деревня Б v1.1: три дома, дороги, колодец и новый лесной набор. [0.23.1/code57 — свет, сутки и погода, ПК/S23](production/VILLAGE_ATMOSPHERE_01_CHECKS.md); автономное сравнение и интерьеры, видео обычной APK. Обычная APK установлена. Следующая точка — личная оценка текущего вида; финальная отделка и кампания остаются впереди.
 
 **D-071 — атмосфера мира:** [требования и текущая проба](design/LIGHTING_AND_WEATHER.md). Сутки/погода работают в отдельной деревне по D-072; TIME-01/DAY-01/WEATHER-01/SAVE-01 для кампании этим не закрыты.
 
-**Планировка:** [«Лесные дворы» Б v1.1](design/starter-village-layout-v2/README.md), [автономная галерея](design/starter-village-layout-v2/index.html). По D-072 три первых двора перенесены в тестовую деревню, пять мест остаются резервными.
+**Планировка:** [«Лесные дворы» Б v1.1](design/starter-village-layout-v2/README.md), автономная галерея. По D-072 три первых двора перенесены в тестовую деревню, пять мест остаются резервными.
 
 **Актуальное правило D-064:** [концепт мира → согласование → план → реализация](production/WORLD_CONCEPT_WORKFLOW.md). Схемы и экспорты хранятся в проекте; конкретная планировка согласуется до игровой геометрии. [Карточка изменения процесса и сохранённая непринятая проба](production/WORLD_CONCEPT_WORKFLOW_TASK.md).
 
-**D-065–067 — «Лесные дворы»:** [план Б выбран основой](design/starter-village-concepts-v1/DECISION.md). Подготовлены [архитектура и бытовой план H01](../art/concepts/forest-village-v1/README.md), [автономная галерея дома, интерьера, семейства и улицы](../art/concepts/forest-village-v1/index.html); H01 принят по [D-068](../art/concepts/forest-village-v1/DECISION.md); моделирование трёх зданий было разрешено вместе с интерьерами W01/B01. [Карточка/проверки](production/VILLAGE_ARCH_01_TASK.md), [новый контракт бесшовных домов и дверей](design/INTERIORS_AND_ACCESS.md). По D-068 подготовлены [первые H01/W01/B01 в Blender](../art/blender/forest-village-v1/README.md), [рендеры](../art/blender/forest-village-v1/index.html) и [QA](production/VILLAGE_MODEL_01_CHECKS.md). H01 в Blender принят следующим ответом D-069; [VILLAGE-GODOT-01: прогулка по всем трём зданиям, двери и входы](production/VILLAGE_GODOT_01_CHECKS.md) проверена на ПК/S23 в 0.22.0/code54. По D-070 [открывание дверей от героя, включая подход вплотную](production/VILLAGE_DOORS_02_CHECKS.md), проверено на ПК/S23 в 0.22.1/code55; обычная APK обновлена. Нужна личная оценка исправления перед следующим уточнением деревни; базовая отделка и демонстрационная расстановка не являются финальным поселением.
+**D-065–067 — «Лесные дворы»:** [план Б выбран основой](design/starter-village-concepts-v1/DECISION.md). Подготовлены [архитектура и бытовой план H01](../art/concepts/forest-village-v1/README.md), автономная галерея дома, интерьера, семейства и улицы; H01 принят по [D-068](../art/concepts/forest-village-v1/DECISION.md); моделирование трёх зданий было разрешено вместе с интерьерами W01/B01. [Карточка/проверки](production/VILLAGE_ARCH_01_TASK.md), [новый контракт бесшовных домов и дверей](design/INTERIORS_AND_ACCESS.md). По D-068 подготовлены [первые H01/W01/B01 в Blender](../art/blender/forest-village-v1/README.md), рендеры и [QA](production/VILLAGE_MODEL_01_CHECKS.md). H01 в Blender принят следующим ответом D-069; [VILLAGE-GODOT-01: прогулка по всем трём зданиям, двери и входы](production/VILLAGE_GODOT_01_CHECKS.md) проверена на ПК/S23 в 0.22.0/code54. По D-070 [открывание дверей от героя, включая подход вплотную](production/VILLAGE_DOORS_02_CHECKS.md), проверено на ПК/S23 в 0.22.1/code55; обычная APK обновлена. Нужна личная оценка исправления перед следующим уточнением деревни; базовая отделка и демонстрационная расстановка не являются финальным поселением.
 
 **D-063:** текущая планировка — [мир v0.5: места, пути и истоки](design/world-exploration-v1/README.md), [карточка реализации](production/WORLD_GRAYBOX_03_TASK.md). Здесь разделены готовые подходы в макете и будущие услуги таверн/пещеры/шахта; прежние карты сохранены как история.
 
@@ -29,7 +31,7 @@
 
 23 сентября, **D-059/060:** герой 0.19.4 принят владельцем на S23; закреплён [рецепт для брони 2.0](art/ARMOR_ANIMATION_PLAYBOOK.md). По выбору владельца готова [BIOME-01E / карта v0.3](design/world-connections-v1/README.md): горы, перевалы, переправы и связи четырёх биомов; география ещё не принята. По прямому поручению D-061 после схемы создан отдельный [проходимый 3D-макет региона](../art/world/graybox-v1/README.md) — WORLD-GRAYBOX-01, [проверки](production/WORLD_GRAYBOX_01_CHECKS.md). После оценки масштаба/перепадов — отдельная интеграция принятого движения и оставшийся CONS. Финальное производство регионов не открыто.
 
-Локальная опора интерфейса по D-049: **[книга UI 1.0](art/ui/README.md)**, [PDF](art/ui/AshBound-UI-Book.pdf), [автономный HTML](art/ui/index.html), [параметры](art/ui/tokens.json). UI-BOOK-02 применил книгу к HUD/защите в 0.18.4; [проверки ПК/S23](production/UI_BOOK_02_CHECKS.md). Новый лесной макет использует ту же Theme.
+Локальная опора интерфейса по D-049: **[книга UI 1.0](art/ui/README.md)**, PDF, автономный HTML, [параметры](art/ui/tokens.json). UI-BOOK-02 применил книгу к HUD/защите в 0.18.4; [проверки ПК/S23](production/UI_BOOK_02_CHECKS.md). Новый лесной макет использует ту же Theme.
 
 ## С чего читать
 
@@ -38,7 +40,7 @@
 3. [CONS](production/CONSOLIDATION_PLAN.md) — аудит текущих исходников, границы доводки и критерии возврата к разработке.
 4. [ROADMAP](production/ROADMAP.md) — долгосрочные этапы и зависимости.
 5. [AGENTS](../AGENTS.md) и [карточка задачи](production/TASK_TEMPLATE.md) — обязательный процесс и разделение Ollama/Codex.
-6. [Визуальная опора](art/STYLE_REFERENCE.md) — общие источники героя, UI, эффектов и окружения; [CONS-01](art/cons-01/index.html) и [сохранённые снимки CONS-02A](art/cons-02a/README.md). Состояния HUD исправлены в 0.18.3, установленной на S23: [проверки](production/CONS_02B_CHECKS.md), [сравнение и запись](art/cons-02b/README.md). CONS-03A — читаемость акцента контакта — сохранён после текущего обсуждения мира; точная очередь в STATUS.
+6. [Визуальная опора](art/STYLE_REFERENCE.md) — общие источники героя, UI, эффектов и окружения; CONS-01 и [сохранённые снимки CONS-02A](art/cons-02a/README.md). Состояния HUD исправлены в 0.18.3, установленной на S23: [проверки](production/CONS_02B_CHECKS.md), [сравнение и запись](art/cons-02b/README.md). CONS-03A — читаемость акцента контакта — сохранён после текущего обсуждения мира; точная очередь в STATUS.
 
 Проверенная боевая основа — отдельный стенд **0.18.1-combat-dodge**, основной двор проекта — **0.15.2-backpack-proportions**. [Протокол исходной боевой основы](production/COMBAT_DODGE_CHECKS.md), [сохранённая точка дня, PR и сборки](production/SESSION_2026-09-22.md). OnePlus этой версии и подробная личная оценка всех сценариев остаются открытыми. Запись требования или успешный стенд не означают интеграции в кампанию.
 

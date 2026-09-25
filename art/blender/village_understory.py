@@ -8,7 +8,7 @@ from mathutils import Vector
 ROOT = Path(__file__).resolve().parents[2]
 BLEND_DIR = ROOT / "art/blender/village-forest-v1"
 GLB_DIR = ROOT / "assets/environment/village-forest-v1"
-PNG_DIR = ROOT / "art/previews/village-forest-v1"
+PNG_DIR = ROOT / "local/previews/village-forest-v1"
 STATS = BLEND_DIR / "stats-understory.json"
 ASSETS = ["boulder", "stump", "fern", "grass"]
 rng = random.Random(412)

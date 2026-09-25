@@ -1,6 +1,6 @@
 # VILLAGE-DOORS-02 — открывание от героя
 
-24 сентября 2026, D-070. [Карточка](VILLAGE_DOORS_02_TASK.md), [снимки/видео/отчёты](../../art/previews/village-doors-v2/README.md). Исправление выполнил Codex по D-047; основные тесты и отдельный проход QA собственного кода также Codex. Это не внешнее ревью.
+24 сентября 2026, D-070. [Карточка](VILLAGE_DOORS_02_TASK.md), снимки/видео/отчёты. Исправление выполнил Codex по D-047; основные тесты и отдельный проход QA собственного кода также Codex. Это не внешнее ревью.
 
 ## Поведение и причина дефекта
 
@@ -12,7 +12,7 @@
 
 ## Проверки
 
-Godot 4.7.2 stable, Mobile/Vulkan. [Отчёты](../../art/previews/village-doors-v2/results.json) и журналы содержат завершение маршрутов всех трёх зданий без ошибок скрипта/движка. SHA [проверенных исходников](../../art/previews/village-doors-v2/checked-sources.json) сверены с обоими экспортами.
+Godot 4.7.2 stable, Mobile/Vulkan. Отчёты и журналы содержат завершение маршрутов всех трёх зданий без ошибок скрипта/движка. SHA проверенных исходников сверены с обоими экспортами.
 
 | Среда | Результат |
 | --- | --- |
@@ -33,7 +33,7 @@ Codex просмотрел снимки ПК/S23 и проверил движе�
 - Обычная APK: `org.ashbound.villagepreview`, **0.22.1 / code55**; SHA256 `19f06b7dd3b530f96e5f8f011cba59d509f32259f39820149945bd014c5c116d`.
 - Windows EXE SHA256: `e8e5d065b2a15dd0ab779729abf0c470c5ec105f45ef28fd00c4b80e876c4160`.
 - QA APK: `org.ashbound.villagevalidation`; SHA256 `2d5bfd09b682e0a3d5c9981fea7fa38c8f69db342847c040cd96a8c30490d7ce`.
-- [Сверка установленного пакета](../../art/previews/village-doors-v2/installed-s23.json), [метаданные экспортов](../../art/previews/village-doors-v2/builds.json).
+- Сверка установленного пакета, метаданные экспортов.
 - Копии для запуска в основном checkout: `.tools/builds/android/ashbound-village-walkthrough-preview.apk`, `.tools/builds/village-walkthrough/AshBound-Village-Houses.exe`.
 
 ```powershell
