@@ -78,7 +78,7 @@ func run_checks() -> void:
 	check(lesson.quest.stage_index == 0, "a new lesson starts with the hostess")
 	check(world.hud._objective_key == "COURTYARD_OBJECTIVE_MEET_HOST", "the objective is shown outside")
 	var provider: Node = world.pocket.get_pocket_panel()._sections._journal_provider
-	check(provider == world and world.get_journal_entry().id == "courtyard_lesson", "the pocket menu reads the lesson journal")
+	check(provider == world and world.get_journal_entry().id == "village_lesson", "the pocket menu reads the lesson journal")
 	var hostess: Vector3 = lesson.hostess.global_position
 	check(Vector2(hostess.x, hostess.z).distance_to(Vector2(world.player.global_position.x, world.player.global_position.z)) < 8.0, "the hostess stands by the start")
 	Engine.time_scale = 3.0
@@ -93,6 +93,7 @@ func run_checks() -> void:
 	check(lesson.quest.flags[&"reward_claimed"], "the reward is remembered")
 	var to_gate := [plan(Vector2(83.19, 97.63)), plan(Vector2(82.75, 82.5)), plan(Vector2(111.25, 88.75)), plan(Vector2(131.75, 79)), plan(Vector2(145.75, 56))]
 	await talk("watchman lesson", lesson.watchman, to_gate, 4)
+	check(Vector2(lesson.tower.global_position.x - lesson.watchman.global_position.x, lesson.tower.global_position.z - lesson.watchman.global_position.z).length() < 7.0, "the watchtower stands by the watchman")
 	check(world.hud._objective_key == "COURTYARD_OBJECTIVE_PRACTICE" and world.hud._objective_params == {"hits": 0, "total": 3}, "practice objective with the count")
 	await strike()
 	check(lesson.quest.counters[&"dummy_hits"] == 0, "a strike away from the dummy does not count")

@@ -1,0 +1,148 @@
+[gd_resource type="Resource" script_class="QuestData" format=3]
+
+[ext_resource type="Script" path="res://scripts/quests/dialogue_line_data.gd" id="1_g8uym"]
+[ext_resource type="Script" path="res://scripts/quests/quest_data.gd" id="2_jn64g"]
+[ext_resource type="Script" path="res://scripts/quests/quest_stage_data.gd" id="3_jmd11"]
+
+[sub_resource type="Resource" id="Resource_qvxp3"]
+script = ExtResource("1_g8uym")
+speaker = &"innkeeper"
+stages = Array[StringName]([&"meet_host"])
+name_key = "COURTYARD_NAME_INNKEEPER"
+line_key = "VILLAGE_LESSON_HOST_JOB"
+next_stage = &"fetch_wood"
+
+[sub_resource type="Resource" id="Resource_ilkp2"]
+script = ExtResource("1_g8uym")
+speaker = &"innkeeper"
+stages = Array[StringName]([&"return_wood"])
+forbids_flag = &"reward_claimed"
+name_key = "COURTYARD_NAME_INNKEEPER"
+line_key = "VILLAGE_LESSON_HOST_REWARD"
+set_flag = &"reward_claimed"
+next_stage = &"meet_guard"
+
+[sub_resource type="Resource" id="Resource_vatek"]
+script = ExtResource("1_g8uym")
+speaker = &"innkeeper"
+stages = Array[StringName]([&"return_wood"])
+requires_flag = &"reward_claimed"
+name_key = "COURTYARD_NAME_INNKEEPER"
+line_key = "VILLAGE_LESSON_HOST_ACCEPTED"
+
+[sub_resource type="Resource" id="Resource_cyeaw"]
+script = ExtResource("1_g8uym")
+speaker = &"innkeeper"
+stages = Array[StringName]([&"fetch_wood"])
+name_key = "COURTYARD_NAME_INNKEEPER"
+line_key = "VILLAGE_LESSON_HOST_REMIND"
+
+[sub_resource type="Resource" id="Resource_a7r23"]
+script = ExtResource("1_g8uym")
+speaker = &"innkeeper"
+name_key = "COURTYARD_NAME_INNKEEPER"
+line_key = "VILLAGE_LESSON_HOST_AFTER"
+
+[sub_resource type="Resource" id="Resource_83l5g"]
+script = ExtResource("1_g8uym")
+speaker = &"woodpile"
+stages = Array[StringName]([&"fetch_wood"])
+line_key = "VILLAGE_LESSON_WOOD_TAKEN"
+effects = Array[StringName]([&"hide_woodpile_label"])
+next_stage = &"return_wood"
+
+[sub_resource type="Resource" id="Resource_8hy42"]
+script = ExtResource("1_g8uym")
+speaker = &"woodpile"
+stages = Array[StringName]([&"meet_host"])
+line_key = "VILLAGE_LESSON_WOOD_BEFORE"
+
+[sub_resource type="Resource" id="Resource_t4y1x"]
+script = ExtResource("1_g8uym")
+speaker = &"woodpile"
+line_key = "COURTYARD_DIALOGUE_WOOD_ALREADY"
+
+[sub_resource type="Resource" id="Resource_cji6u"]
+script = ExtResource("1_g8uym")
+speaker = &"watchman"
+stages = Array[StringName]([&"meet_guard"])
+name_key = "COURTYARD_NAME_WATCHMAN"
+line_key = "COURTYARD_DIALOGUE_GUARD_LESSON"
+next_stage = &"practice"
+
+[sub_resource type="Resource" id="Resource_x62hf"]
+script = ExtResource("1_g8uym")
+speaker = &"watchman"
+stages = Array[StringName]([&"report"])
+name_key = "COURTYARD_NAME_WATCHMAN"
+line_key = "COURTYARD_DIALOGUE_GUARD_REPORT"
+effects = Array[StringName]([&"complete_guard_practice"])
+next_stage = &"done"
+
+[sub_resource type="Resource" id="Resource_dtml3"]
+script = ExtResource("1_g8uym")
+speaker = &"watchman"
+stages = Array[StringName]([&"practice"])
+name_key = "COURTYARD_NAME_WATCHMAN"
+line_key = "COURTYARD_DIALOGUE_GUARD_REMIND"
+
+[sub_resource type="Resource" id="Resource_hv08n"]
+script = ExtResource("1_g8uym")
+speaker = &"watchman"
+stages = Array[StringName]([&"done"])
+name_key = "COURTYARD_NAME_WATCHMAN"
+line_key = "VILLAGE_LESSON_GUARD_AFTER"
+
+[sub_resource type="Resource" id="Resource_s8hbm"]
+script = ExtResource("1_g8uym")
+speaker = &"watchman"
+name_key = "COURTYARD_NAME_WATCHMAN"
+line_key = "VILLAGE_LESSON_GUARD_OTHER"
+
+[sub_resource type="Resource" id="Resource_1hmsr"]
+script = ExtResource("3_jmd11")
+id = &"meet_host"
+objective_key = "COURTYARD_OBJECTIVE_MEET_HOST"
+
+[sub_resource type="Resource" id="Resource_f2dav"]
+script = ExtResource("3_jmd11")
+id = &"fetch_wood"
+objective_key = "VILLAGE_LESSON_OBJECTIVE_FETCH_WOOD"
+
+[sub_resource type="Resource" id="Resource_6yra5"]
+script = ExtResource("3_jmd11")
+id = &"return_wood"
+objective_key = "VILLAGE_LESSON_OBJECTIVE_RETURN_WOOD"
+
+[sub_resource type="Resource" id="Resource_orw3k"]
+script = ExtResource("3_jmd11")
+id = &"meet_guard"
+objective_key = "VILLAGE_LESSON_OBJECTIVE_MEET_GUARD"
+
+[sub_resource type="Resource" id="Resource_m7k2p"]
+script = ExtResource("3_jmd11")
+id = &"practice"
+objective_key = "COURTYARD_OBJECTIVE_PRACTICE"
+counter = &"dummy_hits"
+counter_total = 3
+counter_param = "hits"
+counter_next_stage = &"report"
+
+[sub_resource type="Resource" id="Resource_vp28y"]
+script = ExtResource("3_jmd11")
+id = &"report"
+objective_key = "COURTYARD_OBJECTIVE_REPORT"
+
+[sub_resource type="Resource" id="Resource_2opys"]
+script = ExtResource("3_jmd11")
+id = &"done"
+objective_key = "VILLAGE_LESSON_OBJECTIVE_DONE"
+completed = true
+
+[resource]
+script = ExtResource("2_jn64g")
+id = &"village_lesson"
+title_key = "MENU_JOURNAL_COURTYARD"
+stages = Array[ExtResource("3_jmd11")]([SubResource("Resource_1hmsr"), SubResource("Resource_f2dav"), SubResource("Resource_6yra5"), SubResource("Resource_orw3k"), SubResource("Resource_m7k2p"), SubResource("Resource_vp28y"), SubResource("Resource_2opys")])
+lines = Array[ExtResource("1_g8uym")]([SubResource("Resource_qvxp3"), SubResource("Resource_ilkp2"), SubResource("Resource_vatek"), SubResource("Resource_cyeaw"), SubResource("Resource_a7r23"), SubResource("Resource_83l5g"), SubResource("Resource_8hy42"), SubResource("Resource_t4y1x"), SubResource("Resource_cji6u"), SubResource("Resource_x62hf"), SubResource("Resource_dtml3"), SubResource("Resource_hv08n"), SubResource("Resource_s8hbm")])
+flags = Array[StringName]([&"reward_claimed"])

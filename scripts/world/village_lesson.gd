@@ -1,11 +1,13 @@
 extends Node3D
 ## PLAYER-WORLD-01C (D-085): the courtyard lesson in the village on the world map.
-## Same data as the courtyard (data/quests/courtyard_lesson.tres): the hostess by the first house,
-## the woodpile at the workshop, the watchman and the straw dummy by the north-east end of the Street.
+## The courtyard stages with village lines that tell the way (data/quests/village_lesson.tres):
+## the hostess by the first house, the woodpile at the workshop, the watchman at the watchtower
+## and the straw dummy by the north-east end of the Street.
 ## Progress is kept in user://world_lesson.cfg until the campaign save (SAVE-01) takes over.
 signal journal_changed()
 
-const LessonQuest: QuestData = preload("res://data/quests/courtyard_lesson.tres")
+const LessonQuest: QuestData = preload("res://data/quests/village_lesson.tres")
+const TowerScene = preload("res://scenes/buildings/watchtower.tscn")
 const ResidentScene = preload("res://scenes/courtyard/resident.tscn")
 const WatchmanFrames = preload("res://assets/characters/courtyard/watchman_frames.tres")
 const WoodpileScene = preload("res://scenes/courtyard/props/woodpile.tscn")
@@ -17,6 +19,9 @@ const HOSTESS_PLAN := Vector2(79.5, 93.0)
 const WOODPILE_PLAN := Vector2(101.0, 83.0)
 const WATCHMAN_PLAN := Vector2(154.3, 49.9)
 const DUMMY_PLAN := Vector2(157.9, 50.0)
+## The watchtower (M0 model) behind the watchman, a landmark seen along the Street; side to the road.
+const TOWER_PLAN := Vector2(152.25, 54.6)
+const TOWER_YAW := 0.605
 const INTERACT_RADIUS := 2.2
 const STRIKE_RANGE := 1.8
 const FACING_DOT_MIN := 0.2
@@ -28,6 +33,7 @@ var hostess: Node3D
 var watchman: Node3D
 var woodpile: Node3D
 var dummy: Node3D
+var tower: Node3D
 var message_source: Node3D
 var save_path := SAVE_PATH
 var _dummy_visual: Node3D
@@ -39,6 +45,11 @@ func configure(scene: Node3D) -> void:
 	hostess = _resident("innkeeper", "COURTYARD_NAME_INNKEEPER", HOSTESS_PLAN, null)
 	watchman = _resident("watchman", "COURTYARD_NAME_WATCHMAN", WATCHMAN_PLAN, WatchmanFrames)
 	woodpile = _woodpile()
+	tower = TowerScene.instantiate()
+	tower.name = "LessonWatchtower"
+	tower.position = _ground(TOWER_PLAN)
+	tower.rotation.y = TOWER_YAW
+	add_child(tower)
 	dummy = DummyScene.instantiate()
 	dummy.name = "LessonDummy"
 	dummy.position = _ground(DUMMY_PLAN)
