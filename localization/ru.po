@@ -796,3 +796,15 @@ msgstr "Трава"
 # Village settings: how far grass is drawn (metres follow).
 msgid "VILLAGE_GRASS_DISTANCE"
 msgstr "Дальность травы"
+
+# Forest inn: the innkeeper's name tag.
+msgid "INN_KEEPER_NAME"
+msgstr "Трактирщик"
+
+# Forest inn: the innkeeper's first greeting.
+msgid "INN_KEEPER_GREETING"
+msgstr "Заходи, путник, грейся. Это лесной трактир. Койки наверху, лестница у дальней стены. Еда и выпивка — здесь, у стойки."
+
+# Forest inn: the innkeeper later.
+msgid "INN_KEEPER_REPEAT"
+msgstr "Лес нынче неспокоен. Будут вести с дороги — неси сюда, я всегда найду, чем помочь."

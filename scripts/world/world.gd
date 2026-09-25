@@ -11,22 +11,27 @@ const Landmarks = preload("res://scripts/world/world_graybox_landmarks.gd")
 ## the grey landmark at the forest_inn site, door towards the trail.
 const InnBuilding = preload("res://scripts/world/village_building.gd")
 const INN_SITE := "forest_inn"
+## TAVERN-02 (owner 25 Sep): twice the floor, an L-shaped bar, straight stairs to the loft.
 const INN_RECORD := {
-	"id": "T02A",
+	"id": "T03A",
 	"title_key": "WORLD_SITE_FOREST_INN",
-	"scene_path": "res://assets/buildings/forest-inn-v1/t02a.glb",
+	"scene_path": "res://assets/buildings/forest-inn-v1/t03a.glb",
 	"position": Vector3.ZERO,
-	"entry": Vector3(0, 0.36, 7.5),
-	"width": 9.0,
-	"depth": 15.0,
+	"entry": Vector3(0, 0.36, 10.5),
+	"width": 13.0,
+	"depth": 21.0,
 	"floor_height": 0.36,
-	"entry_width": 2.2,
+	"entry_width": 2.4,
 }
 ## Door 3 m in front of the site spawn, like the landmark it replaces.
-const INN_BACK_FROM_SPAWN := 10.5
+const INN_BACK_FROM_SPAWN := 13.5
+## Behind the bar (Blender x 4.6, y 1.5 -> Godot x 4.6, z -1.5), guard look for now.
+const INN_KEEPER_AT := Vector3(4.6, 0.36, -1.5)
+const INN_KEEPER_TALK: QuestData = preload("res://data/quests/forest_inn_keeper.tres")
+const INN_TALK_RADIUS := 2.8
 const Pad = preload("res://scripts/world/world_settlement_pad.gd")
 
-const VERSION := "0.29.0"
+const VERSION := "0.30.0"
 const WORLD_LAYOUT := "res://assets/world/graybox-v1/layout.json"
 const WORLD_HEIGHTS := "res://assets/world/graybox-v1/heights.bin"
 const WORLD_COLORS := "res://assets/world/graybox-v1/colors.bin"
@@ -65,6 +70,8 @@ var combat: Node
 ## WORLD-SAVE-01: inventory, hero place and progress; only when the world is the running scene.
 var save: Node
 var inn: Node3D
+var inn_keeper: Node3D
+var inn_talk: QuestTracker
 
 
 func _ready() -> void:
@@ -435,6 +442,10 @@ func interact() -> void:
 			lesson.interact(point)
 			_update_prompt()
 			return
+		if inn_keeper_in_reach():
+			talk_to_inn_keeper()
+			_update_prompt()
+			return
 	super.interact()
 
 
@@ -451,6 +462,8 @@ func _update_prompt() -> void:
 		var entry: Dictionary = lesson.journal_entry()
 		hud.set_objective(entry.objective_key, entry.params)
 	var point: Node3D = lesson.nearest_point() if is_input_available() else null
+	if point == null and is_input_available() and inn_keeper_in_reach():
+		point = inn_keeper
 	if point == null:
 		return
 	current_door = null
@@ -492,14 +505,16 @@ func _flatten_inn(grid: PackedFloat32Array) -> PackedFloat32Array:
 		return grid
 	var result := grid.duplicate()
 	var inverse := Basis(Vector3.UP, frame.yaw).inverse()
-	var half := Vector2(4.7 + GRID, 9.4 + GRID)
+	# Footprint plus 0.2 m, and the entry steps/canopy in front (+z).
+	var half_x: float = INN_RECORD.width * .5 + .2 + GRID
+	var z0: float = -INN_RECORD.depth * .5 - .2
+	var z1: float = INN_RECORD.depth * .5 + 1.9
 	for gz in range(world_width):
 		for gx in range(world_width):
 			var world_point := Vector3(gx * GRID - HALF, 0, gz * GRID - HALF)
 			var local: Vector3 = inverse * (world_point - frame.center)
-			# The rectangle spans z -7.7..9.4 around the inn centre (entry steps in front).
-			var dz := maxf(absf(local.z - .85) - (8.55 + GRID), 0.0)
-			var dx := maxf(absf(local.x) - half.x, 0.0)
+			var dz := maxf(absf(local.z - (z0 + z1) * .5) - ((z1 - z0) * .5 + GRID), 0.0)
+			var dx := maxf(absf(local.x) - half_x, 0.0)
 			var d := Vector2(dx, dz).length()
 			if d >= 10.0:
 				continue
@@ -515,7 +530,8 @@ func _build_inn(site: Dictionary) -> void:
 	# Stand on the highest corner so nothing sinks; a stone plinth fills down to the lowest one.
 	var high := -INF
 	var low := INF
-	for corner in [Vector3(-4.7, 0, -7.7), Vector3(4.7, 0, -7.7), Vector3(-4.7, 0, 9.4), Vector3(4.7, 0, 9.4)]:
+	var hx: float = INN_RECORD.width * .5 + .2
+	for corner in [Vector3(-hx, 0, -INN_RECORD.depth * .5 - .2), Vector3(hx, 0, -INN_RECORD.depth * .5 - .2), Vector3(-hx, 0, INN_RECORD.depth * .5 + 1.9), Vector3(hx, 0, INN_RECORD.depth * .5 + 1.9)]:
 		var at: Vector3 = center + basis * corner
 		var h := world_ground(at.x, at.z)
 		high = maxf(high, h)
@@ -531,7 +547,7 @@ func _build_inn(site: Dictionary) -> void:
 		var plinth := MeshInstance3D.new()
 		plinth.name = "Plinth"
 		var box := BoxMesh.new()
-		box.size = Vector3(9.4, drop + 0.1, 15.4)
+		box.size = Vector3(INN_RECORD.width + .4, drop + 0.1, INN_RECORD.depth + .4)
 		plinth.mesh = box
 		var stone := StandardMaterial3D.new()
 		stone.albedo_color = Color("6d6b63")
@@ -539,6 +555,16 @@ func _build_inn(site: Dictionary) -> void:
 		plinth.material_override = stone
 		plinth.position = Vector3(0, -drop * 0.5 + 0.02, 0)
 		inn.add_child(plinth)
+	_add_inn_keeper()
+	# The hall is four times a village house and the loft is a second room: soft fills, no shadows.
+	for at in [Vector3(-2, 2.7, 5.5), Vector3(-2, 2.7, -5.5), Vector3(0, 5.6, 5.0), Vector3(0, 5.6, -5.0)]:
+		var fill := OmniLight3D.new()
+		fill.name = "InnFill"
+		fill.position = at
+		fill.omni_range = 8.5
+		fill.light_energy = .75
+		fill.light_color = Color(1.0, .8, .58)
+		inn.add_child(fill)
 
 
 ## The inn is not one of the village yards (the house picker and the yard tests stay three),
@@ -564,3 +590,30 @@ func _offer_inn_door() -> void:
 		hud.set_prompt(Localization.text(key) if OS.get_name() == "Android" else "E · " + Localization.text(key))
 	if inn.contains(player.global_position):
 		hud.set_objective(INN_RECORD.title_key)
+
+
+## The innkeeper stands behind the bar (guard look until an own one is drawn); lines are data.
+func _add_inn_keeper() -> void:
+	inn_talk = QuestTracker.new(INN_KEEPER_TALK)
+	inn_keeper = preload("res://scenes/courtyard/resident.tscn").instantiate()
+	inn_keeper.name = "InnKeeper"
+	inn_keeper.interaction_id = &"inn_keeper"
+	inn_keeper.display_name = "INN_KEEPER_NAME"
+	inn_keeper.prompt = "COURTYARD_ACTION_TALK"
+	inn_keeper.appearance = preload("res://assets/characters/courtyard/watchman_frames.tres")
+	inn_keeper.position = INN_KEEPER_AT
+	inn.add_child(inn_keeper)
+
+func inn_keeper_in_reach() -> bool:
+	if inn_keeper == null or player == null:
+		return false
+	var offset := inn_keeper.global_position - player.global_position
+	return Vector2(offset.x, offset.z).length() <= INN_TALK_RADIUS and absf(offset.y) < 1.2
+
+func talk_to_inn_keeper() -> bool:
+	var line: DialogueLineData = inn_talk.line_for(&"inn_keeper")
+	if line == null:
+		return false
+	hud.show_message(line.name_key, line.line_key)
+	inn_talk.apply_line(line)
+	return true

@@ -738,3 +738,15 @@ msgstr ""
 # Village settings: how far grass is drawn (metres follow).
 msgid "VILLAGE_GRASS_DISTANCE"
 msgstr ""
+
+# Forest inn: the innkeeper's name tag.
+msgid "INN_KEEPER_NAME"
+msgstr ""
+
+# Forest inn: the innkeeper's first greeting.
+msgid "INN_KEEPER_GREETING"
+msgstr ""
+
+# Forest inn: the innkeeper later.
+msgid "INN_KEEPER_REPEAT"
+msgstr ""
