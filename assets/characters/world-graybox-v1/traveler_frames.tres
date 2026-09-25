@@ -3,6 +3,7 @@
 [ext_resource type="Texture2D" path="res://assets/characters/courtyard/traveler-v1.png" id="1_bt2qd"]
 [ext_resource type="Texture2D" path="res://assets/characters/courtyard/traveler-back-v1.png" id="2_ac2mg"]
 [ext_resource type="Texture2D" path="res://assets/characters/courtyard/traveler-front-v1.png" id="3_fh5jc"]
+[ext_resource type="Texture2D" path="res://assets/characters/courtyard/fist-defense/trained.png" id="4_2vvt7"]
 [ext_resource type="Texture2D" path="res://assets/characters/courtyard/traveler-run-back-v3.png" id="4_mh2p7"]
 [ext_resource type="Texture2D" path="res://assets/characters/courtyard/traveler-run-front-v3.png" id="5_f27ee"]
 [ext_resource type="Texture2D" path="res://assets/characters/courtyard/painted-motion-v2/run.png" id="6_f27ee"]
@@ -102,6 +103,42 @@ filter_clip = true
 atlas = ExtResource("1_bt2qd")
 region = Rect2(1032, 949, 157, 287)
 margin = Rect2(114, 87, 227, 97)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_prbjf"]
+atlas = ExtResource("4_2vvt7")
+region = Rect2(479, 53, 331, 558)
+margin = Rect2(155, 62, 309, 82)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_wb1xl"]
+atlas = ExtResource("4_2vvt7")
+region = Rect2(67, 52, 349, 561)
+margin = Rect2(146, 59, 291, 79)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_akknj"]
+atlas = ExtResource("4_2vvt7")
+region = Rect2(872, 56, 339, 561)
+margin = Rect2(151, 59, 301, 79)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_mgoky"]
+atlas = ExtResource("4_2vvt7")
+region = Rect2(478, 655, 332, 542)
+margin = Rect2(154.5, 78, 308, 98)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bga0u"]
+atlas = ExtResource("4_2vvt7")
+region = Rect2(67, 655, 349, 545)
+margin = Rect2(146, 75, 291, 95)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ms46m"]
+atlas = ExtResource("4_2vvt7")
+region = Rect2(881, 658, 344, 547)
+margin = Rect2(148.5, 73, 296, 93)
 filter_clip = true
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_uxg3q"]
@@ -584,6 +621,54 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
+"texture": SubResource("AtlasTexture_prbjf")
+}],
+"loop": 0,
+"name": &"guard_back",
+"speed": 1.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_wb1xl")
+}],
+"loop": 0,
+"name": &"guard_front",
+"speed": 1.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_akknj")
+}],
+"loop": 0,
+"name": &"guard_side",
+"speed": 1.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_mgoky")
+}],
+"loop": 0,
+"name": &"hit_back",
+"speed": 1.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_bga0u")
+}],
+"loop": 0,
+"name": &"hit_front",
+"speed": 1.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ms46m")
+}],
+"loop": 0,
+"name": &"hit_side",
+"speed": 1.0
+}, {
+"frames": [{
+"duration": 1.0,
 "texture": SubResource("AtlasTexture_uxg3q")
 }, {
 "duration": 1.0,
@@ -858,7 +943,14 @@ metadata/pixel_size_back = 0.0059900166389351
 metadata/pixel_size_front = 0.00577849117174959
 metadata/baseline_offset_pixels = 182.0
 metadata/pixel_size_run_back = 0.0059900166389351
-metadata/pixel_size_run_front = 0.005778491171749589
-metadata/pixel_size_run_side = 0.004803953871499164
-
-metadata/pixel_size_walk_side = 0.005634266886326189
+metadata/pixel_size_run_front = 0.00577849117174958
+metadata/pixel_size_run_side = 0.00480395387149916
+metadata/pixel_size_walk_side = 0.00563426688632618
+metadata/pixel_size_guard_front = 0.00312100325319095
+metadata/pixel_size_guard_side = 0.00302354879348773
+metadata/pixel_size_guard_back = 0.00303794750684342
+metadata/baseline_offset_pixels_guard = 300.0
+metadata/pixel_size_hit_front = 0.00312100325319095
+metadata/pixel_size_hit_side = 0.00302354879348773
+metadata/pixel_size_hit_back = 0.00303794750684342
+metadata/baseline_offset_pixels_hit = 300.0
