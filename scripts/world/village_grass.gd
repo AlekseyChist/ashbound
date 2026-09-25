@@ -1,122 +1,232 @@
 extends Node3D
-## GRASS-01 probe (D-083): one 30 x 30 m meadow by the first house, in two builds of real grass,
-## to compare the look and the phone cost before grass covers the village.
-## Mode 0: off (only the old sparse tufts), 1: opaque blade clumps, 2: alpha-cut cards.
-const PATCH := Rect2(-6, -12, 30, 30)
+## GRASS-02 (D-084): blade grass over the whole village, streamed in 7.5 m chunks around the camera.
+## Dense by the camera, thinning to a fifth by 30 m (shader), nothing past ~36 m; the ground
+## under it already has the grass tone, so the edge does not show. No grass on paths, in yards,
+## at the well. The "Grass" setting (0-100 %) scales the density; 0 turns it off.
+## Each chunk is built from the same seed every time, so grass never jumps when it streams back.
 const CHUNK := 7.5
-const LABELS := ["VILLAGE_GRASS_OFF", "VILLAGE_GRASS_BLADES", "VILLAGE_GRASS_CARDS"]
-## Clumps per square metre near the camera; far away the shader keeps only a share of them.
-const DENSITY := [0.0, 9.0, 3.2]
+## The "Grass distance" setting moves these together: fade to a fifth by `reach`,
+## chunks streamed within reach + 6 m, dropped past reach + 15 m (defaults for 30 m).
+var RADIUS := 36.0
+var DROP_RADIUS := 45.0
+## Clumps per square metre at 100 %.
+const DENSITY := 8.0
+## Streaming: at most one chunk per frame (a chunk costs a few ms on the phone), checked every TICK.
+const BUILDS_PER_TICK := 1
+const TICK := .05
+## Ground height/colour are sampled on this grid per chunk and interpolated for the clumps.
+const SAMPLES := 7
 const SEED := 83092501
+var FADE_START := 12.0
+var FADE_END := 30.0
 var world: Node3D
-var mode := 0
-var sets: Array[Node3D] = [null, null, null]
-var materials: Array[ShaderMaterial] = []
-var button: Button
-var clump_counts := [0, 0, 0]
-## Where each clump stands (village local), for checks: headless builds do not keep MultiMesh data.
-var placed: Array = [PackedVector3Array(), PackedVector3Array(), PackedVector3Array()]
+var density := 1.0
+var material: ShaderMaterial
+var mesh: ArrayMesh
+var chunks := {}
+var extent := Rect2()
+var _segments: Array = []
+var _yards: Array[Rect2] = []
+var _well := Vector2.ZERO
+var _tick := 0.0
 
-func configure(scene: Node3D) -> void:
+func configure(scene: Node3D, amount: float = 1.0, reach: float = 30.0) -> void:
 	world = scene
-	button = world._button(world.atmosphere.time_button.get_parent(), Vector2(260, 120))
-	button.name = "GrassMode"
-	button.pressed.connect(func():
-		if world.is_input_available(): set_mode((mode + 1) % LABELS.size()))
-	Localization.language_changed.connect(_refresh_text)
-	_refresh_text()
+	var layout: Dictionary = world.terrain.data
+	var origin: Vector2 = world.terrain.ORIGIN
+	extent = Rect2(-origin, Vector2(layout.extent_m[0], layout.extent_m[1]))
+	_well = Vector2(layout.well.x, layout.well.y) - origin
+	for segment in world.terrain.segments:
+		_segments.append(segment)
+	for record in layout.buildings:
+		var yard: Array = record.yard
+		_yards.append(Rect2(Vector2(yard[0], yard[1]) - origin, Vector2(yard[2], yard[3])).grow(.3))
+	material = ShaderMaterial.new()
+	material.shader = preload("res://assets/shaders/village_grass_blades.gdshader")
+	material.set_shader_parameter("far_share", .2)
+	mesh = _blade_clump()
+	mesh.surface_set_material(0, material)
+	_apply_reach(reach)
+	density = -1.0
+	set_density(amount)
 
-## Same wind, time and wetness as the rest of the foliage (kept out of the atmosphere's own foliage list).
-func _process(_delta: float) -> void:
-	var atmosphere: Node = world.atmosphere if world else null
-	if atmosphere == null or mode == 0: return
-	for material in materials:
+## Grass distance setting (15-45 m); rebuilds the chunks so their visibility matches.
+func set_reach(reach: float) -> void:
+	reach = clampf(reach, 15.0, 45.0)
+	if is_equal_approx(reach, FADE_END):
+		return
+	_apply_reach(reach)
+	var amount := density
+	density = -1.0
+	set_density(amount)
+
+func _apply_reach(reach: float) -> void:
+	FADE_END = clampf(reach, 15.0, 45.0)
+	FADE_START = FADE_END * .4
+	RADIUS = FADE_END + 6.0
+	DROP_RADIUS = FADE_END + 15.0
+	material.set_shader_parameter("fade_start", FADE_START)
+	material.set_shader_parameter("fade_end", FADE_END)
+
+func set_density(amount: float) -> void:
+	amount = clampf(amount, 0.0, 1.0)
+	if is_equal_approx(amount, density):
+		return
+	density = amount
+	for key in chunks.keys():
+		chunks[key].queue_free()
+	chunks.clear()
+	_tick = 0.0
+	stream(12)
+
+func _process(delta: float) -> void:
+	if world == null:
+		return
+	var atmosphere: Node = world.atmosphere
+	if atmosphere != null:
 		material.set_shader_parameter("effect_time", atmosphere.effect_time)
 		material.set_shader_parameter("wind_strength", float(atmosphere.current.wind))
 		material.set_shader_parameter("wetness", atmosphere.wetness)
+	_tick += delta
+	if _tick >= TICK:
+		_tick = 0.0
+		stream(BUILDS_PER_TICK)
 
-func set_mode(value: int) -> void:
-	mode = clampi(value, 0, LABELS.size() - 1)
-	if mode > 0 and sets[mode] == null: sets[mode] = _build(mode)
-	for i in range(sets.size()):
-		if sets[i] != null: sets[i].visible = i == mode
-	_refresh_text()
+func _focus() -> Vector2:
+	var camera: Camera3D = world.camera_rig.get_camera() if world.camera_rig != null else null
+	var at: Vector3 = camera.global_position if camera != null else world.player.global_position
+	return Vector2(at.x, at.z)
 
-func _refresh_text(_language: String = "") -> void:
-	if button != null: button.text = Localization.text(LABELS[mode])
+## Build missing chunks near the camera (nearest first, at most `budget`), drop far ones.
+func stream(budget: int) -> void:
+	if density <= 0.0:
+		return
+	var focus := _focus()
+	for key in chunks.keys():
+		if _chunk_center(key).distance_to(focus) > DROP_RADIUS:
+			chunks[key].queue_free()
+			chunks.erase(key)
+	var wanted: Array = []
+	var span := int(ceil(RADIUS / CHUNK))
+	var middle := Vector2i(floori(focus.x / CHUNK), floori(focus.y / CHUNK))
+	for dx in range(-span, span + 1):
+		for dz in range(-span, span + 1):
+			var key := middle + Vector2i(dx, dz)
+			if chunks.has(key):
+				continue
+			var d := _chunk_center(key).distance_to(focus)
+			if d <= RADIUS and extent.intersects(Rect2(Vector2(key) * CHUNK, Vector2(CHUNK, CHUNK))):
+				wanted.append([d, key])
+	wanted.sort_custom(func(a, b): return a[0] < b[0])
+	for i in range(mini(budget, wanted.size())):
+		var key: Vector2i = wanted[i][1]
+		chunks[key] = _build_chunk(key)
 
-func _build(kind: int) -> Node3D:
-	var root := Node3D.new()
-	root.name = "Grass" + ["", "Blades", "Cards"][kind]
-	add_child(root)
-	var material := ShaderMaterial.new()
-	if kind == 1:
-		material.shader = preload("res://assets/shaders/village_grass_blades.gdshader")
-	else:
-		material.shader = preload("res://assets/shaders/village_grass_cards.gdshader")
-		material.set_shader_parameter("blades_texture", _card_texture())
-	# Cards overdraw more, so they thin out a little closer.
-	var fade_end := 38.0 if kind == 1 else 34.0
-	material.set_shader_parameter("fade_start", fade_end - 20.0)
-	material.set_shader_parameter("fade_end", fade_end)
-	materials.append(material)
-	var mesh := _blade_clump() if kind == 1 else _card_clump()
-	mesh.surface_set_material(0, material)
+func _chunk_center(key: Vector2i) -> Vector2:
+	return (Vector2(key) + Vector2(.5, .5)) * CHUNK
+
+## Where the clumps of one chunk stand (village frame), before the density setting.
+## Same seed every time; also used by the checks (headless builds keep no MultiMesh data).
+func chunk_points(key: Vector2i) -> Array:
 	var rng := RandomNumberGenerator.new()
-	rng.seed = SEED + kind
-	var chunks := {}
-	var step := 1.0 / sqrt(float(DENSITY[kind]))
-	var x := PATCH.position.x
-	while x < PATCH.end.x:
-		var z := PATCH.position.y
-		while z < PATCH.end.y:
+	rng.seed = SEED ^ (key.x * 73856093) ^ (key.y * 19349663)
+	var corner := Vector2(key) * CHUNK
+	var area := Rect2(corner, Vector2(CHUNK, CHUNK))
+	var near_segments: Array = []
+	for segment in _segments:
+		var box := Rect2(segment.a, Vector2.ZERO).expand(segment.b).grow(float(segment.width) * .5 + 1.5)
+		if box.intersects(area):
+			near_segments.append(segment)
+	var yards: Array[Rect2] = []
+	for yard in _yards:
+		if yard.intersects(area):
+			yards.append(yard)
+	var step := 1.0 / sqrt(DENSITY)
+	var result: Array = []
+	var x := corner.x
+	while x < corner.x + CHUNK:
+		var z := corner.y
+		while z < corner.y + CHUNK:
 			var point := Vector2(x + rng.randf() * step, z + rng.randf() * step)
-			z += step
-			if world.terrain.reserved(point, .3): continue
-			var road: Vector2 = world.terrain.road_info(point)
-			var margin: float = road.x - road.y * .5
-			if margin < .1: continue
-			# The meadow thins out over its last 4 m, so the probe has no hard square edge.
-			var inside := minf(minf(point.x - PATCH.position.x, PATCH.end.x - point.x), minf(point.y - PATCH.position.y, PATCH.end.y - point.y))
-			var edge := smoothstep(0.0, 4.0, inside)
-			if rng.randf() > edge: continue
-			var at := Vector3(point.x, world.terrain.height_at(point.x, point.y), point.y)
-			# Shorter at the path edge and at the meadow edge, fuller inside.
-			var size := rng.randf_range(.8, 1.2) * lerpf(.45, 1.0, smoothstep(.1, 1.4, margin)) * lerpf(.5, 1.0, edge)
+			var keep := rng.randf()
+			var size := rng.randf_range(.8, 1.2)
 			var tall := size * rng.randf_range(.8, 1.15)
-			var basis := Basis(Vector3.UP, rng.randf_range(-PI, PI)).scaled(Vector3(size, tall, size))
-			var ground: Color = world.terrain.color_at(point.x, point.y)
-			var key := Vector2i(floori(point.x / CHUNK), floori(point.y / CHUNK))
-			if not chunks.has(key): chunks[key] = []
-			chunks[key].append([Transform3D(basis, at), Color(ground.r, ground.g, ground.b, rng.randf())])
-			placed[kind].append(at)
+			var turn := rng.randf_range(-PI, PI)
+			var variation := rng.randf()
+			z += step
+			if not extent.has_point(point) or point.distance_to(_well) < 4.8:
+				continue
+			var blocked := false
+			for yard in yards:
+				if yard.has_point(point):
+					blocked = true
+					break
+			if blocked:
+				continue
+			var margin := INF
+			for segment in near_segments:
+				var closest := Geometry2D.get_closest_point_to_segment(point, segment.a, segment.b)
+				margin = minf(margin, point.distance_to(closest) - float(segment.width) * .5)
+			if margin < .1:
+				continue
+			size *= lerpf(.45, 1.0, smoothstep(.1, 1.4, margin))
+			result.append({"point": point, "keep": keep, "size": size, "tall": tall, "turn": turn, "variation": variation})
 		x += step
-	for key: Vector2i in chunks:
-		var list: Array = chunks[key]
-		var center := Vector3((key.x + .5) * CHUNK, 0, (key.y + .5) * CHUNK)
-		var multi := MultiMesh.new()
-		multi.transform_format = MultiMesh.TRANSFORM_3D
-		multi.use_custom_data = true
-		multi.mesh = mesh
-		multi.instance_count = list.size()
-		for i in range(list.size()):
-			var transform: Transform3D = list[i][0]
-			transform.origin -= center
-			multi.set_instance_transform(i, transform)
-			multi.set_instance_custom_data(i, list[i][1])
-		var batch := MultiMeshInstance3D.new()
-		batch.name = "Chunk_%d_%d" % [key.x, key.y]
-		batch.multimesh = multi
-		batch.position = center
-		batch.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		batch.visibility_range_end = fade_end + 12.0
-		batch.extra_cull_margin = .5
-		root.add_child(batch)
-		clump_counts[kind] += list.size()
-	print("VILLAGE_GRASS mode=", kind, " clumps=", clump_counts[kind], " chunks=", chunks.size(), " triangles=", clump_counts[kind] * mesh.surface_get_array_len(0) / 3)
-	return root
+	return result
 
-## Seven tapered blades of 3 triangles; colour red channel = per-blade shade variation.
+func _build_chunk(key: Vector2i) -> Node3D:
+	var center := Vector3(_chunk_center(key).x, 0, _chunk_center(key).y)
+	var corner := Vector2(key) * CHUNK
+	var cell := CHUNK / float(SAMPLES - 1)
+	var heights := PackedFloat32Array()
+	var colors := PackedColorArray()
+	for j in range(SAMPLES):
+		for i in range(SAMPLES):
+			var at := corner + Vector2(i, j) * cell
+			heights.append(world.terrain.height_at(at.x, at.y))
+			colors.append(world.terrain.color_at(at.x, at.y))
+	var buffer := PackedFloat32Array()
+	var count := 0
+	for clump in chunk_points(key):
+		if clump.keep > density:
+			continue
+		var point: Vector2 = clump.point
+		var g := ((point - corner) / cell).clamp(Vector2.ZERO, Vector2(SAMPLES - 1.001, SAMPLES - 1.001))
+		var i := int(g.x)
+		var j := int(g.y)
+		var f := g - Vector2(i, j)
+		var a := j * SAMPLES + i
+		var height: float = lerpf(lerpf(heights[a], heights[a + 1], f.x), lerpf(heights[a + SAMPLES], heights[a + SAMPLES + 1], f.x), f.y)
+		var ground: Color = colors[a].lerp(colors[a + 1], f.x).lerp(colors[a + SAMPLES].lerp(colors[a + SAMPLES + 1], f.x), f.y)
+		var basis := Basis(Vector3.UP, clump.turn).scaled(Vector3(clump.size, clump.tall, clump.size))
+		var origin := Vector3(point.x, height, point.y) - center
+		buffer.append_array([basis.x.x, basis.y.x, basis.z.x, origin.x, basis.x.y, basis.y.y, basis.z.y, origin.y, basis.x.z, basis.y.z, basis.z.z, origin.z, ground.r, ground.g, ground.b, clump.variation])
+		count += 1
+	var batch := MultiMeshInstance3D.new()
+	batch.name = "Grass_%d_%d" % [key.x, key.y]
+	var multi := MultiMesh.new()
+	multi.transform_format = MultiMesh.TRANSFORM_3D
+	multi.use_custom_data = true
+	multi.mesh = mesh
+	multi.instance_count = count
+	if count > 0:
+		multi.buffer = buffer
+	batch.multimesh = multi
+	batch.position = center
+	batch.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	batch.visibility_range_end = FADE_END + 8.0
+	batch.extra_cull_margin = .6
+	batch.set_meta("clumps", count)
+	add_child(batch)
+	return batch
+
+func clump_count() -> int:
+	var total := 0
+	for batch in chunks.values():
+		total += int(batch.get_meta("clumps", 0))
+	return total
+
+## Seven tapered blades of 3 triangles; the custom alpha holds a random for the far thinning.
 func _blade_clump() -> ArrayMesh:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = SEED
@@ -143,43 +253,3 @@ func _blade_clump() -> ArrayMesh:
 				tool.set_normal(Vector3.UP)
 				tool.add_vertex(points[index][0])
 	return tool.commit()
-
-## Three crossed quads 0.7 x 0.5 m; UV.y 0 at the root.
-func _card_clump() -> ArrayMesh:
-	var tool := SurfaceTool.new()
-	tool.begin(Mesh.PRIMITIVE_TRIANGLES)
-	for q in range(3):
-		var angle := float(q) * PI / 3.0
-		var across := Vector3(cos(angle), 0, sin(angle)) * .35
-		var corners := [[-across, Vector2(0, 0)], [across, Vector2(1, 0)], [across + Vector3.UP * .5, Vector2(1, 1)], [-across + Vector3.UP * .5, Vector2(0, 1)]]
-		for index in [0, 1, 2, 0, 2, 3]:
-			tool.set_color(Color(float(q) / 3.0, 0, 0))
-			tool.set_uv(corners[index][1])
-			tool.set_normal(Vector3.UP)
-			tool.add_vertex(corners[index][0])
-	return tool.commit()
-
-## A painted-looking tuft drawn at start: grey = shade along the blade, alpha = blade shape. Row 0 is the root.
-func _card_texture() -> ImageTexture:
-	var size := 128
-	var image := Image.create(size, size, false, Image.FORMAT_RGBA8)
-	image.fill(Color(0, 0, 0, 0))
-	var rng := RandomNumberGenerator.new()
-	rng.seed = SEED + 7
-	for b in range(16):
-		var base := rng.randf_range(.12, .88) * size
-		var top := base + rng.randf_range(-.22, .22) * size
-		var height := rng.randf_range(.55, .98) * size
-		var width := rng.randf_range(2.2, 4.2)
-		var shade := rng.randf_range(.55, 1.0)
-		for y in range(int(height)):
-			var t := float(y) / height
-			var center := lerpf(base, top, t * t)
-			var half := width * (1.0 - t)
-			for x in range(maxi(0, int(center - half - 1)), mini(size, int(center + half + 2))):
-				var cover := clampf(half + .5 - absf(float(x) + .5 - center), 0, 1)
-				if cover <= 0: continue
-				var value := shade * lerpf(.6, 1.0, t)
-				image.set_pixel(x, y, Color(value, value, value, maxf(image.get_pixel(x, y).a, cover)))
-	image.generate_mipmaps()
-	return ImageTexture.create_from_image(image)

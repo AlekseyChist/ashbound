@@ -734,14 +734,8 @@ msgstr "Дальность прорисовки"
 msgid "VILLAGE_METRES"
 msgstr "м"
 
-msgid "VILLAGE_GRASS_OFF"
-msgstr "Трава: нет"
 
-msgid "VILLAGE_GRASS_BLADES"
-msgstr "Трава: травинки"
 
-msgid "VILLAGE_GRASS_CARDS"
-msgstr "Трава: карточки"
 
 # Village lesson: the hostess asks for firewood and says where the woodpile is.
 msgid "VILLAGE_LESSON_HOST_JOB"
@@ -794,3 +788,11 @@ msgstr "Найди сторожа у сторожевой башни в даль
 # Village lesson objective: done.
 msgid "VILLAGE_LESSON_OBJECTIVE_DONE"
 msgstr "На сегодня ты устроился. Осмотри деревню; дорога за башней ведёт к лесной таверне."
+
+# Village settings: grass density slider (percent follows).
+msgid "VILLAGE_GRASS_DENSITY"
+msgstr "Трава"
+
+# Village settings: how far grass is drawn (metres follow).
+msgid "VILLAGE_GRASS_DISTANCE"
+msgstr "Дальность травы"

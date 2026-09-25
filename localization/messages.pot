@@ -676,14 +676,8 @@ msgstr ""
 msgid "VILLAGE_WEATHER_MANUAL"
 msgstr ""
 
-msgid "VILLAGE_GRASS_OFF"
-msgstr ""
 
-msgid "VILLAGE_GRASS_BLADES"
-msgstr ""
 
-msgid "VILLAGE_GRASS_CARDS"
-msgstr ""
 
 # Village lesson: the hostess asks for firewood and says where the woodpile is.
 msgid "VILLAGE_LESSON_HOST_JOB"
@@ -735,4 +729,12 @@ msgstr ""
 
 # Village lesson objective: done.
 msgid "VILLAGE_LESSON_OBJECTIVE_DONE"
+msgstr ""
+
+# Village settings: grass density slider (percent follows).
+msgid "VILLAGE_GRASS_DENSITY"
+msgstr ""
+
+# Village settings: how far grass is drawn (metres follow).
+msgid "VILLAGE_GRASS_DISTANCE"
 msgstr ""
