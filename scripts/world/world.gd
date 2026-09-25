@@ -7,9 +7,26 @@ const Geometry = preload("res://scripts/world/world_graybox_geometry.gd")
 const Shapes = preload("res://scripts/world/world_graybox_shapes.gd")
 const Headwaters = preload("res://scripts/world/world_graybox_headwaters.gd")
 const Landmarks = preload("res://scripts/world/world_graybox_landmarks.gd")
+## TAVERN-01B (D-089): the forest inn — a one-storey log hall with beds on the loft — replaces
+## the grey landmark at the forest_inn site, door towards the trail.
+const InnBuilding = preload("res://scripts/world/village_building.gd")
+const INN_SITE := "forest_inn"
+const INN_RECORD := {
+	"id": "T02A",
+	"title_key": "WORLD_SITE_FOREST_INN",
+	"scene_path": "res://assets/buildings/forest-inn-v1/t02a.glb",
+	"position": Vector3.ZERO,
+	"entry": Vector3(0, 0.36, 7.5),
+	"width": 9.0,
+	"depth": 15.0,
+	"floor_height": 0.36,
+	"entry_width": 2.2,
+}
+## Door 3 m in front of the site spawn, like the landmark it replaces.
+const INN_BACK_FROM_SPAWN := 10.5
 const Pad = preload("res://scripts/world/world_settlement_pad.gd")
 
-const VERSION := "0.28.0"
+const VERSION := "0.29.0"
 const WORLD_LAYOUT := "res://assets/world/graybox-v1/layout.json"
 const WORLD_HEIGHTS := "res://assets/world/graybox-v1/heights.bin"
 const WORLD_COLORS := "res://assets/world/graybox-v1/colors.bin"
@@ -47,6 +64,7 @@ var lesson: Node3D
 var combat: Node
 ## WORLD-SAVE-01: inventory, hero place and progress; only when the world is the running scene.
 var save: Node
+var inn: Node3D
 
 
 func _ready() -> void:
@@ -100,7 +118,7 @@ func _build_world() -> void:
 	world_layout = JSON.parse_string(FileAccess.get_file_as_string(WORLD_LAYOUT))
 	world_width = int(world_layout.width)
 	original_heights = FileAccess.get_file_as_bytes(WORLD_HEIGHTS).to_float32_array()
-	world_heights = _raise_west_rim(pad.apply(original_heights, world_width, GRID))
+	world_heights = _flatten_inn(_raise_west_rim(pad.apply(original_heights, world_width, GRID)))
 	world_root = Node3D.new()
 	world_root.name = "WorldMap"
 	world_root.position = Vector3(HALF - VILLAGE_ORIGIN_MAP.x, -BASE_HEIGHT, HALF - VILLAGE_ORIGIN_MAP.y)
@@ -394,6 +412,9 @@ func _build_water_and_sites() -> void:
 	for site in world_layout.sites:
 		if str(site.id) == SITE_SKIPPED or site.kind == "lake" or site.kind == "spring_cave":
 			continue
+		if str(site.id) == INN_SITE:
+			_build_inn(site)
+			continue
 		var landmark := Landmarks.new()
 		landmark.name = str(site.id)
 		world_root.add_child(landmark)
@@ -421,6 +442,7 @@ func _update_prompt() -> void:
 	super._update_prompt()
 	if lesson == null or hud == null or player == null:
 		return
+	_offer_inn_door()
 	var inside := false
 	for building in buildings:
 		if building.contains(player.global_position):
@@ -447,3 +469,98 @@ func _start_save() -> void:
 	save.name = "WorldSave"
 	add_child(save)
 	save.initialize(self)
+
+
+## Where the inn stands (world frame): centre, yaw and the level of its pad (the trail end).
+func _inn_frame() -> Dictionary:
+	for site in world_layout.sites:
+		if str(site.id) != INN_SITE:
+			continue
+		var s: Array = site.spawn
+		var direction: Array = site.facing
+		var yaw := atan2(float(direction[0]), float(direction[2]))
+		var center := Vector3(float(s[0]), 0, float(s[2])) + Basis(Vector3.UP, yaw) * Vector3(0, 0, -INN_BACK_FROM_SPAWN)
+		# The site spawn height is the end of the trail embankment: the pad meets the trail without a step.
+		return {"center": center, "yaw": yaw, "level": float(s[1])}
+	return {}
+
+## A level pad under the inn: the footprint grown by one grid step is flat at the trail's height,
+## then 10 m blend back to the slope. Without it the door stood a metre above the ground.
+func _flatten_inn(grid: PackedFloat32Array) -> PackedFloat32Array:
+	var frame := _inn_frame()
+	if frame.is_empty():
+		return grid
+	var result := grid.duplicate()
+	var inverse := Basis(Vector3.UP, frame.yaw).inverse()
+	var half := Vector2(4.7 + GRID, 9.4 + GRID)
+	for gz in range(world_width):
+		for gx in range(world_width):
+			var world_point := Vector3(gx * GRID - HALF, 0, gz * GRID - HALF)
+			var local: Vector3 = inverse * (world_point - frame.center)
+			# The rectangle spans z -7.7..9.4 around the inn centre (entry steps in front).
+			var dz := maxf(absf(local.z - .85) - (8.55 + GRID), 0.0)
+			var dx := maxf(absf(local.x) - half.x, 0.0)
+			var d := Vector2(dx, dz).length()
+			if d >= 10.0:
+				continue
+			var index := gz * world_width + gx
+			result[index] = lerpf(float(frame.level), result[index], smoothstep(0.0, 10.0, d))
+	return result
+
+func _build_inn(site: Dictionary) -> void:
+	var frame := _inn_frame()
+	var yaw: float = frame.yaw
+	var basis := Basis(Vector3.UP, yaw)
+	var center: Vector3 = frame.center
+	# Stand on the highest corner so nothing sinks; a stone plinth fills down to the lowest one.
+	var high := -INF
+	var low := INF
+	for corner in [Vector3(-4.7, 0, -7.7), Vector3(4.7, 0, -7.7), Vector3(-4.7, 0, 9.4), Vector3(4.7, 0, 9.4)]:
+		var at: Vector3 = center + basis * corner
+		var h := world_ground(at.x, at.z)
+		high = maxf(high, h)
+		low = minf(low, h)
+	inn = InnBuilding.new()
+	world_root.add_child(inn)
+	inn.build(INN_RECORD)
+	inn.name = "ForestInn"
+	inn.position = Vector3(center.x, high, center.z)
+	inn.rotation.y = yaw
+	var drop := high - low
+	if drop > 0.02:
+		var plinth := MeshInstance3D.new()
+		plinth.name = "Plinth"
+		var box := BoxMesh.new()
+		box.size = Vector3(9.4, drop + 0.1, 15.4)
+		plinth.mesh = box
+		var stone := StandardMaterial3D.new()
+		stone.albedo_color = Color("6d6b63")
+		stone.roughness = .95
+		plinth.material_override = stone
+		plinth.position = Vector3(0, -drop * 0.5 + 0.02, 0)
+		inn.add_child(plinth)
+
+
+## The inn is not one of the village yards (the house picker and the yard tests stay three),
+## but its door works with the same action button when no village door is nearer.
+func _offer_inn_door() -> void:
+	if inn == null or inn.door == null:
+		return
+	var door: Node3D = inn.door
+	var usable: bool = is_input_available() and door.can_interact(player)
+	door.set_highlight(usable and current_door == null)
+	if not usable or current_door != null:
+		return
+	current_door = door
+	var key := "VILLAGE_OPEN"
+	var would_close: bool = door.goal > 0.5 if door.moving else door.fraction > 0.0
+	if would_close:
+		key = "VILLAGE_CLOSE"
+	interact_button.disabled = false
+	interact_button.text = Localization.text(key)
+	if door.moving:
+		hud.set_prompt(Localization.text("VILLAGE_DOOR_MOVING"))
+	else:
+		hud.set_prompt(Localization.text(key) if OS.get_name() == "Android" else "E · " + Localization.text(key))
+	if inn.contains(player.global_position):
+		hud.set_objective(INN_RECORD.title_key)
