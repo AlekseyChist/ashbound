@@ -21,6 +21,14 @@ const LUNGE_SPEED: float = 3.2
 const CUE_WINDOW: float = 0.18
 const STAGGER_TIME: float = 0.45
 const BLOCK_STAGGER_TIME: float = 0.65
+## QUEST-WOLVES-01: a beaten enemy runs off for this long, then leaves the world.
+const FLEE_TIME: float = 3.0
+const FLEE_SPEED_SCALE: float = 1.7
+
+## Emitted when a beaten enemy has run off and left the world ("gone").
+signal fled()
+## Hits after which the enemy runs away; 0 keeps the sandbox behaviour (never).
+var flee_after_hits: int = 0
 
 var kind: String = ""
 var home: Vector3 = Vector3.ZERO
@@ -227,6 +235,10 @@ func step(delta: float) -> void:
 			_step_stagger(delta)
 		"return":
 			_step_return(delta)
+		"flee":
+			_step_flee(delta)
+		"gone":
+			velocity = Vector3.ZERO
 
 	_present_visual()
 
@@ -261,8 +273,15 @@ func reset_home() -> void:
 func receive_hit() -> void:
 	if session == null or not _session_enabled():
 		return
+	if state == "flee" or state == "gone":
+		return
 	hits_received += 1
 	_hit_flash_time = 0.25
+	if flee_after_hits > 0 and hits_received >= flee_after_hits:
+		state = "flee"
+		state_time = 0.0
+		_contact_done = false
+		return
 	# ALWAYS enter stagger (idle/chase/return/windup/recovery), no stale windup.
 	state = "stagger"
 	state_time = 0.0
@@ -387,6 +406,25 @@ func _step_stagger(delta: float) -> void:
 		_reacquire_timer = REACQUIRE_DELAY
 
 
+## Run straight away from the hero; after FLEE_TIME the enemy is gone (hidden, no collision).
+func _step_flee(delta: float) -> void:
+	var away := global_position - (_player.global_position if _player != null else home)
+	away.y = 0.0
+	var dir := away.normalized() if away.length() > 0.01 else -facing_direction
+	facing_direction = dir
+	if not _move_horizontal(dir * _chase_speed * FLEE_SPEED_SCALE, delta):
+		var perp := Vector3(-dir.z, 0, dir.x) * _steer_side
+		_move_horizontal((dir + perp).normalized() * _chase_speed * FLEE_SPEED_SCALE, delta)
+	_walk_sim_time += delta
+	if state_time >= FLEE_TIME:
+		state = "gone"
+		state_time = 0.0
+		visible = false
+		collision_layer = 0
+		collision_mask = 0
+		fled.emit()
+
+
 func _step_return(delta: float) -> void:
 	var to_home := home - global_position
 	var planar_dist := Vector2(to_home.x, to_home.z).length()
@@ -468,6 +506,9 @@ func _present_visual() -> void:
 		"chase", "return":
 			action = "walk"
 			progress = fmod(_walk_sim_time * 4.0, 1.0)
+		"flee":
+			action = "walk"
+			progress = fmod(_walk_sim_time * 6.0, 1.0)
 		"windup":
 			if state_time >= _windup_time - CUE_WINDOW:
 				action = "attack"

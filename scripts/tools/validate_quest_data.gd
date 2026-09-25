@@ -74,9 +74,16 @@ func run() -> void:
 	check(t.stage_index == 0 and t.counters[&"dummy_hits"] == 0 and not t.flags[&"reward_claimed"], "reset starts over")
 	# Village copy (D-085/086): same stages as the courtyard (saved index), lines that tell the way.
 	var village: QuestData = load("res://data/quests/village_lesson.tres")
-	check(village.id == &"village_lesson" and village.stages.size() == Quest.stages.size(), "village lesson has the courtyard stages")
-	for i in range(village.stages.size()):
-		check(village.stages[i].id == Quest.stages[i].id and village.stages[i].counter == Quest.stages[i].counter, "village stage %d matches" % i)
+	# D-092: the village adds the wolves at the barn between the practice report and the end.
+	var expected: Array = []
+	for stage in Quest.stages: expected.append(stage.id)
+	expected.insert(expected.size() - 1, &"wolves")
+	expected.insert(expected.size() - 1, &"wolves_report")
+	check(village.id == &"village_lesson" and village.stages.size() == expected.size(), "village lesson: the courtyard stages plus the wolves")
+	for i in range(mini(village.stages.size(), expected.size())):
+		check(village.stages[i].id == expected[i], "village stage %d is %s" % [i, expected[i]])
+		if i < Quest.stages.size() - 1:
+			check(village.stages[i].counter == Quest.stages[i].counter, "village stage %d counts like the courtyard" % i)
 	for language in ["en", "ru"]:
 		var keys := catalog_keys("res://localization/%s.po" % language)
 		for stage in village.stages: check(keys.has(stage.objective_key), "%s has %s" % [language, stage.objective_key])
@@ -84,6 +91,11 @@ func run() -> void:
 	var v := QuestTracker.new(village)
 	check(v.line_for(&"innkeeper").line_key == "VILLAGE_LESSON_HOST_JOB", "the village hostess tells where the woodpile is")
 	v.stage_index = 6
-	check(v.line_for(&"watchman").line_key == "VILLAGE_LESSON_GUARD_AFTER", "the watchman points to the forest inn after the lesson")
+	check(v.line_for(&"watchman").line_key == "VILLAGE_LESSON_GUARD_WOLVES_REMIND", "the watchman reminds about the wolves")
+	v.stage_index = 7
+	var paid: DialogueLineData = v.line_for(&"watchman")
+	check(paid.line_key == "VILLAGE_LESSON_GUARD_WOLVES_PAID" and paid.effects == [&"pay_wolf_reward"] and paid.next_stage == &"done", "the watchman pays for the wolves")
+	v.stage_index = 8
+	check(v.journal_entry().completed and v.line_for(&"watchman").line_key == "VILLAGE_LESSON_GUARD_AFTER", "the watchman points to the forest inn after the lesson")
 	print("QUEST_DATA_CHECKS checks=", checks, " failures=", failures.size())
 	quit(0 if failures.is_empty() else 1)

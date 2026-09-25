@@ -99,6 +99,8 @@ func run_checks() -> void:
 	check_seam()
 	check_coverage()
 	check_ring()
+	check_trail_forest()
+	check_neighbours()
 	Engine.max_physics_steps_per_frame = 16
 	Engine.time_scale = 4.0
 	var gate := plan(Vector2(83.19, 97.63))
@@ -196,3 +198,58 @@ func check_west_rim(gate: Vector3) -> void:
 	print("WORLD_VILLAGE_RIM stopped at map ", map.round())
 	check(map.x > 1.0, "west rim stops the hero on the map (map x %.1f)" % map.x)
 	check(lowest_clearance > -0.6, "west rim: hero stays on the ground (lowest %.2f m)" % lowest_clearance)
+
+## TRAIL-01 (owner): a pine forest along the trail to the inn, nothing on a road, the wolf off the trail.
+func check_trail_forest() -> void:
+	var dressing: Node3D = world.trail_dressing
+	var counts: Dictionary = dressing.counts
+	check(int(counts.tree) >= 200 and int(counts.grass) >= 1000 and int(counts.fern) >= 150 and int(counts.boulder) >= 30 and int(counts.log) >= 20, "trees and forest floor along the trail " + str(counts))
+	var on_road := 0
+	var in_village := 0
+	for tree in dressing.tree_positions:
+		var p := Vector2(tree.x, tree.z)
+		if dressing._road_clearance(p) < dressing.SHOULDER: on_road += 1
+		if dressing._in_village(p): in_village += 1
+	check(on_road == 0, "no trail tree on a road or its shoulders (%d)" % on_road)
+	check(in_village == 0, "the trail forest stays out of the village (%d)" % in_village)
+	var verge_on_road := 0
+	for placed in dressing.floor_pieces:
+		var at: Vector3 = (placed[1] as Transform3D).origin
+		if dressing._road_clearance(Vector2(at.x, at.z)) < dressing.trail_width * .5 + .3: verge_on_road += 1
+	check(verge_on_road == 0, "no stone, log or fern on the trail (%d)" % verge_on_road)
+	var inn: Vector3 = world.inn.global_position
+	var near_inn := 0
+	for tree in dressing.tree_positions:
+		if Vector2(tree.x - inn.x, tree.z - inn.z).length() < dressing.INN_CLEAR: near_inn += 1
+	check(near_inn == 0, "the inn's clearing is free (%d)" % near_inn)
+	var trunk := 0
+	for body in dressing.get_children():
+		if body is StaticBody3D and String(body.name).begins_with("TrailTrunk"): trunk += 1
+	check(trunk == dressing.tree_positions.size(), "trail trees are solid")
+	var wind := 0
+	for batch in dressing.foliage_batches:
+		if batch.material_override is ShaderMaterial: wind += 1
+	check(wind > 0 and wind == dressing.foliage_batches.size(), "trail trees and grass sway with the village wind (%d/%d)" % [wind, dressing.foliage_batches.size()])
+	var wolf: Node3D = world.combat.wolf()
+	var closest := INF
+	for p in dressing.trail:
+		closest = minf(closest, Vector2(p.x - wolf.home.x, p.z - wolf.home.z).length())
+	check(closest > 5.0, "the trail wolf waits beside the trail, not on it (%.1f m)" % closest)
+
+## HOUSES-01 (owner): six more houses by the village roads, closed and solid, off the roads and yards.
+func check_neighbours() -> void:
+	var dressing: Node3D = world.dressing
+	check(dressing.neighbours.size() == 6, "six neighbour houses (%d)" % dressing.neighbours.size())
+	var space := world.get_world_3d().direct_space_state
+	for house in dressing.neighbours:
+		var p := Vector2(house.position.x, house.position.z)
+		var road: Vector2 = world.terrain.road_info(p)
+		check(road.x - road.y * .5 > 5.0, "%s stands off the road (%.1f m)" % [house.name, road.x - road.y * .5])
+		check(not world.terrain.reserved(p, 3.0), "%s is not in a yard or at the well" % house.name)
+		var top: Vector3 = house.global_position + Vector3.UP * 20.0
+		var hit := space.intersect_ray(PhysicsRayQueryParameters3D.create(top, house.global_position - Vector3.UP, 1))
+		check(not hit.is_empty() and hit.position.y > house.global_position.y + 1.0, "%s has a solid roof" % house.name)
+		var lights: Array = house.find_children("*", "Light3D", true, false)
+		check(lights.is_empty(), "%s adds no light" % house.name)
+		for other in world.buildings:
+			check(Vector2(other.position.x, other.position.z).distance_to(p) > 14.0, "%s keeps away from %s" % [house.name, other.name])

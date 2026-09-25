@@ -19,7 +19,6 @@ stages = Array[StringName]([&"return_wood"])
 forbids_flag = &"reward_claimed"
 name_key = "COURTYARD_NAME_INNKEEPER"
 line_key = "VILLAGE_LESSON_HOST_REWARD"
-effects = Array[StringName]([&"pay_wood_reward"])
 set_flag = &"reward_claimed"
 next_stage = &"meet_guard"
 
@@ -76,9 +75,9 @@ script = ExtResource("1_g8uym")
 speaker = &"watchman"
 stages = Array[StringName]([&"report"])
 name_key = "COURTYARD_NAME_WATCHMAN"
-line_key = "COURTYARD_DIALOGUE_GUARD_REPORT"
+line_key = "VILLAGE_LESSON_GUARD_WOLVES"
 effects = Array[StringName]([&"complete_guard_practice"])
-next_stage = &"done"
+next_stage = &"wolves"
 
 [sub_resource type="Resource" id="Resource_dtml3"]
 script = ExtResource("1_g8uym")
@@ -93,6 +92,22 @@ speaker = &"watchman"
 stages = Array[StringName]([&"done"])
 name_key = "COURTYARD_NAME_WATCHMAN"
 line_key = "VILLAGE_LESSON_GUARD_AFTER"
+
+[sub_resource type="Resource" id="Resource_g8uym"]
+script = ExtResource("1_g8uym")
+speaker = &"watchman"
+stages = Array[StringName]([&"wolves"])
+name_key = "COURTYARD_NAME_WATCHMAN"
+line_key = "VILLAGE_LESSON_GUARD_WOLVES_REMIND"
+
+[sub_resource type="Resource" id="Resource_jn64g"]
+script = ExtResource("1_g8uym")
+speaker = &"watchman"
+stages = Array[StringName]([&"wolves_report"])
+name_key = "COURTYARD_NAME_WATCHMAN"
+line_key = "VILLAGE_LESSON_GUARD_WOLVES_PAID"
+effects = Array[StringName]([&"pay_wolf_reward"])
+next_stage = &"done"
 
 [sub_resource type="Resource" id="Resource_s8hbm"]
 script = ExtResource("1_g8uym")
@@ -134,6 +149,16 @@ script = ExtResource("3_jmd11")
 id = &"report"
 objective_key = "COURTYARD_OBJECTIVE_REPORT"
 
+[sub_resource type="Resource" id="Resource_jmd11"]
+script = ExtResource("3_jmd11")
+id = &"wolves"
+objective_key = "VILLAGE_LESSON_OBJECTIVE_WOLVES"
+
+[sub_resource type="Resource" id="Resource_1q23w"]
+script = ExtResource("3_jmd11")
+id = &"wolves_report"
+objective_key = "VILLAGE_LESSON_OBJECTIVE_WOLVES_REPORT"
+
 [sub_resource type="Resource" id="Resource_2opys"]
 script = ExtResource("3_jmd11")
 id = &"done"
@@ -144,6 +169,6 @@ completed = true
 script = ExtResource("2_jn64g")
 id = &"village_lesson"
 title_key = "MENU_JOURNAL_COURTYARD"
-stages = Array[ExtResource("3_jmd11")]([SubResource("Resource_1hmsr"), SubResource("Resource_f2dav"), SubResource("Resource_6yra5"), SubResource("Resource_orw3k"), SubResource("Resource_m7k2p"), SubResource("Resource_vp28y"), SubResource("Resource_2opys")])
-lines = Array[ExtResource("1_g8uym")]([SubResource("Resource_qvxp3"), SubResource("Resource_ilkp2"), SubResource("Resource_vatek"), SubResource("Resource_cyeaw"), SubResource("Resource_a7r23"), SubResource("Resource_83l5g"), SubResource("Resource_8hy42"), SubResource("Resource_t4y1x"), SubResource("Resource_cji6u"), SubResource("Resource_x62hf"), SubResource("Resource_dtml3"), SubResource("Resource_hv08n"), SubResource("Resource_s8hbm")])
-flags = Array[StringName]([&"reward_claimed", &"coins_paid"])
+stages = Array[ExtResource("3_jmd11")]([SubResource("Resource_1hmsr"), SubResource("Resource_f2dav"), SubResource("Resource_6yra5"), SubResource("Resource_orw3k"), SubResource("Resource_m7k2p"), SubResource("Resource_vp28y"), SubResource("Resource_jmd11"), SubResource("Resource_1q23w"), SubResource("Resource_2opys")])
+lines = Array[ExtResource("1_g8uym")]([SubResource("Resource_qvxp3"), SubResource("Resource_ilkp2"), SubResource("Resource_vatek"), SubResource("Resource_cyeaw"), SubResource("Resource_a7r23"), SubResource("Resource_83l5g"), SubResource("Resource_8hy42"), SubResource("Resource_t4y1x"), SubResource("Resource_cji6u"), SubResource("Resource_x62hf"), SubResource("Resource_dtml3"), SubResource("Resource_hv08n"), SubResource("Resource_g8uym"), SubResource("Resource_jn64g"), SubResource("Resource_s8hbm")])
+flags = Array[StringName]([&"reward_claimed"])

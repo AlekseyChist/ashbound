@@ -23,7 +23,8 @@ const DUMMY_PLAN := Vector2(157.9, 50.0)
 const TOWER_PLAN := Vector2(152.25, 54.6)
 const TOWER_YAW := 0.605
 const INTERACT_RADIUS := 2.2
-const WOOD_REWARD := 10
+## D-092: the watchman pays for driving the wolves off the barn: a meal and a bed (trial number).
+const WOLF_REWARD := 5
 const STRIKE_RANGE := 1.8
 const FACING_DOT_MIN := 0.2
 
@@ -67,11 +68,20 @@ func configure(scene: Node3D) -> void:
 	if LessonQuest.stages[quest.stage_index].completed:
 		_run_effect(&"complete_guard_practice")
 
-## INN-REST-01: firewood delivered before the hostess paid in coins is paid once. The world calls
-## this after its save has restored the purse, so the coins are not overwritten.
-func pay_missing_reward() -> void:
-	if quest.flags.get(&"reward_claimed", false) and not quest.flags.get(&"coins_paid", false):
-		_run_effect(&"pay_wood_reward")
+## QUEST-WOLVES-01: at the "wolves" stage the pack waits by the barn (also after a restart).
+## The world calls this once its combat exists. The pack gone -> back to the watchman.
+func sync_pack() -> void:
+	if world.combat == null or quest.current_stage().id != &"wolves":
+		return
+	var pack: Array = world.combat.spawn_barn_pack()
+	if not world.combat.pack_driven_off.is_connected(_on_pack_driven_off):
+		world.combat.pack_driven_off.connect(_on_pack_driven_off)
+	if pack.is_empty():
+		push_error("village lesson: no barn for the wolves")
+
+func _on_pack_driven_off() -> void:
+	if quest.go_to(&"wolves_report"):
+		world.hud.show_message("", "VILLAGE_LESSON_WOLVES_GONE")
 		_changed()
 
 func _ground(plan: Vector2) -> Vector3:
@@ -142,17 +152,15 @@ func talk_to(speaker: StringName) -> bool:
 	var flagged := line.set_flag != &""
 	if quest.apply_line(line) or flagged:
 		_changed()
+		sync_pack()
 	return true
 
 func _run_effect(effect: StringName) -> void:
 	match effect:
 		&"hide_woodpile_label":
 			woodpile.get_node("Label3D").visible = false
-		&"pay_wood_reward":
-			# Trial sum (owner, 25 Sep): enough for three nights at the forest inn.
-			if not quest.flags.get(&"coins_paid", false):
-				world.get_node("/root/Inventory").add_gold(WOOD_REWARD)
-				quest.flags[&"coins_paid"] = true
+		&"pay_wolf_reward":
+			world.get_node("/root/Inventory").add_gold(WOLF_REWARD)
 		&"complete_guard_practice":
 			var progression: Node = world.player.get_node_or_null("Progression")
 			if progression != null and progression.has_method("complete_guard_practice"):

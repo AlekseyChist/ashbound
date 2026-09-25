@@ -85,6 +85,7 @@ func build(ground: Node3D, buildings: Array[Node3D]) -> void:
 	_prop("res://assets/buildings/ashbound/courtyard_well.glb",at,0,Vector3.ONE,true)
 	for building in buildings:
 		_dress_yard(building)
+	_neighbours(buildings)
 	household = preload("res://scripts/world/village_props.gd").new()
 	household.name = "Household"
 	add_child(household)
@@ -279,3 +280,97 @@ func _solid(piece: Array, transform: Transform3D, step: float) -> void:
 	shape.shape=box
 	body.add_child(shape)
 	add_child(body)
+
+## HOUSES-01 (owner, 25 Sep): more houses in the village, to see the phone's load. The three yard
+## models again as neighbours by the roads: closed doors, no interior light or furniture, solid.
+const NEIGHBOUR_COUNT := 6
+const NEIGHBOUR_MODELS := ["H01", "W01", "H01", "B01", "H01", "W01"]
+var neighbours: Array[Node3D] = []
+
+func _neighbours(buildings: Array[Node3D]) -> void:
+	var catalog := {}
+	for record in preload("res://scripts/world/village_building_catalog.gd").all():
+		catalog[record.id] = record
+	var house_rng := RandomNumberGenerator.new()
+	house_rng.seed = 250927
+	var placed: Array[Vector2] = []
+	for building in buildings:
+		placed.append(Vector2(building.position.x, building.position.z))
+	for attempt in range(4000):
+		if neighbours.size() >= NEIGHBOUR_COUNT: break
+		var record: Dictionary = catalog[NEIGHBOUR_MODELS[neighbours.size()]]
+		var half := maxf(float(record.width), float(record.depth)) * .5
+		var point := Vector2(house_rng.randf_range(-80, 115), house_rng.randf_range(-80, 65))
+		if terrain.forest_contains(point) or terrain.reserved(point, half + 3.0): continue
+		var road: Vector2 = terrain.road_info(point)
+		var edge: float = road.x - road.y * .5
+		if edge < half + 4.5 or edge > half + 12.0: continue
+		var free := true
+		for other in placed:
+			if other.distance_to(point) < 16.0 + half: free = false
+		for tree in tree_positions:
+			if Vector2(tree.x, tree.z).distance_to(point) < half + 3.0: free = false
+		if not free: continue
+		# Face the nearest road: the road distance falls fastest that way.
+		var toward := Vector2.ZERO
+		for dir in [Vector2(1, 0), Vector2(-1, 0), Vector2(0, 1), Vector2(0, -1)]:
+			toward += dir * (terrain.road_info(point).x - terrain.road_info(point + dir).x)
+		if toward.length() < .01: continue
+		toward = toward.normalized()
+		var yaw := atan2(toward.x, toward.y)
+		var basis := Basis(Vector3.UP, yaw)
+		var low := INF
+		var high := -INF
+		for corner in [Vector3(-1, 0, -1), Vector3(1, 0, -1), Vector3(-1, 0, 1), Vector3(1, 0, 1)]:
+			var c: Vector3 = basis * Vector3(corner.x * float(record.width) * .5, 0, corner.z * float(record.depth) * .5)
+			var h: float = terrain.height_at(point.x + c.x, point.y + c.z)
+			low = minf(low, h)
+			high = maxf(high, h)
+		if high - low > 1.2: continue
+		neighbours.append(_neighbour(record, Vector3(point.x, high, point.y), yaw, high - low))
+		placed.append(point)
+		# The blade grass keeps off the footprint.
+		for gx in [-.3, .3]:
+			for gz in [-.3, .3]:
+				var c: Vector3 = basis * Vector3(gx * float(record.width), 0, gz * float(record.depth))
+				clearings.append(Vector3(point.x + c.x, point.y + c.z, half * .75))
+	floor_counts["neighbours"] = neighbours.size()
+
+func _neighbour(record: Dictionary, at: Vector3, yaw: float, drop: float) -> Node3D:
+	var house := Node3D.new()
+	house.name = "Neighbour%d_%s" % [neighbours.size(), record.id]
+	house.position = at
+	house.rotation.y = yaw
+	add_child(house)
+	var model := (load(record.scene_path) as PackedScene).instantiate() as Node3D
+	model.name = "Model"
+	house.add_child(model)
+	preload("res://scripts/world/village_house_materials.gd").new().apply(model, str(record.id))
+	for mesh: MeshInstance3D in model.find_children("*", "MeshInstance3D", true, false):
+		var role := str(mesh.get_meta("extras", {}).get("part_role", ""))
+		# Closed house: nothing inside is ever seen.
+		if role == "furniture" or role == "interior":
+			mesh.visible = false
+			continue
+		var body := StaticBody3D.new()
+		body.collision_layer = 1
+		body.collision_mask = 0
+		mesh.add_child(body)
+		var collider := CollisionShape3D.new()
+		collider.shape = mesh.mesh.create_trimesh_shape()
+		body.add_child(collider)
+		mesh.visibility_range_end = 160.0
+	if drop > .05:
+		# On a slope the downhill side stands on a stone plinth, like the inn.
+		var plinth := MeshInstance3D.new()
+		plinth.name = "Plinth"
+		var box := BoxMesh.new()
+		box.size = Vector3(float(record.width) + .2, drop + .1, float(record.depth) + .2)
+		plinth.mesh = box
+		var stone := StandardMaterial3D.new()
+		stone.albedo_color = Color(0.46, 0.44, 0.4)
+		stone.roughness = .95
+		plinth.material_override = stone
+		plinth.position = Vector3(0, -drop * .5, 0)
+		house.add_child(plinth)
+	return house
