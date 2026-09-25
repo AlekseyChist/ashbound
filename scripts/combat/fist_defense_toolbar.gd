@@ -233,7 +233,10 @@ func _player_attack_allowed() -> bool:
 	var level := _level()
 	if level == null:
 		return false
+	# The courtyard sandbox keeps the hero under Actors; the player rig of the world at its root.
 	var player := level.get_node_or_null("Actors/Player")
+	if player == null:
+		player = level.get_node_or_null("Player")
 	if player == null or not player.has_method("is_attack_allowed"):
 		return false
 	return player.is_attack_allowed()

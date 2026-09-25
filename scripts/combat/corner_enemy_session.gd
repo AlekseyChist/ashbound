@@ -17,6 +17,14 @@ const HERO_TARGET_RANGE := 1.9
 const HERO_CONE_HALF: float = 55.0
 
 var enemies: Array[Node] = []
+## Where the encounter puts the hero and whether it marks the enemy homes (sandbox defaults).
+## The world keeps the hero where they are (null) and shows no rings.
+var hero_start: Variant = HERO_POS
+var show_home_rings := true
+## Optional ground for the enemies, `func(x, z) -> float`; empty = the sandbox's flat floor.
+var ground_height: Callable
+## [[kind, home], ...]; empty = the sandbox pair.
+var spawns: Array = []
 var _active_source: CharacterBody3D
 var _incoming_origin: Node3D
 
@@ -31,28 +39,28 @@ func setup(sbx: Node, plr: CharacterBody3D) -> void:
 	_hero_visual = _find_hero_visual()
 	if _hero_visual != null:
 		_hero_visual_base = _hero_visual.position
-		if player != null:
-			player.position = HERO_POS
+		if player != null and hero_start != null:
+			player.position = hero_start
 			if "facing_direction" in player:
 				player.set("facing_direction", Vector3(0.0, 0.0, -1.0))
 
-	var wolf: CharacterBody3D = _create_enemy_actor("wolf")
-	wolf.name = "Wolf"
-	add_child(wolf)
-	wolf.setup("wolf", WOLF_HOME, self)
-	enemies.append(wolf)
-
-	var guard: CharacterBody3D = _create_enemy_actor("guard")
-	guard.name = "Guard"
-	add_child(guard)
-	guard.setup("guard", GUARD_HOME, self)
-	enemies.append(guard)
-
-	_build_home_rings(WOLF_HOME)
-	_build_home_rings(GUARD_HOME)
+	for spawn in _spawn_plan():
+		var actor: CharacterBody3D = _create_enemy_actor(spawn[0])
+		actor.name = String(spawn[0]).capitalize()
+		actor.ground_height = ground_height
+		add_child(actor)
+		actor.setup(spawn[0], spawn[1], self)
+		enemies.append(actor)
+		if show_home_rings:
+			_build_home_rings(spawn[1])
 
 	_apply_focus_state()
 	print("ASHBOUND_CORNER_SESSION_READY")
+
+
+## Kinds and homes of the enemies: the sandbox's wolf and guard.
+func _spawn_plan() -> Array:
+	return spawns if not spawns.is_empty() else [["wolf", WOLF_HOME], ["guard", GUARD_HOME]]
 
 
 func _create_enemy_actor(p_kind: String) -> CharacterBody3D:
@@ -234,9 +242,9 @@ func reset_trial() -> void:
 	_contacts = 0
 	_last_result = ""
 	_refractory_until = -1.0
-	if player != null and player.has_method("stop_input"):
+	if player != null and player.has_method("stop_input") and hero_start != null:
 		player.stop_input()
-		player.position = HERO_POS
+		player.position = hero_start
 		if "facing_direction" in player:
 			player.set("facing_direction", Vector3(0.0, 0.0, -1.0))
 	for e in enemies:

@@ -49,7 +49,7 @@ func run() -> void:
 	fx = session.get_node("CombatFeedbackFX")
 	trails = session.get_node("SwingTrails")
 	for child in sandbox.get_children():
-		if child.get_script() == load("res://scripts/tools/corner_enemy_toolbar.gd"): toolbar = child
+		if child.get_script() == load("res://scripts/combat/corner_enemy_toolbar.gd"): toolbar = child
 	check(toolbar != null, "real toolbar exists")
 	if toolbar == null: get_tree().quit(1); return
 	reset(); await settle()

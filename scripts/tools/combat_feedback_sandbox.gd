@@ -6,7 +6,7 @@ func _create_preview_player_script() -> GDScript:
 	return preload("res://scripts/combat/combat_feedback_player.gd")
 
 func _create_defense_controller() -> Node:
-	return preload("res://scripts/tools/combat_feedback_session.gd").new()
+	return preload("res://scripts/combat/combat_feedback_session.gd").new()
 
 func _ready() -> void:
 	super._ready()

@@ -208,7 +208,7 @@ func run() -> void:
 	reset(); place(guard); await settle(); until_contact(guard)
 	var toolbar: Node
 	for child in sandbox.get_children():
-		if child.get_script() == load("res://scripts/tools/corner_enemy_toolbar.gd"): toolbar = child
+		if child.get_script() == load("res://scripts/combat/corner_enemy_toolbar.gd"): toolbar = child
 	check(toolbar != null, "actual touch toolbar wired")
 	var touch := InputEventScreenTouch.new()
 	touch.index = 7; touch.pressed = true

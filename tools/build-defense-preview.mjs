@@ -21,7 +21,7 @@ const scene = validation ? (cue ? 'scripts/tools/validate_block_timing_cue.tscn'
 const resources = [scene, 'scripts/tools/fist_defense_sandbox.tscn',
   'scripts/tools/fist_technique_sandbox.tscn',
   'scripts/combat/fist_defense_controller.gd','scripts/combat/fist_defense_player.gd',
-  'scripts/tools/fist_defense_toolbar.gd','scripts/tools/fist_preview_toolbar.gd',
+  'scripts/combat/fist_defense_toolbar.gd','scripts/tools/fist_preview_toolbar.gd',
   'scripts/courtyard/adaptive_screen_root.gd',
   ...['novice','novice_pack','trained','trained_pack'].flatMap(id=>['fist-preview','fist-defense'].map(dir=>`assets/characters/courtyard/${dir}/${id}_frames.tres`))
 ].map(file=>`res://${file}`);

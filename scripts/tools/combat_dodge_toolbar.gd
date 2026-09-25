@@ -1,4 +1,4 @@
-extends "res://scripts/tools/corner_enemy_toolbar.gd"
+extends "res://scripts/combat/corner_enemy_toolbar.gd"
 ## Combat-dodge тулбар: наследует guard/блок/RMB/G/reset, добавляет кнопку Dodge.
 
 

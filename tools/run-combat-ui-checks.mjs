@@ -12,7 +12,7 @@ const godot=process.env.ASHBOUND_GODOT||path.join(local,'.tools/godot/Godot_v4.7
 const out=path.join(root,uiBook?'.tools/ui-book-checks':hudInput?'.tools/hud-input-checks':'.tools/combat-ui-checks');fs.mkdirSync(out,{recursive:true});
 if(!fs.existsSync(path.join(stage,'project.godot')))throw Error('Build validation staging first');
 if(uiBook){
- for(const f of ['scripts/tools/validate_ui_book.gd','scripts/tools/validate_ui_book.tscn','scripts/tools/fist_defense_toolbar.gd','assets/ui/ashbound_ui.tres'])fs.copyFileSync(path.join(root,f),path.join(stage,f));
+ for(const f of ['scripts/tools/validate_ui_book.gd','scripts/tools/validate_ui_book.tscn','scripts/combat/fist_defense_toolbar.gd','assets/ui/ashbound_ui.tres'])fs.copyFileSync(path.join(root,f),path.join(stage,f));
 }
 for(const f of [...(hudInput?['validate_hud_input.gd','validate_hud_input.tscn']:[]),'combat_tools_toolbar.gd','combat_dodge_toolbar.gd','combat_dodge_sandbox.gd','validate_combat_ui.gd','validate_combat_ui.tscn'])fs.copyFileSync(path.join(root,'scripts/tools',f),path.join(stage,'scripts/tools',f));
 if(hudInput)fs.copyFileSync(path.join(root,'scripts/courtyard/courtyard_hud.gd'),path.join(stage,'scripts/courtyard/courtyard_hud.gd'));

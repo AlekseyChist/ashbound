@@ -28,7 +28,7 @@ if(fs.existsSync(checkpointPath)){
 }
 const cache=path.join(root,'.tools/export-staging',qa?'village-walkthrough-preview':'walk-phone-preview','.godot/imported');
 if(fs.existsSync(cache)&&!fs.existsSync(path.join(stage,'.godot/imported')))fs.cpSync(cache,path.join(stage,'.godot/imported'),{recursive:true});
-const version='0.25.1',code=67;
+const version='0.26.0',code=68;
 const title=`AshBound World${qa?' QA':''}`;
 const scene=qa?'scripts/tools/validate_world_village.tscn':'scenes/world/world.tscn';
 const packageId=qa?'org.ashbound.worldvalidation':'org.ashbound.worldpreview';
@@ -45,6 +45,9 @@ const resources=[scene,'scenes/world/world.tscn','scenes/world/village_settlemen
 resources.push(...files.filter(f=>f.startsWith('assets/environment/medieval_kit/Textures/')&&f.endsWith('.png')));
 resources.push(...files.filter(f=>f.startsWith('assets/environment/village-props-v1/')&&/\.(gltf|bin|png)$/.test(f)));
 resources.push(...files.filter(f=>(f.startsWith('assets/audio/village-v1/')||f.startsWith('assets/audio/soundtrack-v1/'))&&f.endsWith('.ogg')));
+// COMBAT-WORLD-01B: combat components load scripts/effects by path (not seen by the exporter).
+resources.push(...files.filter(f=>f.startsWith('scripts/combat/')&&f.endsWith('.gd')));
+resources.push(...['hit','block','perfect_block','windup','swing'].map(id=>'assets/vfx/painted-combat-v1/'+id+'.png'),'assets/characters/courtyard/enemy-preview/wolf_frames.tres');
 if(qa)resources.push('scripts/tools/validate_world_village.gd');
 let presets=fs.readFileSync(path.join(stage,'export_presets.cfg'),'utf8')
  .replaceAll('export_files=PackedStringArray(',`export_files=PackedStringArray(${resources.map(v=>JSON.stringify('res://'+v)).join(', ')}, `)

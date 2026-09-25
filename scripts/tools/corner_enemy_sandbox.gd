@@ -11,10 +11,10 @@ func _create_preview_toolbar() -> CanvasLayer:
 	return preload("res://scripts/tools/corner_enemy_preview_toolbar.gd").new()
 
 func _create_defense_controller() -> Node:
-	return preload("res://scripts/tools/corner_enemy_session.gd").new()
+	return preload("res://scripts/combat/corner_enemy_session.gd").new()
 
 func _create_defense_toolbar() -> Node:
-	return preload("res://scripts/tools/corner_enemy_toolbar.gd").new()
+	return preload("res://scripts/combat/corner_enemy_toolbar.gd").new()
 
 func _ready() -> void:
 	super._ready()

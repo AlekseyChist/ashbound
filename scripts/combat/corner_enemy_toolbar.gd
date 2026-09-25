@@ -1,4 +1,4 @@
-extends "res://scripts/tools/fist_defense_toolbar.gd"
+extends "res://scripts/combat/fist_defense_toolbar.gd"
 
 
 func _build_ui() -> void:

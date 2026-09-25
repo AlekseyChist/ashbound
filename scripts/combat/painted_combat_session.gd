@@ -1,4 +1,4 @@
-extends "res://scripts/tools/combat_feedback_session.gd"
+extends "res://scripts/combat/combat_feedback_session.gd"
 ## Изолированное превью раскрашенных (painted) боевых эффектов:
 ## переопределяются только фабрики FX/трейлов, остальная механика
 ## combat_feedback_session.gd не меняется.
