@@ -23,6 +23,7 @@ const DUMMY_PLAN := Vector2(157.9, 50.0)
 const TOWER_PLAN := Vector2(152.25, 54.6)
 const TOWER_YAW := 0.605
 const INTERACT_RADIUS := 2.2
+const WOOD_REWARD := 10
 const STRIKE_RANGE := 1.8
 const FACING_DOT_MIN := 0.2
 
@@ -65,6 +66,13 @@ func configure(scene: Node3D) -> void:
 	# The hero's progress has no world save yet: a finished lesson restores its guard practice mark.
 	if LessonQuest.stages[quest.stage_index].completed:
 		_run_effect(&"complete_guard_practice")
+
+## INN-REST-01: firewood delivered before the hostess paid in coins is paid once. The world calls
+## this after its save has restored the purse, so the coins are not overwritten.
+func pay_missing_reward() -> void:
+	if quest.flags.get(&"reward_claimed", false) and not quest.flags.get(&"coins_paid", false):
+		_run_effect(&"pay_wood_reward")
+		_changed()
 
 func _ground(plan: Vector2) -> Vector3:
 	var local: Vector2 = plan - world.terrain.ORIGIN
@@ -140,6 +148,11 @@ func _run_effect(effect: StringName) -> void:
 	match effect:
 		&"hide_woodpile_label":
 			woodpile.get_node("Label3D").visible = false
+		&"pay_wood_reward":
+			# Trial sum (owner, 25 Sep): enough for three nights at the forest inn.
+			if not quest.flags.get(&"coins_paid", false):
+				world.get_node("/root/Inventory").add_gold(WOOD_REWARD)
+				quest.flags[&"coins_paid"] = true
 		&"complete_guard_practice":
 			var progression: Node = world.player.get_node_or_null("Progression")
 			if progression != null and progression.has_method("complete_guard_practice"):

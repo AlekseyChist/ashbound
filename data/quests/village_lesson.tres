@@ -19,6 +19,7 @@ stages = Array[StringName]([&"return_wood"])
 forbids_flag = &"reward_claimed"
 name_key = "COURTYARD_NAME_INNKEEPER"
 line_key = "VILLAGE_LESSON_HOST_REWARD"
+effects = Array[StringName]([&"pay_wood_reward"])
 set_flag = &"reward_claimed"
 next_stage = &"meet_guard"
 
@@ -145,4 +146,4 @@ id = &"village_lesson"
 title_key = "MENU_JOURNAL_COURTYARD"
 stages = Array[ExtResource("3_jmd11")]([SubResource("Resource_1hmsr"), SubResource("Resource_f2dav"), SubResource("Resource_6yra5"), SubResource("Resource_orw3k"), SubResource("Resource_m7k2p"), SubResource("Resource_vp28y"), SubResource("Resource_2opys")])
 lines = Array[ExtResource("1_g8uym")]([SubResource("Resource_qvxp3"), SubResource("Resource_ilkp2"), SubResource("Resource_vatek"), SubResource("Resource_cyeaw"), SubResource("Resource_a7r23"), SubResource("Resource_83l5g"), SubResource("Resource_8hy42"), SubResource("Resource_t4y1x"), SubResource("Resource_cji6u"), SubResource("Resource_x62hf"), SubResource("Resource_dtml3"), SubResource("Resource_hv08n"), SubResource("Resource_s8hbm")])
-flags = Array[StringName]([&"reward_claimed"])
+flags = Array[StringName]([&"reward_claimed", &"coins_paid"])

@@ -746,7 +746,7 @@ msgstr "The woodpile is by the workshop: along the street past the well, on your
 
 # Village lesson: the hostess thanks the hero and sends them to the watchman at the tower.
 msgid "VILLAGE_LESSON_HOST_REWARD"
-msgstr "Thank you. You have a place for tonight. Before you head out on the road, find the watchman. He keeps the watchtower at the far end of the street, past the workshop. He will show you how to defend yourself."
+msgstr "Thank you. Here are ten coins for your trouble: they will buy you a bed at the forest inn. Before you head out on the road, find the watchman. He keeps the watchtower at the far end of the street, past the workshop. He will show you how to defend yourself."
 
 # Village lesson: the hostess already has the firewood and repeats the way to the watchman.
 msgid "VILLAGE_LESSON_HOST_ACCEPTED"
@@ -807,3 +807,22 @@ msgstr "Come in, traveller, warm yourself. This is the forest inn. Beds are upst
 # Forest inn: the innkeeper later.
 msgid "INN_KEEPER_REPEAT"
 msgstr "The forest is restless these days. Bring news from the road — I'll always find a way to help."
+
+# Forest inn: renting a bed and sleeping (INN-REST-01).
+msgid "INN_ACTION_RENT"
+msgstr "Rent a bed · {price}"
+
+msgid "INN_ACTION_SLEEP"
+msgstr "Sleep"
+
+msgid "INN_KEEPER_BED_RENTED"
+msgstr "Deal. Your bed is upstairs, right of the stairs, by the chest with the lantern. Sleep till morning."
+
+msgid "INN_KEEPER_BED_YOURS"
+msgstr "The bed is yours, upstairs by the lantern. Go get some sleep."
+
+msgid "INN_KEEPER_BED_NO_MONEY"
+msgstr "A bed is {price} coins a night. Come back when you have them."
+
+msgid "INN_SLEEP_DONE"
+msgstr "You slept well. It is morning."
