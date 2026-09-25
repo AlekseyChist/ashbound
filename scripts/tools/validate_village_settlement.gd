@@ -75,6 +75,7 @@ func run_checks() -> void:
 		var p:=Vector2(tree.x,tree.z)
 		var road: Vector2=world.terrain.road_info(p)
 		check(road.x>=road.y*.5+3.39 and not world.terrain.reserved(p,2),"tree leaves routes clear")
+	await check_forest_floor(space)
 	for language in ["ru","en"]:
 		Localization.set_language(language)
 		await settle(.1)
@@ -157,3 +158,61 @@ func door_route(index: int) -> void:
 	check(await drive(building.to_global(entry+Vector3(0,0,3)),3),id+" walk outside")
 	check(world.player.is_on_floor(),id+" exit grounded")
 	await screen(id+"-outside")
+
+## LANDSCAPE-01: the Poly Haven forest floor. Stones on the meadow, logs, branches, roots and
+## boulders between the trees, grass kept short around them; routes stay clear, big pieces are solid.
+func check_forest_floor(space: PhysicsDirectSpaceState3D) -> void:
+	var dressing: Node3D=world.dressing
+	var counts: Dictionary=dressing.floor_counts
+	check(int(counts.get("stone",0))>=30,"meadow stones "+str(counts))
+	check(int(counts.get("log",0))>=20 and int(counts.get("boulder",0))>=25 and int(counts.get("branches",0))>=40,"forest floor pieces "+str(counts))
+	check(int(counts.get("roots",0))>=80,"roots at a third of the trunks")
+	check(int(counts.get("fern",0))>150,"ferns kept")
+	check(dressing.get_node_or_null("boulder_boulder")==null,"old white boulder replaced")
+	var fern_wind:=0
+	for batch in dressing.foliage_batches:
+		if String(batch.name).begins_with("fern_02"): fern_wind+=1
+	check(fern_wind>0,"new ferns sway in the wind")
+	# Every forest-floor batch instance stands on the ground and off the roads.
+	var off_road:=true
+	var grounded:=true
+	var pieces:=0
+	for placed in dressing.floor_pieces:
+		var name:=String(placed[0])
+		if not (name.begins_with("dead_tree_trunk") or name.begins_with("rock_moss") or name.begins_with("dry_branches")): continue
+		var at: Vector3=(placed[1] as Transform3D).origin
+		var p:=Vector2(at.x,at.z)
+		var road: Vector2=world.terrain.road_info(p)
+		pieces+=1
+		if road.x<road.y*.5+.5: off_road=false
+		if absf(at.y-world.terrain.height_at(p.x,p.y))>.3: grounded=false
+	check(pieces>100,"forest floor batches present (%d)"%pieces)
+	check(off_road,"no log, rock or branch on a road")
+	check(grounded,"forest floor pieces rest on the ground")
+	# Solid: the logs and boulders block the hero like the tree trunks do.
+	var solids:=0
+	for body in dressing.get_children():
+		if body is StaticBody3D and String(body.name).begins_with("FloorSolid"): solids+=1
+	check(solids>=int(counts.log)+int(counts.boulder),"logs and boulders are solid (%d)"%solids)
+	for placed in dressing.floor_pieces:
+		if placed[0]!="dead_tree_trunk": continue
+		var centre: Vector3=dressing.to_global((placed[1] as Transform3D).origin)
+		var hit:=space.intersect_ray(PhysicsRayQueryParameters3D.create(centre+Vector3.UP*3,centre-Vector3.UP,1))
+		check(not hit.is_empty() and String(hit.collider.name).begins_with("FloorSolid"),"a ray from above meets the log's collision")
+		break
+	# Grass: none right at a trunk, short around it, the reviewed density elsewhere.
+	var grass: Node3D=world.grass
+	var tree: Vector3=dressing.tree_positions[140]
+	var key:=Vector2i(floori(tree.x/grass.CHUNK),floori(tree.z/grass.CHUNK))
+	var at_trunk:=0
+	var short:=0
+	var near:=0
+	for clump in grass.chunk_points(key):
+		var d: float=clump.point.distance_to(Vector2(tree.x,tree.z))
+		if d<.8: at_trunk+=1
+		elif d<1.6:
+			near+=1
+			if clump.tall<.8: short+=1
+	check(at_trunk==0,"no grass at the trunk")
+	check(near>0 and short*2>near,"short grass around the trunk (%d of %d)"%[short,near])
+	check(dressing.clearings.size()>=dressing.tree_positions.size()+int(counts.log)+int(counts.boulder),"grass clearings for trunks, logs and rocks")
