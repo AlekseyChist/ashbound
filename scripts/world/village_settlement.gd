@@ -13,6 +13,7 @@ var settings: RefCounted
 var settings_menu: Control
 var audio: Node
 var pocket: CanvasLayer
+var grass: Node3D
 
 func _ready() -> void:
 	super._ready()
@@ -30,6 +31,7 @@ func _ready() -> void:
 	camera_rig.get_camera().far = 220.0
 	select_building(0)
 	atmosphere=Atmosphere.new();atmosphere.name="Atmosphere";add_child(atmosphere);atmosphere.configure(self)
+	grass=preload("res://scripts/world/village_grass.gd").new();grass.name="Grass";add_child(grass);grass.configure(self);grass.set_mode(1)
 	settings=preload("res://scripts/world/village_settings.gd").new()
 	settings.load_settings();settings.apply_distance(self)
 	audio=preload("res://scripts/world/village_audio.gd").new();audio.name="VillageAudio";add_child(audio);audio.configure(self,settings)

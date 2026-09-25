@@ -675,3 +675,12 @@ msgstr ""
 
 msgid "VILLAGE_WEATHER_MANUAL"
 msgstr ""
+
+msgid "VILLAGE_GRASS_OFF"
+msgstr ""
+
+msgid "VILLAGE_GRASS_BLADES"
+msgstr ""
+
+msgid "VILLAGE_GRASS_CARDS"
+msgstr ""

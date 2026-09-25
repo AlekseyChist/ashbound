@@ -732,3 +732,12 @@ msgstr "Draw distance"
 
 msgid "VILLAGE_METRES"
 msgstr "m"
+
+msgid "VILLAGE_GRASS_OFF"
+msgstr "Grass: off"
+
+msgid "VILLAGE_GRASS_BLADES"
+msgstr "Grass: blades"
+
+msgid "VILLAGE_GRASS_CARDS"
+msgstr "Grass: cards"
