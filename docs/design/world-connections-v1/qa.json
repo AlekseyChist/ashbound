@@ -1,9 +1,0 @@
-{
-  "pdf_pages": 3,
-  "repeat_build_identical": true,
-  "independent_shortest_path_cases": 48,
-  "undeclared_proper_road_crossings": [],
-  "numeric_labels_checked": true,
-  "game_changes": false,
-  "visual_review": "Codex reviewed all 3 rendered pages; fixed city/bridge label overlaps; final map reviewed."
-}

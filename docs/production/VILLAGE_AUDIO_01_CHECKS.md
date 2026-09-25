@@ -1,6 +1,6 @@
 # VILLAGE-AUDIO-01 — проверка 0.23.6 / code62
 
-24 сентября 2026. База `b834a819237a7bde068a543cc59726df1d23746b`, ветка `codex/village-audio-settings`. [Карточка](VILLAGE_AUDIO_01_TASK.md), [звуковая опора и исходники](../../art/audio/village-v1/README.md), [снимки и записи](../../art/previews/village-audio-v1/README.md).
+24 сентября 2026. База `b834a819237a7bde068a543cc59726df1d23746b`, ветка `codex/village-audio-settings`. [Карточка](VILLAGE_AUDIO_01_TASK.md), [звуковая опора и исходники](../../art/audio/village-v1/README.md), снимки и записи.
 
 ## Поведение
 
@@ -25,11 +25,11 @@
 
 Обычная APK установлена с проверкой package/versionCode/SHA. Физические касания на S23: Вещи → Настройки, музыка 0%, дальность 300 м, Back, Home/resume, перезапуск и сохранность значений; затем восстановлены 45%/80%/220 м. Снимки и installed.json фиксируют момент проверки, не запрещают владельцу менять значения. После признаков ручной работы владельца автоматические касания прекращены. Открытие/закрытие дверей подтверждены QA APK; дополнительный ручной дверной прогон обычной APK не объявляется завершённым. Обычный EXE также запущен без SCRIPT ERROR/ERROR.
 
-143 файла сопоставлены с обоими экспортами, [хеши](../../art/previews/village-audio-v1/checked-sources.json). Герой: `ACCEPTED_TRAVELER_OK files=40 version=0.19.4`. GLB трёх зданий и 17 существовавших файлов владельца не изменены. В Git могут отличаться только CRLF/LF и конечные пустые строки; [нормализация](../../art/previews/village-audio-v1/source-normalization.json).
+143 файла сопоставлены с обоими экспортами, хеши. Герой: `ACCEPTED_TRAVELER_OK files=40 version=0.19.4`. GLB трёх зданий и 17 существовавших файлов владельца не изменены. В Git могут отличаться только CRLF/LF и конечные пустые строки; нормализация.
 
 ## Сборки
 
-Пересборка: `node tools/build-village-settlement.mjs` и `node tools/build-village-settlement.mjs --validate`, см. фактические параметры сборщика. Путь обычного APK `.tools/builds/android/ashbound-village-settlement-preview.apk`; EXE `.tools/builds/village-settlement/0.23.6/AshBound-Forest-Village.exe`. [Манифесты](../../art/previews/village-audio-v1/builds.json).
+Пересборка: `node tools/build-village-settlement.mjs` и `node tools/build-village-settlement.mjs --validate`, см. фактические параметры сборщика. Путь обычного APK `.tools/builds/android/ashbound-village-settlement-preview.apk`; EXE `.tools/builds/village-settlement/0.23.6/AshBound-Forest-Village.exe`. Манифесты.
 
 - Обычный APK: `5cc986b3e97564585fdb79c80848c7c44e8de20612326bacc426d6e6b8f0ce1e`.
 - QA APK: `fdda36b13be2da64816366b0d2acf900ac51556c387b64313d040075fbebc409`.

@@ -33,3 +33,5 @@ docs/**/checks.json
 docs/**/qa.json
 docs/**/browser-checks.json
 docs/**/metrics.json
+docs/art/cons-01/images/
+docs/**/*.pdf

@@ -6,7 +6,7 @@ from mathutils import Vector
 ROOT = Path(__file__).resolve().parents[2]
 BLEND_DIR = ROOT / "art/blender/village-forest-v1"
 GLB_DIR = ROOT / "assets/environment/village-forest-v1"
-PNG_DIR = ROOT / "art/previews/village-forest-v1"
+PNG_DIR = ROOT / "local/previews/village-forest-v1"
 for d in (BLEND_DIR, GLB_DIR, PNG_DIR):
     d.mkdir(parents=True, exist_ok=True)
 

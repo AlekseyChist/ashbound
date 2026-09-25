@@ -30,7 +30,7 @@
 | `.tools/builds/windows/AshBound.exe` | `0D2D9C9A9B37EEE8B74082FC26D191468D28FB35E3EE41CECF97C62CFA3FA66C` |
 | `.tools/builds/android/ashbound-courtyard.apk` | `CDD016D78C21AC4D0D0ACF7A5092C47F7601785382F1594AAA1309861D42DFFD` |
 
-Снимки: [сцена и цель](../../art/previews/courtyard-visual-component.png), [Windows-сборка](../../art/previews/courtyard-visual-windows.png), [OnePlus 13T](../../art/previews/courtyard-visual-oneplus.png). Случайный снимок экрана блокировки удалён и в Git не включён.
+Снимки: сцена и цель, Windows-сборка, OnePlus 13T. Случайный снимок экрана блокировки удалён и в Git не включён.
 
 Экспортёр сообщает о выборе Android Build Tools 30.0.3 при target SDK 36; APK подписан и установлен. Импорт открытой старой сцены сообщает о резервном пути для UID модели Paladin и неподдерживаемом объёмном тумане; новая сцена двора эти предупреждения в игровом запуске не выдаёт.
 

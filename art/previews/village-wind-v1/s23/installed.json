@@ -1,9 +1,0 @@
-{
-  "package": "org.ashbound.villagepreview",
-  "version": "0.23.4",
-  "code": 60,
-  "sha256": "b7ae88893627470fd6e5f6458415921d3ab7cf6707c2ef0182b170a89d7d413c",
-  "paused_hour": 12.678363083333418,
-  "resumed_hour": 12.712493522559,
-  "physical_controls": true
-}

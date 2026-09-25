@@ -5,7 +5,7 @@ from mathutils import Vector
 
 ROOT = Path(__file__).resolve().parents[2]
 BUILD_DATA = ROOT / "art/blender/forest-village-v1/build-data.json"
-PREVIEW_DIR = ROOT / "art/previews/forest-village-v1"
+PREVIEW_DIR = ROOT / "local/previews/forest-village-v1"
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 def parse_args():

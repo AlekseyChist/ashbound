@@ -1,9 +1,0 @@
-{
-  "package": "org.ashbound.villagepreview",
-  "sha256": "c560a7ed36e86c7fc79104d7161f71c0fca34f9b7a100c110bde5aa002647561",
-  "version": [
-    "versionCode=54 minSdk=24 targetSdk=36",
-    "versionName=0.22.0"
-  ],
-  "pid": "19062"
-}
