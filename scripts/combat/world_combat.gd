@@ -1,8 +1,8 @@
 extends Node
 ## COMBAT-WORLD-01B (D-087): the sandbox encounter with painted effects, in the world:
 ## one wolf by the trail to the forest inn, past the village. The hero keeps the accepted
-## D-059 poses (stance, attack); block and hit have no poses of their own yet, so the painted
-## block effects and the recoil show them until the poses are redrawn.
+## D-059 poses (stance, attack) and shows the courtyard's whole-character guard and hit poses
+## (fist-defense, trained) while blocking and when hit, with the painted effects on top.
 ## The combat code asks its owner for `level` (here the player rig: HUD, CameraRig,
 ## InventoryMenu, Player) and `technique`.
 const SessionScript = preload("res://scripts/combat/painted_combat_session.gd")
@@ -41,6 +41,8 @@ func configure(scene: Node3D) -> void:
 	for enemy in session.enemies:
 		enemy.flee_after_hits = FLEE_HITS
 	world.player.strike_requested.connect(session.hero_strike)
+	# The hero's own guard and hit poses (courtyard fist-defense, merged into the world frames).
+	world.player.visual_action_source = session
 	toolbar = ToolbarScript.new()
 	toolbar.name = "BlockControls"
 	add_child(toolbar)

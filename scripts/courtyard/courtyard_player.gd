@@ -280,10 +280,21 @@ func _notification(what: int) -> void:
 
 # --- Визуальная презентация (idle/walk/attack x front/back/left/right) ---
 
+## Optional fight that asks for the whole-character poses (`get_visual_action()` -> &"guard" / &"hit"),
+## as the courtyard defense preview does; the world combat sets it. Empty keeps the plain actions.
+var visual_action_source: Object = null
+
+
 func _update_visual() -> void:
 	var visual := $Visual as CourtyardCharacterVisual
 	if visual == null:
 		return
+	if not _attack_active and is_instance_valid(visual_action_source):
+		var pose: StringName = visual_action_source.get_visual_action()
+		# The hit pose shows during the recoil; the guard pose while standing (walking keeps the walk).
+		if pose == &"hit" or (pose == &"guard" and velocity.x == 0.0 and velocity.z == 0.0):
+			visual.update_visual(pose, facing_direction, walk_pose_fps, run_pose_fps)
+			return
 
 	# Текущее действие (отдельно от имени клипа).
 	# Бег — только при фактическом горизонтальном движении (get_real_velocity

@@ -100,6 +100,12 @@ func run() -> void:
 	await settle()
 	check(until_state("windup"), "the wolf winds up a lunge")
 	check(until_contact(0) and events.back() == "hit", "an unblocked lunge hits the hero")
+	# The hero's own poses (courtyard fist-defense, merged into the world frames).
+	var body: AnimatedSprite3D = player.get_node("Visual/Body")
+	var frames: SpriteFrames = body.sprite_frames
+	player.velocity = Vector3.ZERO
+	player._update_visual()
+	check(String(body.animation).begins_with("hit_") and is_equal_approx(body.pixel_size, float(frames.get_meta("pixel_size_hit_" + String(body.animation).get_slice("_", 1)))), "a hit shows the hit pose at its own scale (%s)" % body.animation)
 	check(session.get_visual_action() == &"hit", "the hero recoils")
 	# Walking away sends it home.
 	player.global_position = wolf.global_position + Vector3(0, 0, -12)
@@ -111,6 +117,9 @@ func run() -> void:
 	await settle()
 	session.set_guard(true)
 	check(until_contact(0) and events.back() == "block", "holding Block blocks")
+	player.velocity = Vector3.ZERO
+	player._update_visual()
+	check(String(body.animation).begins_with("guard_") and is_equal_approx(body.pixel_size, float(frames.get_meta("pixel_size_guard_" + String(body.animation).get_slice("_", 1)))), "holding Block shows the guard pose (%s)" % body.animation)
 	place_near(1.8)
 	await settle()
 	check(until_state("windup") and until_cue(), "the perfect-block cue opens before contact")
@@ -121,6 +130,10 @@ func run() -> void:
 	world.hud.attack_pressed.emit()
 	check(not player.is_attacking(), "Attack is ignored while Block is held")
 	session.set_guard(false)
+	tick(1.0)
+	player._update_visual()
+	check(String(body.animation).begins_with("idle"), "without Block the hero stands in the usual stance (%s)" % body.animation)
+	check(frames == preload("res://assets/characters/world-graybox-v1/traveler_frames.tres") and frames.get_frame_count("idle_front") == 4, "the accepted frames are kept, the poses only added")
 	# The hero's strike.
 	place_near(1.4)
 	await settle()
