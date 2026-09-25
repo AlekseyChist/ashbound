@@ -469,10 +469,8 @@ func _storage_name_key(kind: String) -> String:
 	match kind:
 		"pocket":
 			return "INV_STORAGE_POCKET"
-		"pouch":
-			return "INV_STORAGE_POUCH"
-		"backpack":
-			return "INV_STORAGE_BACKPACK"
+		"wallet":
+			return "INV_STORAGE_WALLET"
 		_:
 			return ""
 

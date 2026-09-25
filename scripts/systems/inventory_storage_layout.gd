@@ -5,7 +5,8 @@ extends RefCounted
 ## Does not own or copy items; canonical data stays in Inventory.items.
 
 const _MAX_TOTAL_CAPACITY := 1000000
-const _VALID_KINDS: Array = ["pocket", "pouch", "backpack"]
+## D-057: the main inventory ("pocket") and the wallet section. Wearable bags are gone.
+const _VALID_KINDS: Array = ["pocket", "wallet"]
 
 var _definitions: Array = []
 var _assignments: Dictionary = {}

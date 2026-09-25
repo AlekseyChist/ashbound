@@ -4,13 +4,9 @@ extends Node
 ## No training, rewards or saves.
 
 const NOVICE_FRAMES := preload("res://assets/characters/courtyard/fist-preview/novice_frames.tres")
-const NOVICE_PACK_FRAMES := preload("res://assets/characters/courtyard/fist-preview/novice_pack_frames.tres")
 const TRAINED_FRAMES := preload("res://assets/characters/courtyard/fist-preview/trained_frames.tres")
-const TRAINED_PACK_FRAMES := preload("res://assets/characters/courtyard/fist-preview/trained_pack_frames.tres")
 const NOVICE_DEFENSE_FRAMES := preload("res://assets/characters/courtyard/fist-defense/novice_frames.tres")
-const NOVICE_DEFENSE_PACK_FRAMES := preload("res://assets/characters/courtyard/fist-defense/novice_pack_frames.tres")
 const TRAINED_DEFENSE_FRAMES := preload("res://assets/characters/courtyard/fist-defense/trained_frames.tres")
-const TRAINED_DEFENSE_PACK_FRAMES := preload("res://assets/characters/courtyard/fist-defense/trained_pack_frames.tres")
 
 @export var defense_preview: bool = false
 
@@ -33,10 +29,6 @@ func _ready() -> void:
 		{"id": "traveler_clothing_pocket", "kind": "pocket", "capacity": 6},
 	]):
 		push_error("FIST_SANDBOX_FAIL: configure_storage")
-		get_tree().quit(1)
-		return
-	if not inventory.add_item("traveler_backpack"):
-		push_error("FIST_SANDBOX_FAIL: add_item traveler_backpack")
 		get_tree().quit(1)
 		return
 
@@ -132,29 +124,29 @@ func _on_strike_requested() -> void:
 	_strike_count += 1
 	print("ASHBOUND_FIST_SANDBOX_STRIKE count=%d" % _strike_count)
 
+## D-057: the hero has no backpack. Kept for the combat QA scripts: turning it off always
+## succeeds, turning it on always fails.
+func set_backpack_enabled(enabled: bool) -> bool:
+	return not enabled
+
+
+func is_backpack_enabled() -> bool:
+	return false
+
+
 func set_technique(value: String) -> bool:
 	if _player == null:
 		return false
 	if value != "novice" and value != "trained":
 		return false
-	var bare: SpriteFrames
-	var worn: SpriteFrames
+	# D-057: the hero has no backpack, so each technique has a single frame set.
+	var frames: SpriteFrames
 	if defense_preview:
-		if value == "novice":
-			bare = NOVICE_DEFENSE_FRAMES
-			worn = NOVICE_DEFENSE_PACK_FRAMES
-		else:
-			bare = TRAINED_DEFENSE_FRAMES
-			worn = TRAINED_DEFENSE_PACK_FRAMES
+		frames = NOVICE_DEFENSE_FRAMES if value == "novice" else TRAINED_DEFENSE_FRAMES
 	else:
-		if value == "novice":
-			bare = NOVICE_FRAMES
-			worn = NOVICE_PACK_FRAMES
-		else:
-			bare = TRAINED_FRAMES
-			worn = TRAINED_PACK_FRAMES
-	var layer: Node = _player.get_node("Visual/BackpackLayer")
-	if layer == null or not layer.configure_body_frame_pair(bare, worn):
+		frames = NOVICE_FRAMES if value == "novice" else TRAINED_FRAMES
+	var visual: Node = _player.get_node("Visual")
+	if visual == null or not visual.set_appearance_frames(frames):
 		return false
 	if defense != null and technique != value:
 		defense.cancel_trial()
@@ -165,36 +157,3 @@ func set_technique(value: String) -> bool:
 	return true
 
 
-func set_backpack_enabled(enabled: bool) -> bool:
-	if _player == null:
-		return false
-	var inventory: Node = get_node("/root/Inventory")
-	var worn: Dictionary = inventory.get_worn_storage("backpack")
-	if enabled == (not worn.is_empty()):
-		return true
-	if enabled:
-		var found := ""
-		for entry in inventory.items:
-			if entry.id == "traveler_backpack":
-				found = entry.instance_id
-				break
-		if found == "":
-			return false
-		if not inventory.equip_storage_item({"instance_id": found}):
-			return false
-	else:
-		if not inventory.unequip_storage_item("backpack", "traveler_clothing_pocket"):
-			return false
-	if is_backpack_enabled() != enabled:
-		return false
-	var layer: Node = _player.get_node("Visual/BackpackLayer")
-	if layer != null and layer.has_method("refresh_visual"):
-		layer.refresh_visual()
-	if _toolbar != null:
-		_toolbar.refresh()
-	print("ASHBOUND_FIST_SANDBOX_BACKPACK=%s" % ("on" if is_backpack_enabled() else "off"))
-	return true
-
-func is_backpack_enabled() -> bool:
-	var inventory: Node = get_node("/root/Inventory")
-	return not inventory.get_worn_storage("backpack").is_empty()

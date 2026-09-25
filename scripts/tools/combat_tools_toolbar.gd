@@ -63,9 +63,6 @@ func refresh() -> void:
 		_title.text = loc.text("COMBAT_TOOLS_TITLE")
 		_novice_button.text = loc.text("FIST_PREVIEW_NOVICE")
 		_trained_button.text = loc.text("FIST_PREVIEW_TRAINED")
-		_backpack_button.text = loc.text(
-			"FIST_PREVIEW_PACK_ON" if _owner.is_backpack_enabled() else "FIST_PREVIEW_PACK_OFF"
-		)
 		_view_button.text = loc.text("FIST_PREVIEW_VIEW")
 		_reset_button.text = loc.text("DEFENSE_RESET")
 		var is_touch := OS.has_feature("android")
@@ -76,11 +73,9 @@ func refresh() -> void:
 	var tech: String = _owner.technique
 	_novice_button.set_pressed_no_signal(tech == "novice")
 	_trained_button.set_pressed_no_signal(tech == "trained")
-	_backpack_button.set_pressed_no_signal(_owner.is_backpack_enabled())
 	_apply_button_style(_toggle, false)
 	_apply_button_style(_novice_button, tech == "novice")
 	_apply_button_style(_trained_button, tech == "trained")
-	_apply_button_style(_backpack_button, _owner.is_backpack_enabled())
 	_apply_button_style(_view_button, false)
 	_apply_button_style(_reset_button, false)
 
@@ -273,6 +268,7 @@ func _build_ui() -> void:
 	_novice_button = _make_button("NoviceButton", "FIST_PREVIEW_NOVICE", Vector2(260, 120))
 	_trained_button = _make_button("TrainedButton", "FIST_PREVIEW_TRAINED", Vector2(260, 120))
 	_backpack_button = _make_button("BackpackButton", "FIST_PREVIEW_PACK_OFF", Vector2(260, 120))
+	_backpack_button.visible = false
 	_view_button = _make_button("ViewButton", "FIST_PREVIEW_VIEW", Vector2(260, 120), false)
 	_reset_button = _make_button("ToolsResetButton", "DEFENSE_RESET", Vector2(260, 120), false)
 
@@ -387,7 +383,7 @@ func _activate(index: int) -> void:
 		1:
 			_owner.set_technique("trained")
 		2:
-			_owner.set_backpack_enabled(not _owner.is_backpack_enabled())
+			pass # D-057: the backpack toggle is gone; the slot keeps button indices stable.
 		3:
 			_rotate_view()
 		4:

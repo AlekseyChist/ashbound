@@ -164,27 +164,13 @@ func _run() -> void:
 	check(player.get_visual_direction() == &"back", "restored direction not back")
 	check(is_equal_approx(body.pixel_size, original_meta_back), "restored pixel size wrong")
 
-	# Physical equip/unequip during actual gameplay attack must not repeat strikes.
-	var inventory: Node = root.get_node("Inventory")
-	check(inventory.add_item("traveler_backpack"),"obtain backpack for combat regression")
-	var bag_id := ""
-	for entry: Dictionary in inventory.items:
-		if entry.id=="traveler_backpack": bag_id=str(entry.instance_id)
+	# D-057: no backpack layer; one attack still emits exactly one strike.
+	check(player.get_node_or_null("Visual/BackpackLayer") == null,"no backpack layer on the hero")
 	var before_strikes := strikes
 	player.request_attack()
-	await frames(2)
-	var attack_before: float=player._attack_time
-	check(inventory.equip_storage_item({"instance_id":bag_id}),"equip backpack during strike")
-	player.get_node("Visual/BackpackLayer").refresh_visual()
-	check(player._attack_time==attack_before and player._attack_active,"equip must preserve attack timer")
-	check(body.sprite_frames==load("res://assets/characters/courtyard/traveler_backpack_frames.tres"),"painted combat appearance")
-	await frames(2)
-	attack_before=player._attack_time
-	check(inventory.unequip_storage_item("backpack","traveler_clothing_pocket"),"remove during strike")
-	player.get_node("Visual/BackpackLayer").refresh_visual()
-	check(player._attack_time==attack_before and body.sprite_frames==original_frames,"restore appearance without restarting combat")
-	await frames(40)
-	check(strikes==before_strikes+1,"backpack transition emits exactly one strike")
+	await frames(44)
+	check(body.sprite_frames==original_frames,"appearance unchanged by the attack")
+	check(strikes==before_strikes+1,"one attack emits exactly one strike")
 
 	level.queue_free()
 	await frames(2)

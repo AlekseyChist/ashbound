@@ -16,7 +16,7 @@ func check(condition: bool, label: String) -> void:
 		printerr("STORAGE_FAIL: " + label)
 
 func defs() -> Array:
-	return [{"id": "coat", "kind": "pocket", "capacity": 1}, {"id": "bag", "kind": "backpack", "capacity": 2}]
+	return [{"id": "coat", "kind": "pocket", "capacity": 1}, {"id": "bag", "kind": "wallet", "capacity": 2}]
 
 func handle(id: String) -> Dictionary:
 	for item in inv.items:

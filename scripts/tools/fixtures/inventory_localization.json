@@ -145,14 +145,9 @@
     "ru": "Карман одежды"
   },
   {
-    "key": "INV_STORAGE_POUCH",
-    "en": "Belt pouch",
-    "ru": "Поясной мешочек"
-  },
-  {
-    "key": "INV_STORAGE_BACKPACK",
-    "en": "Backpack",
-    "ru": "Рюкзак"
+    "key": "INV_STORAGE_WALLET",
+    "en": "Wallet",
+    "ru": "Кошелёк"
   },
   {
     "key": "INV_STORAGE_USAGE",
@@ -180,19 +175,9 @@
     "ru": "За пазухой"
   },
   {
-    "key": "TOUCH_BACKPACK",
-    "en": "Backpack",
-    "ru": "Рюкзак"
-  },
-  {
-    "key": "TOUCH_POUCH",
-    "en": "Belt pouch",
-    "ru": "Мешочек"
-  },
-  {
-    "key": "TOUCH_NOT_WORN",
-    "en": "Not worn",
-    "ru": "Не надет"
+    "key": "TOUCH_WALLET",
+    "en": "Wallet",
+    "ru": "Кошелёк"
   },
   {
     "key": "TOUCH_DRAG_HINT",
@@ -213,15 +198,5 @@
     "key": "TOUCH_MOVE_FAILED",
     "en": "Cannot move this item here.",
     "ru": "Сюда нельзя переложить эту вещь."
-  },
-  {
-    "key": "ITEM_TRAVELER_BACKPACK_NAME",
-    "en": "Travel backpack",
-    "ru": "Дорожный рюкзак"
-  },
-  {
-    "key": "ITEM_BELT_POUCH_NAME",
-    "en": "Belt pouch",
-    "ru": "Поясной мешочек"
   }
 ]

@@ -45,8 +45,6 @@ static func can_equip(template: Dictionary, slot: String) -> bool:
 			return _legacy_type(template) == TYPE_WEAPON
 		"armor":
 			return _legacy_type(template) == TYPE_ARMOR
-		"backpack", "pouch":
-			return _legacy_type(template) == TYPE_MISC
 		_:
 			return false
 	return false
@@ -83,10 +81,6 @@ static func _category(t: Dictionary) -> String:
 	match id:
 		"courtyard_sketch":
 			return "object"
-		"traveler_backpack":
-			return "equipment"
-		"belt_pouch":
-			return "equipment"
 		_:
 			pass
 	var legacy := _legacy_type(t)
@@ -116,10 +110,6 @@ static func _subtype(t: Dictionary, category: String) -> String:
 	match id:
 		"courtyard_sketch":
 			return "map"
-		"traveler_backpack":
-			return "backpack"
-		"belt_pouch":
-			return "pouch"
 		_:
 			pass
 	match category:
@@ -205,14 +195,6 @@ static func _equipment_slot(t: Dictionary, category: String) -> String:
 			if _legacy_type(t) == TYPE_ARMOR:
 				return "armor"
 			return ""
-		"equipment":
-			match _subtype(t, category):
-				"backpack":
-					return "backpack" if _legacy_type(t) == TYPE_MISC else ""
-				"pouch":
-					return "pouch" if _legacy_type(t) == TYPE_MISC else ""
-				_:
-					return ""
 		_:
 			return ""
 

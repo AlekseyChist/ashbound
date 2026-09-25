@@ -46,36 +46,62 @@ const InventoryStorageLayoutScript := preload("res://scripts/systems/inventory_s
 var _storage_layout: RefCounted = null
 # Защита от реентерабельных мутаций раскладки во время commit + сигналов
 var _storage_guard := false
+# Внешний commit (выброс предмета в мир и т.п.) запрещает любые изменения инвентаря
+# из обработчиков сигналов до своего завершения.
+var _commit_guard := false
 
-# Явный preload носимого хранилища (INV-01C): не зависит от глобального class cache
-const InventoryWearableStorageScript = preload("res://scripts/systems/inventory_wearable_storage.gd")
-
-# Носимое хранилище: рюкзак/мешок, которые можно надеть
-var worn_storage: Dictionary = {"backpack": null, "pouch": null}
-# Защита от реентерабельных операций с носимым хранилищем
-var _wearable_guard: bool = false
+## D-057: рюкзак и поясной мешочек убраны из игры. Старые сохранения с ними
+## переносятся при загрузке (_migrate_legacy_bags): сами сумки исчезают,
+## их содержимое раскладывается в основной инвентарь, затем в кошелёк.
+const LEGACY_BAG_IDS: Array[String] = ["traveler_backpack", "belt_pouch"]
+const LEGACY_WORN_PREFIX := "worn_storage:"
 
 # База предметов
 var item_database: Dictionary = {}
 
 
-func get_worn_storage(kind: String) -> Dictionary:
-	var entry = worn_storage.get(kind)
-	if typeof(entry) == TYPE_DICTIONARY:
-		return entry.duplicate(true)
-	return {}
-
-
-func equip_storage_item(handle: Dictionary) -> bool:
-	return InventoryWearableStorageScript.equip(self, handle)
-
-
-func unequip_storage_item(kind: String, dest: String) -> bool:
-	return InventoryWearableStorageScript.unequip(self, kind, dest)
-
-
+## Снять оружие/броню прямо в выбранный контейнер хранилища (жест перетаскивания).
 func unequip_to_storage(slot: String, dest: String) -> bool:
-	return InventoryWearableStorageScript.unequip_equipment(self, slot, dest)
+	if _commit_guard:
+		return false
+	if slot != SLOT_WEAPON and slot != SLOT_ARMOR:
+		return false
+	if _trade_guard or _storage_guard or _storage_layout == null:
+		return false
+	var item: Variant = equipped.get(slot)
+	if not (item is Dictionary):
+		return false
+	var dest_free := false
+	for container in get_storage_containers():
+		if str(container.get("id", "")) == dest:
+			dest_free = int(container.get("used", 0)) < int(container.get("capacity", 0))
+			break
+	if not dest_free:
+		return false
+	var next_items: Array = items.duplicate()
+	next_items.append(item)
+	if next_items.size() > mini(max_capacity, int(_storage_layout.get_capacity())):
+		return false
+	var candidate: RefCounted = InventoryStorageLayoutScript.new()
+	if not candidate.configure(_storage_layout.get_containers(), items):
+		return false
+	if not candidate.load_placements(_storage_layout.get_save_data(), items):
+		return false
+	if not candidate.reconcile(next_items):
+		return false
+	if not candidate.move(str(item.get("instance_id", "")), dest, next_items):
+		return false
+	var next_equipped: Dictionary = equipped.duplicate()
+	next_equipped[slot] = null
+	_storage_guard = true
+	items = next_items
+	equipped = next_equipped
+	_storage_layout = candidate
+	_apply_equipment_stats()
+	storage_changed.emit()
+	item_unequipped.emit(slot)
+	_storage_guard = false
+	return true
 
 
 func _ready() -> void:
@@ -92,24 +118,6 @@ func _init_item_database() -> void:
 		"value": 0,
 		"stackable": false,
 		"icon": "res://assets/ui/maps/courtyard-sketch-v1.png"
-	}
-	item_database["traveler_backpack"] = {
-		"id": "traveler_backpack",
-		"type": ItemType.MISC,
-		"name": "Дорожный рюкзак",
-		"description": "",
-		"value": 30,
-		"stackable": false,
-		"icon": "res://assets/ui/inventory/backpack-v1.png"
-	}
-	item_database["belt_pouch"] = {
-		"id": "belt_pouch",
-		"type": ItemType.MISC,
-		"name": "Поясной мешочек",
-		"description": "",
-		"value": 10,
-		"stackable": false,
-		"icon": "res://assets/ui/inventory/pouch-v1.png"
 	}
 	# Оружие
 	item_database["rusty_sword"] = {
@@ -219,8 +227,6 @@ func _init_item_database() -> void:
 	# Каталог: category/subtype/tags определяются каталогом, а не сохранёнными копиями
 	var _catalog_meta := {
 		"courtyard_sketch": {"category": "object", "subtype": "map", "tags": []},
-		"traveler_backpack": {"category": "equipment", "subtype": "backpack", "tags": []},
-		"belt_pouch": {"category": "equipment", "subtype": "pouch", "tags": []},
 		"rusty_sword": {"category": "weapon", "subtype": "sword", "tags": []},
 		"iron_sword": {"category": "weapon", "subtype": "sword", "tags": []},
 		"cultist_blade": {"category": "weapon", "subtype": "sword", "tags": ["magic"]},
@@ -242,7 +248,7 @@ func _init_item_database() -> void:
 # === ИНВЕНТАРЬ ===
 
 func add_item(item_id: String, quantity: int = 1) -> bool:
-	if _wearable_guard:
+	if _commit_guard:
 		return false
 	if quantity <= 0:
 		return false
@@ -330,7 +336,7 @@ func add_item(item_id: String, quantity: int = 1) -> bool:
 
 
 func remove_item(item_id: String, quantity: int = 1) -> bool:
-	if _wearable_guard:
+	if _commit_guard:
 		return false
 	if quantity <= 0:
 		return false
@@ -392,7 +398,7 @@ func _generate_instance_id() -> String:
 # === ЭКИПИРОВКА ===
 
 func equip_item(item: Dictionary) -> bool:
-	if _wearable_guard:
+	if _commit_guard:
 		return false
 	# item — это HANDLE: используем только instance_id, остальное игнорируем
 	var instance_id = _get_handle_instance_id(item)
@@ -486,7 +492,7 @@ func equip_item(item: Dictionary) -> bool:
 
 
 func unequip_slot(slot: String) -> bool:
-	if _wearable_guard:
+	if _commit_guard:
 		return false
 	if not equipped.has(slot):
 		return false
@@ -549,7 +555,7 @@ func get_equipped(slot: String) -> Dictionary:
 # === ИСПОЛЬЗОВАНИЕ ПРЕДМЕТОВ ===
 
 func use_item(item: Dictionary) -> bool:
-	if _wearable_guard:
+	if _commit_guard:
 		return false
 	# item — это HANDLE: используем только instance_id, остальное игнорируем
 	var instance_id = _get_handle_instance_id(item)
@@ -648,9 +654,6 @@ func resolve_owned_item(handle: Dictionary) -> Dictionary:
 	for value in equipped.values():
 		if (value is Dictionary) and String(value.get("instance_id", "")) == instance_id:
 			found.append(value)
-	for value in worn_storage.values():
-		if (value is Dictionary) and String(value.get("instance_id", "")) == instance_id:
-			found.append(value)
 	if found.size() != 1:
 		return {}
 	var canonical: Dictionary = found[0]
@@ -716,15 +719,6 @@ func has_carried_tag(tag: String) -> bool:
 		var tags = describe_item_id(id).get("tags", [])
 		if (tags is Array) and tags.has(tag):
 			return true
-	for value in worn_storage.values():
-		if not (value is Dictionary):
-			continue
-		var id = value.get("id", "")
-		if not (id is String) or id == "":
-			continue
-		var tags = describe_item_id(id).get("tags", [])
-		if (tags is Array) and tags.has(tag):
-			return true
 	return false
 
 
@@ -735,7 +729,7 @@ func get_item_cell(instance_id: String) -> int:
 	return int(result) if result is int else -1
 
 func move_item_to_cell(handle: Dictionary, destination: String, cell: int) -> bool:
-	if _trade_guard or _storage_guard or _wearable_guard:
+	if _trade_guard or _storage_guard or _commit_guard:
 		return false
 	if _storage_layout == null:
 		return false
@@ -773,7 +767,7 @@ func _safe_name(item: Dictionary) -> String:
 # === ЗОЛОТО ===
 
 func add_gold(amount: int) -> void:
-	if _wearable_guard:
+	if _commit_guard:
 		return
 	if _trade_guard or amount <= 0 or gold < 0:
 		return
@@ -785,7 +779,7 @@ func add_gold(amount: int) -> void:
 
 
 func remove_gold(amount: int) -> bool:
-	if _wearable_guard:
+	if _commit_guard:
 		return false
 	if _trade_guard or amount <= 0 or gold < 0:
 		return false
@@ -805,7 +799,7 @@ func has_gold(amount: int) -> bool:
 # === ТОРГОВЛЯ ===
 
 func sell_item(item: Dictionary) -> bool:
-	if _wearable_guard:
+	if _commit_guard:
 		return false
 	if _trade_guard:
 		return false
@@ -901,7 +895,7 @@ func sell_item(item: Dictionary) -> bool:
 
 
 func buy_item(item_id: String, price: int) -> bool:
-	if _wearable_guard:
+	if _commit_guard:
 		return false
 	if _trade_guard:
 		return false
@@ -1027,7 +1021,7 @@ func get_effective_capacity() -> int:
 
 
 func configure_storage(definitions: Array) -> bool:
-	if _wearable_guard:
+	if _commit_guard:
 		return false
 	if _trade_guard or _storage_guard:
 		return false
@@ -1070,7 +1064,7 @@ func configure_storage(definitions: Array) -> bool:
 
 
 func move_item_to_storage(item: Dictionary, destination_id: String) -> bool:
-	if _wearable_guard:
+	if _commit_guard:
 		return false
 	if _trade_guard or _storage_guard:
 		return false
@@ -1145,14 +1139,11 @@ func get_save_data() -> Dictionary:
 	}
 	if is_storage_configured():
 		data["storage"] = _deep_copy(_storage_layout.get_save_data())
-	# worn_storage добавляем только если есть носимые слоты (не legacy-пустое)
-	if worn_storage.get("backpack") != null or worn_storage.get("pouch") != null:
-		data["worn_storage"] = _deep_copy(worn_storage)
 	return data
 
 
 func load_save_data(data: Dictionary) -> bool:
-	if _wearable_guard:
+	if _commit_guard:
 		return false
 	if _trade_guard:
 		return false
@@ -1166,7 +1157,6 @@ func load_save_data(data: Dictionary) -> bool:
 	items = validated["items"]
 	equipped = validated["equipped"]
 	gold = validated["gold"]
-	worn_storage = validated["worn_storage"]
 	var candidate_layout: RefCounted = validated.get("storage_layout", null)
 	if candidate_layout != null:
 		_storage_layout = candidate_layout
@@ -1179,7 +1169,10 @@ func load_save_data(data: Dictionary) -> bool:
 	return true
 
 
-func _validate_save_data(data: Dictionary) -> Dictionary:
+func _validate_save_data(source: Dictionary) -> Dictionary:
+	var data := _migrate_legacy_bags(source)
+	if data.is_empty():
+		return {}
 	if not data.has("schema_version") or not data.has("items") or not data.has("equipped") or not data.has("gold"):
 		return {}
 
@@ -1199,9 +1192,7 @@ func _validate_save_data(data: Dictionary) -> Dictionary:
 	if not (raw_gold is int) or raw_gold < 0:
 		return {}
 
-	# Проверяем количество записей до обработки каждой записи.
-	# Используем max_capacity, а не get_effective_capacity(): входящий сохранённый
-	# надетый рюкзак может восстановить больше вместимости, чем runtime-карман.
+	# Количество записей проверяется до разбора каждой записи.
 	if raw_items.size() > max_capacity:
 		return {}
 
@@ -1248,29 +1239,93 @@ func _validate_save_data(data: Dictionary) -> Dictionary:
 		"gold": raw_gold,
 	}
 
-	# Надетое хранилище: те же seen_ids, что и для items/equipped. null — невалидно.
-	var parsed_worn: Variant = InventoryWearableStorageScript.parse_saved(self, data.get("worn_storage", null), seen_ids)
-	if parsed_worn == null:
-		return {}
-	result["worn_storage"] = parsed_worn
-
 	# Раскладка хранилища: текущие определения — доверенная runtime-конфигурация,
 	# из сохранения восстанавливаются только placements.
 	var has_storage := data.has("storage")
 	if is_storage_configured():
-		# Кандидат строится по runtime-базовым определениям плюс фактические
-		# входящие надетые предметы, никогда — по сохранённой вместимости.
-		var candidate: RefCounted = InventoryWearableStorageScript.plan_layout(self, new_items, parsed_worn, false)
-		if candidate == null:
+		var candidate: RefCounted = InventoryStorageLayoutScript.new()
+		if not candidate.configure(_storage_layout.get_containers(), new_items):
+			return {}
+		if new_items.size() > mini(max_capacity, int(candidate.get_capacity())):
 			return {}
 		if has_storage:
 			if not candidate.load_placements(data["storage"], new_items):
 				return {}
 		result["storage_layout"] = candidate
-	elif has_storage or parsed_worn.get("backpack") != null or parsed_worn.get("pouch") != null:
+	elif has_storage:
 		# Неизвестные физические владельцы — отказ, даже для пустого storage
 		return {}
 	return result
+
+
+## Перенос сохранений до D-057. Возвращает копию без рюкзака/мешочка или {} при отказе.
+## Вещи из сумок получают место в основном инвентаре, затем в кошельке; излишек
+## не выбрасывается молча — такое сохранение отклоняется целиком.
+func _migrate_legacy_bags(source: Dictionary) -> Dictionary:
+	var data: Dictionary = source.duplicate(true)
+	var legacy := data.has("worn_storage")
+	data.erase("worn_storage")
+	var removed := {}
+	var raw_items: Variant = data.get("items", null)
+	if raw_items is Array:
+		var kept: Array = []
+		for entry in raw_items:
+			if entry is Dictionary and LEGACY_BAG_IDS.has(str(entry.get("id", ""))):
+				removed[str(entry.get("instance_id", ""))] = true
+				legacy = true
+				continue
+			kept.append(entry)
+		data["items"] = kept
+	var storage: Variant = data.get("storage", null)
+	if not (storage is Dictionary) or not (storage.get("placements", null) is Dictionary):
+		return data
+	var placements: Dictionary = storage["placements"]
+	var cells: Dictionary = storage.get("cells", {}) if storage.get("cells", {}) is Dictionary else {}
+	var moved: Array[String] = []
+	for key in placements.keys():
+		if removed.has(str(key)):
+			placements.erase(key)
+			cells.erase(key)
+		elif str(placements[key]).begins_with(LEGACY_WORN_PREFIX):
+			moved.append(str(key))
+			legacy = true
+	if not legacy or moved.is_empty():
+		return data
+	if not is_storage_configured():
+		return {}
+	var containers: Array = _storage_layout.get_containers()
+	for key in moved:
+		placements.erase(key)
+		cells.erase(key)
+	for key in moved:
+		var placed := false
+		for container in containers:
+			var id := str(container.get("id", ""))
+			var capacity := int(container.get("capacity", 0))
+			var used := 0
+			var taken := {}
+			for other in placements.keys():
+				if str(placements[other]) == id:
+					used += 1
+					taken[int(cells.get(other, -1))] = true
+			if used >= capacity:
+				continue
+			for index in range(capacity):
+				if not taken.has(index):
+					placements[key] = id
+					if storage.has("cells"):
+						cells[key] = index
+					placed = true
+					break
+			if placed:
+				break
+		if not placed:
+			return {}
+	storage["placements"] = placements
+	if storage.has("cells"):
+		storage["cells"] = cells
+	data["storage"] = storage
+	return data
 
 
 func _validate_save_item(entry: Variant, seen_ids: Dictionary) -> Dictionary:

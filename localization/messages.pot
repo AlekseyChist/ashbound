@@ -196,12 +196,8 @@ msgstr ""
 msgid "INV_STORAGE_POCKET"
 msgstr ""
 
-# Inventory UI: storage container name for a belt pouch.
-msgid "INV_STORAGE_POUCH"
-msgstr ""
-
-# Inventory UI: storage container name for a backpack.
-msgid "INV_STORAGE_BACKPACK"
+# Inventory UI: storage container name for the wallet section (D-057).
+msgid "INV_STORAGE_WALLET"
 msgstr ""
 
 # Inventory UI: storage usage line; {name}, {used} and {capacity} are placeholders.
@@ -320,16 +316,8 @@ msgstr ""
 msgid "TOUCH_POCKET"
 msgstr ""
 
-# Touch inventory: reviewed mobile equipment UI.
-msgid "TOUCH_BACKPACK"
-msgstr ""
-
-# Touch inventory: reviewed mobile equipment UI.
-msgid "TOUCH_POUCH"
-msgstr ""
-
-# Touch inventory: reviewed mobile equipment UI.
-msgid "TOUCH_NOT_WORN"
+# Touch inventory: wallet section (D-057).
+msgid "TOUCH_WALLET"
 msgstr ""
 
 # Touch inventory: reviewed mobile equipment UI.
@@ -346,14 +334,6 @@ msgstr ""
 
 # Touch inventory: reviewed mobile equipment UI.
 msgid "TOUCH_MOVE_FAILED"
-msgstr ""
-
-# Touch inventory: reviewed mobile equipment UI.
-msgid "ITEM_TRAVELER_BACKPACK_NAME"
-msgstr ""
-
-# Touch inventory: reviewed mobile equipment UI.
-msgid "ITEM_BELT_POUCH_NAME"
 msgstr ""
 
 msgid "MENU_SECTION_ITEMS"

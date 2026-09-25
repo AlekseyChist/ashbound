@@ -54,12 +54,10 @@ func _run() -> void:
 	groups += 1
 
 	# Real inventory APIs create/equip the fixture, no raw inventory field writes.
-	check(inventory.add_item("traveler_backpack"),"backpack fixture")
-	check(inventory.equip_storage_item(item("traveler_backpack")),"wear backpack")
 	check(inventory.add_item("leather_armor") and inventory.equip_item(item("leather_armor")),"wear whole armor")
 	check(inventory.add_item("rusty_sword") and inventory.equip_item(item("rusty_sword")),"equip sword")
 	check(inventory.add_item("bread",3),"food fixture")
-	check(inventory.move_item_to_storage(item("bread"),"worn_storage:"+str(inventory.get_worn_storage("backpack").instance_id)),"bread to worn bag")
+	check(inventory.move_item_to_storage(item("bread"),"traveler_wallet"),"bread to the wallet")
 	check(inventory.add_item("courtyard_sketch"),"map fixture")
 	level.get_node("Interactions/MapStand").available_on_crate = false
 	inventory.add_gold(9223372036854775807)
@@ -84,7 +82,7 @@ func _run() -> void:
 	groups += 1
 
 	check(schema.apply(level,inventory,empty),"apply empty snapshot")
-	check(inventory.get_worn_storage("backpack").is_empty() and inventory.get_item_count("bread") == 0,"old equipment and items cleared")
+	check(inventory.get_equipped("armor").is_empty() and inventory.get_item_count("bread") == 0,"old equipment and items cleared")
 	check(schema.validate(rich,inventory),"incoming quick references validated against incoming items")
 	observe_expected = rich
 	inventory.inventory_restored.connect(on_restored)

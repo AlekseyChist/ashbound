@@ -90,10 +90,11 @@ func run() -> void:
 	var inv: Node = root.get_node("Inventory")
 	check(initial.unarmed_mastery == "novice" and initial.learning_points == 0, "campaign skill starts novice")
 	check(level.get_node_or_null("Persistence") == null, "nested preview has no campaign persistence")
-	check(inv.items.size() == 1 and inv.items[0].id == "traveler_backpack", "only an actual bag fixture")
+	check(inv.items.is_empty(), "no inventory fixture (D-057: no backpack to preview)")
+	check(not button("BackpackButton").visible, "backpack toggle hidden")
 	check(scene.technique == "novice" and not scene.set_technique("master"), "only two explicit preview techniques")
 	check(player.get_node("Visual/Body").sprite_frames.get_meta("fist_preview_technique", "") == "novice", "initial preview actually uses novice artwork")
-	for name in ["NoviceButton", "TrainedButton", "BackpackButton", "ViewButton"]:
+	for name in ["NoviceButton", "TrainedButton", "ViewButton"]:
 		check(button(name) != null, "button exists " + name)
 		if button(name) == null:
 			quit(1)
@@ -105,7 +106,7 @@ func run() -> void:
 		check(button("NoviceButton").text == loc.text("FIST_PREVIEW_NOVICE"), "translated novice")
 		check(button("TrainedButton").text == loc.text("FIST_PREVIEW_TRAINED"), "translated trained")
 		var previous := Rect2()
-		for name in ["NoviceButton", "TrainedButton", "BackpackButton", "ViewButton"]:
+		for name in ["NoviceButton", "TrainedButton", "ViewButton"]:
 			var b := button(name)
 			var rect := b.get_global_rect()
 			print("FIST_SANDBOX_BUTTON %s %s %s" % [language, name, rect])
@@ -119,17 +120,12 @@ func run() -> void:
 	for dimensions in [Vector2i(1600, 900), Vector2i(2340, 1080), Vector2i(1920, 1080)]:
 		root.size = dimensions
 		await settle(4)
-		for name in ["NoviceButton", "TrainedButton", "BackpackButton", "ViewButton"]:
+		for name in ["NoviceButton", "TrainedButton", "ViewButton"]:
 			check(root.get_visible_rect().encloses(button(name).get_global_rect()), "resize keeps toolbar on screen " + str(dimensions) + name)
 	for mode in ["mouse", "touch", "mouse_first", "touch_first"]:
-		check(scene.set_backpack_enabled(false), "reset bag")
 		check(scene.set_technique("novice"), "reset technique")
 		await tap("TrainedButton", mode)
 		check(scene.technique == "trained" and button("TrainedButton").button_pressed and not button("NoviceButton").button_pressed, "selected trained via " + mode)
-		await tap("BackpackButton", mode)
-		check(not inv.get_worn_storage("backpack").is_empty(), "single bag activation " + mode)
-		await tap("BackpackButton", mode)
-		check(inv.get_worn_storage("backpack").is_empty(), "single bag removal " + mode)
 		var yaw: float = level.get_node("CameraRig").rotation.y
 		await tap("ViewButton", mode)
 		for frame in 3: await physics_frame
@@ -141,8 +137,9 @@ func run() -> void:
 	check(scene.technique == "novice", "F1")
 	await key(KEY_F2)
 	check(scene.technique == "trained", "F2")
+	var before_f3: Dictionary = inv.get_save_data().duplicate(true)
 	await key(KEY_F3)
-	check(not inv.get_worn_storage("backpack").is_empty(), "F3")
+	check(inv.get_save_data() == before_f3 and scene.technique == "trained", "F3 (former backpack) changes nothing")
 	group("mouse, touch, emulation orders and keyboard")
 	var position := button("NoviceButton").get_global_rect().get_center()
 	touch(position, true)
@@ -195,10 +192,8 @@ func run() -> void:
 	level.get_node("Actors/Watchman").interacted.emit(level.get_node("Actors/Watchman"))
 	check(progress.get_character_data() == initial, "no preview guard reward")
 	check(level.get_node_or_null("Persistence") == null, "still no campaign persistence")
-	check(scene.set_backpack_enabled(false), "remove bag before absent-item boundary")
-	check(inv.remove_item("traveler_backpack"), "fixture relinquishes actual bag")
 	var without_bag: Dictionary = inv.get_save_data().duplicate(true)
-	check(not scene.set_backpack_enabled(true), "missing bag cannot be equipped or recreated")
+	check(not scene.set_backpack_enabled(true), "a backpack cannot be equipped or recreated")
 	check(inv.get_save_data() == without_bag, "failed preview equip leaves inventory unchanged")
 	group("repeat practice with progression isolation")
 	scene.queue_free()

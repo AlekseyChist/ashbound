@@ -97,7 +97,7 @@ func run() -> void:
 			root.size = dimensions
 			await settle(5)
 			var rects: Array[Rect2] = []
-			for name in ["NoviceButton","TrainedButton","BackpackButton","ViewButton","SwingButton","ResetTrialButton","GuardButton"]:
+			for name in ["NoviceButton","TrainedButton","ViewButton","SwingButton","ResetTrialButton","GuardButton"]:
 				var b := button(name)
 				var rect := b.get_global_rect()
 				check(root.get_visible_rect().encloses(rect), "onscreen " + language + name + str(dimensions))
