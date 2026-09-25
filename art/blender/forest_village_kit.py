@@ -6,6 +6,7 @@ from mathutils import Vector
 ROOT = Path(__file__).resolve().parents[2]
 BUILD_DATA = ROOT / "art/blender/forest-village-v1/build-data.json"
 PREVIEW_DIR = ROOT / "local/previews/forest-village-v1"
+ORTHO = 17.0
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 def parse_args():
@@ -18,6 +19,9 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--asset", default="all")
     parser.add_argument("--no-render", action="store_true")
+    parser.add_argument("--data", default=str(BUILD_DATA))
+    parser.add_argument("--out", default=str(PREVIEW_DIR))
+    parser.add_argument("--ortho", type=float, default=17.0)
     return parser.parse_args(argv)
 
 def load_specs():
@@ -98,7 +102,7 @@ def setup_cameras():
     scene = bpy.context.scene
     cam_data = bpy.data.cameras.new("ExteriorCam")
     cam_data.type = "ORTHO"
-    cam_data.ortho_scale = 17
+    cam_data.ortho_scale = ORTHO
     cam = bpy.data.objects.new("ExteriorCam", cam_data)
     scene.collection.objects.link(cam)
     cam.location = Vector((11, -15, 10))
@@ -107,7 +111,7 @@ def setup_cameras():
 
     cam_data2 = bpy.data.cameras.new("InteriorCam")
     cam_data2.type = "ORTHO"
-    cam_data2.ortho_scale = 14
+    cam_data2.ortho_scale = ORTHO * 14.0 / 17.0
     cam2 = bpy.data.objects.new("InteriorCam", cam_data2)
     scene.collection.objects.link(cam2)
     cam2.location = Vector((11, -14, 14))
@@ -142,7 +146,7 @@ def render_views(spec_id, blend_path):
     bpy.ops.render.render(write_still=True)
 
 def main():
-    global bpy, C
+    global bpy, C, BUILD_DATA, PREVIEW_DIR, ORTHO
     import bpy as _bpy
     import buildings_common as _C
     from forest_village_materials import make_materials
@@ -152,6 +156,9 @@ def main():
     C = _C
 
     args = parse_args()
+    BUILD_DATA = Path(args.data)
+    PREVIEW_DIR = Path(args.out)
+    ORTHO = args.ortho
     specs = load_specs()
     if args.asset != "all":
         specs = [s for s in specs if s["id"] == args.asset]
