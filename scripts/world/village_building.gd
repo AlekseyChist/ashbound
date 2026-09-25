@@ -62,6 +62,23 @@ func build(data: Dictionary) -> void:
 	rope.material_override = cord_colour
 	rope.position = lantern.position + Vector3(0, 0.6, 0)
 	add_child(rope)
+	_fit_rope.call_deferred(rope, lantern)
+
+## Ceilings differ between buildings: once the collision is in the world, the rope reaches the one above.
+func _fit_rope(rope: MeshInstance3D, lantern: Node3D) -> void:
+	await get_tree().physics_frame
+	if not is_inside_tree():
+		return
+	var from := to_global(lantern.position + Vector3(0, 0.4, 0))
+	var hit := get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(from, from + Vector3.UP * 8.0, 1))
+	if hit.is_empty():
+		return
+	var bottom := lantern.position.y + 0.35
+	var length: float = to_local(hit.position).y - bottom
+	if length <= 0.02:
+		return
+	(rope.mesh as BoxMesh).size.y = length
+	rope.position.y = bottom + length * 0.5
 
 func contains(point: Vector3) -> bool:
 	var local := to_local(point)
