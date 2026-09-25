@@ -9,7 +9,7 @@ const Headwaters = preload("res://scripts/world/world_graybox_headwaters.gd")
 const Landmarks = preload("res://scripts/world/world_graybox_landmarks.gd")
 const Pad = preload("res://scripts/world/world_settlement_pad.gd")
 
-const VERSION := "0.24.3"
+const VERSION := "0.25.0"
 const WORLD_LAYOUT := "res://assets/world/graybox-v1/layout.json"
 const WORLD_HEIGHTS := "res://assets/world/graybox-v1/heights.bin"
 const WORLD_COLORS := "res://assets/world/graybox-v1/colors.bin"
@@ -40,8 +40,21 @@ var world_root: Node3D
 var world_terrain: Node3D
 
 
+## The courtyard lesson runs in the village (PLAYER-WORLD-01C); the pocket menu reads its journal here.
+signal journal_changed()
+var lesson: Node3D
+
+
 func _ready() -> void:
 	super._ready()
+	lesson = preload("res://scripts/world/village_lesson.gd").new()
+	lesson.name = "VillageLesson"
+	add_child(lesson)
+	lesson.configure(self)
+	lesson.journal_changed.connect(func(): journal_changed.emit())
+	hud.get_node("RootControl/BottomRight/VBox/AttackButton").show()
+	hud.attack_pressed.connect(player.request_attack)
+	_update_prompt()
 	DisplayServer.window_set_title("AshBound — World %s" % VERSION)
 	print("WORLD_VILLAGE_READY version=%s base=%.1f ring=%.0f" % [VERSION, BASE_HEIGHT, RING])
 
@@ -375,3 +388,41 @@ func _build_water_and_sites() -> void:
 		var direction: Array = site.facing
 		var s: Array = site.spawn
 		landmark.build(site.kind, Vector3(s[0], float(site.point[2]), s[2]), Vector3(direction[0], 0, direction[2]))
+
+
+func get_journal_entry() -> Dictionary:
+	return lesson.journal_entry() if lesson != null else {}
+
+
+## A lesson character or the woodpile nearby takes the action button before a door.
+func interact() -> void:
+	if lesson != null and is_input_available():
+		var point: Node3D = lesson.nearest_point()
+		if point != null:
+			lesson.interact(point)
+			_update_prompt()
+			return
+	super.interact()
+
+
+func _update_prompt() -> void:
+	super._update_prompt()
+	if lesson == null or hud == null or player == null:
+		return
+	var inside := false
+	for building in buildings:
+		if building.contains(player.global_position):
+			inside = true
+	if not inside:
+		var entry: Dictionary = lesson.journal_entry()
+		hud.set_objective(entry.objective_key, entry.params)
+	var point: Node3D = lesson.nearest_point() if is_input_available() else null
+	if point == null:
+		return
+	current_door = null
+	for building in buildings:
+		building.door.set_highlight(false)
+	var action: String = Localization.text(point.prompt)
+	interact_button.disabled = false
+	interact_button.text = action
+	hud.set_prompt(action if OS.get_name() == "Android" else "E · " + action)
