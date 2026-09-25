@@ -35,17 +35,13 @@ func _ready() -> void:
 	settings=preload("res://scripts/world/village_settings.gd").new()
 	settings.load_settings();settings.apply_distance(self)
 	audio=preload("res://scripts/world/village_audio.gd").new();audio.name="VillageAudio";add_child(audio);audio.configure(self,settings)
-	pocket=preload("res://scenes/courtyard/courtyard_inventory_menu.tscn").instantiate()
-	pocket.set_script(preload("res://scripts/world/village_pocket_menu.gd"))
-	pocket.world=self;pocket.player_path=^"../Player";pocket.access_path=^"../Player/PocketAccess"
-	pocket.get_node("RootControl/Overlay/Window").set_script(preload("res://scripts/world/village_inventory_panel.gd"))
-	add_child(pocket)
-	settings_menu=preload("res://scripts/world/village_settings_menu.gd").new()
-	settings_menu.name="VillageSettings"
-	pocket._window.get_node("Margin/RootVBox").add_child(settings_menu);settings_menu.configure(self,settings)
-	pocket._window._sections._settings_view.page.hide()
-	pocket._window._sections._settings_view.page=settings_menu
-	pocket._window.native_settings=settings_menu
+	pocket = preload("res://scenes/world/village_pocket_menu.tscn").instantiate()
+	pocket.world = self
+	rig.add_child(pocket)
+	settings_menu = preload("res://scripts/world/village_settings_menu.gd").new()
+	settings_menu.name = "VillageSettings"
+	pocket.get_pocket_panel().use_settings_page(settings_menu)
+	settings_menu.configure(self, settings)
 	DisplayServer.window_set_title("AshBound — Forest Village 0.23.6")
 	print("VILLAGE_SETTLEMENT_READY version=0.23.6 houses=3 trees=",dressing.tree_positions.size())
 

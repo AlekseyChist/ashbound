@@ -2,11 +2,9 @@ extends Node3D
 ## A walkthrough of the model family; not the final settlement layout or campaign.
 const Catalog = preload("res://scripts/world/village_building_catalog.gd")
 const Building = preload("res://scripts/world/village_building.gd")
-const PlayerScene = preload("res://scenes/courtyard/courtyard_player.tscn")
-const CameraScene = preload("res://scenes/courtyard/third_person_camera.tscn")
-const HudScene = preload("res://scenes/courtyard/courtyard_hud.tscn")
-const AcceptedFrames = preload("res://assets/characters/world-graybox-v1/traveler_frames.tres")
+const RigScene = preload("res://scenes/world/player_rig.tscn")
 var buildings: Array[Node3D] = []
+var rig: Node3D
 var player: CharacterBody3D
 var camera_rig: Node3D
 var hud: CanvasLayer
@@ -28,20 +26,12 @@ func _ready() -> void:
 		add_child(building)
 		building.build(record)
 		buildings.append(building)
-	player = PlayerScene.instantiate()
-	player.name = "Player"
-	add_child(player)
-	player.get_node("Visual").set_appearance_frames(AcceptedFrames)
+	rig = RigScene.instantiate()
+	add_child(rig)
+	player = rig.player
+	camera_rig = rig.camera_rig
+	hud = rig.hud
 	player.interact_requested.connect(interact)
-	camera_rig = CameraScene.instantiate()
-	camera_rig.name = "CameraRig"
-	add_child(camera_rig)
-	camera_rig.set_target(player)
-	camera_rig.get_camera().far = 150.0
-	hud = HudScene.instantiate()
-	hud.name = "HUD"
-	hud.force_touch_controls = true
-	add_child(hud)
 	hud.move_changed.connect(player.set_move_input)
 	hud.run_changed.connect(player.set_run_input)
 	hud.interact_pressed.connect(interact)

@@ -97,7 +97,7 @@ func _run() -> void:
 	add_child(world)
 	await settle(0.5)
 	check(world.buildings.size() == 3, "three buildings")
-	check(world.player.get_node("Visual/Body").sprite_frames == world.AcceptedFrames, "accepted traveler unchanged")
+	check(world.player.get_node("Visual/Body").sprite_frames == preload("res://assets/characters/world-graybox-v1/traveler_frames.tres"), "accepted traveler unchanged")
 	check(world.hud.get_node("RootControl").theme == preload("res://assets/ui/ashbound_ui.tres"), "shared UI book")
 	for language in ["ru", "en"]:
 		Localization.set_language(language)

@@ -62,7 +62,7 @@ func run_checks() -> void:
 	await settle(.5)
 	check(world.buildings.size()==3,"three first yards")
 	check(world.dressing.tree_positions.size()==280,"forest population")
-	check(world.player.get_node("Visual/Body").sprite_frames==world.AcceptedFrames,"accepted frames")
+	check(world.player.get_node("Visual/Body").sprite_frames==preload("res://assets/characters/world-graybox-v1/traveler_frames.tres"),"accepted frames")
 	var positions := [Vector3(-21.5,0,1.5),Vector3(13.25,.4,-19.25),Vector3(-2.5,-.5,48)]
 	for i in range(3): check(world.buildings[i].position.is_equal_approx(positions[i]),"reviewed building position "+str(i))
 	var space:=world.get_world_3d().direct_space_state

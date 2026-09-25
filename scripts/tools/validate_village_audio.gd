@@ -72,7 +72,7 @@ func ui_and_pause_checks() -> void:
 	await click_control(menu.close_button)
 	check(not menu.opened and not get_tree().paused and world.player.input_enabled,"close settings restores game")
 	check(world.player._touch_move==Vector2.ZERO,"no retained movement after settings")
-	check(world.player.get_node("Visual/Body").sprite_frames==world.AcceptedFrames and not world.player.get_node("Visual").is_inventory_access_active(),"accepted hero restored after pocket")
+	check(world.player.get_node("Visual/Body").sprite_frames==preload("res://assets/characters/world-graybox-v1/traveler_frames.tres") and not world.player.get_node("Visual").is_inventory_access_active(),"accepted hero restored after pocket")
 	var key:=InputEventKey.new();key.physical_keycode=KEY_I;key.keycode=KEY_I;key.pressed=true
 	get_viewport().push_input(key,true);await get_tree().process_frame
 	check(world.pocket.state==world.pocket.State.OPENING,"I starts existing pocket gesture")

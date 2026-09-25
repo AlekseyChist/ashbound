@@ -101,7 +101,7 @@ func state_checks() -> void:
 	atmosphere.set_hour(23);atmosphere.apply_look()
 	check(world.sun.light_energy<day_energy*.3,"night lighting is darker")
 	check(world.player.get_node("Visual/Body").modulate.get_luminance()<day_modulate.get_luminance()*.5,"whole hero responds to night")
-	check(world.player.get_node("Visual/Body").sprite_frames==world.AcceptedFrames,"accepted animation resource preserved")
+	check(world.player.get_node("Visual/Body").sprite_frames==preload("res://assets/characters/world-graybox-v1/traveler_frames.tres"),"accepted animation resource preserved")
 	check(atmosphere.foliage_materials.size()>=5,"tree grass fern wind materials")
 	for material in atmosphere.foliage_materials:check(material.shader.resource_path.ends_with("village_foliage.gdshader"),"foliage uses wind shader")
 	for body: AnimatedSprite3D in world.player.find_children("*","AnimatedSprite3D",true,false):
