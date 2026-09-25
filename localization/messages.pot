@@ -769,3 +769,22 @@ msgstr ""
 
 msgid "INN_SLEEP_DONE"
 msgstr ""
+
+# Village lesson: the wolves at the barn (QUEST-WOLVES-01, D-092).
+msgid "VILLAGE_LESSON_GUARD_WOLVES"
+msgstr ""
+
+msgid "VILLAGE_LESSON_GUARD_WOLVES_REMIND"
+msgstr ""
+
+msgid "VILLAGE_LESSON_GUARD_WOLVES_PAID"
+msgstr ""
+
+msgid "VILLAGE_LESSON_WOLVES_GONE"
+msgstr ""
+
+msgid "VILLAGE_LESSON_OBJECTIVE_WOLVES"
+msgstr ""
+
+msgid "VILLAGE_LESSON_OBJECTIVE_WOLVES_REPORT"
+msgstr ""

@@ -45,17 +45,23 @@ func setup(sbx: Node, plr: CharacterBody3D) -> void:
 				player.set("facing_direction", Vector3(0.0, 0.0, -1.0))
 
 	for spawn in _spawn_plan():
-		var actor: CharacterBody3D = _create_enemy_actor(spawn[0])
-		actor.name = String(spawn[0]).capitalize()
-		actor.ground_height = ground_height
-		add_child(actor)
-		actor.setup(spawn[0], spawn[1], self)
-		enemies.append(actor)
-		if show_home_rings:
-			_build_home_rings(spawn[1])
+		spawn_enemy(spawn[0], spawn[1])
 
 	_apply_focus_state()
 	print("ASHBOUND_CORNER_SESSION_READY")
+
+
+## One more enemy at its home; the world adds quest enemies later with this.
+func spawn_enemy(kind: String, home: Vector3) -> CharacterBody3D:
+	var actor: CharacterBody3D = _create_enemy_actor(kind)
+	actor.name = kind.capitalize()
+	actor.ground_height = ground_height
+	add_child(actor)
+	actor.setup(kind, home, self)
+	enemies.append(actor)
+	if show_home_rings:
+		_build_home_rings(home)
+	return actor
 
 
 ## Kinds and homes of the enemies: the sandbox's wolf and guard.
@@ -264,6 +270,8 @@ func eligible_target() -> Node3D:
 		if not is_instance_valid(e):
 			continue
 		var actor: CharacterBody3D = e as CharacterBody3D
+		if actor.state == "flee" or actor.state == "gone":
+			continue
 		var to_actor: Vector3 = actor.global_position - player.global_position
 		var flat: Vector3 = Vector3(to_actor.x, 0.0, to_actor.z)
 		var dist: float = flat.length()

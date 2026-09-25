@@ -74,7 +74,12 @@ func run() -> void:
 	player = world.player
 	session.resolved.connect(func(result: String) -> void: events.append(result))
 	check(wolf != null and wolf.kind == "wolf" and session.enemies.size() == 1, "one wolf in the world")
-	check(Vector2(wolf.global_position.x, wolf.global_position.z).distance_to(Vector2(combat.WOLF_HOME.x, combat.WOLF_HOME.z)) < .05, "the wolf waits by the trail")
+	# Owner (25 Sep): not in the middle of the road; the wolf waits beside the trail, at its home.
+	var closest := INF
+	for p in world.trail_dressing.trail:
+		closest = minf(closest, Vector2(p.x - wolf.global_position.x, p.z - wolf.global_position.z).length())
+	check(Vector2(wolf.global_position.x, wolf.global_position.z).distance_to(Vector2(wolf.home.x, wolf.home.z)) < .05 and closest > 5.0 and closest < 12.0, "the wolf waits beside the trail (%.1f m)" % closest)
+	check(wolf.flee_after_hits == combat.FLEE_HITS, "the trail wolf runs off when beaten")
 	check(on_ground(wolf) < .03, "the wolf stands on the ground (%.3f)" % on_ground(wolf))
 	check(player.global_position.distance_to(wolf.global_position) > 60.0, "the village start is far from the wolf")
 	check(not combat.toolbar._reset_btn.is_visible_in_tree() and combat.toolbar._guard_btn.is_visible_in_tree(), "only the Block button on screen")

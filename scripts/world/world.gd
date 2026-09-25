@@ -31,7 +31,7 @@ const INN_KEEPER_TALK: QuestData = preload("res://data/quests/forest_inn_keeper.
 const INN_TALK_RADIUS := 2.8
 const Pad = preload("res://scripts/world/world_settlement_pad.gd")
 
-const VERSION := "0.33.0"
+const VERSION := "0.34.0"
 const WORLD_LAYOUT := "res://assets/world/graybox-v1/layout.json"
 const WORLD_HEIGHTS := "res://assets/world/graybox-v1/heights.bin"
 const WORLD_COLORS := "res://assets/world/graybox-v1/colors.bin"
@@ -74,10 +74,17 @@ var inn_keeper: Node3D
 var inn_talk: QuestTracker
 ## INN-REST-01: the rented bed in the inn loft and sleeping until the morning.
 var lodging: Node
+## TRAIL-01: the pine forest along the trail from the village to the forest inn.
+var trail_dressing: Node3D
 
 
 func _ready() -> void:
 	super._ready()
+	trail_dressing = preload("res://scripts/world/world_trail_dressing.gd").new()
+	trail_dressing.name = "TrailDressing"
+	add_child(trail_dressing)
+	trail_dressing.build_trail(self)
+	trail_dressing.borrow_wind(dressing)
 	lesson = preload("res://scripts/world/village_lesson.gd").new()
 	lesson.name = "VillageLesson"
 	add_child(lesson)
@@ -98,7 +105,7 @@ func _ready() -> void:
 	lodging.configure(self)
 	lodging.changed.connect(_update_prompt)
 	_start_save.call_deferred()
-	lesson.pay_missing_reward.call_deferred()
+	lesson.sync_pack.call_deferred()
 	_update_prompt()
 	DisplayServer.window_set_title("AshBound — World %s" % VERSION)
 	print("WORLD_VILLAGE_READY version=%s base=%.1f ring=%.0f" % [VERSION, BASE_HEIGHT, RING])

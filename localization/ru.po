@@ -747,7 +747,7 @@ msgstr "Поленница у мастерской: по улице мимо к�
 
 # Village lesson: the hostess thanks the hero and sends them to the watchman at the tower.
 msgid "VILLAGE_LESSON_HOST_REWARD"
-msgstr "Спасибо. Вот десять монет за труды: на них можно снять койку в лесном трактире. А прежде чем выходить на дорогу, найди сторожа: он у сторожевой башни в дальнем конце улицы, за мастерской. Он покажет, как постоять за себя."
+msgstr "Спасибо, выручил. А прежде чем выходить на дорогу, найди сторожа: он у сторожевой башни в дальнем конце улицы, за мастерской. Он покажет, как постоять за себя."
 
 # Village lesson: the hostess already has the firewood and repeats the way to the watchman.
 msgid "VILLAGE_LESSON_HOST_ACCEPTED"
@@ -827,3 +827,22 @@ msgstr "Койка — {price} монеты за ночь. Приходи, ко�
 
 msgid "INN_SLEEP_DONE"
 msgstr "Ты выспался. Уже утро."
+
+# Village lesson: the wolves at the barn (QUEST-WOLVES-01, D-092).
+msgid "VILLAGE_LESSON_GUARD_WOLVES"
+msgstr "Для первого раза сойдёт. Раз кулаки на месте, есть дело: к амбару в южном конце деревни повадились волки. Прогони их, и я заплачу — хватит на ужин и койку в лесном трактире."
+
+msgid "VILLAGE_LESSON_GUARD_WOLVES_REMIND"
+msgstr "Волки у амбара, в южном конце деревни. Бей, пока не побегут."
+
+msgid "VILLAGE_LESSON_GUARD_WOLVES_PAID"
+msgstr "Видел, как они драпали. Держи пять монет: на ужин и койку в лесном трактире. Дорога за башней ведёт прямо к нему."
+
+msgid "VILLAGE_LESSON_WOLVES_GONE"
+msgstr "Волки убежали в лес. Вернись к сторожу."
+
+msgid "VILLAGE_LESSON_OBJECTIVE_WOLVES"
+msgstr "Прогони волков от амбара."
+
+msgid "VILLAGE_LESSON_OBJECTIVE_WOLVES_REPORT"
+msgstr "Вернись к сторожу у башни."

@@ -61,6 +61,55 @@ func talk(label: String, point: Node3D, route: Array, stage_after: int) -> void:
 	check(lesson.quest.stage_index == stage_after, "%s: stage %d (got %d)" % [label, stage_after, lesson.quest.stage_index])
 	check(world.hud._message_visible, "%s: the line is shown" % label)
 
+## QUEST-WOLVES-01: two wolves wait by the barn; three stuns send each off into the forest;
+## both gone -> back to the watchman, who pays 5 coins and closes the lesson.
+func check_wolves(purse: Node) -> void:
+	var pack: Array = world.combat.pack
+	check(pack.size() == 2, "two wolves wait by the barn")
+	var barn: Node3D
+	for building in world.buildings:
+		if building.record.id == "B01": barn = building
+	for wolf in pack:
+		var local: Vector3 = barn.to_local(wolf.global_position)
+		check(local.z < -float(barn.record.depth) * .5 and absf(local.x) < 6.0 and wolf.flee_after_hits == 3, "%s behind the barn (%s)" % [wolf.name, local.round()])
+	check(lesson.quest.stage_index == 6, "the lesson waits while the wolves are there")
+	lesson.talk_to(&"watchman")
+	check(world.hud._message_key == "VILLAGE_LESSON_GUARD_WOLVES_REMIND" and lesson.quest.stage_index == 6, "the watchman reminds about the wolves")
+	var gold_before: int = purse.gold
+	for wolf in pack:
+		var hits := 0
+		for attempt in 12:
+			if wolf.state == "flee" or wolf.state == "gone": break
+			var from: Vector3 = wolf.global_position + Vector3(1.2, 0, 0)
+			world.player.global_position = from + Vector3.UP * .3
+			world.player.velocity = Vector3.ZERO
+			world.player.facing_direction = Vector3(-1, 0, 0)
+			await settle(.05)
+			var before: int = wolf.hits_received
+			await strike()
+			if wolf.hits_received > before: hits += 1
+		check(wolf.state == "flee" and hits == 3, "%s runs off after three real strikes (%d, %s)" % [wolf.name, hits, wolf.state])
+		var fled_from: Vector3 = wolf.global_position
+		await settle(3.4)
+		check(wolf.state == "gone" and not wolf.visible and wolf.collision_layer == 0, "%s is gone" % wolf.name)
+		check(wolf.global_position.distance_to(fled_from) > 3.0, "%s ran away (%.1f m)" % [wolf.name, wolf.global_position.distance_to(fled_from)])
+	world.player.request_attack()
+	await settle(.5)
+	check(pack[0].hits_received == 3 and pack[1].hits_received == 3, "gone wolves take no more hits")
+	check(lesson.quest.stage_index == 7 and world.hud._message_key == "VILLAGE_LESSON_WOLVES_GONE", "both wolves gone: back to the watchman")
+	world._update_prompt()
+	check(world.hud._objective_key == "VILLAGE_LESSON_OBJECTIVE_WOLVES_REPORT", "the objective sends the hero back to the watchman")
+	var saved := ConfigFile.new()
+	check(saved.load(SAVE) == OK and saved.get_value("lesson", "stage") == 7, "the driven-off pack is saved")
+	world.player.global_position = lesson.watchman.global_position + Vector3(1.5, .3, 1.5)
+	world.player.velocity = Vector3.ZERO
+	await settle(.2)
+	await talk("wolves paid", lesson.watchman, [], 8)
+	check(purse.gold == gold_before + 5 and world.hud._message_key == "VILLAGE_LESSON_GUARD_WOLVES_PAID", "the watchman pays five coins (%d -> %d)" % [gold_before, purse.gold])
+	lesson.talk_to(&"watchman")
+	check(purse.gold == gold_before + 5, "no second payment")
+	purse.remove_gold(5)
+
 func strike() -> void:
 	world.player.request_attack()
 	await settle(.9)
@@ -93,16 +142,7 @@ func run_checks() -> void:
 	var gold_before: int = purse.gold
 	await talk("reward", lesson.hostess, back_home, 3)
 	check(lesson.quest.flags[&"reward_claimed"], "the reward is remembered")
-	# INN-REST-01: the hostess pays 10 coins for the firewood, once.
-	check(purse.gold == gold_before + 10 and lesson.quest.flags[&"coins_paid"], "the hostess pays ten coins (%d -> %d)" % [gold_before, purse.gold])
-	lesson.pay_missing_reward()
-	check(purse.gold == gold_before + 10, "the coins are not paid twice")
-	# A lesson finished before the coins existed is paid once when the world starts.
-	lesson.quest.flags[&"coins_paid"] = false
-	lesson.pay_missing_reward()
-	lesson.pay_missing_reward()
-	check(purse.gold == gold_before + 20 and lesson.quest.flags[&"coins_paid"], "an older finished lesson is paid once")
-	purse.remove_gold(10)
+	check(purse.gold == gold_before, "the hostess thanks, the watchman pays later (D-092)")
 	var to_gate := [plan(Vector2(83.19, 97.63)), plan(Vector2(82.75, 82.5)), plan(Vector2(111.25, 88.75)), plan(Vector2(131.75, 79)), plan(Vector2(145.75, 56))]
 	await talk("watchman lesson", lesson.watchman, to_gate, 4)
 	check(Vector2(lesson.tower.global_position.x - lesson.watchman.global_position.x, lesson.tower.global_position.z - lesson.watchman.global_position.z).length() < 7.0, "the watchtower stands by the watchman")
@@ -117,12 +157,14 @@ func run_checks() -> void:
 	await strike()
 	check(lesson.quest.counters[&"dummy_hits"] == 3, "no strikes count after the practice")
 	await talk("report", lesson.watchman, [], 6)
+	check(not world.get_journal_entry().completed and world.hud._objective_key == "VILLAGE_LESSON_OBJECTIVE_WOLVES", "the watchman sends the hero to the barn")
+	await check_wolves(purse)
 	check(world.get_journal_entry().completed, "the lesson is completed in the journal")
 	check(world.player.get_node("Progression").get_character_data().guard_practice_completed, "the guard practice mark is set")
 	Engine.time_scale = 1.0
 	# Saved progress: a new world continues; a damaged file starts over.
 	var saved := ConfigFile.new()
-	check(saved.load(SAVE) == OK and saved.get_value("lesson", "stage") == 6, "progress is saved")
+	check(saved.load(SAVE) == OK and saved.get_value("lesson", "stage") == 8, "progress is saved")
 	world.queue_free()
 	await settle(.3)
 	world = Scene.instantiate()
@@ -130,7 +172,7 @@ func run_checks() -> void:
 	await settle(.6)
 	lesson = world.lesson
 	lesson.use_save(SAVE)
-	check(lesson.quest.stage_index == 6 and not lesson.woodpile.get_node("Label3D").visible, "a new session continues the finished lesson")
+	check(lesson.quest.stage_index == 8 and not lesson.woodpile.get_node("Label3D").visible, "a new session continues the finished lesson")
 	var broken := FileAccess.open(SAVE, FileAccess.WRITE)
 	broken.store_string("[lesson]\nstage=\"broken\"\n")
 	broken.close()
