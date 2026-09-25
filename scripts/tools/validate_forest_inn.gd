@@ -90,6 +90,7 @@ func run() -> void:
 	var first: DialogueLineData = INN_TALK.lines[0]
 	check(first.line_key == "INN_KEEPER_GREETING", "the greeting comes first")
 	check(world.inn_talk.line_for(&"inn_keeper").line_key == "INN_KEEPER_REPEAT", "then the regular line")
+	await check_lodging()
 	await check_dressing()
 	# Up the stairs to the loft (the flight rises towards the back wall, -z in the inn frame).
 	# From the middle aisle to the foot of the flight: no table in the way any more.
@@ -200,3 +201,56 @@ func check_dressing() -> void:
 		var hit := world.get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(top, top + Vector3.UP * 8.0, 1))
 		var gap: float = (hit.position.y - top.y - .03) if not hit.is_empty() else 99.0
 		check(gap < .08, "%s: the lantern rope reaches the ceiling (gap %.2f m)" % [building.record.id, gap])
+
+## INN-REST-01: after the greeting the innkeeper rents a bed for 3 coins; the hero sleeps in it
+## until 7:00, which gives the bed back. The rent survives a restart (its own file).
+func check_lodging() -> void:
+	var lodging: Node = world.lodging
+	var purse: Node = get_node("/root/Inventory")
+	var path := "user://inn-qa.cfg"
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
+	lodging.use_save(path)
+	purse.remove_gold(purse.gold)
+	world._update_prompt()
+	check(world.interact_button.text == Localization.text("INN_ACTION_RENT", {"price": "3"}), "the innkeeper offers a bed for 3 coins (%s)" % world.interact_button.text)
+	# The rented bed is not in reach from below, and not usable before it is rented.
+	world.player.global_position = inn.to_global(Vector3(1.7, 4.0, -3.2))
+	world.player.velocity = Vector3.ZERO
+	await settle(.3)
+	world._update_prompt()
+	check(not lodging.bed_in_reach() and world.interact_button.text != Localization.text("INN_ACTION_SLEEP"), "no sleeping in a bed that is not rented")
+	world.player.global_position = inn.to_global(Vector3(2.0, .5, -1.5))
+	world.player.facing_direction = inn.global_basis.x
+	await settle(.3)
+	world.interact()
+	check(not lodging.rented and purse.gold == 0 and world.hud._message_key == "INN_KEEPER_BED_NO_MONEY", "no coins, no bed")
+	purse.add_gold(5)
+	world.interact()
+	check(lodging.rented and purse.gold == 2 and world.hud._message_key == "INN_KEEPER_BED_RENTED", "the bed is rented for 3 coins (%d left)" % purse.gold)
+	world._update_prompt()
+	check(world.interact_button.text == Localization.text("COURTYARD_ACTION_TALK"), "with a bed the innkeeper only talks")
+	world.interact()
+	check(lodging.rented and purse.gold == 2 and world.hud._message_key == "INN_KEEPER_BED_YOURS", "talking again does not charge twice")
+	var saved := ConfigFile.new()
+	check(saved.load(path) == OK and saved.get_value("inn", "rented") == true, "the rent is saved")
+	lodging.rented = false
+	lodging.load_state()
+	check(lodging.rented, "the rent is restored from the file")
+	# Up in the loft, by the bed: sleep until the morning.
+	world.player.global_position = inn.to_global(Vector3(1.7, 4.0, -3.2))
+	world.player.velocity = Vector3.ZERO
+	await settle(.3)
+	world._update_prompt()
+	check(lodging.bed_in_reach() and world.interact_button.text == Localization.text("INN_ACTION_SLEEP"), "the rented bed offers sleep")
+	world.atmosphere.set_hour(21.0)
+	await world.interact()
+	check(absf(world.atmosphere.hour - 7.0) < .1, "the hero wakes at seven (%.2f)" % world.atmosphere.hour)
+	check(not lodging.rented and not lodging.sleeping and lodging._veil.color.a < .01, "the night is over, the bed is given back, the screen is clear")
+	check(world.hud._message_key == "INN_SLEEP_DONE", "a morning message")
+	check(saved.load(path) == OK and saved.get_value("inn", "rented") == false, "the ended rent is saved")
+	world._update_prompt()
+	check(world.interact_button.text != Localization.text("INN_ACTION_SLEEP"), "no second night without paying")
+	purse.remove_gold(purse.gold)
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
+	world.player.global_position = inn.to_global(Vector3(2.0, .5, -1.5))
+	await settle(.3)

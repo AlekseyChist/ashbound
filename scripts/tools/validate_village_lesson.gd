@@ -89,8 +89,20 @@ func run_checks() -> void:
 	await talk("hostess job", lesson.hostess, back_home, 1)
 	await talk("take wood", lesson.woodpile, to_street, 2)
 	check(not lesson.woodpile.get_node("Label3D").visible, "taken wood hides the woodpile label")
+	var purse: Node = get_node("/root/Inventory")
+	var gold_before: int = purse.gold
 	await talk("reward", lesson.hostess, back_home, 3)
 	check(lesson.quest.flags[&"reward_claimed"], "the reward is remembered")
+	# INN-REST-01: the hostess pays 10 coins for the firewood, once.
+	check(purse.gold == gold_before + 10 and lesson.quest.flags[&"coins_paid"], "the hostess pays ten coins (%d -> %d)" % [gold_before, purse.gold])
+	lesson.pay_missing_reward()
+	check(purse.gold == gold_before + 10, "the coins are not paid twice")
+	# A lesson finished before the coins existed is paid once when the world starts.
+	lesson.quest.flags[&"coins_paid"] = false
+	lesson.pay_missing_reward()
+	lesson.pay_missing_reward()
+	check(purse.gold == gold_before + 20 and lesson.quest.flags[&"coins_paid"], "an older finished lesson is paid once")
+	purse.remove_gold(10)
 	var to_gate := [plan(Vector2(83.19, 97.63)), plan(Vector2(82.75, 82.5)), plan(Vector2(111.25, 88.75)), plan(Vector2(131.75, 79)), plan(Vector2(145.75, 56))]
 	await talk("watchman lesson", lesson.watchman, to_gate, 4)
 	check(Vector2(lesson.tower.global_position.x - lesson.watchman.global_position.x, lesson.tower.global_position.z - lesson.watchman.global_position.z).length() < 7.0, "the watchtower stands by the watchman")

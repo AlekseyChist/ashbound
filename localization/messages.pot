@@ -750,3 +750,22 @@ msgstr ""
 # Forest inn: the innkeeper later.
 msgid "INN_KEEPER_REPEAT"
 msgstr ""
+
+# Forest inn: renting a bed and sleeping (INN-REST-01).
+msgid "INN_ACTION_RENT"
+msgstr ""
+
+msgid "INN_ACTION_SLEEP"
+msgstr ""
+
+msgid "INN_KEEPER_BED_RENTED"
+msgstr ""
+
+msgid "INN_KEEPER_BED_YOURS"
+msgstr ""
+
+msgid "INN_KEEPER_BED_NO_MONEY"
+msgstr ""
+
+msgid "INN_SLEEP_DONE"
+msgstr ""

@@ -747,7 +747,7 @@ msgstr "Поленница у мастерской: по улице мимо к�
 
 # Village lesson: the hostess thanks the hero and sends them to the watchman at the tower.
 msgid "VILLAGE_LESSON_HOST_REWARD"
-msgstr "Спасибо. На эту ночь место твоё. А прежде чем выходить на дорогу, найди сторожа: он у сторожевой башни в дальнем конце улицы, за мастерской. Он покажет, как постоять за себя."
+msgstr "Спасибо. Вот десять монет за труды: на них можно снять койку в лесном трактире. А прежде чем выходить на дорогу, найди сторожа: он у сторожевой башни в дальнем конце улицы, за мастерской. Он покажет, как постоять за себя."
 
 # Village lesson: the hostess already has the firewood and repeats the way to the watchman.
 msgid "VILLAGE_LESSON_HOST_ACCEPTED"
@@ -808,3 +808,22 @@ msgstr "Заходи, путник, грейся. Это лесной тракт
 # Forest inn: the innkeeper later.
 msgid "INN_KEEPER_REPEAT"
 msgstr "Лес нынче неспокоен. Будут вести с дороги — неси сюда, я всегда найду, чем помочь."
+
+# Forest inn: renting a bed and sleeping (INN-REST-01).
+msgid "INN_ACTION_RENT"
+msgstr "Снять койку · {price}"
+
+msgid "INN_ACTION_SLEEP"
+msgstr "Спать"
+
+msgid "INN_KEEPER_BED_RENTED"
+msgstr "Идёт. Твоя койка наверху, справа от лестницы, где фонарь на сундуке. Спи до утра."
+
+msgid "INN_KEEPER_BED_YOURS"
+msgstr "Койка твоя, наверху у фонаря. Иди выспись."
+
+msgid "INN_KEEPER_BED_NO_MONEY"
+msgstr "Койка — {price} монеты за ночь. Приходи, когда разживёшься."
+
+msgid "INN_SLEEP_DONE"
+msgstr "Ты выспался. Уже утро."

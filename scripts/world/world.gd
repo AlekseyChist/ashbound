@@ -31,7 +31,7 @@ const INN_KEEPER_TALK: QuestData = preload("res://data/quests/forest_inn_keeper.
 const INN_TALK_RADIUS := 2.8
 const Pad = preload("res://scripts/world/world_settlement_pad.gd")
 
-const VERSION := "0.32.0"
+const VERSION := "0.33.0"
 const WORLD_LAYOUT := "res://assets/world/graybox-v1/layout.json"
 const WORLD_HEIGHTS := "res://assets/world/graybox-v1/heights.bin"
 const WORLD_COLORS := "res://assets/world/graybox-v1/colors.bin"
@@ -72,6 +72,8 @@ var save: Node
 var inn: Node3D
 var inn_keeper: Node3D
 var inn_talk: QuestTracker
+## INN-REST-01: the rented bed in the inn loft and sleeping until the morning.
+var lodging: Node
 
 
 func _ready() -> void:
@@ -90,7 +92,13 @@ func _ready() -> void:
 	combat.name = "Combat"
 	add_child(combat)
 	combat.configure(self)
+	lodging = preload("res://scripts/world/inn_lodging.gd").new()
+	lodging.name = "InnLodging"
+	add_child(lodging)
+	lodging.configure(self)
+	lodging.changed.connect(_update_prompt)
 	_start_save.call_deferred()
+	lesson.pay_missing_reward.call_deferred()
 	_update_prompt()
 	DisplayServer.window_set_title("AshBound — World %s" % VERSION)
 	print("WORLD_VILLAGE_READY version=%s base=%.1f ring=%.0f" % [VERSION, BASE_HEIGHT, RING])
@@ -443,7 +451,14 @@ func interact() -> void:
 			_update_prompt()
 			return
 		if inn_keeper_in_reach():
-			talk_to_inn_keeper()
+			if inn_talk.flags.get(&"greeted", false):
+				lodging.rent()
+			else:
+				talk_to_inn_keeper()
+			_update_prompt()
+			return
+		if lodging.bed_in_reach():
+			await lodging.sleep()
 			_update_prompt()
 			return
 	super.interact()
@@ -462,14 +477,20 @@ func _update_prompt() -> void:
 		var entry: Dictionary = lesson.journal_entry()
 		hud.set_objective(entry.objective_key, entry.params)
 	var point: Node3D = lesson.nearest_point() if is_input_available() else null
+	var action := ""
 	if point == null and is_input_available() and inn_keeper_in_reach():
 		point = inn_keeper
-	if point == null:
+		if inn_talk.flags.get(&"greeted", false):
+			action = lodging.keeper_prompt()
+	if point == null and is_input_available() and lodging.bed_in_reach():
+		action = Localization.text("INN_ACTION_SLEEP")
+	elif point == null:
 		return
 	current_door = null
 	for building in buildings:
 		building.door.set_highlight(false)
-	var action: String = Localization.text(point.prompt)
+	if action == "":
+		action = Localization.text(point.prompt)
 	interact_button.disabled = false
 	interact_button.text = action
 	hud.set_prompt(action if OS.get_name() == "Android" else "E · " + action)
