@@ -103,7 +103,7 @@ func _run() -> void:
 	check(panel.get_node("%ItemDetails").text == "Select an item to inspect it.", "empty details localized")
 	groups += 1
 
-	var profile := [{"id":"qa_pocket", "kind":"pocket", "capacity":2}, {"id":"qa_bag", "kind":"backpack", "capacity":1}, {"id":"qa_pouch", "kind":"pouch", "capacity":2}]
+	var profile := [{"id":"qa_pocket", "kind":"pocket", "capacity":2}, {"id":"qa_bag", "kind":"pocket", "capacity":1}, {"id":"qa_pouch", "kind":"wallet", "capacity":2}]
 	check(inv.configure_storage(profile), "configure physical QA clothing and bag")
 	check(inv.add_item("bread", 3) and inv.add_item("rusty_sword", 2) and inv.add_item("health_potion"), "seed canonical fixture")
 	inv.add_gold(17)
@@ -132,7 +132,7 @@ func _run() -> void:
 	check(inv.get_item_storage(bread.instance_id) == "qa_pouch", "whole bread stack moved")
 	check(belongings() == unchanged, "move preserves every item, count, equipment and coin")
 	check(selected_id() == bread.instance_id, "moved stack remains selected")
-	check(panel.get_node("%ItemDetails").text.contains("Belt pouch") and not panel.get_node("%TransferError").visible, "success updates detail location without error")
+	check(panel.get_node("%ItemDetails").text.contains("Wallet") and not panel.get_node("%TransferError").visible, "success updates detail location without error")
 	check(inv.add_item("bread", 1), "grow existing selected stack")
 	await settle()
 	check(panel.get_node("%ItemDetails").text.contains("Bread × 4"), "selected quantity refreshes from canonical data")

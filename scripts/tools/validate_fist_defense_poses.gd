@@ -85,8 +85,8 @@ func run() -> void:
 	var rig: Node = sandbox.level.get_node("CameraRig")
 	for tech in ["novice", "trained"]:
 		check(sandbox.set_technique(tech), "technique " + tech)
-		for pack in [false, true]:
-			check(sandbox.set_backpack_enabled(pack), "backpack variant")
+		for pack in [false]: # D-057: no backpack variant any more
+			check(sandbox.set_backpack_enabled(pack), "hero stays without a backpack")
 			defense.reset_trial()
 			# Preview starts at 45 degrees: cardinal samples avoid intentionally
 			# ambiguous diagonal boundaries in the view selector's hysteresis.

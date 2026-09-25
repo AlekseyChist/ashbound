@@ -157,13 +157,8 @@ func _run() -> void:
 	var collision_before := collider.global_transform
 	var shadow_before: Transform3D = actor.get_node("GroundShadow").global_transform
 	var inv: Node = root.get_node("Inventory")
-	check(inv.add_item("traveler_backpack"), "backpack fixture")
-	var bag: Dictionary = inv.items[0]
 	await settle()
-	for worn in [false, true]:
-		if worn:
-			check(inv.equip_storage_item({"instance_id": bag.instance_id}), "wear real backpack")
-			visual.get_node("BackpackLayer").refresh_visual()
+	for worn in [false]: # D-057: the hero has no backpack variant
 		for action in ["idle", "walk", "run", "attack", "pocket"]:
 			for view in ["front", "back", "right", "left"]:
 				set_camera(0, 0)
@@ -242,7 +237,8 @@ func _run() -> void:
 	check(actor.facing_direction == Vector3.FORWARD, "presentation does not rewrite gameplay facing")
 	viewport.queue_free()
 	await settle()
-	if failures.is_empty() and cases == 120 and (DisplayServer.get_name() == "headless" or rendered == 10):
+	# D-057: bare hero only (was 120 cases / 10 renders with the backpack variant).
+	if failures.is_empty() and cases == 60 and (DisplayServer.get_name() == "headless" or rendered == 5):
 		print("ASHBOUND_HERO_PROJECTION_OK cases=", cases, " rendered=", rendered)
 		quit(0)
 	else:

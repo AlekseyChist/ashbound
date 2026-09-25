@@ -184,7 +184,7 @@ func _run() -> void:
 	await settle()
 	var cell: Control = panel.get("_cell_nodes")[0]
 	var hidden_cell := cell.get_global_rect().get_center()
-	var hidden_equipment: Vector2 = panel.get_node("%BackpackSlot").get_global_rect().get_center()
+	var hidden_equipment: Vector2 = panel.get_node("%WeaponSlot").get_global_rect().get_center()
 	var before := state_snapshot()
 	await tap_tab("QuestsTab")
 	var gesture: RefCounted = panel.get("_gesture_handler")

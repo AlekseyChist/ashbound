@@ -10,7 +10,6 @@ var pairs: Dictionary = {}
 var inv: Node
 var player: Node
 var visual: Node
-var layer: Node
 var body: AnimatedSprite3D
 var images: Dictionary = {}
 
@@ -122,73 +121,10 @@ func check_assets() -> void:
 				check(variants[0].get_meta("pixel_size_attack_" + view) == variants[1].get_meta("pixel_size_attack_" + view), "pack cannot rescale body " + view)
 	group("artwork coverage, phase cells, timing, foot anchors and scale")
 
-func check_pairs() -> void:
-	check(inv.add_item("traveler_backpack"), "seed actual backpack instance")
-	var bag_id: String = inv.items[0].instance_id
-	for view in ["front", "back", "right", "left"]:
-		for action in ["idle", "walk", "run", "attack"]:
-			visual._current_view = StringName(view)
-			visual._current_action = StringName(action)
-			body.animation = StringName(action + "_" + (view if view in ["front", "back"] else "side"))
-			body.flip_h = view == "left"
-			for playing in [false, true]:
-				for technique in ["novice", "trained", "novice"]:
-					body.speed_scale = 1.25
-					if playing: body.play()
-					else: body.pause()
-					body.set_frame_and_progress(1, 0.37)
-					var before := phase()
-					var before_save: String = JSON.stringify(inv.get_save_data())
-					check(layer.configure_body_frame_pair(pairs[technique][0], pairs[technique][1]), "configure bare pair")
-					check(body.sprite_frames == pairs[technique][0], "configured bare active")
-					check(phase() == before and JSON.stringify(inv.get_save_data()) == before_save, "pair switch preserves action and inventory")
-					check(inv.equip_storage_item({"instance_id": bag_id}), "equip actual bag")
-					layer.refresh_visual()
-					check(body.sprite_frames == pairs[technique][1] and phase() == before, "equip keeps selected technique and phase")
-					var other: String = "trained" if technique == "novice" else "novice"
-					check(layer.configure_body_frame_pair(pairs[other][0], pairs[other][1]), "configure while worn")
-					check(body.sprite_frames == pairs[other][1] and phase() == before, "worn switch keeps phase")
-					check(inv.unequip_storage_item("backpack", "traveler_clothing_pocket"), "remove actual bag")
-					layer.refresh_visual()
-					check(body.sprite_frames == pairs[other][0] and phase() == before, "remove returns selected bare technique")
-					var suffix: String = view if view in ["front", "back"] else "side"
-					var key: String = "pixel_size_" + action + "_" + suffix
-					var expected: float = body.sprite_frames.get_meta(key, body.sprite_frames.get_meta("pixel_size_" + suffix))
-					check(is_equal_approx(body.pixel_size, expected), "action scale applied")
-					transitions += 4
-	check(layer.get_child_count() == 0, "no accessory overlay")
-	group("384 technique/equipment transitions across all views/actions")
-	var before_frames := body.sprite_frames
-	var before := phase()
-	for mutation in ["null", "missing", "count", "speed", "loop", "duration"]:
-		var bad: SpriteFrames = pairs.novice[1].duplicate(true)
-		match mutation:
-			"null": bad = null
-			"missing": bad.remove_animation("attack_front")
-			"count": bad.remove_frame("attack_front", 0)
-			"speed": bad.set_animation_speed("attack_front", 17)
-			"loop": bad.set_animation_loop("attack_front", not bad.get_animation_loop("attack_front"))
-			"duration": bad.set_frame("attack_front", 0, bad.get_frame_texture("attack_front", 0), 2.0)
-		check(not layer.configure_body_frame_pair(pairs.novice[0], bad), "reject mismatched pair " + mutation)
-		check(body.sprite_frames == before_frames and phase() == before, "atomic rejection " + mutation)
-	check(inv.equip_storage_item({"instance_id": bag_id}), "equip after rejection")
-	layer.refresh_visual()
-	check(body.sprite_frames == pairs.trained[1], "failed configuration preserves prior valid pair")
-	check(inv.unequip_storage_item("backpack", "traveler_clothing_pocket"), "remove after rejection")
-	layer.refresh_visual()
-	group("malformed configurations rejected atomically")
-
 func check_boundaries() -> void:
-	var detached: Node = load("res://scenes/courtyard/courtyard_player.tscn").instantiate()
-	check(not detached.get_node("Visual/BackpackLayer").configure_body_frame_pair(pairs.novice[0], pairs.novice[1]), "unready pair request rejected cleanly")
-	detached.free()
-	var bag_id: String = inv.items[0].instance_id
-	check(inv.equip_storage_item({"instance_id":bag_id}), "same-frame equip")
-	check(layer.configure_body_frame_pair(pairs.novice[0], pairs.novice[1]), "configure before visual process")
-	check(body.sprite_frames == pairs.novice[1], "actual equipment authoritative immediately")
-	check(inv.unequip_storage_item("backpack", "traveler_clothing_pocket"), "same-frame remove")
-	check(layer.configure_body_frame_pair(pairs.trained[0], pairs.trained[1]), "configure before unequip refresh")
-	check(body.sprite_frames == pairs.trained[0], "actual removal authoritative immediately")
+	# D-057: no backpack layer; techniques switch whole bare frame sets.
+	check(visual.set_appearance_frames(pairs.trained[0]), "switch to trained frames")
+	check(body.sprite_frames == pairs.trained[0], "trained frames active immediately")
 	visual._current_view = &"right"
 	visual._current_action = &"attack"
 	body.animation = &"attack_side"
@@ -205,7 +141,7 @@ func check_boundaries() -> void:
 		resource.set_meta("baseline_offset_pixels", invalid)
 		visual._apply_sprite_scale(body)
 		check(is_equal_approx(body.pixel_size, 0.006) and is_equal_approx(body.position.y, 0.9), "invalid base metadata uses finite defaults")
-	check(layer.configure_body_frame_pair(pairs.novice[0], pairs.novice[1]), "restore valid pair")
+	check(visual.set_appearance_frames(pairs.novice[0]), "restore novice frames")
 	visual._current_action = &""
 	body.animation = &"run_side"
 	visual._apply_sprite_scale(body)
@@ -223,7 +159,7 @@ func check_attack() -> void:
 		player.request_attack()
 		for step in int(ceil(0.5 / delta)):
 			var technique: String = "novice" if step % 2 == 0 else "trained"
-			check(layer.configure_body_frame_pair(pairs[technique][0], pairs[technique][1]), "mid-attack pair")
+			check(visual.set_appearance_frames(pairs[technique][0]), "mid-attack technique switch")
 			player.request_attack()
 			player._physics_process(delta)
 		check(strikes == 1 and not player.is_attacking(), "one hit despite switching/spam at " + str(delta))
@@ -241,17 +177,14 @@ func run() -> void:
 	player.set_physics_process(false)
 	visual = player.get_node("Visual")
 	visual.set_process(false)
-	layer = visual.get_node("BackpackLayer")
-	layer.set_process(false)
 	body = visual.get_node("Body")
-	check_pairs()
 	check_boundaries()
 	check_attack()
 	player.queue_free()
 	await process_frame
-	check(groups == 5 and transitions == 384, "all expected groups and transitions finished")
+	check(groups == 3, "all expected groups finished (pair/backpack groups removed, D-057)")
 	if errors.is_empty():
-		print("ASHBOUND_FIST_TECHNIQUES_OK groups=%d transitions=%d" % [groups, transitions])
+		print("ASHBOUND_FIST_TECHNIQUES_OK groups=%d" % groups)
 		quit(0)
 	else:
 		quit(1)

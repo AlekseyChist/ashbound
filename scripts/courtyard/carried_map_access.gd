@@ -16,9 +16,6 @@ static func find_carried_map(inventory: Node, pocket: Node) -> Dictionary:
 	var items: Array = inventory.get_save_data().items
 	var containers: Array = inventory.get_storage_containers()
 
-	var worn_backpack: Dictionary = _worn_item(inventory, "backpack")
-	var worn_pouch: Dictionary = _worn_item(inventory, "pouch")
-
 	for item in items:
 		if not (item is Dictionary):
 			continue
@@ -37,19 +34,7 @@ static func find_carried_map(inventory: Node, pocket: Node) -> Dictionary:
 			if str(container.get("id", "")) != storage_id:
 				continue
 			var kind: String = str(container.get("kind", ""))
-			if kind == "pocket":
-				if str(container.get("id", "")) == str(pocket.storage_id) and pocket.has_access():
-					return item.duplicate(true)
-			elif kind == "backpack" or kind == "pouch":
-				var worn: Dictionary = worn_backpack if kind == "backpack" else worn_pouch
-				if not worn.is_empty() and str(worn.get("instance_id", "")) != "":
-					if str(container.get("id", "")) == "worn_storage:" + str(worn.get("instance_id", "")):
-						return item.duplicate(true)
-	return {}
-
-
-static func _worn_item(inventory: Node, kind: String) -> Dictionary:
-	var worn: Variant = inventory.get_worn_storage(kind)
-	if worn is Dictionary and not worn.is_empty():
-		return worn
+			# The map is read when it is carried on the hero: main inventory or wallet.
+			if (kind == "pocket" or kind == "wallet") and pocket.has_access():
+				return item.duplicate(true)
 	return {}

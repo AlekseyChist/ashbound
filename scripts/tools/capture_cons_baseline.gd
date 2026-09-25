@@ -102,8 +102,7 @@ func hero_matrix() -> void:
 	var seen := {}
 	for tech in ["novice","trained"]:
 		check(sandbox.set_technique(tech), "technique")
-		for pack in [false,true]:
-			check(sandbox.set_backpack_enabled(pack), "backpack")
+		for pack in [false]: # D-057: the hero has no backpack; only bare cells remain.
 			for direction in [Vector3.FORWARD,Vector3.BACK,Vector3.LEFT,Vector3.RIGHT]:
 				for action in ["idle","windup","contact","guard","hit","dodge"]:
 					clear_case(); same_camera()
@@ -122,7 +121,7 @@ func hero_matrix() -> void:
 					var id := "hero-%s-%s-%s-%s"%[tech,"pack" if pack else "bare",view,action]
 					await shot(id,{"category":"hero","action":action,"mode":"posed resource / fixed camera; dodge sampled at 0.08s"})
 	check(seen.size()==4,"four actual views")
-	check(records.size()==96,"complete 96-cell hero matrix")
+	check(records.size()==48,"complete 48-cell hero matrix (bare only, D-057)")
 
 func enemy_matrix() -> void:
 	clear_case(); same_camera(); ui_visible(false)

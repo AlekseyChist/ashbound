@@ -199,13 +199,9 @@ msgstr "Карман одежды"
 msgid "INV_STORAGE_POCKET"
 msgstr "Карман одежды"
 
-# Inventory UI: storage container name for a belt pouch.
-msgid "INV_STORAGE_POUCH"
-msgstr "Поясной мешочек"
-
-# Inventory UI: storage container name for a backpack.
-msgid "INV_STORAGE_BACKPACK"
-msgstr "Рюкзак"
+# Inventory UI: storage container name for the wallet section (D-057).
+msgid "INV_STORAGE_WALLET"
+msgstr "Кошелёк"
 
 # Inventory UI: storage usage line; {name}, {used} and {capacity} are placeholders.
 msgid "INV_STORAGE_USAGE"
@@ -323,17 +319,9 @@ msgstr "Оружие"
 msgid "TOUCH_POCKET"
 msgstr "За пазухой"
 
-# Touch inventory: reviewed mobile equipment UI.
-msgid "TOUCH_BACKPACK"
-msgstr "Рюкзак"
-
-# Touch inventory: reviewed mobile equipment UI.
-msgid "TOUCH_POUCH"
-msgstr "Мешочек"
-
-# Touch inventory: reviewed mobile equipment UI.
-msgid "TOUCH_NOT_WORN"
-msgstr "Не надет"
+# Touch inventory: wallet section (D-057).
+msgid "TOUCH_WALLET"
+msgstr "Кошелёк"
 
 # Touch inventory: reviewed mobile equipment UI.
 msgid "TOUCH_DRAG_HINT"
@@ -350,14 +338,6 @@ msgstr "Пусто"
 # Touch inventory: reviewed mobile equipment UI.
 msgid "TOUCH_MOVE_FAILED"
 msgstr "Сюда нельзя переложить эту вещь."
-
-# Touch inventory: reviewed mobile equipment UI.
-msgid "ITEM_TRAVELER_BACKPACK_NAME"
-msgstr "Дорожный рюкзак"
-
-# Touch inventory: reviewed mobile equipment UI.
-msgid "ITEM_BELT_POUCH_NAME"
-msgstr "Поясной мешочек"
 
 msgid "MENU_SECTION_ITEMS"
 msgstr "Вещи"

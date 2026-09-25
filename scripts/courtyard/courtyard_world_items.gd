@@ -5,8 +5,6 @@ extends Node3D
 const MAX_DROPS: int = 128
 const DROPPED_ITEM_SCRIPT: GDScript = preload("res://scripts/courtyard/courtyard_dropped_item.gd")
 const ICON_MAP: String = "res://assets/ui/maps/courtyard-sketch-v1.png"
-const ICON_BACKPACK: String = "res://assets/ui/inventory/backpack-v1.png"
-const ICON_POUCH: String = "res://assets/ui/inventory/pouch-v1.png"
 const ICON_ATLAS: String = "res://assets/ui/inventory/items-v1.png"
 const ATLAS_ORDER: Array[String] = [
 	"rusty_sword", "iron_sword", "cultist_blade",
@@ -47,10 +45,6 @@ static func texture_for_item(item_id: String) -> Texture2D:
 	match item_id:
 		"courtyard_sketch":
 			return load(ICON_MAP)
-		"traveler_backpack":
-			return load(ICON_BACKPACK)
-		"belt_pouch":
-			return load(ICON_POUCH)
 	var atlas_index: int = ATLAS_ORDER.find(item_id)
 	if atlas_index < 0:
 		return null
@@ -302,12 +296,6 @@ func _iter_inventory_items(save_data: Dictionary) -> Array[Dictionary]:
 			var item: Variant = equipped[slot]
 			if item is Dictionary:
 				items.append(item)
-	var worn_storage: Variant = save_data.get("worn_storage", {})
-	if worn_storage is Dictionary:
-		for kind in worn_storage:
-			var item: Variant = worn_storage[kind]
-			if item is Dictionary:
-				items.append(item)
 	return items
 
 
@@ -339,7 +327,7 @@ func _spawn_point(record: Dictionary, silent: bool) -> void:
 func _commit_state(candidate_inventory: Dictionary, candidate_records: Array) -> bool:
 	if _busy:
 		return false
-	if inventory_get_guard("_trade_guard") or inventory_get_guard("_storage_guard") or inventory_get_guard("_wearable_guard"):
+	if inventory_get_guard("_trade_guard") or inventory_get_guard("_storage_guard") or inventory_get_guard("_commit_guard"):
 		return false
 	if inventory_validate(candidate_inventory).is_empty() or not validate_records(candidate_records, candidate_inventory):
 		return false
@@ -357,9 +345,9 @@ func _commit_state(candidate_inventory: Dictionary, candidate_records: Array) ->
 		_records.clear()
 	_rebuild_points()
 	_inventory.set_block_signals(old_signals_blocked)
-	var old_wearable_guard: bool = inventory_get_guard("_wearable_guard")
+	var old_commit_guard: bool = inventory_get_guard("_commit_guard")
 	var old_storage_guard: bool = inventory_get_guard("_storage_guard")
-	_inventory.set("_wearable_guard", true)
+	_inventory.set("_commit_guard", true)
 	_inventory.set("_storage_guard", true)
 	if not old_signals_blocked:
 		if _inventory.has_signal("inventory_restored"):
@@ -367,7 +355,7 @@ func _commit_state(candidate_inventory: Dictionary, candidate_records: Array) ->
 		if _inventory.has_signal("storage_changed"):
 			_inventory.emit_signal("storage_changed")
 	changed.emit()
-	_inventory.set("_wearable_guard", old_wearable_guard)
+	_inventory.set("_commit_guard", old_commit_guard)
 	_inventory.set("_storage_guard", old_storage_guard)
 	_busy = false
 	return true

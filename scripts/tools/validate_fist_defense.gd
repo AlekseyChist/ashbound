@@ -318,8 +318,8 @@ func run() -> void:
 	check(snapshot().contacts == 1 and snapshot().result == "hit" and snapshot().time == contact_time, "cancel preserves completed result and clock")
 	group("invalid time and cancellation")
 
-	for pack in [false, true]:
-		check(sandbox.set_backpack_enabled(pack), "actual backpack toggles")
+	for pack in [false]: # D-057: no backpack variant any more
+		check(sandbox.set_backpack_enabled(pack), "hero stays without a backpack")
 		for tech in ["novice", "trained"]:
 			reset(tech)
 			var visual: Node3D = player.get_node("Visual")

@@ -46,7 +46,7 @@ func run() -> void:
 	await carry(cell_pos(map.instance_id),cell_pos(food.instance_id))
 	check(inv.get_item_cell(map.instance_id)==1 and inv.get_item_cell(food.instance_id)==4,"touch occupied swap")
 	var before: Dictionary=inv.get_save_data()
-	for slot in ["ArmorSlot","WeaponSlot","BackpackSlot","PouchSlot"]:
+	for slot in ["ArmorSlot","WeaponSlot"]:
 		await carry(cell_pos(map.instance_id),center(slot))
 		check(inv.get_save_data()==before,"map cannot equip as "+slot)
 	await carry(cell_pos(map.instance_id),panel._cell_nodes[3].get_global_rect().get_center(),true)

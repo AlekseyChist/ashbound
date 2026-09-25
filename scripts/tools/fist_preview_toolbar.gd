@@ -41,9 +41,6 @@ func refresh() -> void:
 		_title.text = loc.text("FIST_PREVIEW_TITLE")
 		_novice_button.text = loc.text("FIST_PREVIEW_NOVICE")
 		_trained_button.text = loc.text("FIST_PREVIEW_TRAINED")
-		_backpack_button.text = loc.text(
-			"FIST_PREVIEW_PACK_ON" if _owner.is_backpack_enabled() else "FIST_PREVIEW_PACK_OFF"
-		)
 		_view_button.text = loc.text("FIST_PREVIEW_VIEW")
 		var defense_mode: bool = _owner.get("defense_preview") == true
 		if defense_mode:
@@ -59,10 +56,8 @@ func refresh() -> void:
 	var tech: String = _owner.technique
 	_novice_button.set_pressed_no_signal(tech == "novice")
 	_trained_button.set_pressed_no_signal(tech == "trained")
-	_backpack_button.set_pressed_no_signal(_owner.is_backpack_enabled())
 	_apply_button_style(_novice_button, tech == "novice")
 	_apply_button_style(_trained_button, tech == "trained")
-	_apply_button_style(_backpack_button, _owner.is_backpack_enabled())
 	_apply_button_style(_view_button, false)
 
 
@@ -182,6 +177,7 @@ func _build_ui() -> void:
 	_novice_button = _make_button("NoviceButton")
 	_trained_button = _make_button("TrainedButton")
 	_backpack_button = _make_button("BackpackButton")
+	_backpack_button.visible = false
 	_view_button = _make_button("ViewButton", false)
 
 	hbox.add_child(_novice_button)
@@ -304,7 +300,7 @@ func _activate(index: int) -> void:
 		1:
 			_owner.set_technique("trained")
 		2:
-			_owner.set_backpack_enabled(not _owner.is_backpack_enabled())
+			pass # D-057: the backpack toggle is gone; the slot keeps button indices stable.
 		3:
 			_rotate_view()
 	refresh()

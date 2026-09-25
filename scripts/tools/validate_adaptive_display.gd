@@ -109,7 +109,7 @@ func run() -> void:
 		var safe: Rect2 = layout_script.get_safe_rect(root)
 		for control in ui_roots:
 			close_rect(control.get_global_rect(), safe, "root follows safe area " + str(control.name))
-		var targets: Array[Control] = [button("NoviceButton"), button("TrainedButton"), button("BackpackButton"), button("ViewButton"), menu.get_node("RootControl/OpenButton")]
+		var targets: Array[Control] = [button("NoviceButton"), button("TrainedButton"), button("ViewButton"), menu.get_node("RootControl/OpenButton")]
 		for b in hud._all_buttons():
 			if b.is_visible_in_tree(): targets.append(b)
 		for b in bar.cells: targets.append(b)
@@ -151,15 +151,13 @@ func run() -> void:
 		await settle()
 	group("EN/RU inventory gesture, five sections, settings and restored input")
 	# Resize repeatedly; no offset accumulation and no changes to actual inventory/technique.
-	await tap(button("BackpackButton"))
-	check(scene.is_backpack_enabled(), "equip real pack")
 	var carried_before: Array = inv.items.duplicate(true)
-	var worn_before: Dictionary = inv.get_worn_storage("backpack").duplicate(true)
+	var equipped_before: Dictionary = inv.equipped.duplicate(true)
 	for iteration in 8:
 		if not OS.has_feature("android"): root.size = Vector2i(1600, 1200) if iteration % 2 == 0 else Vector2i(2400, 1080)
 		await settle()
 		for control in ui_roots: close_rect(control.get_global_rect(), layout_script.get_safe_rect(root), "no accumulated offsets")
-	check(scene.is_backpack_enabled() and inv.items == carried_before and inv.get_worn_storage("backpack") == worn_before and scene.technique == "novice", "resize preserves exact carried/worn item records and preview choice")
+	check(inv.items == carried_before and inv.equipped == equipped_before and scene.technique == "novice", "resize preserves exact carried/equipped item records and preview choice")
 	group("repeated live resize preserves state without accumulated offsets")
 	scene.queue_free()
 	await settle()
