@@ -58,6 +58,67 @@ def _build_wall(spec, face, mat):
     return wall
 
 
+def _build_log_wall(spec, face, mat):
+    """Horizontal round logs of a log cabin; the two wall pairs are offset by half a log
+    (as in a real corner joint) and the log ends stick out past the corners."""
+    w, d, floor, wt, th = spec['width'], spec['depth'], spec['floor'], spec['wall_top'], spec['thickness']
+    hw, hd = w / 2, d / 2
+    dia = spec.get('log_diameter', 0.3)
+    out = spec.get('log_overhang', 0.35)
+    step = dia * 0.92
+    offset = step / 2 if face in ('right', 'left') else 0.0
+    if face in ('front', 'rear'):
+        length = w + 2 * out
+        y = -hd + th / 2 if face == 'front' else hd - th / 2
+    else:
+        length = d + 2 * out
+        x = hw - th / 2 if face == 'right' else -hw + th / 2
+    logs = []
+    z = floor + dia / 2 + offset
+    i = 0
+    while z + dia / 2 <= wt + 0.001:
+        if face in ('front', 'rear'):
+            loc = Vector((0, y, z))
+            rot = (0, math.pi / 2, 0)
+        else:
+            loc = Vector((x, 0, z))
+            rot = (math.pi / 2, 0, 0)
+        bpy.ops.mesh.primitive_cylinder_add(vertices=10, radius=dia / 2, depth=length, location=loc, rotation=rot)
+        log = bpy.context.active_object
+        log.name = f"{spec['id']}_log_{face}_{i}"
+        bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
+        log.data.materials.clear()
+        log.data.materials.append(mat)
+        C._link(log)
+        for op in spec['openings']:
+            if op['face'] != face:
+                continue
+            cx, cz, ow, oh = op['center'], op['bottom'], op['width'], op['height']
+            if z + dia / 2 <= cz or z - dia / 2 >= cz + oh:
+                continue
+            if face in ('front', 'rear'):
+                cloc = Vector((cx, y, cz + oh / 2))
+                csize = (ow, dia + .6, oh)
+            else:
+                cloc = Vector((x, cx, cz + oh / 2))
+                csize = (dia + .6, ow, oh)
+            cutter = C.box(f"cut_{op['id']}_{i}", cloc, csize, mat)
+            _apply_bool(log, cutter)
+        logs.append(log)
+        z += step
+        i += 1
+    # Join the logs of this wall into one object.
+    bpy.ops.object.select_all(action='DESELECT')
+    for log in logs:
+        log.select_set(True)
+    bpy.context.view_layer.objects.active = logs[0]
+    bpy.ops.object.join()
+    wall = bpy.context.active_object
+    wall.name = f"{spec['id']}_wall_{face}"
+    _tag(wall, spec, 'shell', face)
+    return wall
+
+
 def _build_gable(spec, face, mat):
     w, d, wt, ridge, th = spec['width'], spec['depth'], spec['wall_top'], spec['ridge'], spec['thickness']
     hw, hd = w / 2, d / 2
@@ -249,11 +310,12 @@ def build_shell(spec, mats):
 
     # Walls
     for face in ('front', 'rear', 'right', 'left'):
-        _build_wall(spec, face, wall_mat)
+        builder = _build_log_wall if spec.get('wall_style') == 'log' else _build_wall
+        builder(spec, face, wall_mat)
 
     # Gables: only front/rear
     for face in ('front', 'rear'):
-        _build_gable(spec, face, wall_mat)
+        _build_gable(spec, face, mats['oak'] if spec.get('wall_style') == 'log' else wall_mat)
 
     # Roof
     _build_roof(spec, mats['oak'], mats['roof'])
