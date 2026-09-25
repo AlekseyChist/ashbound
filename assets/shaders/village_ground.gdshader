@@ -10,6 +10,8 @@ uniform sampler2D grass_roughness : filter_linear_mipmap_anisotropic, repeat_ena
 uniform sampler2D path_roughness : filter_linear_mipmap_anisotropic, repeat_enable;
 uniform float grass_meters = 1.4;
 uniform float path_meters = 3.2;
+// Godot scales the grazing (sky) reflection with SPECULAR: 0.25 made far grass look like a mirror.
+uniform float grass_specular = 0.06;
 varying highp vec3 world;
 float hash(vec2 p){vec3 q=fract(vec3(p.xyx)*0.1031);q+=dot(q,q.yzx+33.33);return fract((q.x+q.y)*q.z);}
 float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x),f.y);}
@@ -36,14 +38,18 @@ void fragment(){
 		vec3 n=mix(texture(grass_normal,guv).rgb,texture(path_normal,puv).rgb,road);
 		NORMAL_MAP=n;
 		NORMAL_MAP_DEPTH=mix(.38,.52,road)*near;
-		float rough=mix(texture(grass_roughness,guv).r,texture(path_roughness,puv).r,road);
-		ROUGHNESS=mix(clamp(rough,.72,1.0),.43,damp);
+		// Grass stays matte even in rain; only the trodden paths gain a wet sheen (D-083, variant A).
+		float grass_rough=mix(clamp(texture(grass_roughness,guv).r,.9,1.0),.8,damp);
+		float path_rough=mix(clamp(texture(path_roughness,puv).r,.72,1.0),.43,damp);
+		ROUGHNESS=mix(grass_rough,path_rough,road);
+		SPECULAR=mix(grass_specular,mix(.25,.35,damp),road);
 	}else{
 		float grain=noise(world.xz*9.0)*.28+noise(world.xz*1.7)*.2;
 		ALBEDO=COLOR.rgb*(.74+grain)*mix(1.0,.67,damp);
-		ROUGHNESS=mix(.96,.43,damp);
+		float road=smoothstep(.08,.92,COLOR.a);
+		ROUGHNESS=mix(mix(.96,.8,damp),mix(.96,.43,damp),road);
+		SPECULAR=mix(grass_specular,mix(.25,.35,damp),road);
 		NORMAL_MAP=vec3(.5,.5,1.0);
 		NORMAL_MAP_DEPTH=0.0;
 	}
-	SPECULAR=.25;
 }

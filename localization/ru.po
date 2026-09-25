@@ -733,3 +733,12 @@ msgstr "Дальность прорисовки"
 
 msgid "VILLAGE_METRES"
 msgstr "м"
+
+msgid "VILLAGE_GRASS_OFF"
+msgstr "Трава: нет"
+
+msgid "VILLAGE_GRASS_BLADES"
+msgstr "Трава: травинки"
+
+msgid "VILLAGE_GRASS_CARDS"
+msgstr "Трава: карточки"
