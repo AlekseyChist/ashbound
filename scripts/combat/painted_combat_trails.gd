@@ -5,7 +5,7 @@ var _initialized := false
 
 func _ready() -> void:
 	var tex: Texture2D = preload("res://assets/vfx/painted-combat-v1/swing.png")
-	_pool = preload("res://scripts/tools/painted_effect_pool.gd").new()
+	_pool = preload("res://scripts/combat/painted_effect_pool.gd").new()
 	_pool.name = "TrailPool"
 	add_child(_pool)
 	_pool.setup({"hero": tex, "guard": tex, "wolf": tex}, 6)

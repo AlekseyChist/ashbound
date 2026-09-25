@@ -3,8 +3,8 @@ extends "res://scripts/tools/combat_feedback_session.gd"
 ## переопределяются только фабрики FX/трейлов, остальная механика
 ## combat_feedback_session.gd не меняется.
 
-const PAINTED_FX_SCRIPT_PATH := "res://scripts/tools/painted_combat_fx.gd"
-const PAINTED_TRAILS_SCRIPT_PATH := "res://scripts/tools/painted_combat_trails.gd"
+const PAINTED_FX_SCRIPT_PATH := "res://scripts/combat/painted_combat_fx.gd"
+const PAINTED_TRAILS_SCRIPT_PATH := "res://scripts/combat/painted_combat_trails.gd"
 
 
 func _create_feedback_fx() -> Node:

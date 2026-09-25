@@ -1,6 +1,6 @@
 [gd_resource type="Resource" load_steps=2 format=3]
 
-[ext_resource type="Script" path="res://scripts/tools/attack_frame_data.gd" id="1_guard"]
+[ext_resource type="Script" path="res://scripts/combat/attack_frame_data.gd" id="1_guard"]
 
 [resource]
 script = ExtResource("1_guard")

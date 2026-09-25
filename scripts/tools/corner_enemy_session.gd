@@ -1,9 +1,9 @@
-extends "res://scripts/tools/fist_defense_controller.gd"
+extends "res://scripts/combat/fist_defense_controller.gd"
 ## Corner-enemy session: two scripted corner enemies (wolf/guard) replace the
 ## training device. All timing, guard, refractory and recoil logic is inherited
 ## from FistDefenseController; this file only wires the actors into it.
 
-const ACTOR_SCRIPT_PATH := "res://scripts/tools/corner_enemy_actor.gd"
+const ACTOR_SCRIPT_PATH := "res://scripts/combat/corner_enemy_actor.gd"
 const HERO_POS := Vector3(0.0, 0.02, 5.0)
 const WOLF_HOME := Vector3(-11.0, 0.02, 10.0)
 const GUARD_HOME := Vector3(11.0, 0.02, 10.0)

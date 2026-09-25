@@ -70,7 +70,7 @@ Frame data описывает временные свойства действи
 
 | Нынешнее поведение | Где смотреть |
 | --- | --- |
-| Волк: замах 0,70 с; стражник: 0,80 с; восстановление обоих 0,70 с | [corner_enemy_actor.gd](../../scripts/tools/corner_enemy_actor.gd), `setup()` |
+| Волк: замах 0,70 с; стражник: 0,80 с; восстановление обоих 0,70 с | [corner_enemy_actor.gd](../../scripts/combat/corner_enemy_actor.gd), `setup()` |
 | Последние 0,18 с замаха — сигнал блока; волк в это время делает выпад | Тот же файл, `is_block_window_open()` и `_step_windup()` |
 | Одна проверка контакта в конце замаха, защищённая `_contact_done` | `_step_windup()`; это ещё не непрерывный активный интервал hitbox |
 | Контакт учитывает дальность, высоту, сектор, препятствие, технику и направление блока | [corner_enemy_session.gd](../../scripts/tools/corner_enemy_session.gd), `_resolve_contact()` |

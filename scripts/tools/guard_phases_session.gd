@@ -2,7 +2,7 @@ extends "res://scripts/tools/painted_combat_session.gd"
 ## Сессия с фазовым guard-актёром: guard получает frame_guard_actor,
 ## wolf остаётся как в базовой painted_combat_session.
 
-const FRAME_GUARD_ACTOR_PATH := "res://scripts/tools/frame_guard_actor.gd"
+const FRAME_GUARD_ACTOR_PATH := "res://scripts/combat/frame_guard_actor.gd"
 
 
 func _create_enemy_actor(p_kind: String) -> CharacterBody3D:

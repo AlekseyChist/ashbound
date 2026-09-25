@@ -104,13 +104,13 @@ func _create_level() -> Node:
 	return preload("res://scenes/courtyard/first_courtyard.tscn").instantiate()
 
 func _create_preview_player_script() -> GDScript:
-	return preload("res://scripts/tools/fist_defense_player.gd")
+	return preload("res://scripts/combat/fist_defense_player.gd")
 
 func _create_preview_toolbar() -> CanvasLayer:
 	return preload("res://scripts/tools/fist_preview_toolbar.gd").new()
 
 func _create_defense_controller() -> Node:
-	return preload("res://scripts/tools/fist_defense_controller.gd").new()
+	return preload("res://scripts/combat/fist_defense_controller.gd").new()
 
 func _create_defense_toolbar() -> Node:
 	return preload("res://scripts/tools/fist_defense_toolbar.gd").new()

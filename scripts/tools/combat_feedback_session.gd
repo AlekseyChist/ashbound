@@ -4,8 +4,8 @@ extends "res://scripts/tools/corner_enemy_session.gd"
 ## hitstop (заморозка симуляции на фиксированное время), FX-подчинённый узел и
 ## снимок состояния для отладки.
 
-const FX_SCRIPT_PATH := "res://scripts/tools/combat_feedback_fx.gd"
-const TRAILS_SCRIPT_PATH := "res://scripts/tools/combat_swing_trails.gd"
+const FX_SCRIPT_PATH := "res://scripts/combat/combat_feedback_fx.gd"
+const TRAILS_SCRIPT_PATH := "res://scripts/combat/combat_swing_trails.gd"
 
 const STOP_HIT := 0.050
 const STOP_BLOCK := 2.0 / 60.0
