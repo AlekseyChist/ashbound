@@ -78,6 +78,9 @@ def _build_log_wall(spec, face, mat):
     i = 0
     while z + dia / 2 <= wt + 0.001:
         if face in ('front', 'rear'):
+            slope = (spec['ridge'] - wt) / hw
+            ext = min(out, max(0.0, (wt - z - dia / 2 - 0.03) / slope))
+            length = w + 2 * ext
             loc = Vector((0, y, z))
             rot = (0, math.pi / 2, 0)
         else:
