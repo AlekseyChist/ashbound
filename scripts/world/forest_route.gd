@@ -2,9 +2,7 @@ extends Node3D
 ## Exploration-only route. Reuses input/visuals without courtyard quests or saves.
 const Layout := preload("res://scripts/world/forest_route_layout.gd")
 const EnvironmentBuilder := preload("res://scripts/world/forest_route_environment.gd")
-const PlayerScene := preload("res://scenes/courtyard/courtyard_player.tscn")
-const CameraScene := preload("res://scenes/courtyard/third_person_camera.tscn")
-const HudScene := preload("res://scenes/courtyard/courtyard_hud.tscn")
+const RigScene := preload("res://scenes/world/player_rig.tscn")
 
 var player: CharacterBody3D
 var camera_rig: Node3D
@@ -20,18 +18,13 @@ func _ready() -> void:
 	add_child(terrain)
 	terrain.build(Layout.main_path(), Layout.loop_path())
 	_add_light()
-	player = PlayerScene.instantiate()
-	player.name = "Player"
-	add_child(player)
-	camera_rig = CameraScene.instantiate()
-	camera_rig.name = "CameraRig"
-	add_child(camera_rig)
-	camera_rig.set_target(player)
-	camera_rig.get_camera().far = 420.0
-	hud = HudScene.instantiate()
-	hud.name = "HUD"
-	hud.force_touch_controls = true
-	add_child(hud)
+	var rig: Node3D = RigScene.instantiate()
+	rig.accepted_appearance = false
+	rig.camera_far = 420.0
+	add_child(rig)
+	player = rig.player
+	camera_rig = rig.camera_rig
+	hud = rig.hud
 	hud.move_changed.connect(player.set_move_input)
 	hud.run_changed.connect(player.set_run_input)
 	hud.attack_pressed.connect(player.request_attack)

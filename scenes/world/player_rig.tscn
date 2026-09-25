@@ -1,0 +1,16 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/player_rig.gd" id="1_rig"]
+[ext_resource type="PackedScene" path="res://scenes/courtyard/courtyard_player.tscn" id="2_player"]
+[ext_resource type="PackedScene" path="res://scenes/courtyard/third_person_camera.tscn" id="3_camera"]
+[ext_resource type="PackedScene" path="res://scenes/courtyard/courtyard_hud.tscn" id="4_hud"]
+
+[node name="PlayerRig" type="Node3D"]
+script = ExtResource("1_rig")
+
+[node name="Player" parent="." instance=ExtResource("2_player")]
+
+[node name="CameraRig" parent="." instance=ExtResource("3_camera")]
+
+[node name="HUD" parent="." instance=ExtResource("4_hud")]
+force_touch_controls = true

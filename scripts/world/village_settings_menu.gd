@@ -19,8 +19,8 @@ func configure(owner_world: Node3D, preferences: RefCounted) -> void:
 	size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	size_flags_vertical=Control.SIZE_EXPAND_FILL
 	add_theme_constant_override("separation",12)
-	open_button=world.pocket._open_button
-	close_button=world.pocket._window._close_button
+	open_button=world.pocket.get_open_button()
+	close_button=world.pocket.get_pocket_panel().get_close_button()
 	for key in ["music","sound","distance"]:
 		var label:=Label.new();add_child(label);labels[key]=label
 		var slider:=HSlider.new();slider.name=key.capitalize();slider.custom_minimum_size=Vector2(1000,120)

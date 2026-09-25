@@ -40,7 +40,7 @@ let project=fs.readFileSync(path.join(stage,'project.godot'),'utf8')
  .replace('[application]',`[application]\nconfig/use_custom_user_dir=true\nconfig/custom_user_dir_name="AshBound_World_Graybox${qa?'_QA':''}"`);
 fs.writeFileSync(path.join(stage,'project.godot'),project);
 if(qa&&args.includes('--ui-only'))fs.appendFileSync(path.join(stage,'project.godot'),'\n[ashbound]\nqa/screens_only=true\n');
-const resources=[scene,'scenes/world/world_graybox.tscn',...files.filter(f=>f.startsWith('scripts/world/world_graybox')||f.startsWith('assets/world/graybox-v1/')||f.startsWith('assets/characters/world-graybox-v1/')).filter(f=>!f.endsWith('.import')&&!f.endsWith('.uid'))];
+const resources=[scene,'scenes/world/player_rig.tscn','scripts/world/player_rig.gd','scenes/world/world_graybox.tscn',...files.filter(f=>f.startsWith('scripts/world/world_graybox')||f.startsWith('assets/world/graybox-v1/')||f.startsWith('assets/characters/world-graybox-v1/')).filter(f=>!f.endsWith('.import')&&!f.endsWith('.uid'))];
 let presets=fs.readFileSync(path.join(stage,'export_presets.cfg'),'utf8')
  .replaceAll('export_files=PackedStringArray(',`export_files=PackedStringArray(${resources.map(v=>JSON.stringify('res://'+v)).join(', ')}, `)
  .replace(/include_filter="([^"]*)"/g,(_,filter)=>`include_filter="${filter?filter+',':''}assets/world/graybox-v1/*.bin,assets/world/graybox-v1/*.json"`)

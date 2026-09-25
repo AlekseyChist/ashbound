@@ -28,7 +28,7 @@ func _run() -> void:
 	await get_tree().physics_frame
 	await get_tree().physics_frame
 	check(world.terrain.get_child_count() == 100, "100 terrain chunks")
-	check(world.player.get_node("Visual/Body").sprite_frames == world.AcceptedFrames, "accepted hero resource")
+	check(world.player.get_node("Visual/Body").sprite_frames == preload("res://assets/characters/world-graybox-v1/traveler_frames.tres"), "accepted hero resource")
 	await _geometry_fixture()
 	await _surfaces_and_ui()
 	await _headwaters()

@@ -4,10 +4,7 @@ const Geometry = preload("res://scripts/world/world_graybox_geometry.gd")
 const Shapes = preload("res://scripts/world/world_graybox_shapes.gd")
 const Headwaters = preload("res://scripts/world/world_graybox_headwaters.gd")
 const Landmarks = preload("res://scripts/world/world_graybox_landmarks.gd")
-const PlayerScene = preload("res://scenes/courtyard/courtyard_player.tscn")
-const CameraScene = preload("res://scenes/courtyard/third_person_camera.tscn")
-const HudScene = preload("res://scenes/courtyard/courtyard_hud.tscn")
-const AcceptedFrames = preload("res://assets/characters/world-graybox-v1/traveler_frames.tres")
+const RigScene = preload("res://scenes/world/player_rig.tscn")
 const CITY_KEYS = ["WORLD_CITY_FOREST", "WORLD_CITY_SNOW", "WORLD_CITY_DESERT", "WORLD_CITY_LOWLAND"]
 
 var layout: Dictionary
@@ -84,25 +81,18 @@ func _ready() -> void:
 	_build_headwaters()
 	_build_sites()
 	_add_light()
-	player = PlayerScene.instantiate()
-	player.name = "Player"
-	add_child(player)
-	player.get_node("Visual").set_appearance_frames(AcceptedFrames)
-	camera_rig = CameraScene.instantiate()
-	camera_rig.name = "CameraRig"
-	add_child(camera_rig)
-	camera_rig.set_target(player)
-	camera_rig.get_camera().far = 4500.0
+	var rig: Node3D = RigScene.instantiate()
+	rig.camera_far = 4500.0
+	add_child(rig)
+	player = rig.player
+	camera_rig = rig.camera_rig
+	hud = rig.hud
 	overview_camera = Camera3D.new()
 	overview_camera.name = "OverviewCamera"
 	overview_camera.far = 6500.0
 	overview_camera.near = 2.0
 	overview_camera.fov = 55.0
 	add_child(overview_camera)
-	hud = HudScene.instantiate()
-	hud.name = "HUD"
-	hud.force_touch_controls = true
-	add_child(hud)
 	hud.move_changed.connect(_move_changed)
 	hud.run_changed.connect(func(enabled: bool): player.set_run_input(enabled and not overview))
 	hud.attack_pressed.connect(func():

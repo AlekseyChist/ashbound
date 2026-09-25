@@ -39,7 +39,7 @@ let project=fs.readFileSync(path.join(stage,'project.godot'),'utf8')
  .replace('window/size/mode=2','window/size/mode=0')
  .replace('[application]',`[application]\nconfig/use_custom_user_dir=true\nconfig/custom_user_dir_name="AshBound_Village_Houses${qa?'_QA':''}"`);
 fs.writeFileSync(path.join(stage,'project.godot'),project);
-const resources=[scene,'scenes/world/village_walkthrough.tscn',...files.filter(f=>f.startsWith('scripts/world/village_')||f.startsWith('assets/buildings/forest-village-v1/')||f.startsWith('assets/characters/world-graybox-v1/')).filter(f=>!f.endsWith('.import')&&!f.endsWith('.uid'))];
+const resources=[scene,'scenes/world/player_rig.tscn','scripts/world/player_rig.gd','scenes/world/village_walkthrough.tscn',...files.filter(f=>f.startsWith('scripts/world/village_')||f.startsWith('assets/buildings/forest-village-v1/')||f.startsWith('assets/characters/world-graybox-v1/')).filter(f=>!f.endsWith('.import')&&!f.endsWith('.uid'))];
 let presets=fs.readFileSync(path.join(stage,'export_presets.cfg'),'utf8')
  .replaceAll('export_files=PackedStringArray(',`export_files=PackedStringArray(${resources.map(v=>JSON.stringify('res://'+v)).join(', ')}, `)
  .replaceAll('org.ashbound.courtyard',packageId)
