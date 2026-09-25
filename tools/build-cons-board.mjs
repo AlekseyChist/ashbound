@@ -4,7 +4,8 @@ import path from 'node:path';
 import {createHash} from 'node:crypto';
 const root=path.resolve(import.meta.dirname,'..');
 const source=path.join(root,'.tools/cons-stage/.tools/cons-captures');
-const out=path.join(root,'docs/art/cons-01');
+// D-080: the board and its captures stay local, never in Git.
+const out=path.join(root,'local/exports/cons-01');
 const args=process.argv.slice(2);
 const local=args.includes('--baseline-root')?path.resolve(args[args.indexOf('--baseline-root')+1]):root;
 const sha=p=>createHash('sha256').update(fs.readFileSync(p)).digest('hex');

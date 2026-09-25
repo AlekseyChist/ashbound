@@ -95,32 +95,32 @@
       "bytes": 1455896
     },
     {
-      "file": "art/previews/forest-village-v1/b01-exterior.png",
+      "file": "local/previews/forest-village-v1/b01-exterior.png",
       "sha256": "75dcc62e0c446f072436de59c491f7d2851be6b612fc461a880b72c3f970a520",
       "bytes": 1193464
     },
     {
-      "file": "art/previews/forest-village-v1/b01-interior.png",
+      "file": "local/previews/forest-village-v1/b01-interior.png",
       "sha256": "25c2c22eddfe64a528a623517baff093259b9954ea7d11137103a0b10b5e88f7",
       "bytes": 1221452
     },
     {
-      "file": "art/previews/forest-village-v1/h01-exterior.png",
+      "file": "local/previews/forest-village-v1/h01-exterior.png",
       "sha256": "108f4376203e88d9f3e0c4bbbf44daa9780400c4f235e15cfad469d3f573ce7d",
       "bytes": 1083297
     },
     {
-      "file": "art/previews/forest-village-v1/h01-interior.png",
+      "file": "local/previews/forest-village-v1/h01-interior.png",
       "sha256": "4cc78751f9aca8a5399e7ee930a7549a87aa5869a66cdb42c91d50039a271d5e",
       "bytes": 1114083
     },
     {
-      "file": "art/previews/forest-village-v1/w01-exterior.png",
+      "file": "local/previews/forest-village-v1/w01-exterior.png",
       "sha256": "f12f472d98f7a484ce6c0be48b7a0117937206c4ae760f2a693a42a402f7a46d",
       "bytes": 1136187
     },
     {
-      "file": "art/previews/forest-village-v1/w01-interior.png",
+      "file": "local/previews/forest-village-v1/w01-interior.png",
       "sha256": "edcd535d01d5b2ea2e670f02b234e80e567f1c5e76c4c86e80a30b159d60e7db",
       "bytes": 1163627
     }

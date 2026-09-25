@@ -44,6 +44,6 @@ for spec in json.loads((ROOT/'art/blender/forest-village-v1/build-data.json').re
         for bale in bales:
             lo,hi=bounds([bale]);check(3.36<=lo[2]<=3.48,'hay rests on loft')
     results.append(dict(asset=spec['id'],status='FAIL' if failures else 'PASS',meshes=len(meshes),failures=failures))
-out=ROOT/'art/previews/forest-village-v1/furniture-qa.json';out.parent.mkdir(parents=True,exist_ok=True);out.write_text(json.dumps(results,indent=2)+'\n',encoding='utf-8')
+out=ROOT/'local/previews/forest-village-v1/furniture-qa.json';out.parent.mkdir(parents=True,exist_ok=True);out.write_text(json.dumps(results,indent=2)+'\n',encoding='utf-8')
 print('FURNITURE_QA',json.dumps(results))
 if any(r['failures'] for r in results):raise RuntimeError('Furniture QA failed')
