@@ -4,6 +4,14 @@ extends Node3D
 const CHUNK_CELLS := 40
 
 
+## Optional: Callable(cell_x: int, cell_z: int) -> bool; true leaves the cell out (a settlement fills it).
+var skip_cell: Callable
+## Optional: replaces the default vertex-colour material.
+var material: Material
+## Optional: footstep surface stored on every terrain collider.
+var surface_meta: String = ""
+
+
 func build(heights: PackedFloat32Array, colors: PackedColorArray, width: int, spacing: float) -> void:
 	if width < 2 or spacing <= 0.0 or heights.size() != width * width or colors.size() != width * width:
 		push_error("world_graybox_geometry: invalid input (width=%d spacing=%.3f h=%d c=%d)" % [width, spacing, heights.size(), colors.size()])
@@ -14,9 +22,12 @@ func build(heights: PackedFloat32Array, colors: PackedColorArray, width: int, sp
 
 	var half := (width - 1) * spacing * 0.5
 	var cell_count := width - 1
-	var mat := StandardMaterial3D.new()
-	mat.vertex_color_use_as_albedo = true
-	mat.roughness = 1.0
+	var mat: Material = material
+	if mat == null:
+		var standard := StandardMaterial3D.new()
+		standard.vertex_color_use_as_albedo = true
+		standard.roughness = 1.0
+		mat = standard
 
 	var chunk_cols := int(ceil(float(cell_count) / float(CHUNK_CELLS)))
 	for cz in range(chunk_cols):
@@ -38,7 +49,7 @@ func _build_chunk(
 	x1: int,
 	z0: int,
 	z1: int,
-	mat: StandardMaterial3D
+	mat: Material
 ) -> void:
 	var verts := PackedVector3Array()
 	var normals := PackedVector3Array()
@@ -54,6 +65,8 @@ func _build_chunk(
 
 	for z in range(z0, z1):
 		for x in range(x0, x1):
+			if skip_cell.is_valid() and skip_cell.call(x, z):
+				continue
 			var a := (z - z0) * (x1 - x0 + 1) + (x - x0)
 			var b := a + 1
 			var c := a + (x1 - x0 + 1)
@@ -61,6 +74,8 @@ func _build_chunk(
 			# Godot front faces use clockwise winding, including trimesh collision.
 			idx.append_array([a, b, c, b, d, c])
 
+	if idx.is_empty():
+		return
 	var arrays: Array = []
 	arrays.resize(Mesh.ARRAY_MAX)
 	arrays[Mesh.ARRAY_VERTEX] = verts
@@ -80,6 +95,8 @@ func _build_chunk(
 	var body := StaticBody3D.new()
 	body.collision_layer = 1
 	body.collision_mask = 0
+	if not surface_meta.is_empty():
+		body.set_meta("footstep_surface", surface_meta)
 	var shape := CollisionShape3D.new()
 	shape.shape = mesh.create_trimesh_shape()
 	body.add_child(shape)

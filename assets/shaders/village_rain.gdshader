@@ -9,7 +9,12 @@ uniform float daylight=1.0;
 uniform bool splash=false;
 varying vec3 rain_world;
 varying float phase;
-float cover(vec2 at){return texture(cover_heights,(at+vec2(95.5))/vec2(226.0,176.0)).r;}
+float cover(vec2 at){
+	vec2 uv=(at+vec2(95.5))/vec2(226.0,176.0);
+	// Outside the measured village the terrain itself hides drops; no floating splashes.
+	if(any(lessThan(uv,vec2(0.0)))||any(greaterThan(uv,vec2(1.0)))) return -1.0e6;
+	return texture(cover_heights,uv).r;
+}
 void vertex(){
 	vec3 at=MODEL_MATRIX[3].xyz;
 	phase=fract(INSTANCE_CUSTOM.x+effect_time*(1.3+INSTANCE_CUSTOM.y));
