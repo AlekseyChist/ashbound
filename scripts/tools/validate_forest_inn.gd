@@ -191,3 +191,12 @@ func check_dressing() -> void:
 		var fill: Node3D = building.get_node_or_null("InteriorFill")
 		var lantern: Node3D = building.get_node_or_null("Lantern")
 		check(fill == null or (lantern != null and lantern.position.distance_to(fill.position) < .5), "house %s: its light hangs as a lantern" % building.record.id)
+	# The centre lantern's rope reaches the ceiling in every building, the inn's tall hall included.
+	for building in world.buildings + [inn]:
+		var rope: MeshInstance3D = building.get_node_or_null("LanternRope")
+		if rope == null:
+			continue
+		var top: Vector3 = building.to_global(rope.position + Vector3(0, (rope.mesh as BoxMesh).size.y * .5 - .03, 0))
+		var hit := world.get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(top, top + Vector3.UP * 8.0, 1))
+		var gap: float = (hit.position.y - top.y - .03) if not hit.is_empty() else 99.0
+		check(gap < .08, "%s: the lantern rope reaches the ceiling (gap %.2f m)" % [building.record.id, gap])
