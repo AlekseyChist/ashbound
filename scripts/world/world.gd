@@ -9,7 +9,7 @@ const Headwaters = preload("res://scripts/world/world_graybox_headwaters.gd")
 const Landmarks = preload("res://scripts/world/world_graybox_landmarks.gd")
 const Pad = preload("res://scripts/world/world_settlement_pad.gd")
 
-const VERSION := "0.27.1"
+const VERSION := "0.28.0"
 const WORLD_LAYOUT := "res://assets/world/graybox-v1/layout.json"
 const WORLD_HEIGHTS := "res://assets/world/graybox-v1/heights.bin"
 const WORLD_COLORS := "res://assets/world/graybox-v1/colors.bin"
@@ -45,6 +45,8 @@ signal journal_changed()
 var lesson: Node3D
 ## COMBAT-WORLD-01B: the wolf by the trail to the forest inn and the Block button.
 var combat: Node
+## WORLD-SAVE-01: inventory, hero place and progress; only when the world is the running scene.
+var save: Node
 
 
 func _ready() -> void:
@@ -63,6 +65,7 @@ func _ready() -> void:
 	combat.name = "Combat"
 	add_child(combat)
 	combat.configure(self)
+	_start_save.call_deferred()
 	_update_prompt()
 	DisplayServer.window_set_title("AshBound — World %s" % VERSION)
 	print("WORLD_VILLAGE_READY version=%s base=%.1f ring=%.0f" % [VERSION, BASE_HEIGHT, RING])
@@ -435,3 +438,12 @@ func _update_prompt() -> void:
 	interact_button.disabled = false
 	interact_button.text = action
 	hud.set_prompt(action if OS.get_name() == "Android" else "E · " + action)
+
+
+func _start_save() -> void:
+	if get_tree().current_scene != self or OS.get_cmdline_user_args().has("--no-world-save"):
+		return
+	save = preload("res://scripts/world/world_save.gd").new()
+	save.name = "WorldSave"
+	add_child(save)
+	save.initialize(self)
