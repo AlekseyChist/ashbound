@@ -1,5 +1,7 @@
 # AshBound — документы разработки
 
+Текущее состояние и очередь — [STATUS](production/STATUS.md); все решения владельца — [DECISIONS](production/DECISIONS.md).
+
 **25 сентября / FILES-CLEANUP-01 (D-080):** снимки, QA-отчёты, PDF/HTML-экспорты и контактные листы (814 файлов, 544 МБ) убраны из Git в `local/` на ПК владельца: `art/previews/` → `local/previews/`, `docs/art/reviews/` → `local/previews/reviews/`, картинки из `docs/` → `local/previews/docs/`, QA-JSON/логи → `local/qa/<путь>`, PDF/HTML → `local/exports/<путь>`. Ссылки на них в документах заменены текстом; сами файлы остаются в истории Git.
 
 **D-079 — единственный главный герой:** [фиксированная принятая внешность](design/LIFE_AND_ECONOMY.md), CHAR-01 исключена; [карточка и проверка согласованности](production/FIXED_PROTAGONIST_TASK.md). Цельные сеты и оружие сохраняют лицо/волосы/бороду и пропорции героя.
