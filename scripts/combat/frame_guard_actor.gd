@@ -1,4 +1,4 @@
-extends "res://scripts/tools/corner_enemy_actor.gd"
+extends "res://scripts/combat/corner_enemy_actor.gd"
 ## Guard actor with a real startup/active/recovery attack driven by an
 ## attack_frame_data resource. Extends the corner enemy actor and reuses its
 ## movement, aggro, return, cancellation and stagger logic. Only the guard

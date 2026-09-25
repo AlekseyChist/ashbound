@@ -1,6 +1,6 @@
 extends Node3D
 
-const POOL_SCRIPT: String = "res://scripts/tools/painted_effect_pool.gd"
+const POOL_SCRIPT: String = "res://scripts/combat/painted_effect_pool.gd"
 
 const TEX_HIT: Texture2D = preload("res://assets/vfx/painted-combat-v1/hit.png")
 const TEX_BLOCK: Texture2D = preload("res://assets/vfx/painted-combat-v1/block.png")

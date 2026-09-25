@@ -1,4 +1,4 @@
-extends "res://scripts/tools/combat_feedback_player.gd"
+extends "res://scripts/combat/combat_feedback_player.gd"
 ## Игрок изолированного превью уворота: базовое поведение (движение, атака,
 ## ввод, hitstop) полностью унаследовано; добавлен только физический короткий
 ## уворот без неуязвимости.

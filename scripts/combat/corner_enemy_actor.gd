@@ -118,7 +118,7 @@ func setup(p_kind: String, p_home: Vector3, p_session: Node) -> void:
 func _build_visual() -> void:
 	# Visual script is created in a later task; use load (not preload) so the
 	# first import still works when it does not exist yet.
-	var visual_script := load("res://scripts/tools/corner_enemy_visual.gd")
+	var visual_script := load("res://scripts/combat/corner_enemy_visual.gd")
 	if visual_script != null:
 		var vis := Node3D.new()
 		vis.name = "Visual"

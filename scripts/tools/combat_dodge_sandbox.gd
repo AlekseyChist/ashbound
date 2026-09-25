@@ -3,7 +3,7 @@ extends "res://scripts/tools/guard_phases_sandbox.gd"
 
 
 func _create_preview_player_script() -> GDScript:
-	return preload("res://scripts/tools/combat_dodge_player.gd")
+	return preload("res://scripts/combat/combat_dodge_player.gd")
 
 
 func _create_defense_controller() -> Node:
