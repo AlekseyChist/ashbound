@@ -72,5 +72,18 @@ func run() -> void:
 	check(t.line_for(&"innkeeper").line_key == "COURTYARD_DIALOGUE_HOST_ACCEPTED", "a claimed reward is not paid twice")
 	t.reset()
 	check(t.stage_index == 0 and t.counters[&"dummy_hits"] == 0 and not t.flags[&"reward_claimed"], "reset starts over")
+	# Village copy (D-085/086): same stages as the courtyard (saved index), lines that tell the way.
+	var village: QuestData = load("res://data/quests/village_lesson.tres")
+	check(village.id == &"village_lesson" and village.stages.size() == Quest.stages.size(), "village lesson has the courtyard stages")
+	for i in range(village.stages.size()):
+		check(village.stages[i].id == Quest.stages[i].id and village.stages[i].counter == Quest.stages[i].counter, "village stage %d matches" % i)
+	for language in ["en", "ru"]:
+		var keys := catalog_keys("res://localization/%s.po" % language)
+		for stage in village.stages: check(keys.has(stage.objective_key), "%s has %s" % [language, stage.objective_key])
+		for line in village.lines: check(keys.has(line.line_key), "%s has %s" % [language, line.line_key])
+	var v := QuestTracker.new(village)
+	check(v.line_for(&"innkeeper").line_key == "VILLAGE_LESSON_HOST_JOB", "the village hostess tells where the woodpile is")
+	v.stage_index = 6
+	check(v.line_for(&"watchman").line_key == "VILLAGE_LESSON_GUARD_AFTER", "the watchman points to the forest inn after the lesson")
 	print("QUEST_DATA_CHECKS checks=", checks, " failures=", failures.size())
 	quit(0 if failures.is_empty() else 1)

@@ -684,3 +684,55 @@ msgstr ""
 
 msgid "VILLAGE_GRASS_CARDS"
 msgstr ""
+
+# Village lesson: the hostess asks for firewood and says where the woodpile is.
+msgid "VILLAGE_LESSON_HOST_JOB"
+msgstr ""
+
+# Village lesson: the hostess repeats the way to the woodpile.
+msgid "VILLAGE_LESSON_HOST_REMIND"
+msgstr ""
+
+# Village lesson: the hostess thanks the hero and sends them to the watchman at the tower.
+msgid "VILLAGE_LESSON_HOST_REWARD"
+msgstr ""
+
+# Village lesson: the hostess already has the firewood and repeats the way to the watchman.
+msgid "VILLAGE_LESSON_HOST_ACCEPTED"
+msgstr ""
+
+# Village lesson: the hostess after the lesson.
+msgid "VILLAGE_LESSON_HOST_AFTER"
+msgstr ""
+
+# Village lesson: the hero takes the firewood.
+msgid "VILLAGE_LESSON_WOOD_TAKEN"
+msgstr ""
+
+# Village lesson: the woodpile before the hostess gives the job.
+msgid "VILLAGE_LESSON_WOOD_BEFORE"
+msgstr ""
+
+# Village lesson: the watchman before the hostess sends the hero.
+msgid "VILLAGE_LESSON_GUARD_OTHER"
+msgstr ""
+
+# Village lesson: the watchman after the lesson points to the road to the forest inn.
+msgid "VILLAGE_LESSON_GUARD_AFTER"
+msgstr ""
+
+# Village lesson objective: fetch firewood by the workshop.
+msgid "VILLAGE_LESSON_OBJECTIVE_FETCH_WOOD"
+msgstr ""
+
+# Village lesson objective: bring the firewood back.
+msgid "VILLAGE_LESSON_OBJECTIVE_RETURN_WOOD"
+msgstr ""
+
+# Village lesson objective: find the watchman at the tower.
+msgid "VILLAGE_LESSON_OBJECTIVE_MEET_GUARD"
+msgstr ""
+
+# Village lesson objective: done.
+msgid "VILLAGE_LESSON_OBJECTIVE_DONE"
+msgstr ""
