@@ -31,9 +31,12 @@ func _ready() -> void:
 	camera_rig.get_camera().far = 220.0
 	select_building(0)
 	atmosphere=Atmosphere.new();atmosphere.name="Atmosphere";add_child(atmosphere);atmosphere.configure(self)
-	grass=preload("res://scripts/world/village_grass.gd").new();grass.name="Grass";add_child(grass);grass.configure(self);grass.set_mode(1)
 	settings=preload("res://scripts/world/village_settings.gd").new()
 	settings.load_settings();settings.apply_distance(self)
+	grass = preload("res://scripts/world/village_grass.gd").new()
+	grass.name = "Grass"
+	add_child(grass)
+	grass.configure(self, settings.grass_percent / 100.0, settings.grass_distance)
 	audio=preload("res://scripts/world/village_audio.gd").new();audio.name="VillageAudio";add_child(audio);audio.configure(self,settings)
 	pocket = preload("res://scenes/world/village_pocket_menu.tscn").instantiate()
 	pocket.world = self

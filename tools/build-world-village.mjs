@@ -28,7 +28,7 @@ if(fs.existsSync(checkpointPath)){
 }
 const cache=path.join(root,'.tools/export-staging',qa?'village-walkthrough-preview':'walk-phone-preview','.godot/imported');
 if(fs.existsSync(cache)&&!fs.existsSync(path.join(stage,'.godot/imported')))fs.cpSync(cache,path.join(stage,'.godot/imported'),{recursive:true});
-const version='0.26.0',code=68;
+const version='0.27.0',code=69;
 const title=`AshBound World${qa?' QA':''}`;
 const scene=qa?'scripts/tools/validate_world_village.tscn':'scenes/world/world.tscn';
 const packageId=qa?'org.ashbound.worldvalidation':'org.ashbound.worldpreview';

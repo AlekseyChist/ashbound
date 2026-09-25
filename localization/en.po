@@ -733,14 +733,8 @@ msgstr "Draw distance"
 msgid "VILLAGE_METRES"
 msgstr "m"
 
-msgid "VILLAGE_GRASS_OFF"
-msgstr "Grass: off"
 
-msgid "VILLAGE_GRASS_BLADES"
-msgstr "Grass: blades"
 
-msgid "VILLAGE_GRASS_CARDS"
-msgstr "Grass: cards"
 
 # Village lesson: the hostess asks for firewood and says where the woodpile is.
 msgid "VILLAGE_LESSON_HOST_JOB"
@@ -793,3 +787,11 @@ msgstr "Find the watchman at the watchtower at the far end of the street."
 # Village lesson objective: done.
 msgid "VILLAGE_LESSON_OBJECTIVE_DONE"
 msgstr "You are settled for today. Explore the village; the road past the tower leads to the forest inn."
+
+# Village settings: grass density slider (percent follows).
+msgid "VILLAGE_GRASS_DENSITY"
+msgstr "Grass"
+
+# Village settings: how far grass is drawn (metres follow).
+msgid "VILLAGE_GRASS_DISTANCE"
+msgstr "Grass distance"

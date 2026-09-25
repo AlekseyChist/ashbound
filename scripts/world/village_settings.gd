@@ -4,6 +4,10 @@ const PATH := "user://village_settings.cfg"
 var music_percent := 45.0
 var sound_percent := 80.0
 var draw_distance := 220.0
+## GRASS-02: share of the full grass density; 0 turns the grass off.
+var grass_percent := 100.0
+## GRASS-02 / D-088: how far grass is drawn, metres.
+var grass_distance := 30.0
 var path := PATH
 
 func load_settings(file: String = PATH) -> void:
@@ -13,6 +17,8 @@ func load_settings(file: String = PATH) -> void:
 	music_percent = _number(config.get_value("audio", "music", music_percent), music_percent, 0, 100)
 	sound_percent = _number(config.get_value("audio", "sound", sound_percent), sound_percent, 0, 100)
 	draw_distance = _number(config.get_value("graphics", "distance", draw_distance), draw_distance, 80, 300)
+	grass_percent = _number(config.get_value("graphics", "grass", grass_percent), grass_percent, 0, 100)
+	grass_distance = _number(config.get_value("graphics", "grass_distance", grass_distance), grass_distance, 15, 45)
 
 func save_settings() -> Error:
 	var config := ConfigFile.new()
@@ -21,6 +27,8 @@ func save_settings() -> Error:
 	config.set_value("audio", "music", music_percent)
 	config.set_value("audio", "sound", sound_percent)
 	config.set_value("graphics", "distance", draw_distance)
+	config.set_value("graphics", "grass", grass_percent)
+	config.set_value("graphics", "grass_distance", grass_distance)
 	return config.save(path)
 
 func apply_distance(world: Node3D) -> void:
