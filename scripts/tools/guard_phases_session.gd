@@ -1,4 +1,4 @@
-extends "res://scripts/tools/painted_combat_session.gd"
+extends "res://scripts/combat/painted_combat_session.gd"
 ## Сессия с фазовым guard-актёром: guard получает frame_guard_actor,
 ## wolf остаётся как в базовой painted_combat_session.
 

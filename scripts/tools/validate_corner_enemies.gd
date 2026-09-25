@@ -245,7 +245,7 @@ func run() -> void:
 	reset()
 	var toolbar: Node
 	for child in sandbox.get_children():
-		if child.get_script() == load("res://scripts/tools/corner_enemy_toolbar.gd"): toolbar = child
+		if child.get_script() == load("res://scripts/combat/corner_enemy_toolbar.gd"): toolbar = child
 	check(toolbar != null, "actual enemy toolbar exists")
 	if toolbar != null:
 		toolbar._process(0)

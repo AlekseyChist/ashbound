@@ -9,7 +9,7 @@ const Headwaters = preload("res://scripts/world/world_graybox_headwaters.gd")
 const Landmarks = preload("res://scripts/world/world_graybox_landmarks.gd")
 const Pad = preload("res://scripts/world/world_settlement_pad.gd")
 
-const VERSION := "0.25.1"
+const VERSION := "0.26.0"
 const WORLD_LAYOUT := "res://assets/world/graybox-v1/layout.json"
 const WORLD_HEIGHTS := "res://assets/world/graybox-v1/heights.bin"
 const WORLD_COLORS := "res://assets/world/graybox-v1/colors.bin"
@@ -43,6 +43,8 @@ var world_terrain: Node3D
 ## The courtyard lesson runs in the village (PLAYER-WORLD-01C); the pocket menu reads its journal here.
 signal journal_changed()
 var lesson: Node3D
+## COMBAT-WORLD-01B: the wolf by the trail to the forest inn and the Block button.
+var combat: Node
 
 
 func _ready() -> void:
@@ -53,7 +55,14 @@ func _ready() -> void:
 	lesson.configure(self)
 	lesson.journal_changed.connect(func(): journal_changed.emit())
 	hud.get_node("RootControl/BottomRight/VBox/AttackButton").show()
-	hud.attack_pressed.connect(player.request_attack)
+	# As in the combat sandbox: no strike while the Block button is held.
+	hud.attack_pressed.connect(func():
+		if combat == null or not combat.session.snapshot().get("guarding", false):
+			player.request_attack())
+	combat = preload("res://scripts/combat/world_combat.gd").new()
+	combat.name = "Combat"
+	add_child(combat)
+	combat.configure(self)
 	_update_prompt()
 	DisplayServer.window_set_title("AshBound — World %s" % VERSION)
 	print("WORLD_VILLAGE_READY version=%s base=%.1f ring=%.0f" % [VERSION, BASE_HEIGHT, RING])

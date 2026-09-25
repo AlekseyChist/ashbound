@@ -3,7 +3,7 @@ extends "res://scripts/tools/combat_feedback_sandbox.gd"
 ## Переиспользует combat_feedback_sandbox, подменяя только сессию.
 
 func _create_defense_controller() -> Node:
-	return preload("res://scripts/tools/painted_combat_session.gd").new()
+	return preload("res://scripts/combat/painted_combat_session.gd").new()
 
 
 func _ready() -> void:

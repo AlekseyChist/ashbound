@@ -1,4 +1,4 @@
-extends "res://scripts/tools/corner_enemy_session.gd"
+extends "res://scripts/combat/corner_enemy_session.gd"
 ## Изолированное превью боевой обратной связи: унаследованные правила
 ## движения/агрессии/контактов/дистанций не меняются; добавлены локальный
 ## hitstop (заморозка симуляции на фиксированное время), FX-подчинённый узел и
@@ -160,7 +160,8 @@ func _apply_result_fx(result: String) -> void:
 func _begin_stop(seconds: float, action: StringName) -> void:
 	_stop_remaining = maxf(_stop_remaining, seconds)
 	_stop_count += 1
-	if is_instance_valid(player):
+	# The sandbox hero freezes with the fight; the world hero (no guard/hit poses yet, D-087) keeps moving.
+	if is_instance_valid(player) and player.has_method("begin_feedback_stop"):
 		player.begin_feedback_stop(seconds, action)
 
 func hero_strike() -> void:

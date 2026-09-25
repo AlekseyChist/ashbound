@@ -59,6 +59,11 @@ var _capsule_height: float = 1.8
 var _capsule_center: float = 0.9
 
 
+## Optional ground under the actor, `func(x: float, z: float) -> float` (the world's terrain).
+## Empty in the sandboxes: they keep their flat floor at y = 0.02.
+var ground_height: Callable
+const GROUND_CLEARANCE := 0.12
+
 func setup(p_kind: String, p_home: Vector3, p_session: Node) -> void:
 	kind = p_kind
 	home = p_home
@@ -94,11 +99,11 @@ func setup(p_kind: String, p_home: Vector3, p_session: Node) -> void:
 	capsule.height = _capsule_height
 	var col := CollisionShape3D.new()
 	col.shape = capsule
-	col.position.y = _capsule_center
+	col.position.y = _capsule_center + (GROUND_CLEARANCE if ground_height.is_valid() else 0.0)
 	add_child(col)
 
 	# Start at home, slightly above the flat floor.
-	global_position = Vector3(home.x, 0.02, home.z)
+	global_position = Vector3(home.x, _floor_y(home.x, home.z), home.z)
 	state = "idle"
 	state_time = 0.0
 	contacts = 0
@@ -239,7 +244,7 @@ func cancel_attack() -> void:
 
 func reset_home() -> void:
 	# Explicit test reset only.
-	global_position = Vector3(home.x, 0.02, home.z)
+	global_position = Vector3(home.x, _floor_y(home.x, home.z), home.z)
 	state = "idle"
 	state_time = 0.0
 	contacts = 0
@@ -442,7 +447,13 @@ func _move_horizontal(dir: Vector3, delta: float) -> bool:
 		var tangent := (dir - collision.get_normal() * dir.dot(collision.get_normal())).normalized()
 		if tangent.length_squared() > 0.0001 and remainder.length_squared() > 0.0:
 			move_and_collide(tangent * remainder.length())
+	if ground_height.is_valid():
+		global_position.y = _floor_y(global_position.x, global_position.z)
 	return global_position.distance_squared_to(prev_pos) > 1e-8
+
+
+func _floor_y(x: float, z: float) -> float:
+	return float(ground_height.call(x, z)) + 0.02 if ground_height.is_valid() else 0.02
 
 
 func _present_visual() -> void:

@@ -113,7 +113,7 @@ func _create_defense_controller() -> Node:
 	return preload("res://scripts/combat/fist_defense_controller.gd").new()
 
 func _create_defense_toolbar() -> Node:
-	return preload("res://scripts/tools/fist_defense_toolbar.gd").new()
+	return preload("res://scripts/combat/fist_defense_toolbar.gd").new()
 
 func _process(_delta: float) -> void:
 	if level != null and level.dummy_hits >= 3:

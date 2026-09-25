@@ -18,10 +18,10 @@ for (const file of new Set(files)) {
   fs.mkdirSync(path.dirname(dest),{recursive:true}); fs.copyFileSync(source,dest);
 }
 const scene = validation ? 'scripts/tools/validate_corner_enemies.tscn' : 'scripts/tools/corner_enemy_sandbox.tscn';
-const resources = [scene, 'scripts/tools/corner_enemy_sandbox.tscn', ...['actor','visual','session','level','toolbar','preview_toolbar'].map(id=>'scripts/tools/corner_enemy_'+id+'.gd'), ...['wolf','guard'].map(id=>'assets/characters/courtyard/enemy-preview/'+id+'_frames.tres'), 'scripts/tools/fist_defense_sandbox.tscn',
+const resources = [scene, 'scripts/tools/corner_enemy_sandbox.tscn', ...['actor','visual','session','level','toolbar','preview_toolbar'].map(id=>(fs.existsSync(path.join(root,'scripts/combat/corner_enemy_'+id+'.gd'))?'scripts/combat/':'scripts/tools/')+'corner_enemy_'+id+'.gd'), ...['wolf','guard'].map(id=>'assets/characters/courtyard/enemy-preview/'+id+'_frames.tres'), 'scripts/tools/fist_defense_sandbox.tscn',
   'scripts/tools/fist_technique_sandbox.tscn',
   'scripts/combat/fist_defense_controller.gd','scripts/combat/fist_defense_player.gd',
-  'scripts/tools/fist_defense_toolbar.gd','scripts/tools/fist_preview_toolbar.gd',
+  'scripts/combat/fist_defense_toolbar.gd','scripts/tools/fist_preview_toolbar.gd',
   'scripts/courtyard/adaptive_screen_root.gd',
   ...['novice','novice_pack','trained','trained_pack'].flatMap(id=>['fist-preview','fist-defense'].map(dir=>`assets/characters/courtyard/${dir}/${id}_frames.tres`))
 ].map(file=>`res://${file}`);
