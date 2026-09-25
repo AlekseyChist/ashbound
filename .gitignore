@@ -14,3 +14,22 @@ node_modules/
 art/blender/__pycache__/
 tools/__pycache__/
 art/blender/output/*.blend[0-9]
+
+# D-080: local-only files (screenshots, QA logs, exports, builds). See AGENTS.md "ФАЙЛЫ И GIT".
+/local/
+.codex-remote-attachments/
+.DS_Store
+*.apk
+*.aab
+*.log
+*.mp4
+*.mov
+*.webm
+# New QA evidence is never committed; already tracked files are removed by FILES-CLEANUP-01.
+art/previews/
+docs/art/reviews/
+docs/**/evidence/
+docs/**/checks.json
+docs/**/qa.json
+docs/**/browser-checks.json
+docs/**/metrics.json
