@@ -382,12 +382,25 @@ target=np.where(target-lowest<1.0,lowest,target)
 channel=water_distance<=river_half+.5
 heights=np.where(np.isfinite(best)&~channel,target,heights)
 
+# WORLD-EDGES-01 (owner 27 Sep): the world ends in mountains - along the north, west and east edges
+# the land rises 45-95 m within ~30 m (steeper than 60 deg, the hero climbs 45 at most), a ridge that
+# varies along the edge; rock models dress its face in the game. The south is the sea.
+edge_e=np.minimum(np.minimum(x,2000.0-x),z)
+along=np.where(edge_e==z,x,z)
+ridge_h=70+25*np.sin(along/83.0)*np.cos(along/47.0)
+heights=heights+ridge_h*(1-smooth((edge_e-12.0)/30.0))
+
 # Clay color masses only. Roads come from the road mask, water from its own strips.
 colors=np.zeros((WIDTH,WIDTH,4));colors[:,:,:]=[.43,.52,.43,1]
 desert=(x>1210)&(z<1570);colors[desert]=[.66,.57,.43,1]
 low=z>1390+110*np.sin(x/200);colors[low]=[.37,.52,.49,1]
 rock=smooth((heights-165)/155)[:,:,None]
 colors[:,:,:3]=colors[:,:,:3]*(1-rock)+np.array([.55,.56,.54])*rock
+# WORLD-EDGES-01: bare rock on every slope steeper than ~35 deg (the edge ridge, gorges, cliffs), so
+# no meadow colour - and no grass - climbs a cliff.
+_gz,_gx=np.gradient(heights,STEP)
+steep_rock=smooth((np.degrees(np.arctan(np.hypot(_gx,_gz)))-30.0)/12.0)[:,:,None]
+colors[:,:,:3]=colors[:,:,:3]*(1-steep_rock)+np.array([.55,.56,.54])*steep_rock
 snow=smooth((heights-280)/110)[:,:,None]
 colors[:,:,:3]=colors[:,:,:3]*(1-snow)+np.array([.84,.86,.83])*snow
 # ROADS-UNIFY-01: no road colour here; roads are painted from the 1 m mask (roads.png) at run time.

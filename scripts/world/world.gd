@@ -91,6 +91,8 @@ var trail_dressing: Node3D
 var far_forest: Node3D
 ## WORLD-SEA-01: the sea along the south edge (D-099).
 var sea: Node3D
+## WORLD-EDGES-01: mountains, cliffs and boulders at the north, west and east edges.
+var edges: Node3D
 ## DEBUG-MAP-01: Settings -> Debug -> Map.
 var debug_map: CanvasLayer
 
@@ -188,6 +190,10 @@ func _build_world() -> void:
 	sea.name = "Sea"
 	world_root.add_child(sea)
 	sea.build(self)
+	edges = preload("res://scripts/world/world_edges.gd").new()
+	edges.name = "Edges"
+	world_root.add_child(edges)
+	edges.build(self)
 
 
 ## The map ends 45 m west of the village. A steep rise there (steeper than the hero can climb)
