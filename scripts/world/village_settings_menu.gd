@@ -9,6 +9,11 @@ var language_button: Button
 var hint: Label
 var error_label: Label
 var sliders: Dictionary={}
+## UI-CLEAN-01: checking tools (time, weather, house picker, return) instead of buttons on the game screen.
+var grid: GridContainer
+var debug_button: Button
+var debug_page: VBoxContainer
+var restart_button: Button
 var labels: Dictionary={}
 var opened: bool:
 	get: return is_visible_in_tree() and world.pocket.state==world.pocket.State.OPEN
@@ -22,7 +27,7 @@ func configure(owner_world: Node3D, preferences: RefCounted) -> void:
 	open_button=world.pocket.get_open_button()
 	close_button=world.pocket.get_pocket_panel().get_close_button()
 	# D-088: five sliders in two columns, so the language row and the hint stay on a phone screen.
-	var grid:=GridContainer.new();grid.columns=2;grid.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	grid=GridContainer.new();grid.columns=2;grid.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	grid.add_theme_constant_override("h_separation",48);grid.add_theme_constant_override("v_separation",8);add_child(grid)
 	for key in ["music","sound","distance","grass","grass_distance"]:
 		var cell:=VBoxContainer.new();cell.size_flags_horizontal=Control.SIZE_EXPAND_FILL;grid.add_child(cell)
@@ -41,10 +46,39 @@ func configure(owner_world: Node3D, preferences: RefCounted) -> void:
 	language_button=world._button(row,Vector2(240,120))
 	language_button.pressed.connect(func():
 		Localization.set_language("en" if Localization.get_language()=="ru" else "ru"))
+	debug_button=world._button(row,Vector2(300,120))
+	debug_button.name="DebugButton"
+	debug_button.pressed.connect(func(): show_debug(not debug_page.visible))
+	_build_debug_page()
 	hint=Label.new();hint.add_theme_font_size_override("font_size",22);add_child(hint)
 	error_label=Label.new();error_label.add_theme_font_size_override("font_size",22);add_child(error_label);error_label.hide()
 	Localization.language_changed.connect(_refresh_text)
 	_refresh_text();hide()
+
+func _build_debug_page() -> void:
+	debug_page=VBoxContainer.new();debug_page.name="DebugPage"
+	debug_page.add_theme_constant_override("separation",12)
+	add_child(debug_page);move_child(debug_page,grid.get_index()+1)
+	if world.atmosphere!=null and world.atmosphere.controls!=null:
+		debug_page.add_child(world.atmosphere.controls)
+	var row:=HBoxContainer.new();row.add_theme_constant_override("separation",12);debug_page.add_child(row)
+	world.picker.reparent(row,false)
+	world.picker.custom_minimum_size=Vector2(360,120)
+	restart_button=world._button(row,Vector2(360,120))
+	restart_button.name="RestartButton"
+	restart_button.pressed.connect(return_to_start)
+	debug_page.hide()
+
+## Settings or the Debug page in the same place; the sliders make room for it on a phone.
+func show_debug(value: bool) -> void:
+	debug_page.visible=value
+	grid.visible=not value
+	_refresh_text()
+
+## Back to the entrance of the chosen house, as the old "Return to start" button did.
+func return_to_start() -> void:
+	world.pocket.close_menu()
+	world.select_building(world.selected)
 
 func _change(key: String, value: float) -> void:
 	if key=="distance": settings.draw_distance=value;settings.apply_distance(world)
@@ -71,4 +105,6 @@ func _refresh_text(_language: String="") -> void:
 	labels.distance.text=Localization.text("VILLAGE_DRAW_DISTANCE")+" · %d " % settings.draw_distance+Localization.text("VILLAGE_METRES")
 	labels.language.text=Localization.text("SETTINGS_LANGUAGE_TITLE")
 	language_button.text="English" if Localization.get_language()=="ru" else "Русский"
-	hint.text=Localization.text("VILLAGE_SETTINGS_HINT")
+	debug_button.text=Localization.text("MENU_SECTION_SETTINGS" if debug_page.visible else "SETTINGS_DEBUG")
+	restart_button.text=Localization.text("FOREST_RETURN_START")
+	hint.text=Localization.text("SETTINGS_DEBUG_HINT" if debug_page.visible else "VILLAGE_SETTINGS_HINT")

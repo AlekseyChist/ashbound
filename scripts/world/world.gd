@@ -104,6 +104,7 @@ func _ready() -> void:
 	add_child(lodging)
 	lodging.configure(self)
 	lodging.changed.connect(_update_prompt)
+	lodging.changed.connect(func(): journal_changed.emit())
 	_start_save.call_deferred()
 	lesson.sync_pack.call_deferred()
 	_update_prompt()
@@ -446,7 +447,19 @@ func _build_water_and_sites() -> void:
 
 
 func get_journal_entry() -> Dictionary:
-	return lesson.journal_entry() if lesson != null else {}
+	if lesson == null:
+		return {}
+	var entry: Dictionary = lesson.journal_entry()
+	# UI-CLEAN-01: after the watchman pays, the objective leads to the inn bed and past the first night.
+	if entry.completed and lodging != null:
+		if lodging.rented:
+			entry.objective_key = "INN_OBJECTIVE_SLEEP"
+		elif lodging.nights == 0:
+			entry.objective_key = "INN_OBJECTIVE_RENT"
+			entry.params = {"price": str(lodging.PRICE)}
+		else:
+			entry.objective_key = "INN_OBJECTIVE_MORNING"
+	return entry
 
 
 ## A lesson character or the woodpile nearby takes the action button before a door.
@@ -476,13 +489,9 @@ func _update_prompt() -> void:
 	if lesson == null or hud == null or player == null:
 		return
 	_offer_inn_door()
-	var inside := false
-	for building in buildings:
-		if building.contains(player.global_position):
-			inside = true
-	if not inside:
-		var entry: Dictionary = lesson.journal_entry()
-		hud.set_objective(entry.objective_key, entry.params)
+	# UI-CLEAN-01: the corner always shows the current step, also inside houses and the inn.
+	var entry := get_journal_entry()
+	hud.set_objective(entry.objective_key, entry.params)
 	var point: Node3D = lesson.nearest_point() if is_input_available() else null
 	var action := ""
 	if point == null and is_input_available() and inn_keeper_in_reach():
@@ -612,8 +621,6 @@ func _offer_inn_door() -> void:
 		hud.set_prompt(Localization.text("VILLAGE_DOOR_MOVING"))
 	else:
 		hud.set_prompt(Localization.text(key) if OS.get_name() == "Android" else "E · " + Localization.text(key))
-	if inn.contains(player.global_position):
-		hud.set_objective(INN_RECORD.title_key)
 
 
 ## The innkeeper stands behind the bar (guard look until an own one is drawn); lines are data.

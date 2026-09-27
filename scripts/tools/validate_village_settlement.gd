@@ -79,9 +79,11 @@ func run_checks() -> void:
 	for language in ["ru","en"]:
 		Localization.set_language(language)
 		await settle(.1)
-		for control in [world.picker,world.language_button,world.interact_button]:
+		for control in [world.picker,world.interact_button]:
 			check(not control.text.begins_with("VILLAGE_"),"translated "+language)
-			check(world.hud.get_node("RootControl").get_global_rect().encloses(control.get_global_rect()),"safe HUD "+language)
+		# UI-CLEAN-01: the house picker is in Settings -> Debug; only play controls stay on the HUD.
+		check(world.hud.get_node("RootControl").get_global_rect().encloses(world.interact_button.get_global_rect()),"safe HUD "+language)
+		check(not world.picker.is_visible_in_tree() and not world.language_button.is_visible_in_tree(),"no debug buttons on the HUD "+language)
 	Localization.set_language("ru")
 	await screen("start")
 	for i in range(3): await door_route(i)

@@ -845,3 +845,18 @@ msgstr "Drive the wolves away from the barn."
 
 msgid "VILLAGE_LESSON_OBJECTIVE_WOLVES_REPORT"
 msgstr "Go back to the watchman at the tower."
+
+msgid "SETTINGS_DEBUG"
+msgstr "Debug"
+
+msgid "SETTINGS_DEBUG_HINT"
+msgstr "Checking tools: time, weather, jump to the houses. Not part of the game."
+
+msgid "INN_OBJECTIVE_RENT"
+msgstr "Go to the forest inn past the tower and rent a bed for {price} coins."
+
+msgid "INN_OBJECTIVE_SLEEP"
+msgstr "The bed is yours: go up to the loft and sleep."
+
+msgid "INN_OBJECTIVE_MORNING"
+msgstr "Morning. Look around the village and the forest."

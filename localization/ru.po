@@ -846,3 +846,18 @@ msgstr "Прогони волков от амбара."
 
 msgid "VILLAGE_LESSON_OBJECTIVE_WOLVES_REPORT"
 msgstr "Вернись к сторожу у башни."
+
+msgid "SETTINGS_DEBUG"
+msgstr "Отладка"
+
+msgid "SETTINGS_DEBUG_HINT"
+msgstr "Инструменты для проверки: время, погода, переход к домам. Это не часть игры."
+
+msgid "INN_OBJECTIVE_RENT"
+msgstr "Сходи в лесной трактир за башней и сними койку за {price} монеты."
+
+msgid "INN_OBJECTIVE_SLEEP"
+msgstr "Койка твоя: поднимись на чердак и выспись."
+
+msgid "INN_OBJECTIVE_MORNING"
+msgstr "Утро. Осмотри деревню и лес вокруг."

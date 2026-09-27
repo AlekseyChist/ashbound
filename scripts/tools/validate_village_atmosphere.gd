@@ -121,13 +121,29 @@ func cover_checks() -> void:
 	print("ATMOSPHERE_COVER_COMPLETE")
 
 func ui_and_pause_checks() -> void:
-	for language in ["ru","en"]:
-		Localization.set_language(language);atmosphere.apply_look();await settle(.1)
-		for control in [atmosphere.time_button,atmosphere.weather_button,atmosphere.clock_label]:
-			check(not "VILLAGE_" in control.text,"localized weather controls "+language)
-			check(world.hud.get_node("RootControl").get_global_rect().encloses(control.get_global_rect()),"weather controls inside safe area "+language)
-	Localization.set_language("ru")
+	# UI-CLEAN-01: the game screen has no checking buttons; they are in Settings -> Debug.
+	var root: Control=world.hud.get_node("RootControl")
+	for control in [root.get_node("HousePicker"),root.get_node("TopRightPanel"),world.picker,world.language_button]:
+		check(not control.is_visible_in_tree(),"no debug button on the game screen: "+str(control.name))
+	check(not root.is_ancestor_of(atmosphere.time_button) and not root.is_ancestor_of(atmosphere.weather_button),"time and weather are not on the HUD")
+	var menu: Control=world.settings_menu
 	world.camera_rig.set_mouse_capture(false)
+	await click_control(menu.open_button)
+	await get_tree().create_timer(1.5,true).timeout
+	check(world.pocket.state==world.pocket.State.OPEN,"pocket opens for the debug page")
+	await click_control(world.pocket._window._sections._settings_tab)
+	check(menu.debug_button.is_visible_in_tree() and not menu.debug_page.visible,"Settings opens on the settings page with a Debug button")
+	await click_control(menu.debug_button)
+	check(menu.debug_page.visible and not menu.grid.visible,"Debug page replaces the sliders")
+	var pocket_root: Control=world.pocket.get_node("RootControl")
+	for language in ["ru","en"]:
+		Localization.set_language(language);atmosphere.apply_look();await get_tree().create_timer(.1,true).timeout
+		for control in [atmosphere.time_button,atmosphere.weather_button,atmosphere.clock_label,world.picker,menu.restart_button,menu.debug_button]:
+			check(control.is_visible_in_tree(),"debug control shown "+language+"/"+str(control.name))
+			check(not "VILLAGE_" in control.text and not "SETTINGS_" in control.text and not "FOREST_" in control.text,"localized debug controls "+language)
+			check(pocket_root.get_global_rect().encloses(control.get_global_rect()),"debug controls inside safe area "+language)
+		await shot("debug-"+language)
+	Localization.set_language("ru")
 	atmosphere.set_hour(12);atmosphere.set_weather(0,false,true);atmosphere.auto_weather=true
 	await click_control(atmosphere.time_button)
 	check(is_equal_approx(atmosphere.hour,18.5),"time button selects next period")
@@ -135,6 +151,23 @@ func ui_and_pause_checks() -> void:
 	check(atmosphere.weather_index==1 and not atmosphere.auto_weather,"weather button selects rain")
 	for i in range(4):await click_control(atmosphere.weather_button)
 	check(atmosphere.weather_index==0 and atmosphere.auto_weather,"weather cycle returns to automatic")
+	check(world.pocket.state==world.pocket.State.OPEN,"time and weather keep the menu open")
+	var from: int=world.selected
+	await click_control(world.picker)
+	check(world.pocket.state==world.pocket.State.CLOSED and not get_tree().paused,"next house closes the menu")
+	check(world.selected==(from+1)%world.buildings.size(),"next house from Debug")
+	world.player.global_position+=Vector3(6,0,0)
+	await click_control(menu.open_button)
+	await get_tree().create_timer(1.5,true).timeout
+	await click_control(world.pocket._window._sections._settings_tab)
+	check(menu.debug_page.visible,"Debug page stays chosen while the game runs")
+	await click_control(menu.restart_button)
+	var building: Node3D=world.buildings[world.selected]
+	var entry: Vector3=building.to_global(building.record.entry+Vector3(0,0,4.0))
+	check(world.pocket.state==world.pocket.State.CLOSED and Vector2(world.player.global_position.x-entry.x,world.player.global_position.z-entry.z).length()<.05,"return to start from Debug")
+	menu.show_debug(false)
+	check(menu.grid.visible and not menu.debug_page.visible,"back to the settings page")
+	world.select_building(0);await settle(.2)
 	world.camera_rig.set_mouse_capture(true)
 	var before_hour: float=atmosphere.hour
 	var before_time: float=atmosphere.effect_time

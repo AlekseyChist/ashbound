@@ -45,6 +45,10 @@ func _ready() -> void:
 	settings_menu.name = "VillageSettings"
 	pocket.get_pocket_panel().use_settings_page(settings_menu)
 	settings_menu.configure(self, settings)
+	# UI-CLEAN-01: the game screen keeps only play controls; checking tools are in Settings -> Debug,
+	# the language choice is already in Settings.
+	hud.get_node("RootControl/HousePicker").hide()
+	hud.get_node("RootControl/TopRightPanel").hide()
 	DisplayServer.window_set_title("AshBound — Forest Village 0.23.6")
 	print("VILLAGE_SETTLEMENT_READY version=0.23.6 houses=3 trees=",dressing.tree_positions.size())
 
@@ -99,6 +103,14 @@ func select_building(index: int) -> void:
 	camera_rig._apply_rotation()
 	camera_rig.snap_to_target()
 	player.get_node("Visual").reset_motion_interpolation()
+
+## From Settings -> Debug: close the menu and go to the next house.
+func _on_picker_pressed() -> void:
+	if settings_menu == null or pocket.state == pocket.State.CLOSED:
+		super._on_picker_pressed()
+		return
+	pocket.close_menu()
+	select_building((selected+1)%buildings.size())
 
 func is_input_available() -> bool:
 	return super.is_input_available() and (pocket==null or pocket.state==pocket.State.CLOSED)

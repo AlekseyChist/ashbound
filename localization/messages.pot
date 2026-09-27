@@ -788,3 +788,18 @@ msgstr ""
 
 msgid "VILLAGE_LESSON_OBJECTIVE_WOLVES_REPORT"
 msgstr ""
+
+msgid "SETTINGS_DEBUG"
+msgstr ""
+
+msgid "SETTINGS_DEBUG_HINT"
+msgstr ""
+
+msgid "INN_OBJECTIVE_RENT"
+msgstr ""
+
+msgid "INN_OBJECTIVE_SLEEP"
+msgstr ""
+
+msgid "INN_OBJECTIVE_MORNING"
+msgstr ""

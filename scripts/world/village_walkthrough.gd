@@ -91,8 +91,7 @@ func _configure_hud() -> void:
 	bar.add_theme_constant_override("separation",20)
 	hud.get_node("RootControl").add_child(bar)
 	picker = _button(bar,Vector2(320,120))
-	picker.pressed.connect(func():
-		if is_input_available(): select_building((selected+1)%buildings.size()))
+	picker.pressed.connect(_on_picker_pressed)
 	language_button = _button(bar,Vector2(240,120))
 	language_button.pressed.connect(func():
 		if is_input_available(): Localization.set_language("en" if Localization.get_language()=="ru" else "ru"))
@@ -105,6 +104,10 @@ func _configure_hud() -> void:
 	prompt.add_theme_stylebox_override("normal", hud.get_node("RootControl").theme.get_stylebox("panel", "PanelContainer"))
 	hud.clear_message()
 	_refresh_text()
+
+## The house picker; a scene with the pocket menu moves it into Settings -> Debug.
+func _on_picker_pressed() -> void:
+	if is_input_available(): select_building((selected+1)%buildings.size())
 
 func _button(parent: Control, minimum: Vector2) -> Button:
 	var button := Button.new()

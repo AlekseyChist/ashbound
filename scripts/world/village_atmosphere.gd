@@ -20,6 +20,7 @@ var foliage_materials: Array[ShaderMaterial]=[]
 var time_button: Button
 var weather_button: Button
 var clock_label: Label
+var controls: VBoxContainer
 var auto_weather:=true
 var weather_elapsed:=0.0
 var save_elapsed:=0.0
@@ -162,27 +163,31 @@ func _setup_foliage() -> void:
 		batch.material_override=cache[key]
 		batch.extra_cull_margin=2.0 if tree else .6
 
+## UI-CLEAN-01: the time and weather buttons live in Settings -> Debug, not on the game screen.
 func _controls() -> void:
-	var bar:=VBoxContainer.new();bar.name="AtmosphereControls";bar.position=Vector2(24,176)
-	bar.add_theme_constant_override("separation",12)
-	world.hud.get_node("RootControl").add_child(bar)
-	var row:=HBoxContainer.new();row.add_theme_constant_override("separation",12);bar.add_child(row)
-	time_button=world._button(row,Vector2(240,120))
-	weather_button=world._button(row,Vector2(340,120))
-	clock_label=Label.new();clock_label.add_theme_font_size_override("font_size",22);bar.add_child(clock_label)
-	time_button.pressed.connect(func():
-		if not world.is_input_available(): return
-		var hours: Array[float]=[6.5,12,18.5,23]
-		var next: float=hours[0]
-		for at in hours:
-			if at>hour+.05: next=at;break
-		set_hour(next);apply_look();save_state())
-	weather_button.pressed.connect(func():
-		if not world.is_input_available(): return
-		if weather_index==profiles.size()-1 and not auto_weather:
-			auto_weather=true;set_weather(0,false)
-		else: set_weather((weather_index+1)%profiles.size())
-		_refresh_text();save_state())
+	controls=VBoxContainer.new();controls.name="AtmosphereControls"
+	controls.add_theme_constant_override("separation",12)
+	var row:=HBoxContainer.new();row.add_theme_constant_override("separation",12);controls.add_child(row)
+	time_button=world._button(row,Vector2(360,120))
+	weather_button=world._button(row,Vector2(360,120))
+	clock_label=Label.new();clock_label.add_theme_font_size_override("font_size",22);controls.add_child(clock_label)
+	time_button.pressed.connect(cycle_time)
+	weather_button.pressed.connect(cycle_weather)
+
+## Morning, noon, evening, night in turn.
+func cycle_time() -> void:
+	var hours: Array[float]=[6.5,12,18.5,23]
+	var next: float=hours[0]
+	for at in hours:
+		if at>hour+.05: next=at;break
+	set_hour(next);apply_look();save_state()
+
+## Each weather in turn; after the last one the weather changes by itself again.
+func cycle_weather() -> void:
+	if weather_index==profiles.size()-1 and not auto_weather:
+		auto_weather=true;set_weather(0,false)
+	else: set_weather((weather_index+1)%profiles.size())
+	_refresh_text();save_state()
 
 func _refresh_text(_language: String="") -> void:
 	if time_button==null: return

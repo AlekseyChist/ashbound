@@ -211,6 +211,13 @@ func check_lodging() -> void:
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
 	lodging.use_save(path)
 	purse.remove_gold(purse.gold)
+	# UI-CLEAN-01: after the watchman pays, the corner objective leads to the bed (in memory only,
+	# the lesson file is not written).
+	var quest: QuestTracker = world.lesson.quest
+	var stage_before: int = quest.stage_index
+	quest.stage_index = world.lesson.LessonQuest.stage_index(&"done")
+	world._update_prompt()
+	check(lodging.nights == 0 and world.hud._objective_key == "INN_OBJECTIVE_RENT" and world.get_journal_entry().params == {"price": "3"}, "the objective sends the hero to rent a bed")
 	world._update_prompt()
 	check(world.interact_button.text == Localization.text("INN_ACTION_RENT", {"price": "3"}), "the innkeeper offers a bed for 3 coins (%s)" % world.interact_button.text)
 	# The rented bed is not in reach from below, and not usable before it is rented.
@@ -242,6 +249,7 @@ func check_lodging() -> void:
 	await settle(.3)
 	world._update_prompt()
 	check(lodging.bed_in_reach() and world.interact_button.text == Localization.text("INN_ACTION_SLEEP"), "the rented bed offers sleep")
+	check(world.hud._objective_key == "INN_OBJECTIVE_SLEEP", "inside the inn the objective is the current step, not the inn name")
 	world.atmosphere.set_hour(21.0)
 	await world.interact()
 	check(absf(world.atmosphere.hour - 7.0) < .1, "the hero wakes at seven (%.2f)" % world.atmosphere.hour)
@@ -249,6 +257,11 @@ func check_lodging() -> void:
 	check(world.hud._message_key == "INN_SLEEP_DONE", "a morning message")
 	check(saved.load(path) == OK and saved.get_value("inn", "rented") == false, "the ended rent is saved")
 	world._update_prompt()
+	check(lodging.nights == 1 and saved.get_value("inn", "nights") == 1 and world.hud._objective_key == "INN_OBJECTIVE_MORNING", "after the first night the objective moves on")
+	lodging.nights = 0
+	lodging.load_state()
+	check(lodging.nights == 1, "the nights are restored from the file")
+	quest.stage_index = stage_before
 	check(world.interact_button.text != Localization.text("INN_ACTION_SLEEP"), "no second night without paying")
 	purse.remove_gold(purse.gold)
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
