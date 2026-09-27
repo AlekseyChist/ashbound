@@ -99,6 +99,9 @@ var bridges: Node3D
 var props: Node3D
 ## SNOW-01 / SAND-01: prints in the snow and the sand.
 var footprints: Node3D
+## WATER-01: spray over the rapids; SAND-01: whirls of sand in the desert wind.
+var water_spray: Node3D
+var dust_devils: Node3D
 ## DIALOG-CHOICE-01: answers to choose from in a conversation (the innkeeper first).
 var choices: CanvasLayer
 const DRINK_PRICE := 1
@@ -147,6 +150,14 @@ func _ready() -> void:
 	add_child(footprints)
 	footprints.configure(self)
 	audio.stepped.connect(footprints.step)
+	water_spray = preload("res://scripts/world/world_water_spray.gd").new()
+	water_spray.name = "WaterSpray"
+	add_child(water_spray)
+	water_spray.configure(self)
+	dust_devils = preload("res://scripts/world/world_dust_devils.gd").new()
+	dust_devils.name = "DustDevils"
+	add_child(dust_devils)
+	dust_devils.configure(self)
 	debug_map = preload("res://scripts/world/world_debug_map.gd").new()
 	debug_map.name = "DebugMap"
 	add_child(debug_map)
