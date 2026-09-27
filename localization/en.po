@@ -869,3 +869,6 @@ msgstr "Teleport"
 
 msgid "UI_ACTION_JUMP"
 msgstr "Jump"
+
+msgid "WORLD_SEA_TOO_DEEP"
+msgstr "It's too deep further on - I can't swim, I would drown."

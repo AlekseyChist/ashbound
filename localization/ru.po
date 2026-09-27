@@ -870,3 +870,6 @@ msgstr "Телепорт"
 
 msgid "UI_ACTION_JUMP"
 msgstr "Прыжок"
+
+msgid "WORLD_SEA_TOO_DEEP"
+msgstr "Дальше глубоко — плавать я не умею, утону."

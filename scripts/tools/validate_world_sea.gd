@@ -1,8 +1,8 @@
 extends Node
 ## WORLD-SEA-01 checks (D-099): the sea along the south edge.
 ## Water surface at the sea level to the horizon, a beach and a seabed in the heights, the hero
-## wades instead of sinking and stops at the map edge, no trees in the water, the fishing hamlet
-## by the water and the river ending in the bay.
+## walks into the water and stops chest-deep saying he cannot swim, no trees in the water, the
+## fishing hamlet by the water and the river ending in the bay.
 const Scene = preload("res://scenes/world/world.tscn")
 var world: Node3D
 var failures: Array[String] = []
@@ -74,24 +74,36 @@ func run_checks() -> void:
 			var p: Vector3 = batch.position + shape.position
 			if world.world_ground(p.x, p.z) < level + 2.0: wet += 1
 	check(wet == 0, "no tree in the water or on the beach (%d)" % wet)
-	# The hero wades: in deep water he stands on the wading floor, not on the seabed.
+	# WORLD-EDGES-01: from the beach the hero walks into ever deeper water on the seabed and stops
+	# where it would reach his chest, saying he cannot swim.
 	var player: CharacterBody3D = world.player
-	var deep := Vector2(700, 1950)
-	check(world.world_ground(deep.x - world.HALF, deep.y - world.HALF) < level - 5.0, "the test spot is deep water")
-	player.global_position = scene_point(deep, level + 1.0)
-	player.velocity = Vector3.ZERO
-	await settle(1.0)
-	var wading: float = world.world_root.to_local(player.global_position).y
-	check(player.is_on_floor() and absf(wading - (level - sea.WADE_DEPTH)) < 0.2, "the hero wades knee-deep (y %.2f)" % wading)
-	# Walking south: the map edge stops him.
+	# The first water south of a beach at x 700 (map metres), found on the ground itself.
+	var shore := INF
+	for z in range(1700, 1995):
+		if world.world_ground(700.0 - world.HALF, float(z) - world.HALF) < level:
+			shore = float(z)
+			break
+	check(shore < 1990.0, "the beach at x 700 meets the water (z %.0f)" % shore)
 	world.camera_rig._yaw = PI
 	world.camera_rig._apply_rotation()
-	player.global_position = scene_point(Vector2(700, 1975), level + 0.2)
-	await settle(.2)
+	player.global_position = scene_point(Vector2(700, shore - 6.0)) + Vector3.UP * 0.2
+	player.velocity = Vector3.ZERO
+	await settle(.3)
 	player.set_move_input(Vector2.UP)
-	await settle(3.0)
+	var deepest := 0.0
+	var entered := false
+	for i in 40:
+		await settle(.25)
+		var d: float = sea.depth_at(player.global_position)
+		deepest = maxf(deepest, d)
+		if d > 0.3: entered = true
 	player.set_move_input(Vector2.ZERO)
 	var reached: float = world.world_root.to_local(player.global_position).z + world.HALF
-	check(reached < 1996.0 and reached > 1980.0, "the map edge stops the hero in the water (z %.1f)" % reached)
+	check(entered, "the hero walks into the water (deepest %.2f m)" % deepest)
+	check(deepest <= sea.STOP_DEPTH + 0.15, "he never goes deeper than his chest (%.2f m)" % deepest)
+	check(deepest > sea.STOP_DEPTH - 0.4, "he stops at the depth limit, not before (%.2f m)" % deepest)
+	check(reached < 1990.0, "he stops well before the map edge (z %.1f)" % reached)
+	check(world.hud.get("_message_key") == "WORLD_SEA_TOO_DEEP", "he says he would drown")
+	check(not str(Localization.text("WORLD_SEA_TOO_DEEP")).begins_with("WORLD_"), "the remark is translated")
 	print("WORLD_SEA_CHECKS checks=", checks, " failures=", failures.size())
 	get_tree().quit(0 if failures.is_empty() else 1)

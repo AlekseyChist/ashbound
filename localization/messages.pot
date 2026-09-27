@@ -812,3 +812,6 @@ msgstr ""
 
 msgid "UI_ACTION_JUMP"
 msgstr ""
+
+msgid "WORLD_SEA_TOO_DEEP"
+msgstr ""
