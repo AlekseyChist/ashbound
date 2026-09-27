@@ -35,6 +35,7 @@ const ATTACK_SPEED_SCALE := 0.25
 ## about 0.45 m, from the ground only and not during a strike.
 const JUMP_HEIGHT := 0.45
 var _jump_requested := false
+var _in_jump := false
 
 
 ## Ввод игрока (клавиатура + сенсорный HUD). Выключение немедленно отменяет
@@ -90,8 +91,10 @@ func _physics_process(delta: float) -> void:
 	# Гравитация накапливается только в воздухе; на полу — нулевая вертикаль.
 	if is_on_floor():
 		velocity.y = 0.0
+		_in_jump = false
 		if _jump_requested and input_enabled and not _attack_active:
 			velocity.y = sqrt(2.0 * gravity * JUMP_HEIGHT)
+			_in_jump = true
 	else:
 		velocity.y -= gravity * delta
 	_jump_requested = false
@@ -317,6 +320,8 @@ func _update_visual() -> void:
 	var new_action := &"idle"
 	if _attack_active:
 		new_action = &"attack"
+	elif _in_jump:
+		new_action = &"jump"
 	elif is_running():
 		new_action = &"run"
 	elif velocity.x != 0.0 or velocity.z != 0.0:
