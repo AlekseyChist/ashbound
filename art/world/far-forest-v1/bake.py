@@ -6,7 +6,8 @@ import json, math, os, random, struct
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..'))
 SRC = os.path.join(ROOT, 'assets/world/graybox-v1')
-OUT = os.path.join(ROOT, 'assets/world/far-forest-v1/instances.bin')
+# FOREST_OUT: write elsewhere first when Windows folder protection blocks Python in Documents; copy after.
+OUT = os.environ.get('FOREST_OUT', os.path.join(ROOT, 'assets/world/far-forest-v1/instances.bin'))
 SEED = 270926
 N, S = 401, 5.0
 CELL = 8.0                      # one candidate per 8 x 8 m cell, jittered
@@ -115,8 +116,22 @@ def village_distance(x, z):
     x0, z0, x1, z1 = VILLAGE_RECT
     return math.hypot(max(x0 - x, 0.0, x - x1), max(z0 - z, 0.0, z - z1))
 
+SEA = layout.get('sea')
+def seaside(x, z):
+    # D-099: no trees in the water, on the beach or on the cliff edge.
+    if not SEA:
+        return False
+    xs = [p[0] for p in SEA['coast']]; zs = [p[1] for p in SEA['coast']]
+    for k in range(len(xs) - 1):
+        if xs[k] <= x <= xs[k + 1]:
+            t = (x - xs[k]) / (xs[k + 1] - xs[k])
+            return z > zs[k] + t * (zs[k + 1] - zs[k]) - 25.0 or height(x, z) < SEA['level'] + 3.0
+    return False
+
 def blocked(x, z):
     if x < 8 or z < 8 or x > 1992 or z > 1992:
+        return True
+    if seaside(x, z):
         return True
     if village_distance(x, z) < VILLAGE_CLEAR:
         return True

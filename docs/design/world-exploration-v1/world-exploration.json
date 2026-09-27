@@ -443,9 +443,9 @@
           32
         ],
         [
-          1670,
-          1730,
-          24
+          1690,
+          1818,
+          3
         ]
       ],
       "width_m": 3,
@@ -496,23 +496,18 @@
     },
     {
       "id": "crossroads_inn_approach",
-      "from": "valley_turn",
+      "from": "desert_gate",
       "to": "crossroads_inn",
       "points": [
         [
-          1470,
-          1090,
-          105
+          1650,
+          930,
+          100
         ],
         [
-          1460,
-          1140,
-          101
-        ],
-        [
-          1450,
-          1190,
-          97
+          1630,
+          910,
+          100
         ]
       ],
       "width_m": 3,
@@ -635,24 +630,24 @@
       "to": "lowland",
       "points": [
         [
-          1670,
-          1730,
-          24
+          1690,
+          1818,
+          3
         ],
         [
-          1500,
-          1820,
-          17
+          1520,
+          1800,
+          12
         ],
         [
           1280,
           1830,
-          10
+          4.5
         ],
         [
           1160,
           1760,
-          11
+          6
         ],
         [
           1030,
@@ -814,8 +809,8 @@
           6
         ],
         [
-          1120,
-          1990,
+          1095,
+          1782,
           0
         ]
       ],
@@ -827,7 +822,7 @@
         12,
         12,
         12,
-        12
+        22
       ]
     },
     {
@@ -1180,9 +1175,9 @@
       "id": "lowland_hamlet",
       "kind": "settlement",
       "point": [
-        1670,
-        1730,
-        24
+        1690,
+        1818,
+        3
       ],
       "key": "WORLD_SITE_LOWLAND_HAMLET",
       "label_ru": "Посёлок низин",
@@ -1245,9 +1240,9 @@
       "id": "crossroads_inn",
       "kind": "tavern",
       "point": [
-        1450,
-        1190,
-        97
+        1630,
+        910,
+        100
       ],
       "key": "WORLD_SITE_CROSSROADS_INN",
       "label_ru": "Таверна у развилки",
@@ -1465,5 +1460,78 @@
       "world_premise": "hot_magmatic_depths_beneath_desert",
       "ancient_mine_connection": false
     }
-  ]
+  ],
+  "sea": {
+    "decision": "D-099",
+    "level": 0.0,
+    "coast": [
+      [
+        0,
+        1885
+      ],
+      [
+        300,
+        1875
+      ],
+      [
+        600,
+        1882
+      ],
+      [
+        900,
+        1868
+      ],
+      [
+        1010,
+        1830
+      ],
+      [
+        1060,
+        1790
+      ],
+      [
+        1130,
+        1772
+      ],
+      [
+        1190,
+        1795
+      ],
+      [
+        1260,
+        1848
+      ],
+      [
+        1450,
+        1866
+      ],
+      [
+        1610,
+        1862
+      ],
+      [
+        1660,
+        1835
+      ],
+      [
+        1720,
+        1832
+      ],
+      [
+        1770,
+        1862
+      ],
+      [
+        2000,
+        1872
+      ]
+    ],
+    "cliffs_from_x": 1330,
+    "cove": [
+      1640,
+      1745
+    ],
+    "beach_width_m": 55,
+    "note": "West: low beaches; river mouth bay up to the lowland city port; east: rocky coast with the fishing cove."
+  }
 }

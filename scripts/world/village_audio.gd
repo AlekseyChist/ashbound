@@ -136,7 +136,8 @@ func surface_at(at: Vector3) -> String:
 	if hit.is_empty() or hit.normal.y<.5: return ""
 	var surface: String=hit.collider.get_meta("footstep_surface","stone")
 	if surface=="ground":
-		return "dirt" if world.terrain.color_at(hit.position.x,hit.position.z).a>.5 else "grass"
+		var road: float=world.road_at(hit.position.x,hit.position.z) if world.has_method("road_at") else world.terrain.color_at(hit.position.x,hit.position.z).a
+		return "dirt" if road>.5 else "grass"
 	return surface if samples.has(surface) else "stone"
 
 func _notification(what: int) -> void:

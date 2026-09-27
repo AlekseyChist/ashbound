@@ -1,7 +1,7 @@
 extends "res://scripts/world/village_dressing.gd"
 ## TRAIL-01 (owner, 25 Sep): the trail from the village to the forest inn runs through a pine
 ## forest instead of an empty meadow. The village kit (our trees, D-090) and the Poly Haven
-## forest floor, both sides of start_trail: trees and boulders past the shoulders, tufts of grass
+## forest floor, both sides of start_trail: trees and boulders past the shoulders, stones
 ## and small stones on the verge, nothing on any road, in the village or at the inn.
 ## Deterministic (own seed); batched in chunks like the village dressing.
 const SEED := 250926
@@ -45,7 +45,6 @@ func build_trail(scene: Node3D) -> void:
 	var ferns: Array = [[], []]
 	var logs: Array = []
 	var branches: Array = []
-	var grass: Array = []
 	for key in LIMITS: counts[key] = 0
 	var taken: Array[Vector2] = []
 	for attempt in range(30000):
@@ -108,7 +107,9 @@ func build_trail(scene: Node3D) -> void:
 			"stone":
 				stones[floor_rng.randi_range(0, 1)].append(Transform3D(turn.scaled(Vector3.ONE * floor_rng.randf_range(.25, .45)), Vector3(at.x, y, at.z)))
 			"grass":
-				grass.append(Transform3D(turn.scaled(Vector3.ONE * floor_rng.randf_range(.8, 1.35)), Vector3(at.x, y + .04, at.z)))
+				# GRASS-WORLD-01: the village blade grass covers the world now; the pick stays so the
+				# trees keep their places.
+				continue
 		counts[kind] += 1
 	for v in 3:
 		_batch(["pine_tall", "spruce", "pine_young"][v], trees[v], true, 180)
@@ -123,7 +124,6 @@ func build_trail(scene: Node3D) -> void:
 		_scatter(FERNS[v], ferns[v], false, 65, 56, true)
 	_scatter(["dead_tree_trunk", "dead_tree_trunk"], logs, true, 70, 56, false)
 	_scatter(["dry_branches_medium_01", "dry_branches_medium_01_a"], branches, false, 40, 56, false)
-	_batch("grass", grass, false, 42)
 	print("TRAIL_DRESSING ", counts)
 
 ## Which piece this attempt tries; the mix follows the limits, trees first.

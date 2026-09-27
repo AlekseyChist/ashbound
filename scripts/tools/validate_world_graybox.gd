@@ -144,7 +144,8 @@ func _surfaces_and_ui() -> void:
 		var vertices: PackedVector3Array = river_mesh.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
 		var actual_width := vertices[0].distance_to(vertices[1])
 		check(absf(actual_width - (2.0 if river.id == "east" else 12.0)) < 0.01, "visible upstream water width " + str(river.id))
-		check(absf(vertices[-2].distance_to(vertices[-1]) - 12.0) < 0.01, "water widens into lowlands " + str(river.id))
+		# D-099: the main river opens into the sea bay as a 22 m mouth; the others join it at 12 m.
+		check(absf(vertices[-2].distance_to(vertices[-1]) - (22.0 if river.id == "main" else 12.0)) < 0.01, "water widens into lowlands " + str(river.id))
 	for city in range(world.locations.size()):
 		world.select_city(city)
 		world.set_overview(false)

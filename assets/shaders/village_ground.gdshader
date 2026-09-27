@@ -12,6 +12,12 @@ uniform float grass_meters = 1.4;
 uniform float path_meters = 3.2;
 // Godot scales the grazing (sky) reflection with SPECULAR: 0.25 made far grass look like a mirror.
 uniform float grass_specular = 0.06;
+// ROADS-UNIFY-01: world roads are painted like the village paths, from a 1 m mask over the map.
+uniform bool use_road_mask = false;
+uniform sampler2D road_mask : filter_linear, repeat_disable;
+// xy: world x/z of the mask's corner, zw: its size in metres.
+uniform vec4 road_mask_rect = vec4(0.0, 0.0, 1.0, 1.0);
+uniform vec3 road_tint : source_color = vec3(0.333, 0.282, 0.216);
 varying highp vec3 world;
 float hash(vec2 p){vec3 q=fract(vec3(p.xyx)*0.1031);q+=dot(q,q.yzx+33.33);return fract((q.x+q.y)*q.z);}
 float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x),f.y);}
@@ -23,10 +29,17 @@ void vertex(){
 }
 void fragment(){
 	float damp=clamp(wetness,0.0,1.0);
+	float painted=COLOR.a;
+	vec3 base=COLOR.rgb;
+	if(use_road_mask){
+		float m=texture(road_mask,(world.xz-road_mask_rect.xy)/road_mask_rect.zw).r;
+		painted=max(painted,m);
+		base=mix(base,road_tint,m);
+	}
 	if(detail_enabled){
 		vec2 guv=world.xz/max(grass_meters,.01);
 		vec2 puv=world.xz/max(path_meters,.01);
-		float road=smoothstep(.08,.92,COLOR.a);
+		float road=smoothstep(.08,.92,painted);
 		// Far ground (the world map around the village) fades to its mean tone: no tiling moire.
 		float near=1.0-smoothstep(60.0,200.0,distance(world,CAMERA_POSITION_WORLD));
 		vec3 grass=texture(grass_albedo,guv).rgb;
@@ -34,7 +47,7 @@ void fragment(){
 		// Measured linear means of unchanged source images. Keep our palette and their surface detail.
 		vec3 detail=mix(grass/vec3(.060315,.109109,.022630),dirt/vec3(.152341,.108615,.063908),road);
 		float macro=.93+.14*mix(.5,noise(world.xz*.12),near);
-		ALBEDO=COLOR.rgb*mix(vec3(1.0),clamp(detail,vec3(.16),vec3(3.0)),.78*near)*macro*mix(1.0,.67,damp);
+		ALBEDO=base*mix(vec3(1.0),clamp(detail,vec3(.16),vec3(3.0)),.78*near)*macro*mix(1.0,.67,damp);
 		vec3 n=mix(texture(grass_normal,guv).rgb,texture(path_normal,puv).rgb,road);
 		NORMAL_MAP=n;
 		NORMAL_MAP_DEPTH=mix(.38,.52,road)*near;
@@ -45,8 +58,8 @@ void fragment(){
 		SPECULAR=mix(grass_specular,mix(.25,.35,damp),road);
 	}else{
 		float grain=noise(world.xz*9.0)*.28+noise(world.xz*1.7)*.2;
-		ALBEDO=COLOR.rgb*(.74+grain)*mix(1.0,.67,damp);
-		float road=smoothstep(.08,.92,COLOR.a);
+		ALBEDO=base*(.74+grain)*mix(1.0,.67,damp);
+		float road=smoothstep(.08,.92,painted);
 		ROUGHNESS=mix(mix(.96,.8,damp),mix(.96,.43,damp),road);
 		SPECULAR=mix(grass_specular,mix(.25,.35,damp),road);
 		NORMAL_MAP=vec3(.5,.5,1.0);

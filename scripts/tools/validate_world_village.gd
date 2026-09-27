@@ -203,7 +203,7 @@ func check_west_rim(gate: Vector3) -> void:
 func check_trail_forest() -> void:
 	var dressing: Node3D = world.trail_dressing
 	var counts: Dictionary = dressing.counts
-	check(int(counts.tree) >= 200 and int(counts.grass) >= 1000 and int(counts.fern) >= 150 and int(counts.boulder) >= 30 and int(counts.log) >= 20, "trees and forest floor along the trail " + str(counts))
+	check(int(counts.tree) >= 200 and int(counts.get("grass", 0)) == 0 and int(counts.fern) >= 150 and int(counts.boulder) >= 30 and int(counts.log) >= 20, "trees and forest floor along the trail " + str(counts))
 	var on_road := 0
 	var in_village := 0
 	for tree in dressing.tree_positions:
@@ -230,6 +230,19 @@ func check_trail_forest() -> void:
 	for batch in dressing.foliage_batches:
 		if batch.material_override is ShaderMaterial: wind += 1
 	check(wind > 0 and wind == dressing.foliage_batches.size(), "trail trees and grass sway with the village wind (%d/%d)" % [wind, dressing.foliage_batches.size()])
+	# GRASS-WORLD-01: the same blade grass as in the village grows along the trail, never on it.
+	var grass: Node3D = world.grass
+	check(grass.extent.size.x >= 2000.0, "the blade grass covers the world map")
+	var verge := 0
+	var on_trail := 0
+	for i in range(0, dressing.trail.size() - 1, 10):
+		var at: Vector3 = dressing.trail[i]
+		var key := Vector2i(floori((at.x + 6.0) / grass.CHUNK), floori(at.z / grass.CHUNK))
+		for clump in grass.chunk_points(key):
+			verge += 1
+			var p: Vector2 = clump.point
+			if dressing._road_clearance(p) < dressing.trail_width * .5: on_trail += 1
+	check(verge > 200 and on_trail == 0, "blade grass by the trail, none on it (%d, %d)" % [verge, on_trail])
 	var wolf: Node3D = world.combat.wolf()
 	var closest := INF
 	for p in dressing.trail:

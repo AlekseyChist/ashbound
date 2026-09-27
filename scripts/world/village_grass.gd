@@ -31,6 +31,9 @@ var _well := Vector2.ZERO
 ## LANDSCAPE-01: (x, z, radius) around trunks, logs, stumps and rocks: no grass inside, short grass nearby.
 var _clearings: Array[Vector3] = []
 var _tick := 0.0
+## GRASS-WORLD-01: a host scene (the world map) can widen the grass beyond the village; it then gives
+## the extent, the ground, and the obstacles near a chunk (roads, rivers, buildings).
+var _hooks := false
 
 func configure(scene: Node3D, amount: float = 1.0, reach: float = 30.0) -> void:
 	world = scene
@@ -51,6 +54,9 @@ func configure(scene: Node3D, amount: float = 1.0, reach: float = 30.0) -> void:
 	material.set_shader_parameter("far_share", .2)
 	mesh = _blade_clump()
 	mesh.surface_set_material(0, material)
+	_hooks = world.has_method("grass_obstacles")
+	if _hooks:
+		extent = world.grass_extent()
 	_apply_reach(reach)
 	density = -1.0
 	set_density(amount)
@@ -150,6 +156,11 @@ func chunk_points(key: Vector2i) -> Array:
 	for clearing in _clearings:
 		if area.grow(clearing.z + 1.0).has_point(Vector2(clearing.x, clearing.y)):
 			clearings.append(clearing)
+	var blocks: Array = []
+	if _hooks:
+		var near: Dictionary = world.grass_obstacles(area)
+		near_segments.append_array(near.segments)
+		blocks = near.blocks
 	var step := 1.0 / sqrt(DENSITY)
 	var result: Array = []
 	var x := corner.x
@@ -168,6 +179,12 @@ func chunk_points(key: Vector2i) -> Array:
 			var blocked := false
 			for yard in yards:
 				if yard.has_point(point):
+					blocked = true
+					break
+			if blocked:
+				continue
+			for block: Vector3 in blocks:
+				if point.distance_to(Vector2(block.x, block.y)) < block.z:
 					blocked = true
 					break
 			if blocked:
@@ -202,8 +219,8 @@ func _build_chunk(key: Vector2i) -> Node3D:
 	for j in range(SAMPLES):
 		for i in range(SAMPLES):
 			var at := corner + Vector2(i, j) * cell
-			heights.append(world.terrain.height_at(at.x, at.y))
-			colors.append(world.terrain.color_at(at.x, at.y))
+			heights.append(world.grass_height(at.x, at.y) if _hooks else world.terrain.height_at(at.x, at.y))
+			colors.append(world.grass_color(at.x, at.y) if _hooks else world.terrain.color_at(at.x, at.y))
 	var buffer := PackedFloat32Array()
 	var count := 0
 	for clump in chunk_points(key):
@@ -217,6 +234,8 @@ func _build_chunk(key: Vector2i) -> Node3D:
 		var a := j * SAMPLES + i
 		var height: float = lerpf(lerpf(heights[a], heights[a + 1], f.x), lerpf(heights[a + SAMPLES], heights[a + SAMPLES + 1], f.x), f.y)
 		var ground: Color = colors[a].lerp(colors[a + 1], f.x).lerp(colors[a + SAMPLES].lerp(colors[a + SAMPLES + 1], f.x), f.y)
+		if _hooks and not world.grass_grows(point.x, height, point.y, ground):
+			continue
 		var basis := Basis(Vector3.UP, clump.turn).scaled(Vector3(clump.size, clump.tall, clump.size))
 		var origin := Vector3(point.x, height, point.y) - center
 		buffer.append_array([basis.x.x, basis.y.x, basis.z.x, origin.x, basis.x.y, basis.y.y, basis.z.y, origin.y, basis.x.z, basis.y.z, basis.z.z, origin.z, ground.r, ground.g, ground.b, clump.variation])
