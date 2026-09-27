@@ -486,7 +486,7 @@ func _index_grass_obstacles() -> void:
 	for river in world_layout.rivers:
 		var points := _points_of(river)
 		for i in range(points.size() - 1):
-			pieces.append([Vector2(points[i].x, points[i].z) + offset, Vector2(points[i + 1].x, points[i + 1].z) + offset, float(river.world_widths[i]) + 2.0])
+			pieces.append([Vector2(points[i].x, points[i].z) + offset, Vector2(points[i + 1].x, points[i + 1].z) + offset, river_half_width(float(river.world_widths[i])) * 2.0])
 	for n in pieces.size():
 		var piece: Array = pieces[n]
 		var segment := {"id": n, "a": piece[0], "b": piece[1], "width": piece[2]}
@@ -511,6 +511,21 @@ func _index_grass_obstacles() -> void:
 	for lake in world_layout.lakes:
 		var c: Array = lake.center
 		_grass_blocks.append(Vector3(float(c[0]) - HALF + offset.x, float(c[1]) - HALF + offset.y, maxf(float(lake.radii_m[0]), float(lake.radii_m[1])) + 2.0))
+
+
+## MUSIC-REGION-01: which track plays here - "main" at home (the village and its ring), otherwise the
+## biome of the map as build.py colours it: mountains over 165 m, the desert east, the lowlands south.
+func music_region(at: Vector3) -> String:
+	var map := Vector2(at.x - world_root.position.x + HALF, at.z - world_root.position.z + HALF)
+	if VILLAGE_RECT.grow(RING).has_point(map):
+		return "main"
+	if at.y - world_root.position.y > 165.0:
+		return "mountains"
+	if map.x > 1210.0 and map.y < 1570.0:
+		return "desert"
+	if map.y > 1390.0 + 110.0 * sin(map.x / 200.0):
+		return "lowlands"
+	return "forest"
 
 
 ## How much a scene point is road (0..1): the village ground's own paint inside it, the mask outside.
@@ -578,6 +593,12 @@ func _mark_surfaces(root: Node, surface: String) -> void:
 		body.set_meta("footstep_surface", surface)
 
 
+## RIVER-BANKS-01: the water ribbon reaches 3 m past the channel (at least 3 m from the axis), so its
+## edges tuck under the banks that build.py raises over the water; the bank hides the rest.
+func river_half_width(width: float) -> float:
+	return maxf(width * 0.5, 3.0) + 3.0
+
+
 func _build_rivers() -> void:
 	var water := Shapes.new()
 	water.name = "Rivers"
@@ -588,7 +609,7 @@ func _build_rivers() -> void:
 		var right := PackedVector3Array()
 		for i in range(points.size()):
 			var tangent := points[mini(i + 1, points.size() - 1)] - points[maxi(i - 1, 0)]
-			var side := Vector3(-tangent.z, 0, tangent.x).normalized() * float(river.world_widths[i]) * 0.5
+			var side := Vector3(-tangent.z, 0, tangent.x).normalized() * river_half_width(float(river.world_widths[i]))
 			left.append(points[i] + side)
 			right.append(points[i] - side)
 		var band: MeshInstance3D = water.add_band(left, right, Color("537d91"), false)

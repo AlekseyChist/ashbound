@@ -298,9 +298,28 @@ for lake in D['lakes']:
     influence=1-smooth((q-1.08)/.45)
     heights=heights*(1-influence)+bed*influence
 # Actual channel is below water; road strips cross it as decks.
-river_weight=1-smooth((water_distance-(water_width*.5+3))/14)
+# RIVER-BANKS-01 (owner 27 Sep: "the river hangs in the air"): the water lies *inside* its channel.
+# The bed is under the water; the bank starts 1.5 m inside the water's edge (so the water ribbon
+# tucks into it) and half a metre past the edge stands 0.5 m over the water, then 1:1 up to the land. Where the land by a river is lower than that (after
+# the basins, sea and roads), a low bank rises to it - never into the sea. The old channel was a
+# flat trench 3+14 m wider than the water, so the water ribbon hung over its own bed.
 river_depth=1+1.8*np.clip((water_width-2)/10,0,1)
-heights=heights*(1-river_weight)+np.minimum(heights,water_height-river_depth)*river_weight
+river_half=np.maximum(water_width*.5,3.0)
+river_bed=water_height-river_depth
+river_bank=water_height+.5
+def channel_profile():
+    t=np.clip((water_distance-(river_half-1.5))/2.0,0,1)
+    return river_bed+(river_bank-river_bed)*t*t*(3-2*t)+np.maximum(water_distance-(river_half+1.5),0)
+def carve(h):
+    h=np.minimum(h,channel_profile())
+    inland=(d_sea<-30) if SEA else np.ones_like(h,bool)
+    # A low bank on the downhill side: 0.5 m over the water to 4 m past the edge, then 1:1 down
+    # to the land, so a grid triangle by the water never dips under it on a slope.
+    ring=(water_distance>=river_half+.5)&(water_distance<=river_half+12.0)&inland
+    levee=river_bank-np.maximum(water_distance-(river_half+4.0),0)
+    return np.where(ring,np.maximum(h,levee),h)
+river_weight=(water_distance<=river_half+1.0).astype(float)
+heights=carve(heights)
 # WORLD-TERRAIN-02: soften what the shaping left (cut edges, crossings) everywhere except the road
 # decks, then press the river channels and the decks back exactly.
 def blur(a,sigma):
@@ -310,7 +329,7 @@ def blur(a,sigma):
     return np.apply_along_axis(lambda v:np.convolve(v,kern,mode='valid'),1,p)
 deck_w=np.where(dd<=core,1.0,1-ease((dd-core)/6.0))
 heights=heights*deck_w+blur(heights,1.3)*(1-deck_w)
-heights=heights*(1-river_weight)+np.minimum(heights,water_height-river_depth)*river_weight
+heights=carve(heights)
 # No water hanging in the air: right under a river the ground reaches at least its bed.
 under=water_distance<=water_width*.5+1.0
 heights=np.where(under,np.maximum(heights,water_height-river_depth),heights)
@@ -360,7 +379,7 @@ for r in roads:
 # Where roads meet or share a stretch (their decks within 1 m) the ground takes the lower road, so it
 # never rises through a deck; switchback legs further apart in height keep the nearest leg.
 target=np.where(target-lowest<1.0,lowest,target)
-channel=water_distance<=water_width*.5+3.0
+channel=water_distance<=river_half+.5
 heights=np.where(np.isfinite(best)&~channel,target,heights)
 
 # Clay color masses only. Roads come from the road mask, water from its own strips.
@@ -400,16 +419,48 @@ def dense(path,road=False):
     p=path[-1];result.append([p[0]-HALF,p[2]+.08 if road else p[2],p[1]-HALF])
     return result
 
-OUT.mkdir(parents=True,exist_ok=True)
-(OUT/'heights.bin').write_bytes(heights.astype('<f4').tobytes())
-(OUT/'colors.bin').write_bytes(colors.astype('<f4').tobytes())
-def water_record(r):
-    points=dense(r['points']);widths=[]
+# RIVER-BANKS-01: where the planned water would stand over its own banks (steep headwaters, the lake
+# outlet, a confluence) the water comes down to them: at every point it stays 0.15 m under the lower
+# bank just past the (widened) ribbon's edge and never rises downstream; the bed is cut under it again.
+def river_widths(r):
+    widths=[]
     for a,b,wa,wb in zip(r['points'],r['points'][1:],r['widths_m'],r['widths_m'][1:]):
         n=math.ceil(math.dist(a[:2],b[:2])/2)
         widths.extend(wa+(wb-wa)*i/n for i in range(n))
     widths.append(r['widths_m'][-1])
-    assert len(widths)==len(points)
+    return widths
+def settle_river(r):
+    pts=dense(r['points']);widths=river_widths(r)
+    assert len(widths)==len(pts)
+    for i,(p,w) in enumerate(zip(pts,widths)):
+        a=pts[max(i-1,0)];b=pts[min(i+1,len(pts)-1)]
+        tx,tz=b[0]-a[0],b[2]-a[2];n=math.hypot(tx,tz) or 1.0
+        reach=max(w*.5,3.0)+3.0
+        banks=[sample(p[0]+HALF-tz/n*s*reach,p[2]+HALF+tx/n*s*reach) for s in (-1,1)]
+        if p[1]>1.0:p[1]=min(p[1],min(banks)-.15)
+        if i:p[1]=min(p[1],pts[i-1][1])
+    return pts,widths
+def recut(settled):
+    for rid,(pts,widths) in settled.items():
+        for a,b,w in zip(pts,pts[1:],widths):
+            depth=1+1.8*min(max((w-2)/10,0),1);half=max(w*.5,3.0)-.5
+            ax,az,bx,bz=a[0]+HALF,a[2]+HALF,b[0]+HALF,b[2]+HALF
+            sl=(slice(max(0,int((min(az,bz)-half)/STEP)),min(WIDTH,int((max(az,bz)+half)/STEP)+2)),slice(max(0,int((min(ax,bx)-half)/STEP)),min(WIDTH,int((max(ax,bx)+half)/STEP)+2)))
+            xx,zz=x[sl],z[sl];dx,dz=bx-ax,bz-az
+            t=np.clip(((xx-ax)*dx+(zz-az)*dz)/max(dx*dx+dz*dz,1e-9),0,1)
+            dist=np.hypot(xx-(ax+t*dx),zz-(az+t*dz))
+            heights[sl]=np.where(dist<=half,np.minimum(heights[sl],a[1]+t*(b[1]-a[1])-depth),heights[sl])
+
+# Twice: the cut bed moves the ground by the water's edge, the water settles to it once more.
+for _ in range(2):
+    settled={r['id']:settle_river(r) for r in D['rivers']}
+    recut(settled)
+
+OUT.mkdir(parents=True,exist_ok=True)
+(OUT/'heights.bin').write_bytes(heights.astype('<f4').tobytes())
+(OUT/'colors.bin').write_bytes(colors.astype('<f4').tobytes())
+def water_record(r):
+    points,widths=settled[r['id']]
     return {**r,'world_points':points,'world_widths':widths}
 
 layout={'version':'0.21.2-headwaters','width':WIDTH,'spacing':STEP,'extent_m':2000,
