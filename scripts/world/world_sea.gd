@@ -117,9 +117,11 @@ func _physics_process(_delta: float) -> void:
 		_warn()
 
 
-## After a teleport the old safe point is far away: start over from here.
+## After a teleport the old safe point is far away: the new place is the safe point when it is not
+## too deep itself.
 func forget_safe_point() -> void:
-	_safe = Vector3.INF
+	var at: Vector3 = world.player.global_position
+	_safe = at if depth_at(at) <= STOP_DEPTH else Vector3.INF
 
 
 func _warn() -> void:

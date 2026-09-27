@@ -108,7 +108,10 @@ func run_checks() -> void:
 	# The mountain lake too (owner: "I walked into the lake over my head").
 	var lake: Dictionary = layout.lakes[0]
 	var c: Array = lake.center
+	# From the dry bank south of the lake (the basin rim is under water right by the ellipse).
 	var start := Vector2(float(c[0]), float(c[1]) + float(lake.radii_m[1]) + 8.0)
+	while world.world_ground(start.x - world.HALF, start.y - world.HALF) < float(c[2]) + 0.3 and start.y < float(c[1]) + 200.0:
+		start.y += 2.0
 	world.hud.clear_message()
 	world.teleport_to({"id": "lake", "spawn": [start.x - world.HALF, world.world_ground(start.x - world.HALF, start.y - world.HALF) + 0.3, start.y - world.HALF], "point": [float(c[0]), float(c[1])]})
 	await settle(.5)

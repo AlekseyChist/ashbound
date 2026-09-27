@@ -32,6 +32,8 @@ var _region_time := 0.0
 var _region_check := 0.0
 var _music_fade: Tween
 var rng := RandomNumberGenerator.new()
+## SNOW-01 / SAND-01: every footstep with where it fell and on what ("snow", "sand", "grass"...).
+signal stepped(at: Vector3, kind: String)
 
 func configure(owner_world: Node3D, preferences: RefCounted) -> void:
 	world=owner_world; settings=preferences
@@ -164,6 +166,7 @@ func _physics_process(_delta: float) -> void:
 	var variant:=rng.randi_range(0,choices.size()-2)
 	if variant>=last_variant: variant+=1
 	last_variant=variant;last_surface=surface;step_count+=1
+	stepped.emit(at,world.ground_kind(at.x,at.z) if world.has_method("ground_kind") else surface)
 	step.stream=choices[variant]
 	step.pitch_scale=rng.randf_range(.95,1.05)
 	step.volume_db=-9 if running else -13
@@ -176,6 +179,10 @@ func surface_at(at: Vector3) -> String:
 	var surface: String=hit.collider.get_meta("footstep_surface","stone")
 	if surface=="ground":
 		var road: float=world.road_at(hit.position.x,hit.position.z) if world.has_method("road_at") else world.terrain.color_at(hit.position.x,hit.position.z).a
+		if world.has_method("ground_kind") and road<=.5:
+			var kind: String=world.ground_kind(hit.position.x,hit.position.z)
+			if kind=="snow": return "snow"
+			if kind=="sand": return "dirt"
 		return "dirt" if road>.5 else "grass"
 	return surface if samples.has(surface) else "stone"
 

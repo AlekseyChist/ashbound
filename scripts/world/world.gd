@@ -97,6 +97,8 @@ var edges: Node3D
 var bridges: Node3D
 ## WORLD-PROPS-01: desert rocks and plants, ships and piers in the harbours.
 var props: Node3D
+## SNOW-01 / SAND-01: prints in the snow and the sand.
+var footprints: Node3D
 ## DIALOG-CHOICE-01: answers to choose from in a conversation (the innkeeper first).
 var choices: CanvasLayer
 const DRINK_PRICE := 1
@@ -140,6 +142,11 @@ func _ready() -> void:
 	choices.name = "DialogueChoices"
 	add_child(choices)
 	choices.configure(self)
+	footprints = preload("res://scripts/world/world_footprints.gd").new()
+	footprints.name = "Footprints"
+	add_child(footprints)
+	footprints.configure(self)
+	audio.stepped.connect(footprints.step)
 	debug_map = preload("res://scripts/world/world_debug_map.gd").new()
 	debug_map.name = "DebugMap"
 	add_child(debug_map)
@@ -560,6 +567,20 @@ func music_region(at: Vector3) -> String:
 	if map.y > 1390.0 + 110.0 * sin(map.x / 200.0):
 		return "lowlands"
 	return "forest"
+
+
+## SNOW-01 / SAND-01: what the ground is at a scene point - "snow" (the white of the mountains),
+## "sand" (the desert), otherwise "ground".
+func ground_kind(x: float, z: float) -> String:
+	if _scene_in_village(x, z):
+		return "ground"
+	var c := grass_color(x, z)
+	var luminance := c.r * 0.2126 + c.g * 0.7152 + c.b * 0.0722
+	if luminance > 0.22:
+		return "snow"
+	if c.r > c.g * 1.15 and music_region(Vector3(x, 0.0, z)) == "desert":
+		return "sand"
+	return "ground"
 
 
 ## How much a scene point is road (0..1): the village ground's own paint inside it, the mask outside.
