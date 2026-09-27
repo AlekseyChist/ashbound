@@ -10,6 +10,11 @@ func _build_ui() -> void:
 		_hint_panel.hide()
 	if _hint_label != null:
 		_hint_label.hide()
+	# UI-CLEAN-01: left of Attack on the same line (the column: 298 wide, 32 px from the edges).
+	_guard_btn.offset_right = -32.0 - 298.0 - 12.0
+	_guard_btn.offset_left = _guard_btn.offset_right - 298.0
+	_guard_btn.offset_bottom = -32.0
+	_guard_btn.offset_top = -152.0
 
 
 func _inside_own_control(pos: Vector2) -> bool:

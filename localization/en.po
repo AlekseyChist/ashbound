@@ -860,3 +860,6 @@ msgstr "The bed is yours: go up to the loft and sleep."
 
 msgid "INN_OBJECTIVE_MORNING"
 msgstr "Morning. Look around the village and the forest."
+
+msgid "HUD_ACTION_IDLE"
+msgstr "Action"

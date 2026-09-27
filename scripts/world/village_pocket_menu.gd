@@ -7,7 +7,10 @@ var styled_section:=""
 func _ready() -> void:
 	process_mode=Node.PROCESS_MODE_ALWAYS
 	super._ready()
-	_root_control.get_node("QuickBar").queue_free()
+	# No quick bar in the village/world yet: give the HUD back the room the bar reserved.
+	var bar: Control=_root_control.get_node("QuickBar")
+	bar.release_hud()
+	bar.queue_free()
 	var book: Theme=preload("res://assets/ui/ashbound_ui.tres")
 	_root_control.theme=book
 	_open_button.offset_top=180;_open_button.offset_bottom=300

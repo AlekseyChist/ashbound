@@ -803,3 +803,6 @@ msgstr ""
 
 msgid "INN_OBJECTIVE_MORNING"
 msgstr ""
+
+msgid "HUD_ACTION_IDLE"
+msgstr ""

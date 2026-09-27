@@ -174,7 +174,8 @@ func _update_prompt() -> void:
 	for building in buildings: building.door.set_highlight(building.door==current_door)
 	hud.set_objective("VILLAGE_OUTSIDE" if inside_key.is_empty() else inside_key)
 	interact_button.disabled = current_door == null
-	var key := "VILLAGE_OPEN"
+	# Nothing in reach: a neutral label instead of a grey "Open door" (UI-CLEAN-01).
+	var key := "HUD_ACTION_IDLE" if current_door == null else "VILLAGE_OPEN"
 	if current_door != null:
 		var would_close: bool = current_door.goal > 0.5 if current_door.moving else current_door.fraction > 0.0
 		if would_close:

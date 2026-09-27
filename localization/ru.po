@@ -861,3 +861,6 @@ msgstr "Койка твоя: поднимись на чердак и выспи�
 
 msgid "INN_OBJECTIVE_MORNING"
 msgstr "Утро. Осмотри деревню и лес вокруг."
+
+msgid "HUD_ACTION_IDLE"
+msgstr "Действие"

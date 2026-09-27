@@ -65,6 +65,27 @@ func _shift_hud() -> void:
 					legend.position.y -= BAR_RESERVE
 		_hud_shifted = true
 
+## Undo _shift_hud() when a scene removes the bar (the world has no quick bar yet).
+func release_hud() -> void:
+	if not _hud_shifted or not is_instance_valid(_hud):
+		return
+	var force_touch := OS.has_feature("android") or bool(_hud.force_touch_controls)
+	var message_panel: Node = _hud.get_node_or_null("RootControl/MessagePanel")
+	if message_panel is Control:
+		message_panel.position.y += BAR_RESERVE
+	var bottom_left: Node = _hud.get_node_or_null("RootControl/BottomLeft")
+	if force_touch:
+		var bottom_right: Node = _hud.get_node_or_null("RootControl/BottomRight")
+		if bottom_left is Control:
+			bottom_left.position.y += BAR_RESERVE
+		if bottom_right is Control:
+			bottom_right.position.y += BAR_RESERVE
+	elif bottom_left != null:
+		var legend: Node = bottom_left.get_node_or_null("LegendLabel")
+		if legend is Control:
+			legend.position.y += BAR_RESERVE
+	_hud_shifted = false
+
 func _build_cells() -> void:
 	for i in range(10):
 		var btn := Button.new()
