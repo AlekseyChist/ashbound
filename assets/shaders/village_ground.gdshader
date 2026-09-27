@@ -69,7 +69,12 @@ void fragment(){
 			if(cliff>0.0){
 				vec3 w=pow(abs(world_normal),vec3(4.0));w/=(w.x+w.y+w.z);
 				vec3 q=world/cliff_meters;
+				// Two scales and a broad mottling, so the scan does not read as a repeating tile.
+				vec3 q2=world/(cliff_meters*4.6)+vec3(.37,.11,.73);
 				vec3 rock=texture(cliff_albedo,q.zy).rgb*w.x+texture(cliff_albedo,q.xz).rgb*w.y+texture(cliff_albedo,q.xy).rgb*w.z;
+				vec3 rock2=texture(cliff_albedo,q2.zy).rgb*w.x+texture(cliff_albedo,q2.xz).rgb*w.y+texture(cliff_albedo,q2.xy).rgb*w.z;
+				float mottle=noise(world.xz*.021+world.y*.013)*.6+noise(world.xz*.083)*.4;
+				rock=mix(rock,rock2,.55)*mix(.7,1.2,mottle);
 				vec3 rn=texture(cliff_normal,q.zy).rgb*w.x+texture(cliff_normal,q.xz).rgb*w.y+texture(cliff_normal,q.xy).rgb*w.z;
 				ALBEDO=mix(ALBEDO,rock*.8*mix(1.0,.67,damp),cliff);
 				NORMAL_MAP=mix(NORMAL_MAP,rn,cliff);

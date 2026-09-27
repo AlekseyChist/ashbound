@@ -66,33 +66,46 @@ func _build_massif() -> void:
 	_noise.fractal_type = FastNoiseLite.FRACTAL_RIDGED
 	_noise.fractal_octaves = 5
 	_noise.fractal_gain = 0.5
-	var st := SurfaceTool.new()
-	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	# One shared vertex per grid point (normals from the neighbouring heights), triangles only for the
+	# cells outside the map - built straight into arrays, far faster than a SurfaceTool on a phone.
 	var lo := -OUTER
 	var n := int((2000.0 + 2.0 * OUTER) / CELL)
+	var row := n + 1
 	var heights := PackedFloat32Array()
-	heights.resize((n + 1) * (n + 1))
-	for j in n + 1:
-		for i in n + 1:
-			heights[j * (n + 1) + i] = _massif_height(Vector2(lo + i * CELL, lo + j * CELL))
+	heights.resize(row * row)
+	for j in row:
+		for i in row:
+			heights[j * row + i] = _massif_height(Vector2(lo + i * CELL, lo + j * CELL))
+	var vertices := PackedVector3Array()
+	var normals := PackedVector3Array()
+	vertices.resize(row * row)
+	normals.resize(row * row)
+	for j in row:
+		for i in row:
+			var k := j * row + i
+			vertices[k] = Vector3(lo + i * CELL - world.HALF, heights[k], lo + j * CELL - world.HALF)
+			var dx := heights[j * row + mini(i + 1, n)] - heights[j * row + maxi(i - 1, 0)]
+			var dz := heights[mini(j + 1, n) * row + i] - heights[maxi(j - 1, 0) * row + i]
+			normals[k] = Vector3(-dx, 2.0 * CELL, -dz).normalized()
+	var indices := PackedInt32Array()
 	for j in n:
 		for i in n:
-			var a := Vector2(lo + i * CELL, lo + j * CELL)
-			var centre := a + Vector2(CELL, CELL) * 0.5
+			var centre := Vector2(lo + (i + 0.5) * CELL, lo + (j + 0.5) * CELL)
 			# Only outside the map, and not out on the southern sea.
 			if Rect2(0, 0, 2000, 2000).grow(-1.0).has_point(centre) or centre.y > 2000.0 + CELL:
 				continue
-			var corner := [Vector2i(i, j), Vector2i(i + 1, j), Vector2i(i + 1, j + 1), Vector2i(i, j + 1)]
-			var p: Array[Vector3] = []
-			for c: Vector2i in corner:
-				p.append(Vector3(lo + c.x * CELL - world.HALF, heights[c.y * (n + 1) + c.x], lo + c.y * CELL - world.HALF))
-			for k in [0, 1, 2, 0, 2, 3]:
-				st.add_vertex(p[k])
-	st.index()
-	st.generate_normals()
+			var a := j * row + i
+			indices.append_array(PackedInt32Array([a, a + 1, a + row + 1, a, a + row + 1, a + row]))
+	var arrays := []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = vertices
+	arrays[Mesh.ARRAY_NORMAL] = normals
+	arrays[Mesh.ARRAY_INDEX] = indices
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
 	massif = MeshInstance3D.new()
 	massif.name = "Massif"
-	massif.mesh = st.commit()
+	massif.mesh = mesh
 	var rock: StandardMaterial3D = _mesh_of("mountainside").surface_get_material(0)
 	var material := ShaderMaterial.new()
 	material.shader = preload("res://assets/shaders/world_massif.gdshader")
