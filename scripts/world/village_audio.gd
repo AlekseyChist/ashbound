@@ -131,7 +131,9 @@ func _process(delta: float) -> void:
 	var weather: Dictionary=world.atmosphere.current
 	var gust:=.86+.14*sin(world.atmosphere.effect_time*.71)
 	wind.volume_db=linear_to_db(maxf(.30*float(weather.wind)*exposure*gust,.0001))
-	rain.volume_db=linear_to_db(maxf(.48*float(weather.rain)*exposure,.0001))
+	# WEATHER-BIOME-01: no rain sound where it snows (the mountains) or never rains (the desert).
+	var raining: float=1.0 if world.atmosphere.rain.precipitation_here()=="rain" else 0.0
+	rain.volume_db=linear_to_db(maxf(.48*float(weather.rain)*exposure*raining,.0001))
 	if world.atmosphere.weather_index==4 and float(weather.rain)>.75:
 		thunder_timer-=delta
 		if thunder_timer<=0:

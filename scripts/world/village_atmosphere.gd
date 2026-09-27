@@ -54,9 +54,15 @@ func configure(scene: Node3D) -> void:
 	apply_look()
 	Localization.language_changed.connect(_refresh_text)
 
+## WEATHER-BIOME-01 (owner 27 Sep): in the desert a hot sun - clear, bright, warm, dry, thin haze.
+## 0 elsewhere, 1 in the desert; it follows the hero over a few seconds, no jump at the border.
+var heat:=0.0
+
 func _process(delta: float) -> void:
 	if world==null or not world.is_input_available() or force_pause: return
 	advance(delta)
+	var desert: bool=world.has_method("music_region") and world.music_region(world.player.global_position)=="desert"
+	heat=move_toward(heat,1.0 if desert else 0.0,delta*0.25)
 	apply_look()
 	save_elapsed+=delta
 	if save_elapsed>=15.0: save_elapsed=0.0;save_state()
@@ -99,14 +105,15 @@ func apply_look() -> void:
 	var elevation:=sin((hour-6.0)/24.0*TAU)
 	daylight=smoothstep(-.25,.35,elevation)
 	var dusk: float=(1.0-smoothstep(.0,.45,absf(elevation)))*(1.0-float(current.cloud))
-	var overcast:=float(current.cloud)
+	var overcast:=float(current.cloud)*(1.0-heat)
 	world.sun.rotation_degrees=Vector3(-maxf(4.0,absf(elevation)*(60.0 if elevation>=0 else 35.0)),hour*15.0-180.0,0)
 	world.sun.light_color=Color("b7c6e5").lerp(Color("fff0da").lerp(Color("ffb078"),dusk),daylight)
-	world.sun.light_energy=lerpf(.22,1.25,daylight)*(1.0-overcast*.65)
+	world.sun.light_energy=lerpf(.22,1.25,daylight)*(1.0-overcast*.65)*(1.0+.35*heat*daylight)
+	world.sun.light_color=world.sun.light_color.lerp(Color("fff1c4"),heat*daylight*.6)
 	world.environment.ambient_light_color=Color("576f94").lerp(Color("89978e"),daylight)
 	world.environment.ambient_light_energy=lerpf(.16,.24,daylight)*(1.0-overcast*.12)
 	world.environment.adjustment_contrast=lerpf(1.025,1.10,daylight)
-	var horizon:=Color("16242f").lerp(Color("859487"),daylight).lerp(Color("a36f4b"),dusk*.7)
+	var horizon:=Color("16242f").lerp(Color("859487"),daylight).lerp(Color("a36f4b"),dusk*.7).lerp(Color("c7b38a"),heat*daylight*.4)
 	horizon=horizon.lerp(Color("45545b").lerp(Color("101c29"),1.0-daylight),overcast*.75)
 	sky_material.sky_top_color=Color("050b16").lerp(Color("355966"),daylight).lerp(horizon,overcast*.65)
 	sky_material.sky_horizon_color=horizon
@@ -114,10 +121,10 @@ func apply_look() -> void:
 	sky_material.ground_horizon_color=horizon
 	world.environment.fog_light_color=horizon
 	world.environment.fog_light_energy=lerpf(.25,.75,daylight)
-	world.environment.fog_density=float(current.fog)
+	world.environment.fog_density=float(current.fog)*(1.0-.5*heat)
 	world.environment.fog_height=.5
-	world.environment.fog_height_density=float(current.fog)*.8
-	world.terrain.material.set_shader_parameter("wetness",wetness)
+	world.environment.fog_height_density=float(current.fog)*.8*(1.0-.5*heat)
+	world.terrain.material.set_shader_parameter("wetness",wetness*(1.0-heat))
 	for material in foliage_materials:
 		material.set_shader_parameter("effect_time",effect_time)
 		material.set_shader_parameter("wind_strength",float(current.wind))

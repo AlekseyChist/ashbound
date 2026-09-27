@@ -64,9 +64,19 @@ func _batch(count: int, splash: bool, texture: Texture2D) -> MultiMeshInstance3D
 	add_child(node)
 	return node
 
+## WEATHER-BIOME-01 (owner 27 Sep): the mountains get snow instead of rain, the desert no rain at
+## all (wind and a hot sun); elsewhere rain. Returns what falls here: "rain", "snow" or "".
+func precipitation_here() -> String:
+	var region: String=world.music_region(world.player.global_position) if world.has_method("music_region") else ""
+	if region=="desert": return ""
+	return "snow" if region=="mountains" else "rain"
+
 func update_weather(time: float, intensity: float, wind: float, daylight: float) -> void:
 	if not ready_to_draw: return
 	global_position=world.player.global_position
+	var kind:=precipitation_here()
+	if kind=="": intensity=0.0
+	for material in materials: material.set_shader_parameter("snow",1.0 if kind=="snow" else 0.0)
 	visible=intensity>.005
 	var at:=Vector2(global_position.x,global_position.z)
 	if VILLAGE_COVER.grow(-14.0).has_point(at):
