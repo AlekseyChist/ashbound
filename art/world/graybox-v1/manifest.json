@@ -8,8 +8,8 @@
   ],
   "source": "docs/design/world-exploration-v1/world-exploration.json",
   "files": {
-    "assets/world/graybox-v1/colors.bin": "13f70a5d557088a40fd35c9c8e6bc65256e94b0074b7ef72b8c7f411360f2760",
-    "assets/world/graybox-v1/heights.bin": "975657b64a21c9562734941606249d266b39406cb7d1011f0db50c63d315509b",
+    "assets/world/graybox-v1/colors.bin": "34a62fde2835fe86a53aadd9313cbfaa9789165497700aee2f318ae27e68462e",
+    "assets/world/graybox-v1/heights.bin": "2abf2f3ef80bfb51cef03f580e893bb0307652f076eced843b9bbffc65fdb5b3",
     "assets/world/graybox-v1/layout.json": "92b2bfc17554f608f1274b0ed0fd9c05a7584bcafd0856a2899522decba028f6",
     "assets/world/graybox-v1/roads.png": "975b1311240c084c038e9edde5b731255bea3605105e4fd49612b061fe12ed17",
     "assets/characters/world-graybox-v1/walk.png": "2d4ca6894099fc7a2b7e3f8f38348aca487cf521ab2bf27b65c62dab8d1ed2cc",

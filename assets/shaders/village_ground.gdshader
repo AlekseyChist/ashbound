@@ -18,11 +18,19 @@ uniform sampler2D road_mask : filter_linear, repeat_disable;
 // xy: world x/z of the mask's corner, zw: its size in metres.
 uniform vec4 road_mask_rect = vec4(0.0, 0.0, 1.0, 1.0);
 uniform vec3 road_tint : source_color = vec3(0.333, 0.282, 0.216);
+// WORLD-EDGES-01: bare rock on steep ground (the edge ridges, gorges), a scanned cliff projected
+// from three sides; off in the village.
+uniform bool use_cliff = false;
+uniform sampler2D cliff_albedo : source_color, filter_linear_mipmap_anisotropic, repeat_enable;
+uniform sampler2D cliff_normal : hint_normal, filter_linear_mipmap_anisotropic, repeat_enable;
+uniform float cliff_meters = 9.0;
+varying vec3 world_normal;
 varying highp vec3 world;
 float hash(vec2 p){vec3 q=fract(vec3(p.xyx)*0.1031);q+=dot(q,q.yzx+33.33);return fract((q.x+q.y)*q.z);}
 float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x),f.y);}
 void vertex(){
 	world=(MODEL_MATRIX*vec4(VERTEX,1.0)).xyz;
+	world_normal=normalize((MODEL_MATRIX*vec4(NORMAL,0.0)).xyz);
 	// Terrain is fixed in world space, UV u = +X, v = +Z. Build the missing tangent frame.
 	TANGENT=normalize(vec3(1.0,-NORMAL.x/max(NORMAL.y,.001),0.0));
 	BINORMAL=normalize(cross(TANGENT,NORMAL));
@@ -56,6 +64,19 @@ void fragment(){
 		float path_rough=mix(clamp(texture(path_roughness,puv).r,.72,1.0),.43,damp);
 		ROUGHNESS=mix(grass_rough,path_rough,road);
 		SPECULAR=mix(grass_specular,mix(.25,.35,damp),road);
+		if(use_cliff){
+			float cliff=1.0-smoothstep(0.62,0.8,world_normal.y);
+			if(cliff>0.0){
+				vec3 w=pow(abs(world_normal),vec3(4.0));w/=(w.x+w.y+w.z);
+				vec3 q=world/cliff_meters;
+				vec3 rock=texture(cliff_albedo,q.zy).rgb*w.x+texture(cliff_albedo,q.xz).rgb*w.y+texture(cliff_albedo,q.xy).rgb*w.z;
+				vec3 rn=texture(cliff_normal,q.zy).rgb*w.x+texture(cliff_normal,q.xz).rgb*w.y+texture(cliff_normal,q.xy).rgb*w.z;
+				ALBEDO=mix(ALBEDO,rock*.8*mix(1.0,.67,damp),cliff);
+				NORMAL_MAP=mix(NORMAL_MAP,rn,cliff);
+				NORMAL_MAP_DEPTH=mix(NORMAL_MAP_DEPTH,.9,cliff);
+				ROUGHNESS=mix(ROUGHNESS,.9,cliff);
+			}
+		}
 	}else{
 		float grain=noise(world.xz*9.0)*.28+noise(world.xz*1.7)*.2;
 		ALBEDO=base*(.74+grain)*mix(1.0,.67,damp);

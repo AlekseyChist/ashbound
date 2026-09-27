@@ -10,20 +10,19 @@ const CLIFFS := ["mountainside", "namaqualand_cliff_01", "namaqualand_cliff_02"]
 const BOULDER := "namaqualand_boulder_02"
 const SEED := 270926
 const OUTER := 1200.0
-const CELL := 40.0
+const CELL := 20.0
 const CLIFF_STEP := 22.0
 const BOULDER_STEP := 35.0
 const CHUNK := 300.0
 ## Base visibility ends at the default draw distance (220 m); VillageSettings scales them.
 const CLIFF_VISIBLE := 450.0
 const BOULDER_VISIBLE := 160.0
-const ROCK := Color(0.55, 0.56, 0.54)
-const SNOW := Color(0.84, 0.86, 0.83)
 
 var world: Node3D
 var cliff_count := 0
 var boulder_count := 0
 var massif: MeshInstance3D
+var _massif_material: ShaderMaterial
 
 
 func build(scene: Node3D) -> void:
@@ -39,30 +38,42 @@ func _edge_height(map: Vector2) -> float:
 	return world.world_ground(inside.x - world.HALF, inside.y - world.HALF)
 
 
+## Ridged fractal peaks rising from the ridge at the edge; the range sinks into the sea in the south.
+var _noise: FastNoiseLite
+
 func _massif_height(map: Vector2) -> float:
 	var inside := Vector2(clampf(map.x, 0.0, 2000.0), clampf(map.y, 0.0, 2000.0))
 	var out := map.distance_to(inside)
 	var base := _edge_height(map)
-	var noise := 0.55 + 0.25 * sin(map.x / 173.0 + map.y / 211.0) + 0.2 * cos(map.x / 97.0 - map.y / 131.0)
-	var h := base + 30.0 + 280.0 * smoothstep(0.0, 500.0, out) * noise
-	# Towards the south the range runs into the sea.
+	# Separate sharp peaks (the noise to the power 1.5), not an even wall along the edge; a finer
+	# layer breaks the slopes into ribs and gullies.
+	var peaks := pow((_noise.get_noise_2d(map.x, map.y) + 1.0) * 0.5, 1.5)
+	var ribs := _noise.get_noise_2d(map.x * 4.0 + 913.0, map.y * 4.0 - 377.0)
+	# A range on the horizon, not a wall overhead: it rises over 700 m to peaks up to ~350 m over
+	# the edge (seen from 250 m inside the map, about 15-20 degrees up).
+	var rise := smoothstep(0.0, 700.0, out)
+	var h := base + 15.0 + (30.0 + 320.0 * peaks) * rise + 30.0 * ribs * rise
 	var sink := smoothstep(1650.0, 1900.0, map.y)
 	return lerpf(h, -25.0, sink)
 
 
-func _colour(h: float) -> Color:
-	var c := ROCK.lerp(SNOW, smoothstep(300.0, 380.0, h)).srgb_to_linear()
-	var luminance := c.r * 0.2126 + c.g * 0.7152 + c.b * 0.0722
-	var scale := lerpf(0.24, 0.62, smoothstep(0.3, 0.7, luminance))
-	return Color(c.r * scale, c.g * scale, c.b * scale, 0.0)
-
-
 func _build_massif() -> void:
+	_noise = FastNoiseLite.new()
+	_noise.seed = SEED
+	_noise.noise_type = FastNoiseLite.TYPE_SIMPLEX_SMOOTH
+	_noise.frequency = 0.0022
+	_noise.fractal_type = FastNoiseLite.FRACTAL_RIDGED
+	_noise.fractal_octaves = 5
+	_noise.fractal_gain = 0.5
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var lo := -OUTER
-	var hi := 2000.0 + OUTER
-	var n := int((hi - lo) / CELL)
+	var n := int((2000.0 + 2.0 * OUTER) / CELL)
+	var heights := PackedFloat32Array()
+	heights.resize((n + 1) * (n + 1))
+	for j in n + 1:
+		for i in n + 1:
+			heights[j * (n + 1) + i] = _massif_height(Vector2(lo + i * CELL, lo + j * CELL))
 	for j in n:
 		for i in n:
 			var a := Vector2(lo + i * CELL, lo + j * CELL)
@@ -70,21 +81,43 @@ func _build_massif() -> void:
 			# Only outside the map, and not out on the southern sea.
 			if Rect2(0, 0, 2000, 2000).grow(-1.0).has_point(centre) or centre.y > 2000.0 + CELL:
 				continue
-			var quad := [a, a + Vector2(CELL, 0), a + Vector2(CELL, CELL), a + Vector2(0, CELL)]
+			var corner := [Vector2i(i, j), Vector2i(i + 1, j), Vector2i(i + 1, j + 1), Vector2i(i, j + 1)]
 			var p: Array[Vector3] = []
-			for q: Vector2 in quad:
-				var h := _massif_height(q)
-				p.append(Vector3(q.x - world.HALF, h, q.y - world.HALF))
+			for c: Vector2i in corner:
+				p.append(Vector3(lo + c.x * CELL - world.HALF, heights[c.y * (n + 1) + c.x], lo + c.y * CELL - world.HALF))
 			for k in [0, 1, 2, 0, 2, 3]:
-				st.set_color(_colour(p[k].y))
 				st.add_vertex(p[k])
+	st.index()
 	st.generate_normals()
 	massif = MeshInstance3D.new()
 	massif.name = "Massif"
 	massif.mesh = st.commit()
-	massif.material_override = world.terrain.material
+	var rock: StandardMaterial3D = _mesh_of("mountainside").surface_get_material(0)
+	var material := ShaderMaterial.new()
+	material.shader = preload("res://assets/shaders/world_massif.gdshader")
+	material.set_shader_parameter("rock_albedo", rock.albedo_texture)
+	material.set_shader_parameter("rock_normal", rock.normal_texture)
+	massif.material_override = material
+	_massif_material = material
+	# Always drawn: the shader keeps it inside the camera range, the bounds must not cull it.
+	massif.extra_cull_margin = 16384.0
+	# The same scanned rock on every steep slope of the map itself.
+	var ground: ShaderMaterial = world.terrain.material
+	ground.set_shader_parameter("use_cliff", true)
+	ground.set_shader_parameter("cliff_albedo", rock.albedo_texture)
+	ground.set_shader_parameter("cliff_normal", rock.normal_texture)
 	massif.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(massif)
+
+
+func _process(_delta: float) -> void:
+	if _massif_material == null or world.camera_rig == null:
+		return
+	_massif_material.set_shader_parameter("camera_far", world.camera_rig.get_camera().far)
+	var environment: Environment = world.get("environment")
+	if environment != null:
+		_massif_material.set_shader_parameter("fog_density", environment.fog_density if environment.fog_enabled else 0.0)
+		_massif_material.set_shader_parameter("fog_colour", environment.fog_light_color * environment.fog_light_energy)
 
 
 func _mesh_of(asset: String) -> Mesh:
@@ -118,11 +151,12 @@ func _dress_ridge() -> void:
 			# Outcrops at the foot of the ridge, sunk a quarter of their height: rock rising out of the
 			# slope, never hanging over it.
 			var face := along + inward * rng.randf_range(38.0, 48.0)
-			if not _near_sea(face) and not _kept_clear(face):
+			var cornered := t < 60.0 or t > 1940.0
+			if not cornered and not _near_sea(face) and not _kept_clear(face):
 				var kind := rng.randi_range(0, cliffs.size() - 1)
 				var scale := rng.randf_range(2.5, 4.5)
 				var yaw := atan2(inward.x, inward.y) + rng.randf_range(-0.35, 0.35)
-				var at := _add(batches, cliffs[kind], "cliff%d" % kind, face, scale, yaw, -2.5 * scale, CLIFF_VISIBLE)
+				var at := _add(batches, cliffs[kind], "cliff%d" % kind, face, scale, yaw, -0.6 * scale, CLIFF_VISIBLE)
 				# Solid: the hero and the camera stay outside the rock (80 % of its bounds).
 				var box := BoxShape3D.new()
 				var bounds: AABB = cliffs[kind].get_aabb()
@@ -131,6 +165,14 @@ func _dress_ridge() -> void:
 				shape.shape = box
 				shape.transform = Transform3D(Basis(Vector3.UP, yaw), at + Basis(Vector3.UP, yaw) * (bounds.get_center() * scale))
 				solid.add_child(shape)
+				cliff_count += 1
+			# A second row higher up the ridge covers its face with rock.
+			var up := along + inward * rng.randf_range(20.0, 30.0)
+			if not cornered and not _near_sea(up) and not _kept_clear(up) and rng.randf() < 0.8:
+				var kind2 := rng.randi_range(0, cliffs.size() - 1)
+				var scale2 := rng.randf_range(3.0, 5.0)
+				var yaw2 := atan2(inward.x, inward.y) + rng.randf_range(-0.5, 0.5)
+				_add(batches, cliffs[kind2], "cliff%d" % kind2, up, scale2, yaw2, -0.8 * scale2, CLIFF_VISIBLE)
 				cliff_count += 1
 			t += CLIFF_STEP * rng.randf_range(0.8, 1.2)
 		t = 20.0
@@ -177,7 +219,13 @@ func _add(batches: Dictionary, mesh: Mesh, label: String, map: Vector2, scale: f
 			"centre": Vector3(c.x - world.HALF, world.world_ground(c.x - world.HALF, c.y - world.HALF), c.y - world.HALF)}
 	var entry: Dictionary = batches[key]
 	var p := Vector3(map.x - world.HALF, 0.0, map.y - world.HALF)
-	p.y = world.world_ground(p.x, p.z) + sink
+	# On the lowest ground under its footprint, so no underside hangs over a slope.
+	var reach: float = mesh.get_aabb().size.length() * 0.35 * scale
+	var low: float = world.world_ground(p.x, p.z)
+	for k in 8:
+		var o := Vector2.from_angle(TAU * k / 8.0) * reach
+		low = minf(low, world.world_ground(p.x + o.x, p.z + o.y))
+	p.y = low + sink
 	entry.transforms.append(Transform3D(Basis(Vector3.UP, yaw).scaled(Vector3.ONE * scale), p - entry.centre))
 	return p
 

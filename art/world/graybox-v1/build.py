@@ -387,7 +387,8 @@ heights=np.where(np.isfinite(best)&~channel,target,heights)
 # varies along the edge; rock models dress its face in the game. The south is the sea.
 edge_e=np.minimum(np.minimum(x,2000.0-x),z)
 along=np.where(edge_e==z,x,z)
-ridge_h=70+25*np.sin(along/83.0)*np.cos(along/47.0)
+# Ridged: |sin| of incommensurable periods adds up to sharp crests and notches, not even waves.
+ridge_h=40+sum(a*np.abs(np.sin(along/p+ph)) for a,p,ph in ((22,397.,.3),(16,173.,1.7),(10,89.,2.9),(6,37.,.8)))
 heights=heights+ridge_h*(1-smooth((edge_e-12.0)/30.0))
 
 # Clay color masses only. Roads come from the road mask, water from its own strips.
