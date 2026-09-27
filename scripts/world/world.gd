@@ -95,6 +95,8 @@ var sea: Node3D
 var edges: Node3D
 ## BRIDGES-01: timber bridges over the river crossings.
 var bridges: Node3D
+## WORLD-PROPS-01: desert rocks and plants, ships and piers in the harbours.
+var props: Node3D
 ## DIALOG-CHOICE-01: answers to choose from in a conversation (the innkeeper first).
 var choices: CanvasLayer
 const DRINK_PRICE := 1
@@ -203,6 +205,10 @@ func _build_world() -> void:
 	edges.name = "Edges"
 	world_root.add_child(edges)
 	edges.build(self)
+	props = preload("res://scripts/world/world_props.gd").new()
+	props.name = "Props"
+	world_root.add_child(props)
+	props.build(self)
 
 
 ## The map ends 45 m west of the village. A steep rise there (steeper than the hero can climb)

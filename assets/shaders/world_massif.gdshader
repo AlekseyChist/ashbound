@@ -14,6 +14,9 @@ uniform vec3 snow_colour : source_color = vec3(0.86, 0.88, 0.9);
 // The scene's depth fog (density and colour, set every frame), without its height part.
 uniform vec3 fog_colour : source_color = vec3(0.62, 0.68, 0.7);
 uniform float fog_density = 0.002;
+// The scene also blends the sky into distant ground (aerial perspective); the range matches it with
+// a stronger haze, or it stands out darker than the ridge in front of it.
+uniform float haze_boost = 2.5;
 // The camera's far plane (the Draw distance setting). The range lies farther than that; its vertices
 // are drawn along their view ray inside it (same direction, so the same size on screen, and the
 // same order in depth), so the whole range shows at any draw distance, like a backdrop.
@@ -50,7 +53,7 @@ void fragment() {
 	rock *= mix(0.75, 1.15, triplanar(rock_albedo, far_p, world_normal).g);
 	float flat_ground = smoothstep(0.55, 0.8, world_normal.y);
 	float snow = smoothstep(snow_line - snow_fade, snow_line + snow_fade, world_pos.y) * flat_ground;
-	float haze = 1.0 - exp(-fog_density * distance(world_pos, CAMERA_POSITION_WORLD));
+	float haze = 1.0 - exp(-fog_density * haze_boost * distance(world_pos, CAMERA_POSITION_WORLD));
 	ALBEDO = mix(rock, snow_colour, snow) * (1.0 - haze);
 	EMISSION = fog_colour * haze;
 	ROUGHNESS = mix(0.92, 0.7, snow);
