@@ -93,6 +93,9 @@ var far_forest: Node3D
 var sea: Node3D
 ## WORLD-EDGES-01: mountains, cliffs and boulders at the north, west and east edges.
 var edges: Node3D
+## DIALOG-CHOICE-01: answers to choose from in a conversation (the innkeeper first).
+var choices: CanvasLayer
+const DRINK_PRICE := 1
 ## DEBUG-MAP-01: Settings -> Debug -> Map.
 var debug_map: CanvasLayer
 
@@ -129,6 +132,10 @@ func _ready() -> void:
 	lodging.configure(self)
 	lodging.changed.connect(_update_prompt)
 	lodging.changed.connect(func(): journal_changed.emit())
+	choices = preload("res://scripts/world/dialogue_choices.gd").new()
+	choices.name = "DialogueChoices"
+	add_child(choices)
+	choices.configure(self)
 	debug_map = preload("res://scripts/world/world_debug_map.gd").new()
 	debug_map.name = "DebugMap"
 	add_child(debug_map)
@@ -734,7 +741,7 @@ func interact() -> void:
 			return
 		if inn_keeper_in_reach():
 			if inn_talk.flags.get(&"greeted", false):
-				lodging.rent()
+				await keeper_menu()
 			else:
 				talk_to_inn_keeper()
 			_update_prompt()
@@ -759,7 +766,7 @@ func _update_prompt() -> void:
 	if point == null and is_input_available() and inn_keeper_in_reach():
 		point = inn_keeper
 		if inn_talk.flags.get(&"greeted", false):
-			action = lodging.keeper_prompt()
+			action = Localization.text("COURTYARD_ACTION_TALK")
 	if point == null and is_input_available() and lodging.bed_in_reach():
 		action = Localization.text("INN_ACTION_SLEEP")
 	elif point == null:
@@ -902,6 +909,33 @@ func inn_keeper_in_reach() -> bool:
 		return false
 	var offset := inn_keeper.global_position - player.global_position
 	return Vector2(offset.x, offset.z).length() <= INN_TALK_RADIUS and absf(offset.y) < 1.2
+
+## After the greeting the innkeeper asks what the hero wants: a bed (until one is rented), a mug of
+## ale, or nothing. The answer is carried out and the innkeeper replies.
+func keeper_menu() -> void:
+	var answers := []
+	if not lodging.rented:
+		answers.append([&"rent", Localization.text("INN_ANSWER_RENT", {"price": str(lodging.PRICE)})])
+	answers.append([&"drink", Localization.text("INN_ANSWER_DRINK", {"price": str(DRINK_PRICE)})])
+	answers.append([&"leave", Localization.text("INN_ANSWER_LEAVE")])
+	choices.open("INN_KEEPER_NAME", "INN_KEEPER_ASK", answers)
+	var id: StringName = await choices.chosen
+	match id:
+		&"rent":
+			lodging.rent()
+		&"drink":
+			var purse: Node = get_node("/root/Inventory")
+			if purse.has_gold(DRINK_PRICE) and purse.remove_gold(DRINK_PRICE):
+				hud.show_message("INN_KEEPER_NAME", "INN_KEEPER_DRINK")
+			else:
+				hud.show_message("INN_KEEPER_NAME", "INN_KEEPER_DRINK_NO_MONEY", {"price": str(DRINK_PRICE)})
+		_:
+			hud.show_message("INN_KEEPER_NAME", "INN_KEEPER_BYE")
+
+
+func is_input_available() -> bool:
+	return super.is_input_available() and (choices == null or not choices.is_open)
+
 
 func talk_to_inn_keeper() -> bool:
 	var line: DialogueLineData = inn_talk.line_for(&"inn_keeper")

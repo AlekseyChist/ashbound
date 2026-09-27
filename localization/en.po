@@ -878,3 +878,24 @@ msgstr "Map"
 
 msgid "DEBUG_MAP_HINT"
 msgstr "A checking map: the arrow is the hero. Tap the map to go there."
+
+msgid "INN_KEEPER_ASK"
+msgstr "What will it be, traveller?"
+
+msgid "INN_ANSWER_RENT"
+msgstr "Rent a bed ({price} coins)"
+
+msgid "INN_ANSWER_DRINK"
+msgstr "A mug of ale ({price} coin)"
+
+msgid "INN_ANSWER_LEAVE"
+msgstr "Nothing, thanks."
+
+msgid "INN_KEEPER_DRINK"
+msgstr "Here you are - fresh from the barrel. To the road!"
+
+msgid "INN_KEEPER_DRINK_NO_MONEY"
+msgstr "Ale costs {price} coin, friend. Come back with money."
+
+msgid "INN_KEEPER_BYE"
+msgstr "As you like. Holler if you need anything."
