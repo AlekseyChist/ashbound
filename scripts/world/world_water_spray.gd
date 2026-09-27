@@ -59,6 +59,7 @@ func _emitter() -> CPUParticles3D:
 	var quad := QuadMesh.new()
 	quad.size = Vector2(0.35, 0.35)
 	var material := StandardMaterial3D.new()
+	material.albedo_texture = _soft_dot()
 	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	material.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
@@ -67,6 +68,21 @@ func _emitter() -> CPUParticles3D:
 	quad.material = material
 	spray.mesh = quad
 	return spray
+
+
+## A soft round dot (owner: the spray was square pixels).
+static func _soft_dot() -> Texture2D:
+	var ramp := Gradient.new()
+	ramp.set_color(0, Color(1, 1, 1, 1))
+	ramp.set_color(1, Color(1, 1, 1, 0))
+	var dot := GradientTexture2D.new()
+	dot.gradient = ramp
+	dot.fill = GradientTexture2D.FILL_RADIAL
+	dot.fill_from = Vector2(0.5, 0.5)
+	dot.fill_to = Vector2(1.0, 0.5)
+	dot.width = 32
+	dot.height = 32
+	return dot
 
 
 func _process(delta: float) -> void:

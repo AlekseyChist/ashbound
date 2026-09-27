@@ -11,17 +11,14 @@ const CELL := 10.0
 const CHUNK := 100.0
 ## [model, chance per 10 m cell, scale range, visible to (m, at draw distance 220), solid radius (x scale)]
 const DESERT := [
-	["namaqualand_boulder_03", 0.045, Vector2(1.8, 6.0), 300.0, 1.0],
-	["namaqualand_boulder_04", 0.045, Vector2(1.8, 6.0), 300.0, 1.0],
+	["namaqualand_boulder_03", 0.045, Vector2(1.5, 3.5), 300.0, 1.0],
+	["namaqualand_boulder_04", 0.045, Vector2(1.5, 3.5), 300.0, 1.0],
 	["namaqualand_boulder_05", 0.06, Vector2(1.5, 3.5), 160.0, 0.5],
 	["namaqualand_boulder_06", 0.06, Vector2(1.5, 3.5), 160.0, 0.4],
 	["namaqualand_boulders_01", 0.06, Vector2(2.0, 5.0), 140.0, 0.0],
 	["dead_quiver_trunk", 0.014, Vector2(1.6, 2.8), 220.0, 0.2],
 	["dead_quiver_branch_01", 0.04, Vector2(2.0, 3.5), 80.0, 0.0],
 	["crystalline_iceplant", 0.06, Vector2(1.0, 1.8), 80.0, 0.0],
-	# Koppies: lone rock outcrops over the sand (the edge cliffs, smaller).
-	["../edge-rocks-v1/namaqualand_cliff_01", 0.004, Vector2(1.2, 2.6), 450.0, 2.2],
-	["../edge-rocks-v1/namaqualand_cliff_02", 0.003, Vector2(0.8, 1.6), 450.0, 3.0],
 ]
 const PORT := Vector2(1130, 1780)
 const COVE := Vector2(1690, 1848)

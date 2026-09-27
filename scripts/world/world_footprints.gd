@@ -48,7 +48,8 @@ func step(at: Vector3, kind: String) -> void:
 	var p := at + side
 	p.y = world.grass_height(p.x, p.z) + 0.03
 	var print := _prints[_next]
-	print.global_transform = Transform3D(Basis.looking_at(-facing, Vector3.UP), p)
+	# The sole's toe (UV top) points where the hero walks.
+	print.global_transform = Transform3D(Basis.looking_at(facing, Vector3.UP), p)
 	print.set_instance_shader_parameter("made", Time.get_ticks_msec() / 1000.0)
 	print.set_instance_shader_parameter("depth", 0.6 if kind == "snow" else 0.5)
 	print.visible = true

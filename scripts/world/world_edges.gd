@@ -22,7 +22,6 @@ var world: Node3D
 var cliff_count := 0
 var boulder_count := 0
 var massif: MeshInstance3D
-var _massif_material: ShaderMaterial
 
 
 func build(scene: Node3D) -> void:
@@ -46,6 +45,9 @@ func _massif_height(map: Vector2) -> float:
 	var inside := Vector2(clampf(map.x, 0.0, 2000.0), clampf(map.y, 0.0, 2000.0))
 	var out := map.distance_to(inside)
 	var base := _edge_height(map)
+	# Inside the map the range runs on under the ground, so no slit of sky shows at the seam.
+	if out <= 0.0:
+		return base - 4.0
 	# Separate sharp peaks (the noise to the power 1.5), not an even wall along the edge; a finer
 	# layer breaks the slopes into ribs and gullies.
 	var peaks := pow((_noise.get_noise_2d(map.x, map.y) + 1.0) * 0.5, 1.5)
@@ -53,7 +55,7 @@ func _massif_height(map: Vector2) -> float:
 	# A range on the horizon, not a wall overhead: it rises over 700 m to peaks up to ~350 m over
 	# the edge (seen from 250 m inside the map, about 15-20 degrees up).
 	var rise := smoothstep(0.0, 700.0, out)
-	var h := base + 15.0 + (30.0 + 320.0 * peaks) * rise + 30.0 * ribs * rise
+	var h := base + (45.0 + 320.0 * peaks) * rise + 30.0 * ribs * rise
 	var sink := smoothstep(1650.0, 1900.0, map.y)
 	return lerpf(h, -25.0, sink)
 
@@ -92,7 +94,7 @@ func _build_massif() -> void:
 		for i in n:
 			var centre := Vector2(lo + (i + 0.5) * CELL, lo + (j + 0.5) * CELL)
 			# Only outside the map, and not out on the southern sea.
-			if Rect2(0, 0, 2000, 2000).grow(-1.0).has_point(centre) or centre.y > 2000.0 + CELL:
+			if Rect2(0, 0, 2000, 2000).grow(-2.0 * CELL).has_point(centre) or centre.y > 2000.0 + CELL:
 				continue
 			var a := j * row + i
 			indices.append_array(PackedInt32Array([a, a + 1, a + row + 1, a, a + row + 1, a + row]))
@@ -112,7 +114,6 @@ func _build_massif() -> void:
 	material.set_shader_parameter("rock_albedo", rock.albedo_texture)
 	material.set_shader_parameter("rock_normal", rock.normal_texture)
 	massif.material_override = material
-	_massif_material = material
 	# The same scanned rock on every steep slope of the map itself.
 	var ground: ShaderMaterial = world.terrain.material
 	ground.set_shader_parameter("use_cliff", true)
@@ -137,15 +138,6 @@ func _build_walls() -> void:
 		shape.shape = box
 		shape.position = spec[0]
 		walls.add_child(shape)
-
-
-func _process(_delta: float) -> void:
-	if _massif_material == null or world.camera_rig == null:
-		return
-	var environment: Environment = world.get("environment")
-	if environment != null:
-		_massif_material.set_shader_parameter("fog_density", environment.fog_density if environment.fog_enabled else 0.0)
-		_massif_material.set_shader_parameter("fog_colour", environment.fog_light_color * environment.fog_light_energy)
 
 
 func _mesh_of(asset: String) -> Mesh:

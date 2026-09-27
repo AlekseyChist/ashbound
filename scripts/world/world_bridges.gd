@@ -17,6 +17,8 @@ var boards: StandardMaterial3D
 var timber: StandardMaterial3D
 var bridge_count := 0
 var _rails: StaticBody3D
+## Centres of the bridges built so far: where two roads share a crossing, one bridge stands.
+var _centres: Array[Vector3] = []
 
 
 func configure(scene: Node3D) -> void:
@@ -43,6 +45,21 @@ func configure(scene: Node3D) -> void:
 func build_bridge(run: PackedVector3Array, width: float) -> void:
 	if run.size() < 2:
 		return
+	var mid := (run[0] + run[run.size() - 1]) * 0.5
+	for other in _centres:
+		if Vector2(other.x - mid.x, other.z - mid.z).length() < 12.0:
+			return
+	_centres.append(mid)
+	# A level deck: a bridge does not climb with the road; its ends meet the road's own height.
+	var deck_top := -INF
+	for p in run:
+		deck_top = maxf(deck_top, p.y)
+	var level := PackedVector3Array()
+	for i in run.size():
+		var t := float(i) / float(run.size() - 1)
+		var ramp := smoothstep(0.0, 0.25, t) * (1.0 - smoothstep(0.75, 1.0, t))
+		level.append(Vector3(run[i].x, lerpf(run[i].y, deck_top, ramp), run[i].z))
+	run = level
 	var bridge := Node3D.new()
 	bridge.name = "Bridge_%d" % bridge_count
 	add_child(bridge)

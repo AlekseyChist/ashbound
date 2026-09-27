@@ -46,6 +46,7 @@ func _emitter() -> CPUParticles3D:
 	var quad := QuadMesh.new()
 	quad.size = Vector2(0.9, 0.9)
 	var material := StandardMaterial3D.new()
+	material.albedo_texture = preload("res://scripts/world/world_water_spray.gd")._soft_dot()
 	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	material.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES

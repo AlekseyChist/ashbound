@@ -92,6 +92,51 @@ for r in roads:
             sampled.append(p)
     sampled.append(curve[-1]);r['geometry_points']=sampled
 
+# RIVERSIDE-ROADS-01 (owner 27 Sep: bridges along rivers, roads in the water): where a road runs along
+# a river (not across it) inside its channel, the road moves onto the bank - clear of the water's
+# edge by 4 m past its own half width. Real crossings (over 45 deg to the river) stay; the shift
+# is smoothed along the road and fades out at road ends, junctions and plazas.
+river_segs=[]
+for rv in D['rivers']:
+    pts=rv['points'];ws=rv['widths_m']
+    for (a,b,wa,wb) in zip(pts,pts[1:],ws,ws[1:]):river_segs.append((np.array(a[:2],float),np.array(b[:2],float),float(wa),float(wb)))
+def river_near(p):
+    best=(1e9,None,None,0.0)
+    for a,b,wa,wb in river_segs:
+        ab=b-a;L2=float(ab@ab) or 1e-9;t=min(max(float((p-a)@ab)/L2,0.0),1.0)
+        q=a+ab*t;d=float(np.hypot(*(p-q)))
+        if d<best[0]:best=(d,q,ab/np.sqrt(L2),wa+(wb-wa)*t)
+    return best
+node_pts=np.array([n[:2] for n in flat_nodes],float)
+moved_roads=0
+for r in roads:
+    g=r['geometry_points'];n=len(g)
+    if n<5:continue
+    P=np.array([p[:2] for p in g],float)
+    shift=np.zeros_like(P)
+    half_road=float(r.get('width_m',6))*.5
+    for i in range(n):
+        d,q,rt,w=river_near(P[i])
+        clear=w*.5+half_road+4.0
+        if q is None or d>=clear:continue
+        a=P[max(i-2,0)];b=P[min(i+2,n-1)];tt=b-a;tl=float(np.hypot(*tt)) or 1.0
+        if abs(float(tt@rt))/tl<.7:continue                   # a crossing: keep it
+        side=P[i]-q;sl=float(np.hypot(*side))
+        normal=side/sl if sl>1e-3 else np.array([-rt[1],rt[0]])
+        shift[i]=normal*(clear-d)
+    if not shift.any():continue
+    # Smooth the shift along the road (~16 m), then fade it at the ends and near nodes.
+    k=np.exp(-.5*(np.arange(-8,9)/3.0)**2);k/=k.sum()
+    sm=np.stack([np.convolve(np.pad(shift[:,c],8,mode='edge'),k,mode='valid') for c in (0,1)],axis=1)
+    sm=np.where(np.abs(sm)>np.abs(shift),sm,shift)
+    for i in range(n):
+        dn=float(np.min(np.hypot(*(node_pts-P[i]).T))) if len(node_pts) else 1e9
+        de=min(i,n-1-i)*2.0
+        fade=float(smooth((min(dn,de)-8.0)/16.0))
+        g[i][0]+=float(sm[i,0])*fade;g[i][1]+=float(sm[i,1])*fade
+    moved_roads+=1
+print('RIVERSIDE_ROADS moved',moved_roads)
+
 # Shape the river valleys at their authored elevations, including low terrain.
 # Merely carving with min() leaves the water suspended above an unrelated base.
 water_distance,water_height=nearest([r['points'] for r in D['rivers']])
@@ -462,6 +507,10 @@ def settle_river(r):
         banks=[sample(p[0]+HALF-tz/n*s*reach,p[2]+HALF+tx/n*s*reach) for s in (-1,1)]
         if p[1]>1.0:p[1]=min(p[1],min(banks)-.15)
         if i:p[1]=min(p[1],pts[i-1][1])
+    # No steps in the water: a drop spreads upstream at no more than 15 % (rapids, not a wall).
+    for i in range(len(pts)-2,-1,-1):
+        run=math.dist((pts[i][0],pts[i][2]),(pts[i+1][0],pts[i+1][2]))
+        pts[i][1]=min(pts[i][1],pts[i+1][1]+.15*run)
     return pts,widths
 def recut(settled):
     for rid,(pts,widths) in settled.items():
