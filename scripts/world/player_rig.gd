@@ -10,6 +10,15 @@ var player: CharacterBody3D
 var camera_rig: Node3D
 var hud: CanvasLayer
 
+## Screen buttons (D-pad, Run/Action/Attack, Block) only on a phone. Headless runs are the phone
+## layout checks, so they keep them; a PC window plays with keys and the mouse.
+static func touch_controls() -> bool:
+	return OS.has_feature("android") or DisplayServer.get_name() == "headless"
+
+func _enter_tree() -> void:
+	# Before the HUD's _ready, which builds the touch controls from this flag.
+	$HUD.force_touch_controls = touch_controls()
+
 func _ready() -> void:
 	player = $Player
 	camera_rig = $CameraRig

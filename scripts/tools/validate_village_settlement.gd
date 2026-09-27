@@ -79,9 +79,28 @@ func run_checks() -> void:
 	for language in ["ru","en"]:
 		Localization.set_language(language)
 		await settle(.1)
-		for control in [world.picker,world.language_button,world.interact_button]:
+		for control in [world.picker,world.interact_button]:
 			check(not control.text.begins_with("VILLAGE_"),"translated "+language)
-			check(world.hud.get_node("RootControl").get_global_rect().encloses(control.get_global_rect()),"safe HUD "+language)
+		# UI-CLEAN-01: the house picker is in Settings -> Debug; only play controls stay on the HUD.
+		check(world.hud.get_node("RootControl").get_global_rect().encloses(world.interact_button.get_global_rect()),"safe HUD "+language)
+		check(not world.picker.is_visible_in_tree() and not world.language_button.is_visible_in_tree(),"no debug buttons on the HUD "+language)
+		# Only the shown buttons count (Attack is shown by the world scene, not by the village).
+		var things: Rect2=world.pocket.get_open_button().get_global_rect()
+		var column: Array[Rect2]=[]
+		for name in ["RunButton","InteractButton","AttackButton"]:
+			var button: Control=world.hud.get_node("RootControl/BottomRight/VBox/"+name)
+			if button.is_visible_in_tree(): column.append(button.get_global_rect())
+		var aligned:=column.size()>=2
+		for r in column: aligned=aligned and is_equal_approx(r.position.x,things.position.x) and is_equal_approx(r.end.x,things.end.x)
+		check(aligned,"one right column as wide as Things "+language+" things="+str(things)+" column="+str(column))
+		var screen_rect: Rect2=world.hud.get_node("RootControl").get_global_rect()
+		check(is_equal_approx(screen_rect.end.x-things.end.x,32.0) and is_equal_approx(screen_rect.end.y-column[-1].end.y,32.0),"column 32 px from the edges "+language+" screen="+str(screen_rect))
+		var even:=true
+		for i in range(1,column.size()): even=even and column[i].position.y-column[i-1].end.y<13
+		check(even,"column buttons stacked evenly "+language)
+		var bottom_row_top: float=screen_rect.end.y-152.0
+		check(world.hud.get_node("RootControl/MessagePanel").get_global_rect().end.y<bottom_row_top,"dialogue above the Block/Attack line "+language+" message="+str(world.hud.get_node("RootControl/MessagePanel").get_global_rect()))
+		check(world.hud.get_node("RootControl/PromptLabel").get_global_rect().end.x<things.position.x-310.0,"prompt clear of Block "+language)
 	Localization.set_language("ru")
 	await screen("start")
 	for i in range(3): await door_route(i)

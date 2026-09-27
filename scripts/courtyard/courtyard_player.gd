@@ -31,6 +31,10 @@ const ATTACK_DURATION := 0.4
 const STRIKE_TIME := 0.12
 const COOLDOWN_TIME := 0.55
 const ATTACK_SPEED_SCALE := 0.25
+## JUMP-01 (owner 27 Sep, a service feature while the world is built): a low hop over a step,
+## about 0.45 m, from the ground only and not during a strike.
+const JUMP_HEIGHT := 0.45
+var _jump_requested := false
 
 
 ## Ввод игрока (клавиатура + сенсорный HUD). Выключение немедленно отменяет
@@ -53,7 +57,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if not input_enabled:
 		return
-	if event.is_action_pressed("interact"):
+	if event.is_action_pressed("jump"):
+		request_jump()
+	elif event.is_action_pressed("interact"):
 		request_interaction()
 	elif event.is_action_pressed("attack"):
 		# На Android атака — только явный HUD-запрос request_attack().
@@ -69,6 +75,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		request_attack()
 
 
+## Keyboard Space or the touch Jump button; ignored in the air (no double jump).
+func request_jump() -> void:
+	if input_enabled and is_on_floor():
+		_jump_requested = true
+
+
 func _physics_process(delta: float) -> void:
 	# Защита от повторного входа: если сигнал strike_requested вызвал
 	# отмену атаки, состояние уже сброшено — не дублируем контакт.
@@ -78,8 +90,11 @@ func _physics_process(delta: float) -> void:
 	# Гравитация накапливается только в воздухе; на полу — нулевая вертикаль.
 	if is_on_floor():
 		velocity.y = 0.0
+		if _jump_requested and input_enabled and not _attack_active:
+			velocity.y = sqrt(2.0 * gravity * JUMP_HEIGHT)
 	else:
 		velocity.y -= gravity * delta
+	_jump_requested = false
 
 	# Ввод движения: клавиатура + тач-вектор (только при включённом вводе)
 	var input_dir := Vector2.ZERO

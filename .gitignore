@@ -35,3 +35,6 @@ docs/**/browser-checks.json
 docs/**/metrics.json
 docs/art/cons-01/images/
 docs/**/*.pdf
+
+# Personal Claude Code settings (not shared)
+.claude/settings.local.json

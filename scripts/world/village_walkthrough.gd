@@ -91,8 +91,7 @@ func _configure_hud() -> void:
 	bar.add_theme_constant_override("separation",20)
 	hud.get_node("RootControl").add_child(bar)
 	picker = _button(bar,Vector2(320,120))
-	picker.pressed.connect(func():
-		if is_input_available(): select_building((selected+1)%buildings.size()))
+	picker.pressed.connect(_on_picker_pressed)
 	language_button = _button(bar,Vector2(240,120))
 	language_button.pressed.connect(func():
 		if is_input_available(): Localization.set_language("en" if Localization.get_language()=="ru" else "ru"))
@@ -105,6 +104,10 @@ func _configure_hud() -> void:
 	prompt.add_theme_stylebox_override("normal", hud.get_node("RootControl").theme.get_stylebox("panel", "PanelContainer"))
 	hud.clear_message()
 	_refresh_text()
+
+## The house picker; a scene with the pocket menu moves it into Settings -> Debug.
+func _on_picker_pressed() -> void:
+	if is_input_available(): select_building((selected+1)%buildings.size())
 
 func _button(parent: Control, minimum: Vector2) -> Button:
 	var button := Button.new()
@@ -171,7 +174,8 @@ func _update_prompt() -> void:
 	for building in buildings: building.door.set_highlight(building.door==current_door)
 	hud.set_objective("VILLAGE_OUTSIDE" if inside_key.is_empty() else inside_key)
 	interact_button.disabled = current_door == null
-	var key := "VILLAGE_OPEN"
+	# Nothing in reach: a neutral label instead of a grey "Open door" (UI-CLEAN-01).
+	var key := "HUD_ACTION_IDLE" if current_door == null else "VILLAGE_OPEN"
 	if current_door != null:
 		var would_close: bool = current_door.goal > 0.5 if current_door.moving else current_door.fraction > 0.0
 		if would_close:

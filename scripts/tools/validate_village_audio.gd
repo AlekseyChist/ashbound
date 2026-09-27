@@ -20,7 +20,7 @@ func state_checks() -> void:
 	var config:=ConfigFile.new();config.load(file);config.set_value("unrelated","keep",72)
 	config.set_value("audio","music","bad");config.set_value("audio","sound",INF);config.set_value("graphics","distance",9999);config.save(file)
 	loaded.load_settings(file)
-	check(loaded.music_percent==0 and loaded.sound_percent==50 and loaded.draw_distance==300,"invalid fields retained and range clamped")
+	check(loaded.music_percent==0 and loaded.sound_percent==50 and loaded.draw_distance==1000,"invalid fields retained and range clamped")
 	loaded.save_settings();config.load(file)
 	check(config.get_value("unrelated","keep")==72,"other config section preserved")
 	DirAccess.remove_absolute(file)
@@ -35,7 +35,7 @@ func state_checks() -> void:
 	check(world.audio.music.stream.resource_path=="" or world.audio.music.stream.loop,"music instance is looped")
 	check(world.audio.fire.max_distance==14,"hearth is spatial and bounded")
 	var collider_count:=world.find_children("*","CollisionShape3D",true,false).size()
-	for distance in [80.0,300.0,220.0,80.0,300.0,220.0]:
+	for distance in [80.0,1000.0,220.0,80.0,1000.0,220.0]:
 		world.settings.draw_distance=distance;world.settings.apply_distance(world)
 		check(is_equal_approx(world.camera_rig.get_camera().far,distance),"camera far "+str(distance))
 		var batch: MultiMeshInstance3D=world.dressing.foliage_batches[0]

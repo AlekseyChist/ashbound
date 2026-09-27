@@ -7,11 +7,13 @@ uniform float intensity=0.0;
 uniform float wind_strength=0.0;
 uniform float daylight=1.0;
 uniform bool splash=false;
+// The measured cover map: x/z of its corner and its size in metres (the village, or a window round the hero).
+uniform vec4 cover_rect=vec4(-95.5,-95.5,226.0,176.0);
 varying vec3 rain_world;
 varying float phase;
 float cover(vec2 at){
-	vec2 uv=(at+vec2(95.5))/vec2(226.0,176.0);
-	// Outside the measured village the terrain itself hides drops; no floating splashes.
+	vec2 uv=(at-cover_rect.xy)/cover_rect.zw;
+	// Outside the measured area the terrain itself hides drops; no floating splashes.
 	if(any(lessThan(uv,vec2(0.0)))||any(greaterThan(uv,vec2(1.0)))) return -1.0e6;
 	return texture(cover_heights,uv).r;
 }

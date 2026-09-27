@@ -31,10 +31,15 @@ const INN_KEEPER_TALK: QuestData = preload("res://data/quests/forest_inn_keeper.
 const INN_TALK_RADIUS := 2.8
 const Pad = preload("res://scripts/world/world_settlement_pad.gd")
 
-const VERSION := "0.34.1"
+const VERSION := "0.35.0"
 const WORLD_LAYOUT := "res://assets/world/graybox-v1/layout.json"
 const WORLD_HEIGHTS := "res://assets/world/graybox-v1/heights.bin"
 const WORLD_COLORS := "res://assets/world/graybox-v1/colors.bin"
+## ROADS-UNIFY-01: a 1 m road mask over the map; the ground paints roads from it, like the village.
+const WORLD_ROADS := "res://assets/world/graybox-v1/roads.png"
+## A road deck mesh only where it stands this far over the ground: over a river channel (water + 0.6 m
+## over a bed 1-2.8 m deep); the village ring lowers the ground by less than this under a trail.
+const BRIDGE_RISE := 1.2
 ## Map point (metres) of the village's local origin, i.e. plan point (95, 95).
 const VILLAGE_ORIGIN_MAP := Vector2(140, 1430)
 ## The 225 x 175 m plan on the map. Edges lie on the 5 m world grid.
@@ -60,6 +65,12 @@ var world_heights: PackedFloat32Array
 var pad: RefCounted
 var world_root: Node3D
 var world_terrain: Node3D
+var road_mask: Image
+var world_colors: PackedColorArray
+## GRASS-WORLD-01: road and river pieces near the grass, bucketed by 32 m cells (scene frame).
+const GRASS_CELL := 32.0
+var _grass_segments := {}
+var _grass_blocks: Array[Vector3] = []
 
 
 ## The courtyard lesson runs in the village (PLAYER-WORLD-01C); the pocket menu reads its journal here.
@@ -76,6 +87,10 @@ var inn_talk: QuestTracker
 var lodging: Node
 ## TRAIL-01: the pine forest along the trail from the village to the forest inn.
 var trail_dressing: Node3D
+## WORLD-DRESS-01A: low-poly forest over the rest of the map (baked positions).
+var far_forest: Node3D
+## WORLD-SEA-01: the sea along the south edge (D-099).
+var sea: Node3D
 
 
 func _ready() -> void:
@@ -85,6 +100,11 @@ func _ready() -> void:
 	add_child(trail_dressing)
 	trail_dressing.build_trail(self)
 	trail_dressing.borrow_wind(dressing)
+	far_forest = preload("res://scripts/world/world_far_forest.gd").new()
+	far_forest.name = "FarForest"
+	world_root.add_child(far_forest)
+	far_forest.build(self)
+	settings.apply_distance(self)
 	lesson = preload("res://scripts/world/village_lesson.gd").new()
 	lesson.name = "VillageLesson"
 	add_child(lesson)
@@ -104,6 +124,7 @@ func _ready() -> void:
 	add_child(lodging)
 	lodging.configure(self)
 	lodging.changed.connect(_update_prompt)
+	lodging.changed.connect(func(): journal_changed.emit())
 	_start_save.call_deferred()
 	lesson.sync_pack.call_deferred()
 	_update_prompt()
@@ -151,10 +172,16 @@ func _build_world() -> void:
 	world_terrain.material = terrain.material
 	world_terrain.surface_meta = "ground"
 	world_root.add_child(world_terrain)
-	world_terrain.build(world_heights, _world_colors(), world_width, GRID)
+	world_colors = _world_colors()
+	world_terrain.build(world_heights, world_colors, world_width, GRID)
 	_build_roads()
+	_apply_road_mask()
 	_build_rivers()
 	_build_water_and_sites()
+	sea = preload("res://scripts/world/world_sea.gd").new()
+	sea.name = "Sea"
+	world_root.add_child(sea)
+	sea.build(self)
 
 
 ## The map ends 45 m west of the village. A steep rise there (steeper than the hero can climb)
@@ -237,7 +264,10 @@ func _map_of(p: Vector3) -> Vector2:
 func _world_of_plan(plan_point: Vector2, lift: float) -> Vector3:
 	var map := plan_point - Vector2(95, 95) + VILLAGE_ORIGIN_MAP
 	var p := Vector3(map.x - HALF, 0.0, map.y - HALF)
-	p.y = world_ground(p.x, p.z) + lift
+	# On the village edge the hero stands on the village ground, not on the world grid under it,
+	# so a trail head starts flush with it (WORLD-TERRAIN-02: no lip at the exits).
+	var scene_p := p + world_root.position
+	p.y = ground_height_local(scene_p.x, scene_p.z) - world_root.position.y + lift
 	return p
 
 
@@ -269,10 +299,11 @@ func _road_points(road: Dictionary) -> PackedVector3Array:
 					break
 				result.append(_follow_ground(p))
 			_append_tail(result, [_world_of_plan(STREET_EXIT_PLAN + Vector2(5.3, -10.0), 0.0),
-				_world_of_plan(STREET_EXIT_PLAN, 0.05)])
+				_world_of_plan(STREET_EXIT_PLAN, -0.1)])
 		"forest_cave_trail":
 			# From the village north edge to the forest cave.
-			var head: Array = [_world_of_plan(CAVE_EXIT_PLAN, 0.05),
+			# The head sits 10 cm under the village ground, so the strip's end cap hides in it (no lip).
+			var head: Array = [_world_of_plan(CAVE_EXIT_PLAN, -0.1),
 				_world_of_plan(CAVE_EXIT_PLAN + Vector2(3.75, -15.0), 0.0)]
 			var kept := PackedVector3Array()
 			var started := false
@@ -320,18 +351,175 @@ func _build_roads() -> void:
 		var points := _road_points(road)
 		if points.size() < 2:
 			continue
-		# Overlap end caps slightly so shared junctions have no open edge (same as the graybox).
-		points.insert(0, points[0] + (points[0] - points[1]).normalized() * 0.5)
-		points.append(points[-1] + (points[-1] - points[-2]).normalized() * 0.5)
 		var width: float = road.get("width_m", 6.0)
-		var strip: MeshInstance3D = roads.add_strip(points, width, ROAD_TINT, true)
-		if strip == null:
-			continue
-		strip.name = str(road.id)
-		_paint(strip, Color(ROAD_TINT.srgb_to_linear(), 1.0))
-		_build_shoulders(shoulders, points, width)
+		# ROADS-UNIFY-01: the road is painted on the ground (the terrain already lies at its height,
+		# build.py); a deck is kept only across a river channel, two samples onto each bank.
+		var bridge := PackedByteArray()
+		bridge.resize(points.size())
+		for i in points.size():
+			if points[i].y - world_ground(points[i].x, points[i].z) > BRIDGE_RISE:
+				for k in range(maxi(0, i - 2), mini(points.size(), i + 3)):
+					bridge[k] = 1
+		var run := PackedVector3Array()
+		for i in points.size() + 1:
+			if i < points.size() and bridge[i] == 1:
+				run.append(points[i])
+				continue
+			if run.size() >= 2:
+				var strip: MeshInstance3D = roads.add_strip(run, width, ROAD_TINT, true)
+				if strip != null:
+					strip.name = "%s_bridge_%d" % [road.id, i]
+					_paint(strip, Color(ROAD_TINT.srgb_to_linear(), 1.0))
+			run.clear()
 	_mark_surfaces(roads, "dirt")
 	_mark_surfaces(shoulders, "ground")
+
+
+## The baked mask, with the village ring redrawn from the trail heads built here at run time
+## and nothing inside the village itself (its ground paints its own paths).
+func _apply_road_mask() -> void:
+	road_mask = (load(WORLD_ROADS) as Texture2D).get_image()
+	if road_mask.is_compressed():
+		road_mask.decompress()
+	road_mask.convert(Image.FORMAT_L8)
+	var ring := VILLAGE_RECT.grow(RING + 10.0)
+	road_mask.fill_rect(Rect2i(ring.position.floor(), ring.size.ceil()), Color.BLACK)
+	for road in world_layout.roads:
+		var points := _road_points(road)
+		var width: float = road.get("width_m", 6.0)
+		for i in range(points.size() - 1):
+			var a := _map_of(points[i])
+			var b := _map_of(points[i + 1])
+			if ring.has_point(a) or ring.has_point(b):
+				_stamp_segment(a, b, width, ring)
+	var material: ShaderMaterial = terrain.material
+	material.set_shader_parameter("use_road_mask", true)
+	material.set_shader_parameter("road_mask", ImageTexture.create_from_image(road_mask))
+	var corner := world_root.to_global(Vector3(-HALF, 0.0, -HALF))
+	material.set_shader_parameter("road_mask_rect", Vector4(corner.x, corner.z, 2000.0, 2000.0))
+	material.set_shader_parameter("road_tint", ROAD_TINT)
+
+
+## Same soft edge as the village paths (village_terrain.gd color_at), 1 px = 1 m of the map.
+func _stamp_segment(a: Vector2, b: Vector2, width: float, clip: Rect2) -> void:
+	var inner := width * 0.42
+	var outer := width * 0.65 + 0.5
+	var lo := Vector2i((a.min(b) - Vector2.ONE * outer).floor())
+	var hi := Vector2i((a.max(b) + Vector2.ONE * outer).ceil())
+	for z in range(maxi(lo.y, 0), mini(hi.y, road_mask.get_height() - 1) + 1):
+		for x in range(maxi(lo.x, 0), mini(hi.x, road_mask.get_width() - 1) + 1):
+			var p := Vector2(x + 0.5, z + 0.5)
+			if not clip.has_point(p) or VILLAGE_RECT.has_point(p):
+				continue
+			var d := p.distance_to(Geometry2D.get_closest_point_to_segment(p, a, b))
+			var v := 1.0 - smoothstep(inner, outer, d)
+			if v > road_mask.get_pixel(x, z).r:
+				road_mask.set_pixel(x, z, Color(v, v, v))
+
+
+# --- Grass (GRASS-WORLD-01): the village blade grass over the whole map -----------------------
+
+func grass_extent() -> Rect2:
+	return Rect2(world_root.position.x - HALF, world_root.position.z - HALF, 2000.0, 2000.0)
+
+
+func _scene_in_village(x: float, z: float) -> bool:
+	return VILLAGE_RECT.has_point(Vector2(x - world_root.position.x + HALF, z - world_root.position.z + HALF))
+
+
+## The ground the player sees: the village mesh inside it, the world grid outside.
+func grass_height(x: float, z: float) -> float:
+	if _scene_in_village(x, z):
+		return terrain.height_at(x, z)
+	return world_ground(x - world_root.position.x, z - world_root.position.z) + world_root.position.y
+
+
+func grass_color(x: float, z: float) -> Color:
+	if _scene_in_village(x, z):
+		return terrain.color_at(x, z)
+	var gx := clampf((x - world_root.position.x + HALF) / GRID, 0.0, world_width - 1.0001)
+	var gz := clampf((z - world_root.position.z + HALF) / GRID, 0.0, world_width - 1.0001)
+	var i := int(gz) * world_width + int(gx)
+	var fx := gx - int(gx)
+	var fz := gz - int(gz)
+	return world_colors[i].lerp(world_colors[i + 1], fx).lerp(world_colors[i + world_width].lerp(world_colors[i + world_width + 1], fx), fz)
+
+
+## Grass only on green ground (forest, meadows, lowlands) above the sea; not on sand, rock or snow.
+func grass_grows(x: float, y: float, z: float, ground: Color) -> bool:
+	if _scene_in_village(x, z):
+		return true
+	var sea_level: float = float(world_layout.sea.level) if world_layout.get("sea") is Dictionary else -INF
+	if y - world_root.position.y < sea_level + 0.3:
+		return false
+	return ground.g > ground.r * 1.2 and ground.g < 0.12
+
+
+## Roads and rivers near an area (as the village's own path segments) and places kept clear.
+func grass_obstacles(area: Rect2) -> Dictionary:
+	if _grass_segments.is_empty():
+		_index_grass_obstacles()
+	var segments: Array = []
+	var seen := {}
+	var lo := Vector2i((area.position / GRASS_CELL).floor())
+	var hi := Vector2i((area.end / GRASS_CELL).floor())
+	for cz in range(lo.y, hi.y + 1):
+		for cx in range(lo.x, hi.x + 1):
+			for segment in _grass_segments.get(Vector2i(cx, cz), []):
+				if not seen.has(segment.id):
+					seen[segment.id] = true
+					segments.append(segment)
+	var blocks: Array = []
+	for block in _grass_blocks:
+		if area.grow(block.z).has_point(Vector2(block.x, block.y)):
+			blocks.append(block)
+	return {"segments": segments, "blocks": blocks}
+
+
+func _index_grass_obstacles() -> void:
+	var offset := Vector2(world_root.position.x, world_root.position.z)
+	var pieces: Array = []
+	for road in world_layout.roads:
+		var points := _road_points(road)
+		for i in range(points.size() - 1):
+			pieces.append([Vector2(points[i].x, points[i].z) + offset, Vector2(points[i + 1].x, points[i + 1].z) + offset, float(road.get("width_m", 6.0))])
+	for river in world_layout.rivers:
+		var points := _points_of(river)
+		for i in range(points.size() - 1):
+			pieces.append([Vector2(points[i].x, points[i].z) + offset, Vector2(points[i + 1].x, points[i + 1].z) + offset, float(river.world_widths[i]) + 2.0])
+	for n in pieces.size():
+		var piece: Array = pieces[n]
+		var segment := {"id": n, "a": piece[0], "b": piece[1], "width": piece[2]}
+		var box := Rect2(piece[0], Vector2.ZERO).expand(piece[1]).grow(piece[2] * 0.5 + 1.5)
+		for cz in range(floori(box.position.y / GRASS_CELL), floori(box.end.y / GRASS_CELL) + 1):
+			for cx in range(floori(box.position.x / GRASS_CELL), floori(box.end.x / GRASS_CELL) + 1):
+				var key := Vector2i(cx, cz)
+				if not _grass_segments.has(key):
+					_grass_segments[key] = []
+				_grass_segments[key].append(segment)
+	# Cities (grey blocks round the plaza), hamlets, the inn and the landmarks stay clear; lakes too.
+	for city in world_layout.cities:
+		_grass_blocks.append(Vector3(float(city.spawn[0]) + offset.x, float(city.spawn[2]) + offset.y, 48.0))
+	for site in world_layout.sites:
+		if str(site.id) == SITE_SKIPPED:
+			continue
+		var radius := 30.0 if site.kind == "settlement" else 16.0
+		_grass_blocks.append(Vector3(float(site.spawn[0]) + offset.x, float(site.spawn[2]) + offset.y, radius))
+	var inn_frame := _inn_frame()
+	if not inn_frame.is_empty():
+		_grass_blocks.append(Vector3(inn_frame.center.x + offset.x, inn_frame.center.z + offset.y, 14.0))
+	for lake in world_layout.lakes:
+		var c: Array = lake.center
+		_grass_blocks.append(Vector3(float(c[0]) - HALF + offset.x, float(c[1]) - HALF + offset.y, maxf(float(lake.radii_m[0]), float(lake.radii_m[1])) + 2.0))
+
+
+## How much a scene point is road (0..1): the village ground's own paint inside it, the mask outside.
+func road_at(x: float, z: float) -> float:
+	var map := Vector2(x - world_root.position.x + HALF, z - world_root.position.z + HALF)
+	if VILLAGE_RECT.has_point(map) or road_mask == null:
+		return terrain.color_at(x, z).a
+	var px := Vector2i(clampi(int(map.x), 0, road_mask.get_width() - 1), clampi(int(map.y), 0, road_mask.get_height() - 1))
+	return road_mask.get_pixel(px.x, px.y).r
 
 
 func _build_shoulders(shapes: Node3D, points: PackedVector3Array, width: float) -> void:
@@ -346,7 +534,10 @@ func _build_shoulders(shapes: Node3D, points: PackedVector3Array, width: float) 
 			var edge := p + perpendicular * width * 0.5
 			var bank := p + perpendicular * 8.0
 			var bank_map := _map_of(bank)
-			var on_land := p.y - world_ground(p.x, p.z) < 2.0 and not VILLAGE_RECT.has_point(bank_map)
+			# WORLD-TERRAIN-02: the ground now meets the deck; a shoulder only where the deck stands
+			# clearly above it (bridge heads), so no painted bands run along every road.
+			var rise := p.y - world_ground(p.x, p.z)
+			var on_land := rise > 0.35 and rise < 2.0 and not VILLAGE_RECT.has_point(bank_map)
 			bank.y = world_ground(bank.x, bank.z) + 0.02
 			if not on_land:
 				_add_shoulder(shapes, inner, outer, side)
@@ -445,8 +636,55 @@ func _build_water_and_sites() -> void:
 		landmark.build(site.kind, Vector3(s[0], float(site.point[2]), s[2]), Vector3(direction[0], 0, direction[2]))
 
 
+## Settings -> Debug: the four cities and every site of the atlas, for checking the world by hand.
+func debug_locations() -> Array:
+	var places := []
+	for city in world_layout.cities:
+		places.append(city)
+	for site in world_layout.sites:
+		places.append(site)
+	return places
+
+
+## Puts the hero on the floor at a city or site spawn, looking at the place itself.
+func teleport_to(place: Dictionary) -> void:
+	var s: Array = place.spawn
+	var at := world_root.to_global(Vector3(float(s[0]), float(s[1]), float(s[2])))
+	var query := PhysicsRayQueryParameters3D.create(at + Vector3.UP * 40.0, at + Vector3.DOWN * 40.0)
+	query.exclude = [player.get_rid()]
+	var hit := get_world_3d().direct_space_state.intersect_ray(query)
+	if not hit.is_empty():
+		at = hit.position
+	var p: Array = place.point
+	var look := world_root.to_global(Vector3(float(p[0]) - HALF, at.y, float(p[1]) - HALF)) - at
+	look.y = 0.0
+	if look.length() < 1.0:
+		var f: Array = place.get("facing", [0, 0, -1])
+		look = Vector3(float(f[0]), 0.0, float(f[2]))
+	player.velocity = Vector3.ZERO
+	player.global_position = at + Vector3.UP * 0.12
+	player.facing_direction = look.normalized()
+	camera_rig._yaw = atan2(-look.x, -look.z)
+	camera_rig._apply_rotation()
+	camera_rig.snap_to_target()
+	player.get_node("Visual").reset_motion_interpolation()
+	print("WORLD_TELEPORT id=%s at=%s" % [place.id, player.global_position])
+
+
 func get_journal_entry() -> Dictionary:
-	return lesson.journal_entry() if lesson != null else {}
+	if lesson == null:
+		return {}
+	var entry: Dictionary = lesson.journal_entry()
+	# UI-CLEAN-01: after the watchman pays, the objective leads to the inn bed and past the first night.
+	if entry.completed and lodging != null:
+		if lodging.rented:
+			entry.objective_key = "INN_OBJECTIVE_SLEEP"
+		elif lodging.nights == 0:
+			entry.objective_key = "INN_OBJECTIVE_RENT"
+			entry.params = {"price": str(lodging.PRICE)}
+		else:
+			entry.objective_key = "INN_OBJECTIVE_MORNING"
+	return entry
 
 
 ## A lesson character or the woodpile nearby takes the action button before a door.
@@ -476,13 +714,9 @@ func _update_prompt() -> void:
 	if lesson == null or hud == null or player == null:
 		return
 	_offer_inn_door()
-	var inside := false
-	for building in buildings:
-		if building.contains(player.global_position):
-			inside = true
-	if not inside:
-		var entry: Dictionary = lesson.journal_entry()
-		hud.set_objective(entry.objective_key, entry.params)
+	# UI-CLEAN-01: the corner always shows the current step, also inside houses and the inn.
+	var entry := get_journal_entry()
+	hud.set_objective(entry.objective_key, entry.params)
 	var point: Node3D = lesson.nearest_point() if is_input_available() else null
 	var action := ""
 	if point == null and is_input_available() and inn_keeper_in_reach():
@@ -612,8 +846,6 @@ func _offer_inn_door() -> void:
 		hud.set_prompt(Localization.text("VILLAGE_DOOR_MOVING"))
 	else:
 		hud.set_prompt(Localization.text(key) if OS.get_name() == "Android" else "E · " + Localization.text(key))
-	if inn.contains(player.global_position):
-		hud.set_objective(INN_RECORD.title_key)
 
 
 ## The innkeeper stands behind the bar (guard look until an own one is drawn); lines are data.

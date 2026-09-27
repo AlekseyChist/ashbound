@@ -14,6 +14,8 @@ const FADE := .6
 
 var world: Node3D
 var rented := false
+## Nights slept in the inn; the corner objective moves on after the first one (UI-CLEAN-01).
+var nights := 0
 var sleeping := false
 var save_path := SAVE_PATH
 var _veil: ColorRect
@@ -75,6 +77,7 @@ func sleep() -> bool:
 	atmosphere.apply_look()
 	atmosphere.save_state()
 	rented = false
+	nights += 1
 	_changed()
 	await get_tree().create_timer(.4, false).timeout
 	tween = create_tween()
@@ -96,13 +99,17 @@ func use_save(path: String) -> void:
 func save_state() -> Error:
 	var config := ConfigFile.new()
 	config.set_value("inn", "rented", rented)
+	config.set_value("inn", "nights", nights)
 	return config.save(save_path)
 
 ## A missing or damaged file means no bed is rented.
 func load_state() -> void:
 	rented = false
+	nights = 0
 	var config := ConfigFile.new()
 	if config.load(save_path) != OK:
 		return
 	var value: Variant = config.get_value("inn", "rented", false)
 	rented = value is bool and value
+	var slept: Variant = config.get_value("inn", "nights", 0)
+	nights = maxi(int(slept), 0) if slept is int else 0

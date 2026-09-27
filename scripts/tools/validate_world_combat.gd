@@ -85,6 +85,8 @@ func run() -> void:
 	check(not combat.toolbar._reset_btn.is_visible_in_tree() and combat.toolbar._guard_btn.is_visible_in_tree(), "only the Block button on screen")
 	var attack: Control = world.hud.get_node("RootControl/BottomRight/VBox/AttackButton")
 	check(not combat.toolbar._guard_btn.get_global_rect().intersects(attack.get_global_rect()), "Block and Attack buttons do not overlap")
+	var guard_rect: Rect2 = combat.toolbar._guard_btn.get_global_rect()
+	check(is_equal_approx(guard_rect.end.y, attack.get_global_rect().end.y) and guard_rect.end.x < attack.get_global_rect().position.x, "Block sits left of Attack on the same line (UI-CLEAN-01)")
 	tick(2.0)
 	check(wolf.state == "idle" and events.is_empty(), "the wolf ignores the hero in the village")
 	# Chase on the slope stays on the ground.

@@ -45,6 +45,11 @@ func _ready() -> void:
 	settings_menu.name = "VillageSettings"
 	pocket.get_pocket_panel().use_settings_page(settings_menu)
 	settings_menu.configure(self, settings)
+	# UI-CLEAN-01: the game screen keeps only play controls; checking tools are in Settings -> Debug,
+	# the language choice is already in Settings.
+	hud.get_node("RootControl/HousePicker").hide()
+	hud.get_node("RootControl/TopRightPanel").hide()
+	_layout_play_controls()
 	DisplayServer.window_set_title("AshBound — Forest Village 0.23.6")
 	print("VILLAGE_SETTLEMENT_READY version=0.23.6 houses=3 trees=",dressing.tree_positions.size())
 
@@ -99,6 +104,49 @@ func select_building(index: int) -> void:
 	camera_rig._apply_rotation()
 	camera_rig.snap_to_target()
 	player.get_node("Visual").reset_motion_interpolation()
+
+## UI-CLEAN-01: one right column 32 px from the edges, as wide as "Things": Things at the top,
+## Run / Action / Attack at the bottom (the Block button sits left of Attack, world_block_toolbar.gd).
+const COLUMN_RIGHT := 32.0
+const COLUMN_WIDTH := 298.0
+func _layout_play_controls() -> void:
+	var things: Button = pocket.get_open_button()
+	things.offset_right = -COLUMN_RIGHT
+	things.offset_left = -COLUMN_RIGHT-COLUMN_WIDTH
+	things.offset_top = 24.0
+	things.offset_bottom = 144.0
+	var column: Control = hud.get_node("RootControl/BottomRight")
+	column.offset_right = -COLUMN_RIGHT+8.0
+	column.offset_left = -COLUMN_RIGHT-COLUMN_WIDTH-8.0
+	column.offset_bottom = -COLUMN_RIGHT+8.0
+	column.offset_top = column.offset_bottom-412.0
+	(column.get_node("VBox") as BoxContainer).alignment = BoxContainer.ALIGNMENT_END
+	# The dialogue box stays above the Block/Attack line (where the quick bar used to keep it).
+	var message: Control = hud.get_node("RootControl/MessagePanel")
+	message.offset_top = -430.0
+	message.offset_bottom = -230.0
+	# The "E · action" prompt at the bottom centre stays clear of Block on a 16:9 screen.
+	var prompt: Control = hud.get_node("RootControl/PromptLabel")
+	prompt.offset_left = -300.0
+	prompt.offset_right = 300.0
+	# JUMP-01: Jump sits above Block, left of Action (phone only; Space on a PC).
+	var jump: Button = hud.get_node("RootControl/JumpButton")
+	jump.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	jump.offset_right = -COLUMN_RIGHT-COLUMN_WIDTH-12.0
+	jump.offset_left = jump.offset_right-COLUMN_WIDTH
+	jump.offset_bottom = -32.0-120.0-12.0
+	jump.offset_top = jump.offset_bottom-120.0
+	jump.visible = hud.force_touch_controls
+	if not hud.jump_pressed.is_connected(player.request_jump):
+		hud.jump_pressed.connect(player.request_jump)
+
+## From Settings -> Debug: close the menu and go to the next house.
+func _on_picker_pressed() -> void:
+	if settings_menu == null or pocket.state == pocket.State.CLOSED:
+		super._on_picker_pressed()
+		return
+	pocket.close_menu()
+	select_building((selected+1)%buildings.size())
 
 func is_input_available() -> bool:
 	return super.is_input_available() and (pocket==null or pocket.state==pocket.State.CLOSED)
