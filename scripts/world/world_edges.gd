@@ -29,6 +29,7 @@ func build(scene: Node3D) -> void:
 	world = scene
 	_build_massif()
 	_dress_ridge()
+	_build_walls()
 	print("WORLD_EDGES cliffs=%d boulders=%d" % [cliff_count, boulder_count])
 
 
@@ -108,6 +109,23 @@ func _build_massif() -> void:
 	ground.set_shader_parameter("cliff_normal", rock.normal_texture)
 	massif.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(massif)
+
+
+## A safety behind the ridge: invisible walls up to the sky on the north, west and east edges.
+func _build_walls() -> void:
+	var walls := StaticBody3D.new()
+	walls.name = "EdgeWalls"
+	add_child(walls)
+	var span: float = 2.0 * world.HALF + 4.0
+	for spec in [[Vector3(-world.HALF - 1.0, 600.0, 0.0), Vector3(2.0, 1600.0, span)],
+			[Vector3(world.HALF + 1.0, 600.0, 0.0), Vector3(2.0, 1600.0, span)],
+			[Vector3(0.0, 600.0, -world.HALF - 1.0), Vector3(span, 1600.0, 2.0)]]:
+		var box := BoxShape3D.new()
+		box.size = spec[1]
+		var shape := CollisionShape3D.new()
+		shape.shape = box
+		shape.position = spec[0]
+		walls.add_child(shape)
 
 
 func _process(_delta: float) -> void:

@@ -389,7 +389,16 @@ edge_e=np.minimum(np.minimum(x,2000.0-x),z)
 along=np.where(edge_e==z,x,z)
 # Ridged: |sin| of incommensurable periods adds up to sharp crests and notches, not even waves.
 ridge_h=40+sum(a*np.abs(np.sin(along/p+ph)) for a,p,ph in ((22,397.,.3),(16,173.,1.7),(10,89.,2.9),(6,37.,.8)))
-heights=heights+ridge_h*(1-smooth((edge_e-12.0)/30.0))
+# The crest stands over the highest land within 300 m of the edge (owner 27 Sep: from the high
+# mine one could jump over the old ridge, which only rose over the land right at the edge).
+band=60
+top_n=np.maximum.accumulate(heights[band::-1,:],axis=0)[-1][None,:]      # north: rows 0..band
+top_w=np.maximum.accumulate(heights[:,band::-1],axis=1)[:,-1][:,None]     # west: columns 0..band
+top_e=np.maximum.accumulate(heights[:,-band-1:],axis=1)[:,-1][:,None]     # east: last columns
+near_top=np.where(edge_e==z,np.broadcast_to(top_n,heights.shape),np.where(x<1000,np.broadcast_to(top_w,heights.shape),np.broadcast_to(top_e,heights.shape)))
+crest=np.maximum(heights+ridge_h,near_top+20+ridge_h)
+wall=1-smooth((edge_e-12.0)/30.0)
+heights=heights*(1-wall)+crest*wall
 
 # Clay color masses only. Roads come from the road mask, water from its own strips.
 colors=np.zeros((WIDTH,WIDTH,4));colors[:,:,:]=[.43,.52,.43,1]

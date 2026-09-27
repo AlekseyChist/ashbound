@@ -105,5 +105,19 @@ func run_checks() -> void:
 	check(reached < 1990.0, "he stops well before the map edge (z %.1f)" % reached)
 	check(world.hud.get("_message_key") == "WORLD_SEA_TOO_DEEP", "he says he would drown")
 	check(not str(Localization.text("WORLD_SEA_TOO_DEEP")).begins_with("WORLD_"), "the remark is translated")
+	# The mountain lake too (owner: "I walked into the lake over my head").
+	var lake: Dictionary = layout.lakes[0]
+	var c: Array = lake.center
+	var start := Vector2(float(c[0]), float(c[1]) + float(lake.radii_m[1]) + 8.0)
+	world.hud.clear_message()
+	world.teleport_to({"id": "lake", "spawn": [start.x - world.HALF, world.world_ground(start.x - world.HALF, start.y - world.HALF) + 0.3, start.y - world.HALF], "point": [float(c[0]), float(c[1])]})
+	await settle(.5)
+	player.set_move_input(Vector2.UP)
+	var lake_deepest := 0.0
+	for i in 40:
+		await settle(.2)
+		lake_deepest = maxf(lake_deepest, sea.depth_at(player.global_position))
+	player.set_move_input(Vector2.ZERO)
+	check(lake_deepest <= sea.STOP_DEPTH + 0.15 and world.hud.get("_message_key") == "WORLD_SEA_TOO_DEEP", "the lake stops the hero too (%.2f m)" % lake_deepest)
 	print("WORLD_SEA_CHECKS checks=", checks, " failures=", failures.size())
 	get_tree().quit(0 if failures.is_empty() else 1)
