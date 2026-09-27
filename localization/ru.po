@@ -873,3 +873,9 @@ msgstr "Прыжок"
 
 msgid "WORLD_SEA_TOO_DEEP"
 msgstr "Дальше глубоко — плавать я не умею, утону."
+
+msgid "SETTINGS_DEBUG_MAP"
+msgstr "Карта"
+
+msgid "DEBUG_MAP_HINT"
+msgstr "Карта для проверки: стрелка — герой. Коснись карты, чтобы перенестись туда."

@@ -91,6 +91,8 @@ var trail_dressing: Node3D
 var far_forest: Node3D
 ## WORLD-SEA-01: the sea along the south edge (D-099).
 var sea: Node3D
+## DEBUG-MAP-01: Settings -> Debug -> Map.
+var debug_map: CanvasLayer
 
 
 func _ready() -> void:
@@ -125,6 +127,10 @@ func _ready() -> void:
 	lodging.configure(self)
 	lodging.changed.connect(_update_prompt)
 	lodging.changed.connect(func(): journal_changed.emit())
+	debug_map = preload("res://scripts/world/world_debug_map.gd").new()
+	debug_map.name = "DebugMap"
+	add_child(debug_map)
+	debug_map.configure(self)
 	_start_save.call_deferred()
 	lesson.sync_pack.call_deferred()
 	_update_prompt()
@@ -655,6 +661,10 @@ func _build_water_and_sites() -> void:
 		var direction: Array = site.facing
 		var s: Array = site.spawn
 		landmark.build(site.kind, Vector3(s[0], float(site.point[2]), s[2]), Vector3(direction[0], 0, direction[2]))
+
+
+func open_debug_map() -> void:
+	debug_map.open()
 
 
 ## Settings -> Debug: the four cities and every site of the atlas, for checking the world by hand.

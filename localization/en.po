@@ -872,3 +872,9 @@ msgstr "Jump"
 
 msgid "WORLD_SEA_TOO_DEEP"
 msgstr "It's too deep further on - I can't swim, I would drown."
+
+msgid "SETTINGS_DEBUG_MAP"
+msgstr "Map"
+
+msgid "DEBUG_MAP_HINT"
+msgstr "A checking map: the arrow is the hero. Tap the map to go there."

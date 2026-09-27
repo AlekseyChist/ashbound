@@ -815,3 +815,9 @@ msgstr ""
 
 msgid "WORLD_SEA_TOO_DEEP"
 msgstr ""
+
+msgid "SETTINGS_DEBUG_MAP"
+msgstr ""
+
+msgid "DEBUG_MAP_HINT"
+msgstr ""
