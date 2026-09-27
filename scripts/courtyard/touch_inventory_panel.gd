@@ -1,7 +1,7 @@
 extends PanelContainer
 ## Touch-first inventory panel for the courtyard.
 ## Nearly fullscreen, illustrated grid, real touch drag & drop.
-## Four equipment slots: armor (complete outfit), weapon, backpack, pouch.
+## Two equipment slots: armor (complete outfit) and weapon. Storage sections: main inventory and wallet (D-057).
 
 const GestureScript = preload("res://scripts/courtyard/inventory_touch_gesture.gd")
 const MenuSections = preload("res://scripts/courtyard/courtyard_menu_sections.gd")
@@ -14,8 +14,7 @@ signal quick_slots_changed()
 
 const ATLAS_PATH := preload("res://assets/ui/inventory/items-v1.png")
 const POCKET_TEX := preload("res://assets/ui/inventory/pocket-v1.png")
-const BACKPACK_TEX := preload("res://assets/ui/inventory/backpack-v1.png")
-const POUCH_TEX := preload("res://assets/ui/inventory/pouch-v1.png")
+const WALLET_TEX := preload("res://assets/ui/inventory/pouch-v1.png")
 const MAP_TEX := preload("res://assets/ui/maps/courtyard-sketch-v1.png")
 const TRAVELER_FRAMES := preload("res://assets/characters/courtyard/traveler_frames.tres")
 
@@ -56,10 +55,6 @@ var _armor_label: Label
 var _armor_slot: Button
 var _weapon_label: Label
 var _weapon_slot: Button
-var _backpack_label: Label
-var _backpack_slot: Button
-var _pouch_label: Label
-var _pouch_slot: Button
 var _storage_tabs: HBoxContainer
 var _item_scroll: ScrollContainer
 var _item_grid: GridContainer
@@ -82,7 +77,7 @@ var _quick_cells: Array[Button] = []
 # Drag state
 enum DragMode { NONE, PENDING, ACTIVE }
 var _drag_mode: int = DragMode.NONE
-var _drag_source: Dictionary = {}  # {kind: "item"/"equip"/"worn", id, slot, container}
+var _drag_source: Dictionary = {}  # {kind: "item"/"equip", id, slot, container}
 var _press_target_id: String = ""
 var _press_position: Vector2 = Vector2.ZERO
 var _press_time: float = 0.0
@@ -108,10 +103,6 @@ func _ready() -> void:
 	_armor_slot = $Margin/RootVBox/Body/Left/EquipmentGrid/ArmorColumn/ArmorSlot
 	_weapon_label = $Margin/RootVBox/Body/Left/EquipmentGrid/WeaponColumn/WeaponLabel
 	_weapon_slot = $Margin/RootVBox/Body/Left/EquipmentGrid/WeaponColumn/WeaponSlot
-	_backpack_label = $Margin/RootVBox/Body/Left/EquipmentGrid/BackpackColumn/BackpackLabel
-	_backpack_slot = $Margin/RootVBox/Body/Left/EquipmentGrid/BackpackColumn/BackpackSlot
-	_pouch_label = $Margin/RootVBox/Body/Left/EquipmentGrid/PouchColumn/PouchLabel
-	_pouch_slot = $Margin/RootVBox/Body/Left/EquipmentGrid/PouchColumn/PouchSlot
 	_storage_tabs = $Margin/RootVBox/Body/Right/StorageTabs
 	_item_scroll = $Margin/RootVBox/Body/Right/ItemScroll
 	_item_grid = $Margin/RootVBox/Body/Right/ItemScroll/ItemGrid
@@ -207,7 +198,7 @@ func _apply_styles() -> void:
 	dark_style.set_border_color(COLOR_BRONZE_DIM)
 	dark_style.set_corner_radius_all(6)
 
-	for label in [_title, _coins, _armor_label, _weapon_label, _backpack_label, _pouch_label, _item_details, _empty_label, _quick_label, _hint]:
+	for label in [_title, _coins, _armor_label, _weapon_label, _item_details, _empty_label, _quick_label, _hint]:
 		if label:
 			label.add_theme_color_override("font_color", COLOR_TEXT)
 
@@ -217,7 +208,7 @@ func _apply_styles() -> void:
 	_close_button.add_theme_stylebox_override("pressed", dark_style)
 	_close_button.add_theme_color_override("font_color", COLOR_TEXT)
 
-	for slot in [_armor_slot, _weapon_slot, _backpack_slot, _pouch_slot]:
+	for slot in [_armor_slot, _weapon_slot]:
 		slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		slot.add_theme_stylebox_override("normal", dark_style)
 		slot.add_theme_stylebox_override("hover", dark_style)
@@ -256,8 +247,6 @@ func _setup_character_preview() -> void:
 func _setup_equipment_slots() -> void:
 	_armor_slot.pressed.connect(_on_armor_slot_tapped)
 	_weapon_slot.pressed.connect(_on_weapon_slot_tapped)
-	_backpack_slot.pressed.connect(_on_backpack_slot_tapped)
-	_pouch_slot.pressed.connect(_on_pouch_slot_tapped)
 
 
 func _setup_quick_slots() -> void:
@@ -403,8 +392,6 @@ func _refresh_labels() -> void:
 	_close_button.text = _text("UI_CLOSE")
 	_armor_label.text = _text("TOUCH_ARMOR_SET")
 	_weapon_label.text = _text("TOUCH_WEAPON")
-	_backpack_label.text = _text("TOUCH_BACKPACK")
-	_pouch_label.text = _text("TOUCH_POUCH")
 	_quick_label.text = _text("TOUCH_QUICK_LABEL")
 	_hint.text = _text("TOUCH_DRAG_HINT")
 	_empty_label.text = _text("INV_EMPTY")
@@ -457,13 +444,6 @@ func _get_items_in_container(container_id: String) -> Array:
 	return result
 
 
-func _get_worn_kind(kind: String) -> Dictionary:
-	if not _inventory or not _inventory.has_method("get_worn_storage"):
-		return {}
-	var d: Dictionary = _inventory.get_worn_storage(kind)
-	return d if d is Dictionary else {}
-
-
 # ---------------------------------------------------------------------------
 # Storage tabs
 # ---------------------------------------------------------------------------
@@ -504,25 +484,6 @@ func _rebuild_tabs() -> void:
 		if default_id.is_empty() and kind == "pocket":
 			default_id = id
 
-	var known_kinds := ["pocket", "backpack", "pouch"]
-	for kind in known_kinds:
-		if not seen_kinds.has(kind):
-			var ph := Button.new()
-			ph.disabled = true
-			ph.custom_minimum_size = Vector2(0, 140)
-			ph.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			ph.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			ph.expand_icon = true
-			ph.add_theme_constant_override("icon_max_width", 90)
-			ph.add_theme_font_size_override("font_size", 28)
-			ph.add_theme_color_override("font_color", COLOR_TEXT)
-			var tex := _container_texture(kind)
-			if tex:
-				ph.icon = tex
-			ph.text = _container_label("", kind, {}) + "\n" + _text("TOUCH_NOT_WORN")
-			ph.modulate = Color(0.5, 0.5, 0.5, 1.0)
-			_storage_tabs.add_child(ph)
-
 	if default_id.is_empty():
 		for c in containers:
 			if c is Dictionary and str(c.get("id", "")) != "":
@@ -544,8 +505,7 @@ func _container_label(id: String, kind: String, seen: Dictionary) -> String:
 	var base := ""
 	match kind:
 		"pocket": base = _text("TOUCH_POCKET")
-		"backpack": base = _text("TOUCH_BACKPACK")
-		"pouch": base = _text("TOUCH_POUCH")
+		"wallet": base = _text("TOUCH_WALLET")
 		_: base = _text("INV_UNKNOWN_ITEM")
 	var count: int = 0
 	if seen.has(kind):
@@ -565,8 +525,7 @@ func _container_label(id: String, kind: String, seen: Dictionary) -> String:
 func _container_texture(kind: String) -> Texture2D:
 	match kind:
 		"pocket": return POCKET_TEX
-		"backpack": return BACKPACK_TEX
-		"pouch": return POUCH_TEX
+		"wallet": return WALLET_TEX
 		_: return null
 
 
@@ -687,10 +646,6 @@ func _apply_cell_style(cell: Control, selected: bool, valid: bool) -> void:
 
 
 func _item_texture(id: String) -> Texture2D:
-	if id == "traveler_backpack":
-		return BACKPACK_TEX
-	if id == "belt_pouch":
-		return POUCH_TEX
 	if id == "courtyard_sketch":
 		return MAP_TEX
 	if not _atlas_texture:
@@ -724,8 +679,6 @@ func _rebuild_equipment() -> void:
 	var eq := _get_equipped()
 	_populate_equip_slot(_armor_slot, "armor", eq.get("armor"))
 	_populate_equip_slot(_weapon_slot, "weapon", eq.get("weapon"))
-	_populate_worn_bag_slot(_backpack_slot, "backpack")
-	_populate_worn_bag_slot(_pouch_slot, "pouch")
 
 
 func _populate_equip_slot(slot: Button, slot_name: String, item) -> void:
@@ -746,21 +699,6 @@ func _populate_equip_slot(slot: Button, slot_name: String, item) -> void:
 	slot.text = ""
 
 
-func _populate_worn_bag_slot(slot: Button, kind: String) -> void:
-	slot.set_meta("equip_slot", "worn_" + kind)
-	var worn := _get_worn_kind(kind)
-	if not worn.is_empty():
-		var id: String = str(worn.get("id", ""))
-		slot.icon = _item_texture(id)
-		slot.tooltip_text = _item_name(id)
-		slot.modulate = Color.WHITE
-	else:
-		slot.icon = _container_texture(kind)
-		slot.tooltip_text = ""
-		slot.modulate = Color(1, 1, 1, 0.4)
-	slot.text = ""
-
-
 func _on_armor_slot_tapped() -> void:
 	_try_unequip("armor")
 
@@ -769,38 +707,12 @@ func _on_weapon_slot_tapped() -> void:
 	_try_unequip("weapon")
 
 
-func _on_backpack_slot_tapped() -> void:
-	_try_unequip_worn("backpack")
-
-
-func _on_pouch_slot_tapped() -> void:
-	_try_unequip_worn("pouch")
-
-
 func _try_unequip(slot_name: String) -> void:
 	if not _inventory or not _inventory.has_method("unequip_slot"):
 		return
 	var ok: bool = _inventory.unequip_slot(slot_name)
 	if not ok:
 		_flash_error()
-
-
-func _try_unequip_worn(kind: String) -> void:
-	if not _inventory or not _inventory.has_method("unequip_storage_item"):
-		return
-	var dest := _current_container
-	if dest.is_empty():
-		dest = _first_pocket_id()
-	var ok: bool = _inventory.unequip_storage_item(kind, dest)
-	if not ok:
-		_flash_error()
-
-
-func _first_pocket_id() -> String:
-	for c in _get_containers():
-		if c is Dictionary and str(c.get("kind", "")) == "pocket":
-			return str(c.get("id", ""))
-	return ""
 
 
 # ---------------------------------------------------------------------------
@@ -870,10 +782,6 @@ func _find_item_by_instance(instance_id: String) -> Dictionary:
 			return item
 	var equipped: Dictionary = data.get("equipped", {})
 	for item in equipped.values():
-		if item is Dictionary and str(item.get("instance_id", "")) == instance_id:
-			return item
-	var worn_storage: Dictionary = data.get("worn_storage", {})
-	for item in worn_storage.values():
 		if item is Dictionary and str(item.get("instance_id", "")) == instance_id:
 			return item
 	return {}

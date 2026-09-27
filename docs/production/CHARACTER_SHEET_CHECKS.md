@@ -62,6 +62,6 @@ SM-S911B, Android 16, 2340×1080. Обычная и QA APK установлен�
 | `.tools/builds/android/ashbound-courtyard.apk` | `9E479B00550E45540DF79618D8F00C910253E45915BB9B4C35E2D595489DD7FE` |
 | `.tools/builds/android/ashbound-transfer-qa.apk` | `8AB2ADC7D717A84D13B92649E8986B0BA7CDFF417B3DBE43B5614C9F94922D00` |
 
-Снимки: [ПК EN](../art/reviews/character-sheet-0.9.1/pc-en.png), [ПК RU](../art/reviews/character-sheet-0.9.1/pc-ru.png), [ПК рюкзак](../art/reviews/character-sheet-0.9.1/pc-packed.png), [обычный S23 RU](../art/reviews/character-sheet-0.9.1/s23-normal-ru.png), [QA S23 EN](../art/reviews/character-sheet-0.9.1/s23-qa-en.png), [QA S23 рюкзак](../art/reviews/character-sheet-0.9.1/s23-qa-packed.png), [сохранность вещей S23](../art/reviews/character-sheet-0.9.1/s23-qa-items.png). На снимках автоматического теста ПК 17 очков намеренно введены фикстурой; это не игровая награда.
+Снимки: ПК EN, ПК RU, ПК рюкзак, обычный S23 RU, QA S23 EN, QA S23 рюкзак, сохранность вещей S23. На снимках автоматического теста ПК 17 очков намеренно введены фикстурой; это не игровая награда.
 
 Повторить: `tools/validate-touch-inventory.ps1`, графически `tools/validate-touch-inventory.ps1 -Cases character_sheet -Render`, каталоги `node tools/validate-localization-catalogs.mjs`. Логи локального исполнителя сохранены в `.tools/ollama-godot/runs/`; это локальные диагностические файлы, не часть игры.

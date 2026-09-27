@@ -175,7 +175,7 @@ func _parse_capture_arg() -> void:
 		if not args[i].begins_with("--capture-buildings="):
 			continue
 		var raw: String = args[i].substr("--capture-buildings=".length())
-		var base := ProjectSettings.globalize_path("res://art/previews/")
+		var base := ProjectSettings.globalize_path("res://local/previews/")
 		var simplified := raw.simplify_path()
 		if not simplified.begins_with(base) or not simplified.ends_with(".png"):
 			push_warning("building_showcase: capture path rejected: %s" % raw)

@@ -1,0 +1,172 @@
+{
+  "revision": "TAVERN-01-concept-v2",
+  "units": "metres",
+  "note": "D-089: one-storey hall with sleeping loft, log-cabin walls; concept for owner check before the game asset.",
+  "buildings": [
+    {
+      "id": "T02A",
+      "width": 9,
+      "depth": 15,
+      "floor": 0.36,
+      "wall_top": 3.8,
+      "ridge": 8.4,
+      "thickness": 0.3,
+      "overhang_side": 0.6,
+      "overhang_gable": 0.45,
+      "openings": [
+        {
+          "id": "entry",
+          "face": "front",
+          "center": 0.0,
+          "bottom": 0.36,
+          "width": 2.2,
+          "height": 2.5,
+          "kind": "double_door"
+        },
+        {
+          "id": "front_l",
+          "face": "front",
+          "center": -2.9,
+          "bottom": 1.3,
+          "width": 1.2,
+          "height": 1.2,
+          "kind": "window"
+        },
+        {
+          "id": "front_r",
+          "face": "front",
+          "center": 2.9,
+          "bottom": 1.3,
+          "width": 1.2,
+          "height": 1.2,
+          "kind": "window"
+        },
+        {
+          "id": "loft_front",
+          "face": "front",
+          "center": 0.0,
+          "bottom": 4.6,
+          "width": 1.0,
+          "height": 1.0,
+          "kind": "window"
+        },
+        {
+          "id": "right_1",
+          "face": "right",
+          "center": -5.0,
+          "bottom": 1.3,
+          "width": 1.0,
+          "height": 1.1,
+          "kind": "window"
+        },
+        {
+          "id": "right_2",
+          "face": "right",
+          "center": -1.7,
+          "bottom": 1.3,
+          "width": 1.0,
+          "height": 1.1,
+          "kind": "window"
+        },
+        {
+          "id": "right_3",
+          "face": "right",
+          "center": 1.7,
+          "bottom": 1.3,
+          "width": 1.0,
+          "height": 1.1,
+          "kind": "window"
+        },
+        {
+          "id": "right_4",
+          "face": "right",
+          "center": 5.0,
+          "bottom": 1.3,
+          "width": 1.0,
+          "height": 1.1,
+          "kind": "window"
+        },
+        {
+          "id": "left_1",
+          "face": "left",
+          "center": -5.0,
+          "bottom": 1.3,
+          "width": 1.0,
+          "height": 1.1,
+          "kind": "window"
+        },
+        {
+          "id": "left_2",
+          "face": "left",
+          "center": -1.7,
+          "bottom": 1.3,
+          "width": 1.0,
+          "height": 1.1,
+          "kind": "window"
+        },
+        {
+          "id": "left_3",
+          "face": "left",
+          "center": 3.2,
+          "bottom": 1.3,
+          "width": 1.0,
+          "height": 1.1,
+          "kind": "window"
+        },
+        {
+          "id": "kitchen_door",
+          "face": "left",
+          "center": 5.6,
+          "bottom": 0.36,
+          "width": 1.1,
+          "height": 2.2,
+          "kind": "door"
+        },
+        {
+          "id": "loft_rear",
+          "face": "rear",
+          "center": 0.0,
+          "bottom": 4.6,
+          "width": 1.0,
+          "height": 1.0,
+          "kind": "window"
+        }
+      ],
+      "chimney": {
+        "centre_xy": [
+          -2.6,
+          5.2
+        ],
+        "footprint_xy": [
+          0.9,
+          1.0
+        ],
+        "top_z": 9.0,
+        "location_reason": "common-room hearth at the back"
+      },
+      "ceiling_z": 3.5,
+      "attic_hatch": {
+        "center_xy": [
+          2.9,
+          4.5
+        ],
+        "size_xy": [
+          0.9,
+          1.4
+        ]
+      },
+      "entrance_style": "steps",
+      "approach_width": 1.8,
+      "entrance_canopy": {
+        "width": 3.2,
+        "projection": 1.4,
+        "z_inner": 3.5,
+        "z_outer": 3.1
+      },
+      "wall_material": "oak",
+      "wall_style": "log",
+      "log_diameter": 0.3,
+      "log_overhang": 0.35
+    }
+  ]
+}

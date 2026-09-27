@@ -126,6 +126,9 @@ func _run() -> void:
 	player.notification(MainLoop.NOTIFICATION_APPLICATION_FOCUS_OUT)
 	if player._touch_run:
 		_errors.append("focus-out did not reset _touch_run")
+	# Restore focus before testing a fresh explicit attack. Background attacks
+	# are now correctly rejected; the prior fixture left focus lost forever.
+	player.notification(MainLoop.NOTIFICATION_APPLICATION_FOCUS_IN)
 
 	# --- Атака из бега: один strike на 0.10-0.15 с, скорость 1.05 ---
 	player.global_position = start_pos

@@ -36,7 +36,7 @@ func _run() -> void:
 	var panel: Control = menu.get_node("RootControl/Overlay/Window")
 	var source: Label = panel.get_node("%Source")
 	check(inv.items.is_empty() and inv.gold == 0, "no free items or money on storage setup")
-	check(inv.get_storage_containers().size() == 1 and inv.get_effective_capacity() == 6, "starter clothing provides exactly one configured pocket")
+	check(inv.get_storage_containers().size() == 2 and inv.get_effective_capacity() == 16, "starter clothing: main inventory 12 + wallet 4 (D-082)")
 	check(access.has_access() and menu.request_open(), "physical pocket allows gesture")
 	check(not panel.visible, "capacity panel waits for gesture")
 	await create_timer(0.9).timeout

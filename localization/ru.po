@@ -199,13 +199,9 @@ msgstr "Карман одежды"
 msgid "INV_STORAGE_POCKET"
 msgstr "Карман одежды"
 
-# Inventory UI: storage container name for a belt pouch.
-msgid "INV_STORAGE_POUCH"
-msgstr "Поясной мешочек"
-
-# Inventory UI: storage container name for a backpack.
-msgid "INV_STORAGE_BACKPACK"
-msgstr "Рюкзак"
+# Inventory UI: storage container name for the wallet section (D-057).
+msgid "INV_STORAGE_WALLET"
+msgstr "Кошелёк"
 
 # Inventory UI: storage usage line; {name}, {used} and {capacity} are placeholders.
 msgid "INV_STORAGE_USAGE"
@@ -323,17 +319,9 @@ msgstr "Оружие"
 msgid "TOUCH_POCKET"
 msgstr "За пазухой"
 
-# Touch inventory: reviewed mobile equipment UI.
-msgid "TOUCH_BACKPACK"
-msgstr "Рюкзак"
-
-# Touch inventory: reviewed mobile equipment UI.
-msgid "TOUCH_POUCH"
-msgstr "Мешочек"
-
-# Touch inventory: reviewed mobile equipment UI.
-msgid "TOUCH_NOT_WORN"
-msgstr "Не надет"
+# Touch inventory: wallet section (D-057).
+msgid "TOUCH_WALLET"
+msgstr "Кошелёк"
 
 # Touch inventory: reviewed mobile equipment UI.
 msgid "TOUCH_DRAG_HINT"
@@ -350,14 +338,6 @@ msgstr "Пусто"
 # Touch inventory: reviewed mobile equipment UI.
 msgid "TOUCH_MOVE_FAILED"
 msgstr "Сюда нельзя переложить эту вещь."
-
-# Touch inventory: reviewed mobile equipment UI.
-msgid "ITEM_TRAVELER_BACKPACK_NAME"
-msgstr "Дорожный рюкзак"
-
-# Touch inventory: reviewed mobile equipment UI.
-msgid "ITEM_BELT_POUCH_NAME"
-msgstr "Поясной мешочек"
 
 msgid "MENU_SECTION_ITEMS"
 msgstr "Вещи"
@@ -454,3 +434,439 @@ msgstr "Язык"
 
 msgid "SETTINGS_LANGUAGE_HINT"
 msgstr "Изменения применяются сразу и сохраняются."
+
+msgid "FIST_PREVIEW_TITLE"
+msgstr "Кулачные техники"
+
+msgid "FIST_PREVIEW_NOVICE"
+msgstr "Новичок"
+
+msgid "FIST_PREVIEW_TRAINED"
+msgstr "Обученный"
+
+msgid "FIST_PREVIEW_PACK_ON"
+msgstr "Рюкзак: надет"
+
+msgid "FIST_PREVIEW_PACK_OFF"
+msgstr "Рюкзак: снят"
+
+msgid "FIST_PREVIEW_VIEW"
+msgstr "Повернуть камеру"
+
+msgid "FIST_PREVIEW_HINT"
+msgstr "F1/F2: техника · F3: рюкзак · F4: ракурс"
+
+msgid "FIST_PREVIEW_NOTE"
+msgstr "Проба стойки и удара"
+
+msgid "DEFENSE_SWING"
+msgstr "Входящий удар"
+
+msgid "DEFENSE_RESET"
+msgstr "На исходную"
+
+msgid "DEFENSE_GUARD"
+msgstr "Блок"
+
+msgid "DEFENSE_GUARD_NOW"
+msgstr "Блок"
+
+msgid "DEFENSE_HINT_PC"
+msgstr "F5 — удар · ПКМ (или G) — блок · F6 — сброс. На вспышке нажми ПКМ для точного блока."
+
+msgid "DEFENSE_HINT_TOUCH"
+msgstr "Следи за замахом: нажми «Блок» на вспышке. Удержание даёт обычный блок."
+
+msgid "DEFENSE_NOVICE_HINT"
+msgstr "Новичок: попытка прикрыться не останавливает удар."
+
+msgid "DEFENSE_TRAINED_HINT"
+msgstr "Обученный: повернись к удару. Удержание — обычный блок, точное нажатие — идеальный."
+
+msgid "DEFENSE_NOTE"
+msgstr "Проба входящего удара и защиты"
+
+msgid "ENEMY_WOLF"
+msgstr "Волк"
+
+msgid "ENEMY_GUARD"
+msgstr "Стражник"
+
+msgid "ENEMY_PREVIEW_TITLE"
+msgstr "Волк и стражник"
+
+msgid "ENEMY_HINT_PC"
+msgstr "Войди в круг, чтобы начать бой. ПКМ (или G): блок; F6: на исходную."
+
+msgid "ENEMY_HINT_TOUCH"
+msgstr "Войди в круг, чтобы начать бой. Удерживай «Блок» или нажми на вспышке."
+
+msgid "DODGE_ACTION"
+msgstr "Уклонение"
+
+msgid "DODGE_HINT_PC"
+msgstr "Войди в круг. Пробел + направление: уклонение; без направления: назад. ПКМ: блок."
+
+msgid "DODGE_HINT_TOUCH"
+msgstr "Войди в круг. Уклонение + направление; без направления — назад. «Блок» — защита."
+
+msgid "COMBAT_TOOLS_OPEN"
+msgstr "Тренировка"
+
+msgid "COMBAT_TOOLS_CLOSE"
+msgstr "Свернуть"
+
+msgid "COMBAT_TOOLS_TITLE"
+msgstr "Приёмы и снаряжение"
+
+msgid "COMBAT_HINT_IDLE"
+msgstr "Войди в круг противника."
+
+msgid "COMBAT_HINT_NOVICE"
+msgstr "Уходи шагом: блок новичка не останавливает удар."
+
+msgid "COMBAT_HINT_WINDUP"
+msgstr "Повернись к удару и держи блок."
+
+msgid "COMBAT_HINT_CUE"
+msgstr "Нажми «Блок» на вспышке!"
+
+# Forest route prototype: location heading or reset button; no canonical place name.
+msgid "FOREST_RETURN_START"
+msgstr "На исходную"
+
+# Forest route prototype: location heading or reset button; no canonical place name.
+msgid "FOREST_OUTSKIRTS"
+msgstr "Лесная окраина"
+
+# Forest route prototype: location heading or reset button; no canonical place name.
+msgid "FOREST_ROAD"
+msgstr "Хвойная дорога"
+
+# Forest route prototype: location heading or reset button; no canonical place name.
+msgid "FOREST_FORK"
+msgstr "Лесная развилка"
+
+# Forest route prototype: location heading or reset button; no canonical place name.
+msgid "FOREST_BRIDGE"
+msgstr "Речной мост"
+
+# Forest route prototype: location heading or reset button; no canonical place name.
+msgid "FOREST_ASCENT"
+msgstr "Подъём к смотровой"
+
+# Forest route prototype: location heading or reset button; no canonical place name.
+msgid "FOREST_LOOKOUT"
+msgstr "Вид на город"
+
+#: scripts/world/world_graybox.gd
+msgid "WORLD_CITY_FOREST"
+msgstr "Лесной город"
+
+#: scripts/world/world_graybox.gd
+msgid "WORLD_CITY_SNOW"
+msgstr "Горный город"
+
+#: scripts/world/world_graybox.gd
+msgid "WORLD_CITY_DESERT"
+msgstr "Город пустыни"
+
+#: scripts/world/world_graybox.gd
+msgid "WORLD_CITY_LOWLAND"
+msgstr "Город низин"
+
+#: scripts/world/world_graybox.gd
+msgid "WORLD_WALK"
+msgstr "Прогулка"
+
+#: scripts/world/world_graybox.gd
+msgid "WORLD_OVERVIEW"
+msgstr "Обзор мира"
+
+#: scripts/world/world_graybox.gd
+msgid "WORLD_ALL"
+msgstr "Весь мир"
+
+#: scripts/world/world_graybox.gd
+msgid "WORLD_RESET"
+msgstr "К площади"
+
+#: scripts/world/world_graybox.gd
+msgid "WORLD_OVERVIEW_HELP"
+msgstr "2 × 2 км · Вращение пальцем · + / − масштаб · Стрелки: сдвиг · Tab: прогулка"
+
+#: scripts/world/world_graybox.gd
+msgid "WORLD_WALK_HELP"
+msgstr "Макет рельефа · Стрелки / WASD: шаг · Shift: бег · Справа: обзор · Tab: карта"
+
+#. World exploration graybox; working place label.
+msgid "WORLD_SITE_START_HAMLET"
+msgstr "Лесной посёлок"
+
+#. World exploration graybox; working place label.
+msgid "WORLD_SITE_WEST_HAMLET"
+msgstr "Посёлок у скал"
+
+#. World exploration graybox; working place label.
+msgid "WORLD_SITE_LOWLAND_HAMLET"
+msgstr "Посёлок низин"
+
+#. World exploration graybox; working place label.
+msgid "WORLD_SITE_DESERT_HAMLET"
+msgstr "Сухой привал"
+
+#. World exploration graybox; working place label.
+msgid "WORLD_SITE_FOREST_INN"
+msgstr "Лесная таверна"
+
+#. World exploration graybox; working place label.
+msgid "WORLD_SITE_CROSSROADS_INN"
+msgstr "Таверна у развилки"
+
+#. World exploration graybox; working place label.
+msgid "WORLD_SITE_FOREST_CAVE"
+msgstr "Лесная пещера"
+
+#. World exploration graybox; working place label.
+msgid "WORLD_SITE_FOOTHILL_CAVE"
+msgstr "Пещера предгорий"
+
+#. World exploration graybox; working place label.
+msgid "WORLD_SITE_LOWLAND_CAVE"
+msgstr "Пещера низин"
+
+#. World exploration graybox; working place label.
+msgid "WORLD_SITE_CROWN_MINE"
+msgstr "Горная шахта"
+
+#. World exploration graybox; working place label.
+msgid "WORLD_LOCATIONS"
+msgstr "Места"
+
+#. World exploration graybox; working place label.
+msgid "WORLD_SITE_HINT"
+msgstr "Макеты входов; услуги и интерьеры — в плане."
+
+#. WORLD-GRAYBOX-03 destination
+msgid "WORLD_SITE_LAKE_SHORE"
+msgstr "Горное озеро"
+
+#. WORLD-GRAYBOX-03 destination
+msgid "WORLD_SITE_SPRING_CAVE"
+msgstr "Пещера источника"
+
+msgid "VILLAGE_HOUSE"
+msgstr "Дом лесника"
+
+msgid "VILLAGE_WORKSHOP"
+msgstr "Мастерская"
+
+msgid "VILLAGE_BARN"
+msgstr "Амбар"
+
+msgid "VILLAGE_NEXT"
+msgstr "Другой дом"
+
+msgid "VILLAGE_OUTSIDE"
+msgstr "Лесные дворы"
+
+msgid "VILLAGE_OPEN"
+msgstr "Открыть дверь"
+
+msgid "VILLAGE_CLOSE"
+msgstr "Закрыть дверь"
+
+msgid "VILLAGE_CLEAR_DOOR"
+msgstr "Отойди от двери"
+
+msgid "VILLAGE_DOOR_MOVING"
+msgstr "Дверь движется…"
+
+msgid "VILLAGE_DOOR_BLOCKED"
+msgstr "Дверь упёрлась"
+
+msgid "VILLAGE_TIME"
+msgstr "Время"
+
+msgid "VILLAGE_WEATHER_CLEAR"
+msgstr "Ясно"
+
+msgid "VILLAGE_WEATHER_RAIN"
+msgstr "Дождь"
+
+msgid "VILLAGE_WEATHER_WIND"
+msgstr "Сильный ветер"
+
+msgid "VILLAGE_WEATHER_FOG"
+msgstr "Туман"
+
+msgid "VILLAGE_WEATHER_STORM"
+msgstr "Ливень"
+
+msgid "VILLAGE_WEATHER_AUTO"
+msgstr "Погода меняется автоматически"
+
+msgid "VILLAGE_WEATHER_MANUAL"
+msgstr "Выбрана погода для проверки"
+
+
+msgid "VILLAGE_SETTINGS"
+msgstr "Настройки"
+
+msgid "VILLAGE_SETTINGS_CLOSE"
+msgstr "Вернуться в игру"
+
+msgid "VILLAGE_SETTINGS_HINT"
+msgstr "Меньшая дальность снижает нагрузку. Настройки сохраняются на устройстве."
+
+msgid "VILLAGE_SETTINGS_ERROR"
+msgstr "Не удалось сохранить настройки."
+
+msgid "VILLAGE_MUSIC_VOLUME"
+msgstr "Музыка"
+
+msgid "VILLAGE_SOUND_VOLUME"
+msgstr "Звуки окружения"
+
+msgid "VILLAGE_DRAW_DISTANCE"
+msgstr "Дальность прорисовки"
+
+msgid "VILLAGE_METRES"
+msgstr "м"
+
+
+
+
+# Village lesson: the hostess asks for firewood and says where the woodpile is.
+msgid "VILLAGE_LESSON_HOST_JOB"
+msgstr "Ищешь ночлег? Принеси дрова. Поленница у мастерской: иди по улице мимо колодца, мастерская будет слева. За работу найдётся место у очага."
+
+# Village lesson: the hostess repeats the way to the woodpile.
+msgid "VILLAGE_LESSON_HOST_REMIND"
+msgstr "Поленница у мастерской: по улице мимо колодца, слева."
+
+# Village lesson: the hostess thanks the hero and sends them to the watchman at the tower.
+msgid "VILLAGE_LESSON_HOST_REWARD"
+msgstr "Спасибо, выручил. А прежде чем выходить на дорогу, найди сторожа: он у сторожевой башни в дальнем конце улицы, за мастерской. Он покажет, как постоять за себя."
+
+# Village lesson: the hostess already has the firewood and repeats the way to the watchman.
+msgid "VILLAGE_LESSON_HOST_ACCEPTED"
+msgstr "Дрова уже приняты. Сторож у башни в дальнем конце улицы."
+
+# Village lesson: the hostess after the lesson.
+msgid "VILLAGE_LESSON_HOST_AFTER"
+msgstr "Место у очага твоё. Осмотрись в деревне."
+
+# Village lesson: the hero takes the firewood.
+msgid "VILLAGE_LESSON_WOOD_TAKEN"
+msgstr "Ты подобрал вязанку сухих дров. Отнеси её хозяйке к первому дому."
+
+# Village lesson: the woodpile before the hostess gives the job.
+msgid "VILLAGE_LESSON_WOOD_BEFORE"
+msgstr "Сначала поговори с хозяйкой у первого дома."
+
+# Village lesson: the watchman before the hostess sends the hero.
+msgid "VILLAGE_LESSON_GUARD_OTHER"
+msgstr "Я стерегу дорогу. Ищешь ночлег? Хозяйка у первого дома — вниз по улице, за колодцем."
+
+# Village lesson: the watchman after the lesson points to the road to the forest inn.
+msgid "VILLAGE_LESSON_GUARD_AFTER"
+msgstr "Деревня открыта — осмотрись. Дорога за башней ведёт к лесной таверне."
+
+# Village lesson objective: fetch firewood by the workshop.
+msgid "VILLAGE_LESSON_OBJECTIVE_FETCH_WOOD"
+msgstr "Принеси дрова от поленницы у мастерской."
+
+# Village lesson objective: bring the firewood back.
+msgid "VILLAGE_LESSON_OBJECTIVE_RETURN_WOOD"
+msgstr "Отнеси дрова хозяйке к первому дому."
+
+# Village lesson objective: find the watchman at the tower.
+msgid "VILLAGE_LESSON_OBJECTIVE_MEET_GUARD"
+msgstr "Найди сторожа у сторожевой башни в дальнем конце улицы."
+
+# Village lesson objective: done.
+msgid "VILLAGE_LESSON_OBJECTIVE_DONE"
+msgstr "На сегодня ты устроился. Осмотри деревню; дорога за башней ведёт к лесной таверне."
+
+# Village settings: grass density slider (percent follows).
+msgid "VILLAGE_GRASS_DENSITY"
+msgstr "Трава"
+
+# Village settings: how far grass is drawn (metres follow).
+msgid "VILLAGE_GRASS_DISTANCE"
+msgstr "Дальность травы"
+
+# Forest inn: the innkeeper's name tag.
+msgid "INN_KEEPER_NAME"
+msgstr "Трактирщик"
+
+# Forest inn: the innkeeper's first greeting.
+msgid "INN_KEEPER_GREETING"
+msgstr "Заходи, путник, грейся. Это лесной трактир. Койки наверху, лестница у дальней стены. Еда и выпивка — здесь, у стойки."
+
+# Forest inn: the innkeeper later.
+msgid "INN_KEEPER_REPEAT"
+msgstr "Лес нынче неспокоен. Будут вести с дороги — неси сюда, я всегда найду, чем помочь."
+
+# Forest inn: renting a bed and sleeping (INN-REST-01).
+msgid "INN_ACTION_RENT"
+msgstr "Снять койку · {price}"
+
+msgid "INN_ACTION_SLEEP"
+msgstr "Спать"
+
+msgid "INN_KEEPER_BED_RENTED"
+msgstr "Идёт. Твоя койка наверху, справа от лестницы, где фонарь на сундуке. Спи до утра."
+
+msgid "INN_KEEPER_BED_YOURS"
+msgstr "Койка твоя, наверху у фонаря. Иди выспись."
+
+msgid "INN_KEEPER_BED_NO_MONEY"
+msgstr "Койка — {price} монеты за ночь. Приходи, когда разживёшься."
+
+msgid "INN_SLEEP_DONE"
+msgstr "Ты выспался. Уже утро."
+
+# Village lesson: the wolves at the barn (QUEST-WOLVES-01, D-092).
+msgid "VILLAGE_LESSON_GUARD_WOLVES"
+msgstr "Для первого раза сойдёт. Раз кулаки на месте, есть дело: к амбару в южном конце деревни повадились волки. Прогони их, и я заплачу — хватит на ужин и койку в лесном трактире."
+
+msgid "VILLAGE_LESSON_GUARD_WOLVES_REMIND"
+msgstr "Волки у амбара, в южном конце деревни. Бей, пока не побегут."
+
+msgid "VILLAGE_LESSON_GUARD_WOLVES_PAID"
+msgstr "Видел, как они драпали. Держи пять монет: на ужин и койку в лесном трактире. Дорога за башней ведёт прямо к нему."
+
+msgid "VILLAGE_LESSON_WOLVES_GONE"
+msgstr "Волки убежали в лес. Вернись к сторожу."
+
+msgid "VILLAGE_LESSON_OBJECTIVE_WOLVES"
+msgstr "Прогони волков от амбара."
+
+msgid "VILLAGE_LESSON_OBJECTIVE_WOLVES_REPORT"
+msgstr "Вернись к сторожу у башни."
+
+msgid "SETTINGS_DEBUG"
+msgstr "Отладка"
+
+msgid "SETTINGS_DEBUG_HINT"
+msgstr "Инструменты для проверки: время, погода, переход к домам. Это не часть игры."
+
+msgid "INN_OBJECTIVE_RENT"
+msgstr "Сходи в лесной трактир за башней и сними койку за {price} монеты."
+
+msgid "INN_OBJECTIVE_SLEEP"
+msgstr "Койка твоя: поднимись на чердак и выспись."
+
+msgid "INN_OBJECTIVE_MORNING"
+msgstr "Утро. Осмотри деревню и лес вокруг."
+
+msgid "HUD_ACTION_IDLE"
+msgstr "Действие"
+
+msgid "SETTINGS_DEBUG_TELEPORT"
+msgstr "Телепорт"
+
+msgid "UI_ACTION_JUMP"
+msgstr "Прыжок"

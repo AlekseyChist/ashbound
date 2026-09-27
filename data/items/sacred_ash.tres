@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/items/item_data.gd" id="1_c3u4g"]
+
+[resource]
+script = ExtResource("1_c3u4g")
+id = "sacred_ash"
+type = 3
+name = "Священный пепел"
+description = "Пепел со священного алтаря Ордена."
+stackable = true
+max_stack = 5
+quest_id = "order_trial_fire"
+quest_locked = true
+category = "object"
+subtype = "quest_object"

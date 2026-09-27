@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/items/item_data.gd" id="1_plg3c"]
+
+[resource]
+script = ExtResource("1_plg3c")
+id = "chain_mail"
+type = 1
+name = "Кольчуга"
+description = "Плетёная металлическая броня."
+value = 100
+slot = "armor"
+stats = {
+"defense": 12
+}
+category = "clothing"
+subtype = "armor_set"

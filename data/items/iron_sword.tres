@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/items/item_data.gd" id="1_r8v42"]
+
+[resource]
+script = ExtResource("1_r8v42")
+id = "iron_sword"
+type = 0
+name = "Железный меч"
+description = "Надёжное оружие простого солдата."
+value = 50
+slot = "weapon"
+stats = {
+"damage": 15
+}
+category = "weapon"
+subtype = "sword"

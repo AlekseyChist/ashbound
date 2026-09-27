@@ -16,8 +16,6 @@ func _run() -> void:
 		"courtyard_sketch":["object","map","",true,true],
 		"rusty_sword":["weapon","sword","weapon",true,true],
 		"leather_armor":["clothing","armor_set","armor",false,true],
-		"traveler_backpack":["equipment","backpack","backpack",false,true],
-		"belt_pouch":["equipment","pouch","pouch",false,true],
 		"bread":["consumable","food","",true,true],
 		"sacred_ash":["object","quest_object","",false,false]
 	}
@@ -27,7 +25,7 @@ func _run() -> void:
 		if d.is_empty(): continue
 		var e: Array = expected[id]
 		check(d.category==e[0] and d.subtype==e[1] and d.equipment_slot==e[2] and d.quick_bindable==e[3] and d.droppable==e[4], "matrix " + id)
-		for slot in ["weapon","armor","backpack","pouch"]:
+		for slot in ["weapon","armor","backpack","pouch"]: # bags were removed (D-057): nothing equips there
 			check(Rules.can_equip(inv.item_database[id],slot)==(slot==e[2]), "reject incompatible " + id + " -> " + slot)
 	var enchanted := {"id":"qa_sword","type":0,"slot":"weapon","category":"weapon","subtype":"sword","tags":["magic"],"quest_locked":true}
 	check(Rules.has_tag(enchanted,"magic") and not Rules.can_drop(enchanted) and Rules.can_equip(enchanted,"weapon"),"orthogonal quest/magic/weapon")
@@ -38,7 +36,7 @@ func _run() -> void:
 	groups += 1
 
 	var layout = Layout.new()
-	var defs := [{"id":"coat:a","kind":"pocket","capacity":6},{"id":"bag","kind":"backpack","capacity":2}]
+	var defs := [{"id":"coat:a","kind":"pocket","capacity":6},{"id":"bag","kind":"wallet","capacity":2}]
 	var carried := [entry("a"),entry("b"),entry("c")]
 	check(layout.configure(defs,carried),"configure cells")
 	check(layout.move("a","coat:a",carried,5) and layout.get_cell_index("a")==5,"move into distant empty cell")

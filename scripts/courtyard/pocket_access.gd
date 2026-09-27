@@ -19,9 +19,14 @@ signal availability_changed()
 		available = value
 		availability_changed.emit()
 
-## Prototype slot capacity for the starter clothing pocket.
-## This is a prototype balance value, not final weight/volume tuning.
-@export_range(1, 1000000) var slot_capacity: int = 6
+## Main inventory size at the start (D-057, owner's choice 25 Sep: 12 cells).
+## Growth with level and strength comes later (INV-03B).
+@export_range(1, 1000000) var slot_capacity: int = 12
+
+## Wallet section (D-057, owner's choice 25 Sep: 4 cells). Protection from arrest
+## and looting is planned with JUSTICE-01/LOOT-01; for now it is a separate section.
+@export var wallet_id: StringName = &"traveler_wallet"
+@export_range(1, 1000000) var wallet_capacity: int = 4
 
 
 func _ready() -> void:
@@ -49,6 +54,8 @@ func _configure_pocket_if_needed() -> void:
 	var definitions: Array = [
 		{"id": id, "kind": "pocket", "capacity": slot_capacity},
 	]
+	if wallet_id != &"" and str(wallet_id) != id:
+		definitions.append({"id": str(wallet_id), "kind": "wallet", "capacity": wallet_capacity})
 	Inventory.configure_storage(definitions)
 
 

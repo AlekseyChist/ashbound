@@ -1,7 +1,6 @@
 extends SceneTree
 ## Codex QA: actual hero progress, touch ownership, translated layout and worn portrait.
 const BARE = preload("res://assets/characters/courtyard/traveler_frames.tres")
-const PACKED = preload("res://assets/characters/courtyard/traveler_backpack_frames.tres")
 var failures: Array[String] = []
 var groups := 0
 var level: Node
@@ -144,20 +143,12 @@ func _run() -> void:
 		check(snapshot() == before, "language cannot mutate gameplay")
 		await capture(language)
 	groups += 1
-	check(inv.add_item("traveler_backpack"), "QA bag")
-	for entry in inv.items:
-		if entry.id == "traveler_backpack":
-			check(inv.equip_storage_item({"instance_id":entry.instance_id}), "equip physical bag")
-			break
+	# D-057: no backpack; the portrait is always the bare hero.
 	await settle()
-	check(portrait.texture == PACKED.get_frame_texture("idle_front",0), "equipped portrait uses whole painted frame")
-	await capture("packed")
-	check(inv.unequip_storage_item("backpack","traveler_clothing_pocket"), "remove empty bag")
-	await settle()
-	check(portrait.texture == BARE.get_frame_texture("idle_front",0), "portrait follows removal")
+	check(portrait.texture == BARE.get_frame_texture("idle_front",0), "portrait shows the hero without a backpack")
 	groups += 1
 	await tap_tab("ItemsTab")
-	var hidden_equipment: Vector2 = panel.get_node("%BackpackSlot").get_global_rect().get_center()
+	var hidden_equipment: Vector2 = panel.get_node("%WeaponSlot").get_global_rect().get_center()
 	var hidden_cell: Vector2 = panel.get("_cell_nodes")[0].get_global_rect().get_center()
 	before = snapshot()
 	await tap_tab("CharacterTab", true)

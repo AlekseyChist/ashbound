@@ -1,0 +1,177 @@
+{
+  "author": "Quaternius",
+  "license": "CC0-1.0",
+  "url": "https://quaternius.itch.io/fantasy-props-megakit",
+  "version": "Standard / 2025-06-02",
+  "downloaded": "2026-09-24",
+  "zip_sha256": "8b6f7e806d222e585478f0e1bdc6b271bbc7bc6f84dd6af8ca703a7c64f0cb1e",
+  "free_gltf_count": 94,
+  "files": {
+    "Anvil_Log.bin": {
+      "archive_path": "Exports/glTF/Anvil_Log.bin",
+      "sha256": "7d3d078f1be72c9c56abc0ee2fc5dfa23826b8a03beaaa756d27054a7443919c",
+      "bytes": 130880
+    },
+    "Anvil_Log.gltf": {
+      "archive_path": "Exports/glTF/Anvil_Log.gltf",
+      "sha256": "878f803a0d8d7a4db5ad31f4839bc87ac03fd409cb69e30aa078c00729a38df2",
+      "bytes": 5580
+    },
+    "Bag.bin": {
+      "archive_path": "Exports/glTF/Bag.bin",
+      "sha256": "6bf8ad99d0048264aa37157a92f394ab32aeeb5270dab2f3f76282b1eda4e012",
+      "bytes": 27188
+    },
+    "Bag.gltf": {
+      "archive_path": "Exports/glTF/Bag.gltf",
+      "sha256": "ccbf22a9162a2a2173caa7346e796b8f92a86dbbbe02a196530bf5642293e545",
+      "bytes": 4318
+    },
+    "Bench.bin": {
+      "archive_path": "Exports/glTF/Bench.bin",
+      "sha256": "08d6976112645dc1f6a554019e2fc965d0bceba7a01c4f6013615ac46520b418",
+      "bytes": 19304
+    },
+    "Bench.gltf": {
+      "archive_path": "Exports/glTF/Bench.gltf",
+      "sha256": "0184d3b128a8a3bcc828d7bc6aa867038e2a85a339130ed015f2727e739f9ab7",
+      "bytes": 4298
+    },
+    "Bucket_Wooden_1.bin": {
+      "archive_path": "Exports/glTF/Bucket_Wooden_1.bin",
+      "sha256": "be608473cd78557d466be9b9e2f6ff15f1edf1e4f5fcdd27be75d494f52578f2",
+      "bytes": 32544
+    },
+    "Bucket_Wooden_1.gltf": {
+      "archive_path": "Exports/glTF/Bucket_Wooden_1.gltf",
+      "sha256": "b4f93568d96d38dca162098e75fb3eb4ffaf5ff6e41f8f788476abd3be4984cf",
+      "bytes": 3911
+    },
+    "FarmCrate_Apple.bin": {
+      "archive_path": "Exports/glTF/FarmCrate_Apple.bin",
+      "sha256": "9f764bf2f2e960ec32ff31198f6b54787391e71bec166da59372f596299d24e6",
+      "bytes": 134488
+    },
+    "FarmCrate_Apple.gltf": {
+      "archive_path": "Exports/glTF/FarmCrate_Apple.gltf",
+      "sha256": "56de7097ddbf22801537f38b77335b2d85a4e2d24bdcbe9ceb1b3bc666a24997",
+      "bytes": 6263
+    },
+    "Mug.bin": {
+      "archive_path": "Exports/glTF/Mug.bin",
+      "sha256": "bbf61011611387a248b9107b13f40a9cddb31e605f677b2102b236147bf31691",
+      "bytes": 12488
+    },
+    "Mug.gltf": {
+      "archive_path": "Exports/glTF/Mug.gltf",
+      "sha256": "73c4cb7e575685d0220a5d1dd40f1a68de9e64bfd34a54bcba6085b62a119a9d",
+      "bytes": 3881
+    },
+    "Pickaxe_Bronze.bin": {
+      "archive_path": "Exports/glTF/Pickaxe_Bronze.bin",
+      "sha256": "df51d6075a9d1a8c44ed1b1596796c1b301546c8c2607ddbc88c82d691121bef",
+      "bytes": 30736
+    },
+    "Pickaxe_Bronze.gltf": {
+      "archive_path": "Exports/glTF/Pickaxe_Bronze.gltf",
+      "sha256": "2a934389f82610fc7702e45dcac859b75181633befad409de238932f5f8f2c7f",
+      "bytes": 2425
+    },
+    "Rope_1.bin": {
+      "archive_path": "Exports/glTF/Rope_1.bin",
+      "sha256": "950d7977e2dcd8fa40c6103f7cd6d4bc9eb93dbc2da37bd3a3b092868efd61c4",
+      "bytes": 41624
+    },
+    "Rope_1.gltf": {
+      "archive_path": "Exports/glTF/Rope_1.gltf",
+      "sha256": "b4722ec5baf1313b654d2500ba36e2a2b512bbd9b037f304b94b6665d2286313",
+      "bytes": 2223
+    },
+    "Stall_Cart_Empty.bin": {
+      "archive_path": "Exports/glTF/Stall_Cart_Empty.bin",
+      "sha256": "d70b989c539d9883e9e83f0428390857bf846bb109715a60cb5d526753c33deb",
+      "bytes": 237264
+    },
+    "Stall_Cart_Empty.gltf": {
+      "archive_path": "Exports/glTF/Stall_Cart_Empty.gltf",
+      "sha256": "aaeda0ad9ffe8c317909d7450c994b28b1e608fdf04690fa07726b810fb64c88",
+      "bytes": 6857
+    },
+    "T_Trim_Cloth_BaseColor.png": {
+      "archive_path": "Exports/glTF/T_Trim_Cloth_BaseColor.png",
+      "sha256": "c4d0e14506e05cc56e7ca62ebeeb2d45de055296a55e5a8e9c1330ff8ff1833a",
+      "bytes": 1936754
+    },
+    "T_Trim_Cloth_Normal.png": {
+      "archive_path": "Exports/glTF/T_Trim_Cloth_Normal.png",
+      "sha256": "e91a490f94bc00707fb5be08045e316b4a18962f07a3b6e3d9d7c2058cfc51c0",
+      "bytes": 3920858
+    },
+    "T_Trim_Cloth_ORM.png": {
+      "archive_path": "Exports/glTF/T_Trim_Cloth_ORM.png",
+      "sha256": "9bdaa0d1be8c393b07d6185165d73c7cddc058d5c123ad49449945f45a7e0c0d",
+      "bytes": 623426
+    },
+    "T_Trim_Furniture_BaseColor.png": {
+      "archive_path": "Exports/glTF/T_Trim_Furniture_BaseColor.png",
+      "sha256": "075fbc9ec2fabc15732bd4025b6f63a0b25762df38440d06bf30437565d39bab",
+      "bytes": 2232961
+    },
+    "T_Trim_Furniture_Normal.png": {
+      "archive_path": "Exports/glTF/T_Trim_Furniture_Normal.png",
+      "sha256": "3340c4cc47ff06d5e94a2dbe2a2a12d914d0ef055fcf66f63d876666bd160e42",
+      "bytes": 3485710
+    },
+    "T_Trim_Furniture_ORM.png": {
+      "archive_path": "Exports/glTF/T_Trim_Furniture_ORM.png",
+      "sha256": "7bf417e82baf313793c5791bf48cdc8e573f1f7136197785bf0eb235cb0f8153",
+      "bytes": 2064585
+    },
+    "T_Trim_Metal_BaseColor.png": {
+      "archive_path": "Exports/glTF/T_Trim_Metal_BaseColor.png",
+      "sha256": "50422bbda9661effc259caf8b386224cac4b5ca811d2c5b3b8b25ae8efc714db",
+      "bytes": 1361221
+    },
+    "T_Trim_Metal_Normal.png": {
+      "archive_path": "Exports/glTF/T_Trim_Metal_Normal.png",
+      "sha256": "ab7315c864c9a9e6d716c940a599928506e1569d3b0c9085f8f1a64ec520d790",
+      "bytes": 3625541
+    },
+    "T_Trim_Metal_ORM.png": {
+      "archive_path": "Exports/glTF/T_Trim_Metal_ORM.png",
+      "sha256": "7407bccfc39ca74ecd68a61217395959bf56ac2063e6c93b384b11f07f5687c5",
+      "bytes": 1871475
+    },
+    "T_Trim_Props_BaseColor.png": {
+      "archive_path": "Exports/glTF/T_Trim_Props_BaseColor.png",
+      "sha256": "75225a4ccfd8cc358c871de7a7a3cab7118ef197419a88464e807b81716215c8",
+      "bytes": 2263132
+    },
+    "T_Trim_Props_Normal.png": {
+      "archive_path": "Exports/glTF/T_Trim_Props_Normal.png",
+      "sha256": "c4b28a8ba8efe3108cd11356ecab67e8bf75a10cebf29c78ee7724552c305a3e",
+      "bytes": 4441458
+    },
+    "T_Trim_Props_ORM.png": {
+      "archive_path": "Exports/glTF/T_Trim_Props_ORM.png",
+      "sha256": "2d83d8df79aca2c8f630d389b43f09113afee98e746dfd42ddc3ce3302a136a2",
+      "bytes": 3017151
+    },
+    "License_Standard.txt": {
+      "archive_path": "License_Standard.txt",
+      "sha256": "edad12240087a33e08fc031e4e66c2b2b4b2a6d4f086339bde04f741b385fbda",
+      "bytes": 837
+    },
+    "Workbench.gltf": {
+      "archive_path": "Exports/glTF/Workbench.gltf",
+      "sha256": "518fc5c955def18cfcb781b3b955da0e8edcf4f37830a21561ef32c03ad0397e",
+      "bytes": 4318
+    },
+    "Workbench.bin": {
+      "archive_path": "Exports/glTF/Workbench.bin",
+      "sha256": "d26f2a0ba01b4a8db8d6820d1bd0d281297fea30e48c9952484167d18a637b39",
+      "bytes": 63408
+    }
+  },
+  "license_sha256": "edad12240087a33e08fc031e4e66c2b2b4b2a6d4f086339bde04f741b385fbda"
+}

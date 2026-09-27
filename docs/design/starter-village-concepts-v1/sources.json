@@ -1,0 +1,26 @@
+{
+  "status": "b-selected-as-basis-for-refinement",
+  "decision": "DECISION.md",
+  "version": "1.0",
+  "date": "2026-09-24",
+  "base_commit": "bb98d0f3b1335e61445a867931abda2bd749ec8f",
+  "author_page": "https://watabou.itch.io/village-generator",
+  "source_capture": "Browser screenshots, unmodified; include viewport margins. Native SVG export unavailable in this browser session.",
+  "source_note": "Same seed, different size/tags. High Drum and population are generator decoration, not AshBound canon.",
+  "adaptation": "Concept SVG/PDF are newly authored vector diagrams inspired by the source layouts, not native Watabou exports.",
+  "scale": "Both village sheets propose 4 drawing units per metre; regional sheet 1.44 per metre. Watabou dimensions are not asserted to be metres.",
+  "font": "assets/ui/fonts/OpenSans-SemiBold.ttf",
+  "variants": {
+    "a": {
+      "url": "https://html-classic.itch.zone/html/19365073/bin/index.html?seed=674891922&tags=isolated,organic,sparse&width=250&height=250",
+      "snapshot": "watabou-a.png",
+      "sha256": "0c52d0958873bad5a0e5a1959a4db8b32c3217b6f408215365f7aa207c565245"
+    },
+    "b": {
+      "url": "https://html-classic.itch.zone/html/19365073/bin/index.html?seed=674891922&tags=isolated,organic,sparse,no%20square&width=350&height=250",
+      "snapshot": "watabou-b.png",
+      "sha256": "b90b8e1bbe9f21bbaf47e4f7423f674e1acd7674b2c8b7c511f3b6b2a5316848"
+    }
+  },
+  "regional_source": "docs/design/world-exploration-v1/world-exploration.json"
+}

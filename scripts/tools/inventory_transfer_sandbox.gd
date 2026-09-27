@@ -9,13 +9,14 @@ func _ready() -> void:
 	var localization: Node = get_node("/root/Localization")
 	localization.load_preferences("user://transfer-sandbox-language.cfg", "ru_RU")
 	var configured: bool = inventory.configure_storage([
-		{"id":"traveler_clothing_pocket", "kind":"pocket", "capacity":6},
+		{"id":"traveler_clothing_pocket", "kind":"pocket", "capacity":12},
+		{"id":"traveler_wallet", "kind":"wallet", "capacity":4},
 	])
 	if not configured:
 		printerr("TRANSFER_SANDBOX_FAIL: fixture setup")
 		get_tree().quit(1)
 		return
-	for id in ["bread", "rusty_sword", "health_potion", "leather_armor", "traveler_backpack", "belt_pouch"]:
+	for id in ["bread", "rusty_sword", "health_potion", "leather_armor"]:
 		if not inventory.add_item(id, 3 if id == "bread" else 1):
 			printerr("TRANSFER_SANDBOX_FAIL: seed ", id)
 			get_tree().quit(1)
@@ -31,7 +32,7 @@ func _ready() -> void:
 	print("ASHBOUND_TRANSFER_SANDBOX_READY")
 	_report_storage()
 	var panel: Control = level.get_node("InventoryMenu/RootControl/Overlay/Window")
-	for id in ["ItemGrid", "StorageTabs", "ArmorSlot", "WeaponSlot", "BackpackSlot", "PouchSlot", "QuickSlots", "CloseButton"]:
+	for id in ["ItemGrid", "StorageTabs", "ArmorSlot", "WeaponSlot", "QuickSlots", "CloseButton"]:
 		var control: Control = panel.get_node("%" + id)
 		print("TRANSFER_SANDBOX_RECT ", id, " ", control.get_global_rect())
 

@@ -54,23 +54,21 @@ func _run() -> void:
 	groups += 1
 
 	# Real inventory APIs create/equip the fixture, no raw inventory field writes.
-	check(inventory.add_item("traveler_backpack"),"backpack fixture")
-	check(inventory.equip_storage_item(item("traveler_backpack")),"wear backpack")
 	check(inventory.add_item("leather_armor") and inventory.equip_item(item("leather_armor")),"wear whole armor")
 	check(inventory.add_item("rusty_sword") and inventory.equip_item(item("rusty_sword")),"equip sword")
 	check(inventory.add_item("bread",3),"food fixture")
-	check(inventory.move_item_to_storage(item("bread"),"worn_storage:"+str(inventory.get_worn_storage("backpack").instance_id)),"bread to worn bag")
+	check(inventory.move_item_to_storage(item("bread"),"traveler_wallet"),"bread to the wallet")
 	check(inventory.add_item("courtyard_sketch"),"map fixture")
 	level.get_node("Interactions/MapStand").available_on_crate = false
 	inventory.add_gold(9223372036854775807)
 	check(progress.award_learning_points("save_qa_award",17),"award ledger fixture")
-	level._on_innkeeper_interact()
-	level._on_woodpile_interact()
-	level._on_innkeeper_interact()
-	level._on_watchman_interact()
+	level.talk_to(&"innkeeper")
+	level.talk_to(&"woodpile")
+	level.talk_to(&"innkeeper")
+	level.talk_to(&"watchman")
 	level.dummy_hits = 3
 	level._apply_state(5)
-	level._on_watchman_interact()
+	level.talk_to(&"watchman")
 	panel._quick_bindings[0] = str(item("bread").instance_id)
 	panel._quick_bindings[9] = str(inventory.get_equipped("weapon").instance_id)
 	player.global_position = Vector3(2,0,4)
@@ -84,7 +82,7 @@ func _run() -> void:
 	groups += 1
 
 	check(schema.apply(level,inventory,empty),"apply empty snapshot")
-	check(inventory.get_worn_storage("backpack").is_empty() and inventory.get_item_count("bread") == 0,"old equipment and items cleared")
+	check(inventory.get_equipped("armor").is_empty() and inventory.get_item_count("bread") == 0,"old equipment and items cleared")
 	check(schema.validate(rich,inventory),"incoming quick references validated against incoming items")
 	observe_expected = rich
 	inventory.inventory_restored.connect(on_restored)
@@ -143,7 +141,7 @@ func _run() -> void:
 	check(store_node.flush_now() and store_node.save_count==previous_count,"unchanged snapshot does not write")
 	level._apply_state(5); level.dummy_hits=3
 	# Burst completes synchronously before queued save, like real signal mutations.
-	level._on_watchman_interact()
+	level.talk_to(&"watchman")
 	await settle(3)
 	check(store_node.save_count==previous_count+1,"burst produces one complete deferred save")
 	var saved: Dictionary = schema.capture(level,inventory)

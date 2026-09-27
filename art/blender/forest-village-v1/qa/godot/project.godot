@@ -1,0 +1,7 @@
+config_version=5
+
+[application]
+config/name="AshBound isolated village asset QA"
+
+[rendering]
+renderer/rendering_method="gl_compatibility"

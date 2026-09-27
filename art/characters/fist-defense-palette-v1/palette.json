@@ -1,0 +1,49 @@
+{
+  "schema": 1,
+  "gamma": 1.16,
+  "width": 1254,
+  "height": 1254,
+  "guard_rows": 627,
+  "base": "art/characters/fist-defense-v1/base/trained.png",
+  "paint": "art/characters/fist-defense-v1/paint/trained-pack.png",
+  "base_sha256": "a484eb9db6f9face232e9e33dacecabe9ecb664a521c247e0371180fb6bae163",
+  "paint_sha256": "b8249d26f1cb2e0a26db19afd9aec4d914e19751c76394eaaa3ffea6117e590e",
+  "regions": [
+    [
+      162,
+      135,
+      166,
+      171
+    ],
+    [
+      546,
+      130,
+      188,
+      182
+    ],
+    [
+      920,
+      122,
+      173,
+      190
+    ],
+    [
+      146,
+      738,
+      145,
+      190
+    ],
+    [
+      556,
+      734,
+      188,
+      190
+    ],
+    [
+      898,
+      744,
+      150,
+      181
+    ]
+  ]
+}

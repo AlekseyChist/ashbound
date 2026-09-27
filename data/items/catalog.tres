@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ItemCatalog" format=3]
+
+[ext_resource type="Script" path="res://scripts/items/item_data.gd" id="1_odksi"]
+[ext_resource type="Resource" path="res://data/items/courtyard_sketch.tres" id="2_x15er"]
+[ext_resource type="Resource" path="res://data/items/rusty_sword.tres" id="3_ydbij"]
+[ext_resource type="Resource" path="res://data/items/iron_sword.tres" id="4_g124b"]
+[ext_resource type="Resource" path="res://data/items/cultist_blade.tres" id="5_k858r"]
+[ext_resource type="Resource" path="res://data/items/leather_armor.tres" id="6_s0cru"]
+[ext_resource type="Resource" path="res://data/items/chain_mail.tres" id="7_3hsj6"]
+[ext_resource type="Resource" path="res://data/items/health_potion.tres" id="8_q3oin"]
+[ext_resource type="Resource" path="res://data/items/stamina_potion.tres" id="9_enmd0"]
+[ext_resource type="Resource" path="res://data/items/bread.tres" id="10_ud1ck"]
+[ext_resource type="Resource" path="res://data/items/sacred_ash.tres" id="11_du3vj"]
+[ext_resource type="Script" path="res://scripts/items/item_catalog.gd" id="12_s1jf3"]
+
+[resource]
+script = ExtResource("12_s1jf3")
+items = Array[ExtResource("1_odksi")]([ExtResource("2_x15er"), ExtResource("3_ydbij"), ExtResource("4_g124b"), ExtResource("5_k858r"), ExtResource("6_s0cru"), ExtResource("7_3hsj6"), ExtResource("8_q3oin"), ExtResource("9_enmd0"), ExtResource("10_ud1ck"), ExtResource("11_du3vj")])

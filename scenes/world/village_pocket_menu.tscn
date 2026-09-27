@@ -1,0 +1,13 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/courtyard/courtyard_inventory_menu.tscn" id="1_menu"]
+[ext_resource type="Script" path="res://scripts/world/village_pocket_menu.gd" id="2_pocket"]
+[ext_resource type="Script" path="res://scripts/world/village_inventory_panel.gd" id="3_panel"]
+
+[node name="InventoryMenu" instance=ExtResource("1_menu")]
+script = ExtResource("2_pocket")
+player_path = NodePath("../Player")
+access_path = NodePath("../Player/PocketAccess")
+
+[node name="Window" parent="RootControl/Overlay"]
+script = ExtResource("3_panel")

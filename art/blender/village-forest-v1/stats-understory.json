@@ -1,0 +1,42 @@
+{
+  "boulder": {
+    "tris": 80,
+    "dims": [
+      1.453,
+      1.473,
+      1.075
+    ],
+    "objects": 1,
+    "role": "stone"
+  },
+  "stump": {
+    "tris": 44,
+    "dims": [
+      0.649,
+      0.644,
+      0.65
+    ],
+    "objects": 1,
+    "role": "bark"
+  },
+  "fern": {
+    "tris": 400,
+    "dims": [
+      1.417,
+      1.178,
+      0.667
+    ],
+    "objects": 1,
+    "role": "foliage"
+  },
+  "grass": {
+    "tris": 96,
+    "dims": [
+      0.582,
+      0.364,
+      0.298
+    ],
+    "objects": 1,
+    "role": "foliage"
+  }
+}

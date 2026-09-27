@@ -44,7 +44,7 @@ func _run() -> void:
 		check(inv.move_item_to_cell(find(inv,"bread"),inv.get_item_storage(str(find(inv,"bread").instance_id)),7),"exact cell fixture")
 		check(inv.add_item("courtyard_sketch"),"map fixture")
 		level.get_node("Interactions/MapStand").available_on_crate=false
-		level._on_innkeeper_interact()
+		level.talk_to(&"innkeeper")
 		check(progress.award_learning_points("process_save_qa",11),"award fixture")
 		inv.add_gold(23)
 		panel._quick_bindings[0]=str(find(inv,"bread").instance_id)

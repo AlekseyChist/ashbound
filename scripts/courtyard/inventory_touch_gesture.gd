@@ -301,14 +301,6 @@ func _hit_test(pos: Vector2) -> Dictionary:
 	if weapon_slot is Button and weapon_slot.visible:
 		if weapon_slot.get_global_rect().has_point(pos):
 			return {"kind": "equip", "id": "weapon", "control": weapon_slot}
-	var backpack_slot: Button = panel.get("_backpack_slot")
-	if backpack_slot is Button and backpack_slot.visible:
-		if backpack_slot.get_global_rect().has_point(pos):
-			return {"kind": "worn", "id": "backpack", "control": backpack_slot}
-	var pouch_slot: Button = panel.get("_pouch_slot")
-	if pouch_slot is Button and pouch_slot.visible:
-		if pouch_slot.get_global_rect().has_point(pos):
-			return {"kind": "worn", "id": "pouch", "control": pouch_slot}
 	# Item cells (only within scroll rect).
 	var item_scroll: ScrollContainer = panel.get("_item_scroll")
 	var cell_nodes: Array = panel.get("_cell_nodes")
@@ -356,11 +348,6 @@ func _capture_source(target: Dictionary) -> Dictionary:
 			if eq.is_empty():
 				return {}
 			return {"kind": "equip", "instance_id": str(eq.get("instance_id", "")), "slot": id, "location": id}
-		"worn":
-			var w := _find_worn_by_id(id)
-			if w.is_empty():
-				return {}
-			return {"kind": "worn", "instance_id": str(w.get("instance_id", "")), "id": id, "location": id}
 		"quick":
 			var idx: int = int(target.get("index", 0))
 			var bindings: Array = _panel.get("_quick_bindings")
@@ -397,14 +384,6 @@ func _source_valid() -> bool:
 			if eq.is_empty():
 				return false
 			return str(eq.get("instance_id", "")) == str(_source.get("instance_id", ""))
-		"worn":
-			var wid: String = str(_source.get("id", ""))
-			if wid.is_empty():
-				return false
-			var w := _find_worn_by_id(wid)
-			if w.is_empty():
-				return false
-			return str(w.get("instance_id", "")) == str(_source.get("instance_id", ""))
 		"quick":
 			var idx: int = int(_source.get("index", 0))
 			if idx < 0 or idx > 9:
@@ -423,7 +402,7 @@ func _source_valid() -> bool:
 
 
 func _find_item_full(iid: String) -> Dictionary:
-	# Full lookup: carried, equipped, worn.
+	# Full lookup: carried, equipped.
 	var inv: Node = _panel.get("_inventory")
 	if inv == null or not inv.has_method("get_save_data"):
 		return {}
@@ -445,14 +424,6 @@ func _find_item_full(iid: String) -> Dictionary:
 				continue
 			if str((entry as Dictionary).get("instance_id", "")) == iid:
 				return {"item": (entry as Dictionary).duplicate(true), "kind": "equip", "location": str(slot)}
-	var worn_storage: Variant = (save as Dictionary).get("worn_storage", {})
-	if worn_storage is Dictionary:
-		for slot in (worn_storage as Dictionary).keys():
-			var entry: Variant = (worn_storage as Dictionary).get(slot, null)
-			if entry == null or not (entry is Dictionary):
-				continue
-			if str((entry as Dictionary).get("instance_id", "")) == iid:
-				return {"item": (entry as Dictionary).duplicate(true), "kind": "worn", "location": str(slot)}
 	return {}
 
 
@@ -469,9 +440,6 @@ func _do_tap(target: Dictionary) -> void:
 			_refresh()
 		"equip":
 			_select_equipped(id)
-			_refresh()
-		"worn":
-			_select_worn(id)
 			_refresh()
 		"close":
 			if _panel.has_signal("close_requested"):
@@ -505,12 +473,6 @@ func _select_item(iid: String) -> void:
 
 func _select_equipped(slot: String) -> void:
 	var found := _find_equipped_by_slot(slot)
-	if not found.is_empty():
-		_panel.set("_selected_item_id", str(found.get("instance_id", "")))
-
-
-func _select_worn(wid: String) -> void:
-	var found := _find_worn_by_id(wid)
 	if not found.is_empty():
 		_panel.set("_selected_item_id", str(found.get("instance_id", "")))
 
@@ -643,11 +605,6 @@ func _drop_target_valid(target: Dictionary) -> bool:
 				return false
 			var slot: String = str(target.get("id", ""))
 			return bool(inv.call("can_equip_in_slot", {"instance_id": iid}, slot))
-		"worn":
-			if not _source_kind_is("carried"):
-				return false
-			var slot: String = str(target.get("id", ""))
-			return bool(inv.call("can_equip_in_slot", {"instance_id": iid}, slot))
 		"discard":
 			return _source_kind_is("carried") and bool(_panel.can_drop_instance(iid))
 		"quick":
@@ -698,8 +655,6 @@ func _do_drop(pos: Vector2) -> void:
 			_drop_to_storage(_current_container_id())
 		"equip":
 			_drop_to_equipment(str(target.get("id", "")))
-		"worn":
-			_drop_to_worn(str(target.get("id", "")))
 		"quick":
 			_drop_to_quick(int(target.get("index", 0)))
 		_:
@@ -747,16 +702,6 @@ func _drop_to_storage(dest_id: String) -> void:
 				_refresh()
 			else:
 				_flash_error()
-		"worn":
-			var wid: String = str(captured.get("id", ""))
-			if not dest_ok or inv == null or not inv.has_method("unequip_storage_item"):
-				_flash_error()
-				return
-			var ok3: bool = inv.call("unequip_storage_item", wid, dest_id)
-			if ok3:
-				_refresh()
-			else:
-				_flash_error()
 		"quick":
 			# Quick to storage: clear binding only if still matches and owned.
 			var qidx: int = int(captured.get("index", 0))
@@ -798,36 +743,6 @@ func _drop_to_equipment(slot: String) -> void:
 	var handle := {"instance_id": iid}
 	inv.call("equip_item", handle)
 	_refresh()
-
-
-func _drop_to_worn(wid: String) -> void:
-	if not _source_valid():
-		return
-	if _source.get("kind", "") != "carried":
-		return
-	var iid: String = str(_source.get("instance_id", ""))
-	var expected_id: String = ""
-	if wid == "backpack":
-		expected_id = "traveler_backpack"
-	elif wid == "pouch":
-		expected_id = "belt_pouch"
-	else:
-		_flash_error()
-		return
-	var full: Dictionary = _find_item_full(_source.get("instance_id", 0))
-	var item: Dictionary = full.get("item", {})
-	if str(item.get("id", "")) != expected_id:
-		_flash_error()
-		return
-	var inv: Node = _panel.get("_inventory")
-	if inv == null or not inv.has_method("equip_storage_item"):
-		_flash_error()
-		return
-	var ok: bool = inv.call("equip_storage_item", {"instance_id": iid})
-	if not ok:
-		_flash_error()
-	else:
-		_refresh()
 
 
 func _drop_to_quick(idx: int) -> void:
@@ -905,21 +820,6 @@ func _find_equipped_by_slot(slot: String) -> Dictionary:
 		var eq: Variant = equipped[slot]
 		if eq is Dictionary:
 			return eq.duplicate(true)
-	return {}
-
-
-func _find_worn_by_id(wid: String) -> Dictionary:
-	var inv: Node = _panel.get("_inventory")
-	if inv == null or not inv.has_method("get_save_data"):
-		return {}
-	var save: Variant = inv.call("get_save_data")
-	if not (save is Dictionary):
-		return {}
-	var worn: Dictionary = save.get("worn_storage", {})
-	if worn is Dictionary and worn.has(wid):
-		var w: Variant = worn[wid]
-		if w is Dictionary:
-			return w.duplicate(true)
 	return {}
 
 

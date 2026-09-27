@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="QuestData" format=3]
+
+[ext_resource type="Script" path="res://scripts/quests/dialogue_line_data.gd" id="1_kjbil"]
+[ext_resource type="Script" path="res://scripts/quests/quest_data.gd" id="2_b5lqj"]
+[ext_resource type="Script" path="res://scripts/quests/quest_stage_data.gd" id="3_uumfm"]
+
+[sub_resource type="Resource" id="Resource_t24mt"]
+script = ExtResource("1_kjbil")
+speaker = &"inn_keeper"
+forbids_flag = &"greeted"
+name_key = "INN_KEEPER_NAME"
+line_key = "INN_KEEPER_GREETING"
+set_flag = &"greeted"
+
+[sub_resource type="Resource" id="Resource_p26wf"]
+script = ExtResource("1_kjbil")
+speaker = &"inn_keeper"
+name_key = "INN_KEEPER_NAME"
+line_key = "INN_KEEPER_REPEAT"
+
+[sub_resource type="Resource" id="Resource_jyejw"]
+script = ExtResource("3_uumfm")
+id = &"open"
+objective_key = "WORLD_SITE_FOREST_INN"
+
+[resource]
+script = ExtResource("2_b5lqj")
+id = &"forest_inn_keeper"
+title_key = "WORLD_SITE_FOREST_INN"
+stages = Array[ExtResource("3_uumfm")]([SubResource("Resource_jyejw")])
+lines = Array[ExtResource("1_kjbil")]([SubResource("Resource_t24mt"), SubResource("Resource_p26wf")])
+flags = Array[StringName]([&"greeted"])

@@ -53,6 +53,6 @@ SM-S911B, Android 16, экран 2340×1080. Обычная и отдельна�
 | Android, обычная | `.tools/builds/android/ashbound-courtyard.apk` | `50C888EB4351F25F31FD8054C9116A374770F69AACF27A0CC66D1702CBF34524` |
 | Android, Inventory QA | `.tools/builds/android/ashbound-transfer-qa.apk` | `AC229D8B2F52BEF1137E8A8C6C5293C69E323081D4CF4C9295B9A7967E1F7EF2` |
 
-Снимки: [ПК RU — 1/3 ударов](../art/reviews/quest-journal-0.9.0/pc-ru.png), [ПК EN](../art/reviews/quest-journal-0.9.0/pc-en.png), [S23 — полученное поручение RU](../art/reviews/quest-journal-0.9.0/s23-quest-ru.png), [EN](../art/reviews/quest-journal-0.9.0/s23-quest-en.png), [S23 — вещи и назначение после переключения](../art/reviews/quest-journal-0.9.0/s23-items.png), [обычный пустой старт](../art/reviews/quest-journal-0.9.0/s23-normal.png).
+Снимки: ПК RU — 1/3 ударов, ПК EN, S23 — полученное поручение RU, EN, S23 — вещи и назначение после переключения, обычный пустой старт.
 
 Локальные журналы: `.tools/touch-qa-*.txt`, `.tools/journal-s23-qa.log`, `.tools/journal-s23-normal.log`, `.tools/journal-pc-manual.log`; задания и реальные ответы Ollama — `.tools/ollama-godot/tasks/menu-journal-*`, `.tools/ollama-godot/tasks/sequence-journal-*` и `runs/2026-09-21T10-48-*` — `10-56-*`. Новых изображений или кадров героя эта фича не создаёт.

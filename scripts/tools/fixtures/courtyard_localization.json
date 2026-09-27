@@ -22,7 +22,7 @@
   {
     "key": "COURTYARD_NAME_INNKEEPER",
     "ru": "Хозяйка",
-    "en": "Innkeeper"
+    "en": "Hostess"
   },
   {
     "key": "COURTYARD_NAME_WATCHMAN",
@@ -72,7 +72,7 @@
   {
     "key": "COURTYARD_OBJECTIVE_MEET_HOST",
     "ru": "Поговори с хозяйкой у дома.",
-    "en": "Talk to the innkeeper by the house."
+    "en": "Talk to the hostess by the house."
   },
   {
     "key": "COURTYARD_OBJECTIVE_FETCH_WOOD",
@@ -82,7 +82,7 @@
   {
     "key": "COURTYARD_OBJECTIVE_RETURN_WOOD",
     "ru": "Отнеси дрова хозяйке.",
-    "en": "Bring the firewood to the innkeeper."
+    "en": "Bring the firewood to the hostess."
   },
   {
     "key": "COURTYARD_OBJECTIVE_MEET_GUARD",
@@ -132,12 +132,12 @@
   {
     "key": "COURTYARD_DIALOGUE_WOOD_TAKEN",
     "ru": "Ты подобрал вязанку сухих дров. Отнеси её хозяйке.",
-    "en": "You picked up a bundle of dry firewood. Bring it to the innkeeper."
+    "en": "You picked up a bundle of dry firewood. Bring it to the hostess."
   },
   {
     "key": "COURTYARD_DIALOGUE_WOOD_BEFORE",
     "ru": "Сначала поговори с хозяйкой.",
-    "en": "Talk to the innkeeper first."
+    "en": "Talk to the hostess first."
   },
   {
     "key": "COURTYARD_DIALOGUE_WOOD_ALREADY",

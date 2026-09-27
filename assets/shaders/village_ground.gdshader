@@ -1,0 +1,68 @@
+shader_type spatial;
+render_mode diffuse_burley;
+uniform float wetness : hint_range(0,1) = 0.0;
+uniform bool detail_enabled = true;
+uniform sampler2D grass_albedo : source_color, filter_linear_mipmap_anisotropic, repeat_enable;
+uniform sampler2D path_albedo : source_color, filter_linear_mipmap_anisotropic, repeat_enable;
+uniform sampler2D grass_normal : hint_normal, filter_linear_mipmap_anisotropic, repeat_enable;
+uniform sampler2D path_normal : hint_normal, filter_linear_mipmap_anisotropic, repeat_enable;
+uniform sampler2D grass_roughness : filter_linear_mipmap_anisotropic, repeat_enable;
+uniform sampler2D path_roughness : filter_linear_mipmap_anisotropic, repeat_enable;
+uniform float grass_meters = 1.4;
+uniform float path_meters = 3.2;
+// Godot scales the grazing (sky) reflection with SPECULAR: 0.25 made far grass look like a mirror.
+uniform float grass_specular = 0.06;
+// ROADS-UNIFY-01: world roads are painted like the village paths, from a 1 m mask over the map.
+uniform bool use_road_mask = false;
+uniform sampler2D road_mask : filter_linear, repeat_disable;
+// xy: world x/z of the mask's corner, zw: its size in metres.
+uniform vec4 road_mask_rect = vec4(0.0, 0.0, 1.0, 1.0);
+uniform vec3 road_tint : source_color = vec3(0.333, 0.282, 0.216);
+varying highp vec3 world;
+float hash(vec2 p){vec3 q=fract(vec3(p.xyx)*0.1031);q+=dot(q,q.yzx+33.33);return fract((q.x+q.y)*q.z);}
+float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x),f.y);}
+void vertex(){
+	world=(MODEL_MATRIX*vec4(VERTEX,1.0)).xyz;
+	// Terrain is fixed in world space, UV u = +X, v = +Z. Build the missing tangent frame.
+	TANGENT=normalize(vec3(1.0,-NORMAL.x/max(NORMAL.y,.001),0.0));
+	BINORMAL=normalize(cross(TANGENT,NORMAL));
+}
+void fragment(){
+	float damp=clamp(wetness,0.0,1.0);
+	float painted=COLOR.a;
+	vec3 base=COLOR.rgb;
+	if(use_road_mask){
+		float m=texture(road_mask,(world.xz-road_mask_rect.xy)/road_mask_rect.zw).r;
+		painted=max(painted,m);
+		base=mix(base,road_tint,m);
+	}
+	if(detail_enabled){
+		vec2 guv=world.xz/max(grass_meters,.01);
+		vec2 puv=world.xz/max(path_meters,.01);
+		float road=smoothstep(.08,.92,painted);
+		// Far ground (the world map around the village) fades to its mean tone: no tiling moire.
+		float near=1.0-smoothstep(60.0,200.0,distance(world,CAMERA_POSITION_WORLD));
+		vec3 grass=texture(grass_albedo,guv).rgb;
+		vec3 dirt=texture(path_albedo,puv).rgb;
+		// Measured linear means of unchanged source images. Keep our palette and their surface detail.
+		vec3 detail=mix(grass/vec3(.060315,.109109,.022630),dirt/vec3(.152341,.108615,.063908),road);
+		float macro=.93+.14*mix(.5,noise(world.xz*.12),near);
+		ALBEDO=base*mix(vec3(1.0),clamp(detail,vec3(.16),vec3(3.0)),.78*near)*macro*mix(1.0,.67,damp);
+		vec3 n=mix(texture(grass_normal,guv).rgb,texture(path_normal,puv).rgb,road);
+		NORMAL_MAP=n;
+		NORMAL_MAP_DEPTH=mix(.38,.52,road)*near;
+		// Grass stays matte even in rain; only the trodden paths gain a wet sheen (D-083, variant A).
+		float grass_rough=mix(clamp(texture(grass_roughness,guv).r,.9,1.0),.8,damp);
+		float path_rough=mix(clamp(texture(path_roughness,puv).r,.72,1.0),.43,damp);
+		ROUGHNESS=mix(grass_rough,path_rough,road);
+		SPECULAR=mix(grass_specular,mix(.25,.35,damp),road);
+	}else{
+		float grain=noise(world.xz*9.0)*.28+noise(world.xz*1.7)*.2;
+		ALBEDO=base*(.74+grain)*mix(1.0,.67,damp);
+		float road=smoothstep(.08,.92,painted);
+		ROUGHNESS=mix(mix(.96,.8,damp),mix(.96,.43,damp),road);
+		SPECULAR=mix(grass_specular,mix(.25,.35,damp),road);
+		NORMAL_MAP=vec3(.5,.5,1.0);
+		NORMAL_MAP_DEPTH=0.0;
+	}
+}

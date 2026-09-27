@@ -13,7 +13,6 @@ signal strike_requested()
 @export var walk_pose_fps: int = 15
 @export var run_pose_fps: int = 15
 
-var input_enabled: bool = true
 var facing_direction: Vector3 = Vector3(0, 0, -1)
 
 # Внутреннее состояние
@@ -23,11 +22,31 @@ var _attack_active: bool = false
 var _attack_time: float = 0.0
 var _strike_sent: bool = false
 var _cooldown: float = 0.0
+# Отдельный учёт фокуса и паузы приложения: атака разрешена только когда
+# оба состояния вернулись (и дерево сцены не в паузе).
+var _app_focused: bool = true
+var _app_paused: bool = false
 
 const ATTACK_DURATION := 0.4
 const STRIKE_TIME := 0.12
 const COOLDOWN_TIME := 0.55
 const ATTACK_SPEED_SCALE := 0.25
+## JUMP-01 (owner 27 Sep, a service feature while the world is built): a low hop over a step,
+## about 0.45 m, from the ground only and not during a strike.
+const JUMP_HEIGHT := 0.45
+var _jump_requested := false
+
+
+## Ввод игрока (клавиатура + сенсорный HUD). Выключение немедленно отменяет
+## активную атаку и очищает ввод движения; кулдаун продолжает тикать.
+var input_enabled: bool = true:
+	set(value):
+		if value == input_enabled:
+			return
+		input_enabled = value
+		if not value:
+			_cancel_attack()
+			clear_movement_input()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -38,7 +57,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if not input_enabled:
 		return
-	if event.is_action_pressed("interact"):
+	if event.is_action_pressed("jump"):
+		request_jump()
+	elif event.is_action_pressed("interact"):
 		request_interaction()
 	elif event.is_action_pressed("attack"):
 		# На Android атака — только явный HUD-запрос request_attack().
@@ -54,12 +75,26 @@ func _unhandled_input(event: InputEvent) -> void:
 		request_attack()
 
 
+## Keyboard Space or the touch Jump button; ignored in the air (no double jump).
+func request_jump() -> void:
+	if input_enabled and is_on_floor():
+		_jump_requested = true
+
+
 func _physics_process(delta: float) -> void:
+	# Защита от повторного входа: если сигнал strike_requested вызвал
+	# отмену атаки, состояние уже сброшено — не дублируем контакт.
+	if _attack_active and not is_attack_allowed():
+		_cancel_attack()
+
 	# Гравитация накапливается только в воздухе; на полу — нулевая вертикаль.
 	if is_on_floor():
 		velocity.y = 0.0
+		if _jump_requested and input_enabled and not _attack_active:
+			velocity.y = sqrt(2.0 * gravity * JUMP_HEIGHT)
 	else:
 		velocity.y -= gravity * delta
+	_jump_requested = false
 
 	# Ввод движения: клавиатура + тач-вектор (только при включённом вводе)
 	var input_dir := Vector2.ZERO
@@ -106,10 +141,12 @@ func _physics_process(delta: float) -> void:
 
 	move_and_slide()
 
-	# Таймеры атаки/кулдауна (кулдаун тикает независимо от атаки)
+	# Таймеры атаки/кулдауна (кулдаун тикает независимо от атаки).
+	# Контакт не шлём, если ввод заблокирован (отмена могла произойти
+	# в этом же кадре до этого блока).
 	if _attack_active:
 		_attack_time += delta
-		if not _strike_sent and _attack_time >= STRIKE_TIME:
+		if not _strike_sent and _attack_time >= STRIKE_TIME and is_attack_allowed():
 			_strike_sent = true
 			strike_requested.emit()
 		if _attack_time >= ATTACK_DURATION:
@@ -185,6 +222,9 @@ func request_interaction() -> void:
 func request_attack() -> void:
 	if not input_enabled:
 		return
+	# Атака запрещена без фокуса/приложения и при паузе дерева сцены.
+	if not is_attack_allowed():
+		return
 	# Не перезапускать и не накладывать атаки
 	if _attack_active or _cooldown > 0.0:
 		return
@@ -192,6 +232,35 @@ func request_attack() -> void:
 	_attack_time = 0.0
 	_strike_sent = false
 	_cooldown = COOLDOWN_TIME
+
+
+## Разрешена ли атака прямо сейчас: включён ввод, есть фокус и приложение
+## не в паузе, узел внутри дерева и способен обрабатываться (учёт
+## process_mode и предков), дерево сцены (и предки) не на паузе.
+func is_attack_allowed() -> bool:
+	if not input_enabled or not _app_focused or _app_paused:
+		return false
+	if not is_inside_tree():
+		return false
+	var tree := get_tree()
+	if tree == null or tree.is_paused():
+		return false
+	return can_process()
+
+
+## Немедленная отмена активной атаки (без сброса кулдауна): состояние
+## атаки и ввод движения очищаются, визуальная атака снимается.
+func _cancel_attack() -> void:
+	if not _attack_active:
+		return
+	_attack_active = false
+	_attack_time = 0.0
+	_strike_sent = false
+	clear_movement_input()
+	if is_inside_tree() and is_node_ready():
+		var visual := $Visual as CourtyardCharacterVisual
+		if visual != null:
+			visual.update_visual(&"idle", facing_direction, walk_pose_fps, run_pose_fps)
 
 
 func get_visual_direction() -> StringName:
@@ -202,19 +271,45 @@ func get_visual_direction() -> StringName:
 
 
 func _notification(what: int) -> void:
-	if what == NOTIFICATION_APPLICATION_FOCUS_OUT:
-		_touch_move = Vector2.ZERO
-		# Потеря фокуса очищает сенсорный бег; клавиатурный run сам
-		# перестаёт нажиматься, застрявшего режима не остаётся.
-		_touch_run = false
+	match what:
+		NOTIFICATION_APPLICATION_FOCUS_OUT:
+			_app_focused = false
+			# Потеря фокуса отменяет атаку и очищает ввод движения;
+			# клавиатурный run сам перестаёт нажиматься.
+			_cancel_attack()
+			clear_movement_input()
+		NOTIFICATION_APPLICATION_FOCUS_IN:
+			_app_focused = true
+		NOTIFICATION_APPLICATION_PAUSED:
+			_app_paused = true
+			_cancel_attack()
+			clear_movement_input()
+		NOTIFICATION_APPLICATION_RESUMED:
+			_app_paused = false
+		NOTIFICATION_PAUSED:
+			# Реальная пауза дерева сцены: немедленная отмена без отложенного
+			# контакта; при возврате атака не возрождается.
+			_cancel_attack()
+			clear_movement_input()
 
 
 # --- Визуальная презентация (idle/walk/attack x front/back/left/right) ---
+
+## Optional fight that asks for the whole-character poses (`get_visual_action()` -> &"guard" / &"hit"),
+## as the courtyard defense preview does; the world combat sets it. Empty keeps the plain actions.
+var visual_action_source: Object = null
+
 
 func _update_visual() -> void:
 	var visual := $Visual as CourtyardCharacterVisual
 	if visual == null:
 		return
+	if not _attack_active and is_instance_valid(visual_action_source):
+		var pose: StringName = visual_action_source.get_visual_action()
+		# The hit pose shows during the recoil; the guard pose while standing (walking keeps the walk).
+		if pose == &"hit" or (pose == &"guard" and velocity.x == 0.0 and velocity.z == 0.0):
+			visual.update_visual(pose, facing_direction, walk_pose_fps, run_pose_fps)
+			return
 
 	# Текущее действие (отдельно от имени клипа).
 	# Бег — только при фактическом горизонтальном движении (get_real_velocity

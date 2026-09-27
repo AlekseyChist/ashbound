@@ -15,7 +15,7 @@ func entry(id: String) -> Dictionary:
 	return {"instance_id": id, "id": "bread", "quantity": 20}
 
 func definitions() -> Array:
-	return [{"id": "coat", "kind": "pocket", "capacity": 2}, {"id": "bag", "kind": "backpack", "capacity": 2}]
+	return [{"id": "coat", "kind": "pocket", "capacity": 2}, {"id": "bag", "kind": "wallet", "capacity": 2}]
 
 func state(layout: RefCounted) -> Dictionary:
 	return {"containers": layout.get_containers(), "save": layout.get_save_data()}
@@ -44,7 +44,7 @@ func _run() -> void:
 		var bad := definitions()
 		bad[0]["capacity"] = bad_capacity
 		check(not layout.configure(bad, carried) and state(layout) == before, "invalid capacity is atomic: " + str(bad_capacity))
-	for bad in [[], [{"id": "coat", "kind": "pocket", "capacity": 1}], [{"id": "coat", "kind": "pocket", "capacity": 2}, {"id": "coat", "kind": "backpack", "capacity": 2}], [{"id": "", "kind": "pocket", "capacity": 3}], [{"id": "x", "kind": "magic", "capacity": 3}], [{"id": "coat", "kind": "pocket", "capacity": 1000000}, {"id": "bag", "kind": "backpack", "capacity": 1}]]:
+	for bad in [[], [{"id": "coat", "kind": "pocket", "capacity": 1}], [{"id": "coat", "kind": "pocket", "capacity": 2}, {"id": "coat", "kind": "wallet", "capacity": 2}], [{"id": "", "kind": "pocket", "capacity": 3}], [{"id": "x", "kind": "magic", "capacity": 3}], [{"id": "coat", "kind": "pocket", "capacity": 1000000}, {"id": "bag", "kind": "wallet", "capacity": 1}]]:
 		check(not layout.configure(bad, carried) and state(layout) == before, "invalid/occupied container edit leaves state")
 	groups += 1
 
@@ -55,10 +55,10 @@ func _run() -> void:
 	check(not layout.move("b", "bag", carried) and state(layout) == before, "full destination rejects atomically")
 	check(not layout.move("missing", "coat", carried) and state(layout) == before, "stale instance rejected")
 	check(not layout.move("b", "missing", carried) and state(layout) == before, "missing destination rejected")
-	check(not layout.configure([definitions()[0]], carried) and state(layout) == before, "cannot silently drop occupied backpack")
+	check(not layout.configure([definitions()[0]], carried) and state(layout) == before, "cannot silently drop occupied wallet")
 	groups += 1
 
-	carried.erase(carried[2]) # c was consumed/sold; a stays in backpack.
+	carried.erase(carried[2]) # c was consumed/sold; a stays in the wallet.
 	check(layout.reconcile(carried), "removed item frees its slot")
 	check(layout.get_container_id("c") == "" and layout.get_container_id("a") == "bag", "no reassignment of remaining items")
 	carried.append(entry("d"))

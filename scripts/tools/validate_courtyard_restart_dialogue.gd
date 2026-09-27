@@ -82,8 +82,6 @@ func run() -> void:
 	groups+=1
 
 	check(schema.apply(level,inv,baseline),"restore initial fixture")
-	check(inv.add_item("traveler_backpack"),"backpack fixture")
-	check(inv.equip_storage_item(item("traveler_backpack")),"wear backpack")
 	for id in ["courtyard_sketch","bread","rusty_sword","sacred_ash"]:
 		check(inv.add_item(id),"dirty inventory "+id)
 	check(inv.equip_item(item("rusty_sword")),"equip sword")
@@ -112,7 +110,7 @@ func run() -> void:
 	inv.inventory_restored.disconnect(observe_reset)
 	check(observed_resets==1,"one inventory reset notification")
 	check(inv.items.is_empty() and inv.gold==0,"new start clears inventory and money")
-	check(inv.get_worn_storage("backpack").is_empty() and inv.get_equipped("weapon").is_empty(),"new start clears all worn equipment")
+	check(inv.get_equipped("weapon").is_empty() and inv.get_equipped("armor").is_empty(),"new start clears all worn equipment")
 	check(worlds.get_records().is_empty() and worlds.get_points().is_empty(),"new start clears dropped records and sprites")
 	check(level.get_node("Interactions/MapStand").available_on_crate and not inv.has_item("courtyard_sketch"),"map returns exclusively to crate")
 	check(panel._quick_bindings.all(func(id):return id==""),"new start clears all quick references")

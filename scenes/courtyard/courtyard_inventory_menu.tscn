@@ -1,7 +1,8 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scripts/courtyard/courtyard_inventory_menu.gd" id="2_menu"]
 [ext_resource type="PackedScene" path="res://scenes/courtyard/touch_inventory_panel.tscn" id="1_panel"]
+[ext_resource type="Script" path="res://scripts/courtyard/adaptive_screen_root.gd" id="3_adaptive"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_goldborder_charcoal"]
 content_margin_left = 8.0
@@ -21,6 +22,7 @@ script = ExtResource("2_menu")
 auto_translate_mode = 2
 
 [node name="RootControl" type="Control" parent="."]
+script = ExtResource("3_adaptive")
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0

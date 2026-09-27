@@ -1,0 +1,10 @@
+[
+  {"key":"FIST_PREVIEW_TITLE","en":"Fist techniques","ru":"Кулачные техники"},
+  {"key":"FIST_PREVIEW_NOVICE","en":"Novice","ru":"Новичок"},
+  {"key":"FIST_PREVIEW_TRAINED","en":"Trained","ru":"Обученный"},
+  {"key":"FIST_PREVIEW_PACK_ON","en":"Backpack: on","ru":"Рюкзак: надет"},
+  {"key":"FIST_PREVIEW_PACK_OFF","en":"Backpack: off","ru":"Рюкзак: снят"},
+  {"key":"FIST_PREVIEW_VIEW","en":"Rotate view","ru":"Повернуть камеру"},
+  {"key":"FIST_PREVIEW_HINT","en":"F1/F2: technique · F3: backpack · F4: view","ru":"F1/F2: техника · F3: рюкзак · F4: ракурс"},
+  {"key":"FIST_PREVIEW_NOTE","en":"Stance and strike preview","ru":"Проба стойки и удара"}
+]

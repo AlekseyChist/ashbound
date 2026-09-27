@@ -1,11 +1,10 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://scripts/courtyard/courtyard_player.gd" id="1_player"]
 [ext_resource type="SpriteFrames" path="res://assets/characters/courtyard/traveler_frames.tres" id="2_frames"]
 [ext_resource type="Script" path="res://scripts/courtyard/courtyard_character_visual.gd" id="3_visual"]
 [ext_resource type="SpriteFrames" path="res://assets/characters/courtyard/traveler_pocket_frames.tres" id="4_pocket_frames"]
 [ext_resource type="Script" path="res://scripts/courtyard/pocket_access.gd" id="5_pocket_access"]
-[ext_resource type="Script" path="res://scripts/courtyard/courtyard_backpack_visual.gd" id="6_backpack"]
 [ext_resource type="Script" path="res://scripts/characters/character_progress.gd" id="7_progress"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_1"]
@@ -60,9 +59,6 @@ alpha_scissor_threshold = 0.25
 script = ExtResource("5_pocket_access")
 storage_id = &"traveler_clothing_pocket"
 available = true
-
-[node name="BackpackLayer" type="Node3D" parent="Visual"]
-script = ExtResource("6_backpack")
 
 [node name="Equipment" type="Node3D" parent="Visual"]
 

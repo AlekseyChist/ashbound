@@ -1,0 +1,141 @@
+[gd_resource type="Resource" script_class="QuestData" format=3]
+
+[ext_resource type="Script" path="res://scripts/quests/dialogue_line_data.gd" id="1_rhbaq"]
+[ext_resource type="Script" path="res://scripts/quests/quest_data.gd" id="2_wubrc"]
+[ext_resource type="Script" path="res://scripts/quests/quest_stage_data.gd" id="3_7o41i"]
+
+[sub_resource type="Resource" id="Resource_32c83"]
+script = ExtResource("1_rhbaq")
+speaker = &"innkeeper"
+stages = Array[StringName]([&"meet_host"])
+name_key = "COURTYARD_NAME_INNKEEPER"
+line_key = "COURTYARD_DIALOGUE_HOST_JOB"
+next_stage = &"fetch_wood"
+
+[sub_resource type="Resource" id="Resource_esm5m"]
+script = ExtResource("1_rhbaq")
+speaker = &"innkeeper"
+stages = Array[StringName]([&"return_wood"])
+forbids_flag = &"reward_claimed"
+name_key = "COURTYARD_NAME_INNKEEPER"
+line_key = "COURTYARD_DIALOGUE_HOST_REWARD"
+set_flag = &"reward_claimed"
+next_stage = &"meet_guard"
+
+[sub_resource type="Resource" id="Resource_ibsfj"]
+script = ExtResource("1_rhbaq")
+speaker = &"innkeeper"
+stages = Array[StringName]([&"return_wood"])
+requires_flag = &"reward_claimed"
+name_key = "COURTYARD_NAME_INNKEEPER"
+line_key = "COURTYARD_DIALOGUE_HOST_ACCEPTED"
+
+[sub_resource type="Resource" id="Resource_brmku"]
+script = ExtResource("1_rhbaq")
+speaker = &"innkeeper"
+stages = Array[StringName]([&"fetch_wood"])
+name_key = "COURTYARD_NAME_INNKEEPER"
+line_key = "COURTYARD_DIALOGUE_HOST_REMIND"
+
+[sub_resource type="Resource" id="Resource_toscc"]
+script = ExtResource("1_rhbaq")
+speaker = &"innkeeper"
+name_key = "COURTYARD_NAME_INNKEEPER"
+line_key = "COURTYARD_DIALOGUE_HOST_AFTER"
+
+[sub_resource type="Resource" id="Resource_37gnh"]
+script = ExtResource("1_rhbaq")
+speaker = &"woodpile"
+stages = Array[StringName]([&"fetch_wood"])
+line_key = "COURTYARD_DIALOGUE_WOOD_TAKEN"
+effects = Array[StringName]([&"hide_woodpile_label"])
+next_stage = &"return_wood"
+
+[sub_resource type="Resource" id="Resource_1mg5s"]
+script = ExtResource("1_rhbaq")
+speaker = &"woodpile"
+stages = Array[StringName]([&"meet_host"])
+line_key = "COURTYARD_DIALOGUE_WOOD_BEFORE"
+
+[sub_resource type="Resource" id="Resource_cjpkf"]
+script = ExtResource("1_rhbaq")
+speaker = &"woodpile"
+line_key = "COURTYARD_DIALOGUE_WOOD_ALREADY"
+
+[sub_resource type="Resource" id="Resource_3qqr3"]
+script = ExtResource("1_rhbaq")
+speaker = &"watchman"
+stages = Array[StringName]([&"meet_guard"])
+name_key = "COURTYARD_NAME_WATCHMAN"
+line_key = "COURTYARD_DIALOGUE_GUARD_LESSON"
+next_stage = &"practice"
+
+[sub_resource type="Resource" id="Resource_6anmq"]
+script = ExtResource("1_rhbaq")
+speaker = &"watchman"
+stages = Array[StringName]([&"report"])
+name_key = "COURTYARD_NAME_WATCHMAN"
+line_key = "COURTYARD_DIALOGUE_GUARD_REPORT"
+effects = Array[StringName]([&"complete_guard_practice"])
+next_stage = &"done"
+
+[sub_resource type="Resource" id="Resource_8d20q"]
+script = ExtResource("1_rhbaq")
+speaker = &"watchman"
+stages = Array[StringName]([&"practice"])
+name_key = "COURTYARD_NAME_WATCHMAN"
+line_key = "COURTYARD_DIALOGUE_GUARD_REMIND"
+
+[sub_resource type="Resource" id="Resource_v5h1j"]
+script = ExtResource("1_rhbaq")
+speaker = &"watchman"
+name_key = "COURTYARD_NAME_WATCHMAN"
+line_key = "COURTYARD_DIALOGUE_GUARD_OTHER"
+
+[sub_resource type="Resource" id="Resource_0hp1n"]
+script = ExtResource("3_7o41i")
+id = &"meet_host"
+objective_key = "COURTYARD_OBJECTIVE_MEET_HOST"
+
+[sub_resource type="Resource" id="Resource_apfn4"]
+script = ExtResource("3_7o41i")
+id = &"fetch_wood"
+objective_key = "COURTYARD_OBJECTIVE_FETCH_WOOD"
+
+[sub_resource type="Resource" id="Resource_bc4ag"]
+script = ExtResource("3_7o41i")
+id = &"return_wood"
+objective_key = "COURTYARD_OBJECTIVE_RETURN_WOOD"
+
+[sub_resource type="Resource" id="Resource_sbhat"]
+script = ExtResource("3_7o41i")
+id = &"meet_guard"
+objective_key = "COURTYARD_OBJECTIVE_MEET_GUARD"
+
+[sub_resource type="Resource" id="Resource_bwsgk"]
+script = ExtResource("3_7o41i")
+id = &"practice"
+objective_key = "COURTYARD_OBJECTIVE_PRACTICE"
+counter = &"dummy_hits"
+counter_total = 3
+counter_param = "hits"
+counter_next_stage = &"report"
+
+[sub_resource type="Resource" id="Resource_yt1tx"]
+script = ExtResource("3_7o41i")
+id = &"report"
+objective_key = "COURTYARD_OBJECTIVE_REPORT"
+
+[sub_resource type="Resource" id="Resource_k58ux"]
+script = ExtResource("3_7o41i")
+id = &"done"
+objective_key = "COURTYARD_OBJECTIVE_DONE"
+completed = true
+
+[resource]
+script = ExtResource("2_wubrc")
+id = &"courtyard_lesson"
+title_key = "MENU_JOURNAL_COURTYARD"
+stages = Array[ExtResource("3_7o41i")]([SubResource("Resource_0hp1n"), SubResource("Resource_apfn4"), SubResource("Resource_bc4ag"), SubResource("Resource_sbhat"), SubResource("Resource_bwsgk"), SubResource("Resource_yt1tx"), SubResource("Resource_k58ux")])
+lines = Array[ExtResource("1_rhbaq")]([SubResource("Resource_32c83"), SubResource("Resource_esm5m"), SubResource("Resource_ibsfj"), SubResource("Resource_brmku"), SubResource("Resource_toscc"), SubResource("Resource_37gnh"), SubResource("Resource_1mg5s"), SubResource("Resource_cjpkf"), SubResource("Resource_3qqr3"), SubResource("Resource_6anmq"), SubResource("Resource_8d20q"), SubResource("Resource_v5h1j")])
+flags = Array[StringName]([&"reward_claimed"])

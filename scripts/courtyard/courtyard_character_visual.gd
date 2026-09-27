@@ -10,6 +10,45 @@ signal inventory_access_finished()
 var _current_action: StringName = &""
 var _current_view: StringName = &"back"
 
+# Only presentation is interpolated; collisions, facing and combat stay on physics ticks.
+var _previous_position := Vector3.ZERO
+var _physics_position := Vector3.ZERO
+var _motion_ready := false
+var _ground_shadow: Node3D
+var _ground_shadow_offset := Vector3.ZERO
+
+
+func reset_motion_interpolation() -> void:
+	var actor := get_parent() as Node3D
+	if actor == null:
+		return
+	_physics_position = actor.global_position
+	_previous_position = _physics_position
+	_motion_ready = true
+
+
+func _physics_process(_delta: float) -> void:
+	var actor := get_parent() as Node3D
+	if actor == null:
+		return
+	# Sample after the actor (including dodge/hitstop overrides). Large relocations
+	# must snap; ordinary scene resets also call reset via camera.snap_to_target().
+	if not _motion_ready or actor.global_position.distance_to(_physics_position) > 1.0:
+		reset_motion_interpolation()
+	else:
+		_previous_position = _physics_position
+		_physics_position = actor.global_position
+
+
+func get_render_position() -> Vector3:
+	var actor := get_parent() as Node3D
+	if actor == null:
+		return global_position
+	if not _motion_ready or not actor.is_physics_processing() or not actor.can_process() \
+			or not actor.global_position.is_equal_approx(_physics_position):
+		reset_motion_interpolation()
+	return _previous_position.lerp(_physics_position, Engine.get_physics_interpolation_fraction())
+
 # --- Pocket gesture state ---
 var _pocket_active := false
 var _pocket_finished := false
@@ -85,6 +124,12 @@ func _ready() -> void:
 	# Камера обрабатывается на priority 0, рюкзак — на 10;
 	# визуал героя должен обновляться после обоих.
 	process_priority = 100
+	process_physics_priority = 100
+	reset_motion_interpolation()
+	_ground_shadow = get_parent().get_node_or_null("GroundShadow") as Node3D
+	if _ground_shadow != null:
+		_ground_shadow_offset = _ground_shadow.position
+		_ground_shadow.top_level = true
 	# Тени-прокси создаются напрямую: _make_shadow_proxy добавляет детей
 	# в этот Visual во время собственного _ready, а не в занятого родителя.
 	_make_shadow_proxy($Body, "BodyShadow")
@@ -96,6 +141,9 @@ func _ready() -> void:
 
 
 func _process(_delta: float) -> void:
+	global_position = get_render_position()
+	if _ground_shadow != null:
+		_ground_shadow.global_position = global_position + get_parent().global_basis * _ground_shadow_offset
 	var camera := get_viewport().get_camera_3d()
 	if camera != null:
 		# Поворачиваем весь Visual целиком (якорь — ноги, origin 0):
@@ -166,7 +214,9 @@ func _sync_shadow(source: AnimatedSprite3D, shadow: AnimatedSprite3D) -> void:
 	shadow.axis = source.axis
 	# Глобальная позиция: тень остаётся вертикальной под актором,
 	# несмотря на вращение самого Visual.
-	shadow.global_transform = get_parent().global_transform * Transform3D(Basis.IDENTITY, source.position)
+	var upright_transform: Transform3D = get_parent().global_transform
+	upright_transform.origin = global_position
+	shadow.global_transform = upright_transform * Transform3D(Basis.IDENTITY, source.position)
 
 
 ## Текущее визуальное направление.
@@ -521,8 +571,8 @@ func _apply_sprite_scale(body: AnimatedSprite3D) -> void:
 	if frames == null:
 		return
 
-	# Вид определяет базовый ключ; для run дополнительно пробуем
-	# pixel_size_run_<view> с fallback на обычный pixel_size_<view>.
+	# Вид определяет базовый ключ; для действия дополнительно пробуем
+	# pixel_size_<action>_<view> с fallback на обычный pixel_size_<view>.
 	var view_key := "side"
 	match _current_view:
 		&"back":
@@ -530,13 +580,34 @@ func _apply_sprite_scale(body: AnimatedSprite3D) -> void:
 		&"front":
 			view_key = "front"
 
-	var run_action := body.animation.begins_with("run")
-	var pixel_size: float = 0.0
-	if run_action:
-		pixel_size = frames.get_meta("pixel_size_run_" + view_key, -1.0)
-	if pixel_size <= 0.0:
-		pixel_size = frames.get_meta("pixel_size_" + view_key, 0.006)
-	if pixel_size <= 0.0:
+	# Действие берём из _current_action; если пусто — из префикса клипа.
+	var action_key := String(_current_action)
+	if action_key.is_empty():
+		action_key = body.animation.get_slice("_", 0)
+
+	# Читаем float-мета безопасно: нечисловой тип трактуем как отсутствие.
+	var pixel_size: float = -1.0
+	if not action_key.is_empty():
+		var meta_value: Variant = frames.get_meta("pixel_size_" + action_key + "_" + view_key, -1.0)
+		if typeof(meta_value) in [TYPE_FLOAT, TYPE_INT]:
+			pixel_size = float(meta_value)
+	if not is_finite(pixel_size) or pixel_size <= 0.0:
+		var meta_value: Variant = frames.get_meta("pixel_size_" + view_key, -1.0)
+		if typeof(meta_value) in [TYPE_FLOAT, TYPE_INT]:
+			pixel_size = float(meta_value)
+	if not is_finite(pixel_size) or pixel_size <= 0.0:
 		pixel_size = 0.006
 	body.pixel_size = pixel_size
-	body.position.y = float(frames.get_meta("baseline_offset_pixels", 150.0)) * pixel_size
+
+	var baseline: float = -1.0
+	if not action_key.is_empty():
+		var meta_value: Variant = frames.get_meta("baseline_offset_pixels_" + action_key, -1.0)
+		if typeof(meta_value) in [TYPE_FLOAT, TYPE_INT]:
+			baseline = float(meta_value)
+	if not is_finite(baseline) or baseline <= 0.0:
+		var meta_value: Variant = frames.get_meta("baseline_offset_pixels", -1.0)
+		if typeof(meta_value) in [TYPE_FLOAT, TYPE_INT]:
+			baseline = float(meta_value)
+	if not is_finite(baseline) or baseline <= 0.0:
+		baseline = 150.0
+	body.position.y = baseline * pixel_size

@@ -65,7 +65,7 @@ func layout(language: String) -> void:
 	var area: Rect2 = panel.get_global_rect()
 	check(root.get_visible_rect().grow(1).encloses(area),language+" panel fits")
 	check(area.size.x >= root.get_visible_rect().size.x*0.9,language+" uses phone width")
-	for key in ["CloseButton","ArmorSlot","WeaponSlot","BackpackSlot","PouchSlot","QuickSlots","ItemDetails"]:
+	for key in ["CloseButton","ArmorSlot","WeaponSlot","QuickSlots","ItemDetails"]:
 		var c: Control = panel.get_node("%"+key)
 		check(area.grow(1).encloses(c.get_global_rect()),language+" inside "+key)
 	for c: Control in panel.get("_quick_cells"):
@@ -81,7 +81,7 @@ func run() -> void:
 	inv = root.get_node("Inventory")
 	loc = root.get_node("Localization")
 	loc.load_preferences("res://.tools/touch-qa-language.cfg","en_US")
-	check(inv.configure_storage([{"id":"traveler_clothing_pocket","kind":"pocket","capacity":6}]),"starter pocket")
+	check(inv.configure_storage([{"id":"traveler_clothing_pocket","kind":"pocket","capacity":12},{"id":"traveler_wallet","kind":"wallet","capacity":4}]),"main inventory and wallet (D-057)")
 	panel = load("res://scenes/courtyard/touch_inventory_panel.tscn").instantiate()
 	root.add_child(panel)
 	panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -92,10 +92,11 @@ func run() -> void:
 	check(not panel.visible,"ready does not open")
 	panel.open_panel()
 	await settle()
-	check(panel.get("_tab_buttons").size()==1,"only starter pocket active")
+	check(panel.get("_tab_buttons").size()==2,"main inventory and wallet tabs")
 	check(panel.get_node("%CharacterPreview").get_child_count()==0,"portrait has no accessory overlay")
 	check(panel.get_node("%CharacterPreview").texture==load("res://assets/characters/courtyard/traveler_frames.tres").get_frame_texture("idle_front",0),"portrait does not invent backpack")
-	check(panel.get_node("%StorageTabs").get_child_count()==3,"missing bags still pictured")
+	check(panel.get_node("%StorageTabs").get_child_count()==2,"no placeholder tabs for removed bags")
+	check(panel.get_node_or_null("%BackpackSlot")==null and panel.get_node_or_null("%PouchSlot")==null,"no bag slots (D-057)")
 	for language in ["en","ru"]:
 		loc.load_preferences("res://.tools/touch-qa-language.cfg",language)
 		await settle()
@@ -104,27 +105,21 @@ func run() -> void:
 		layout(language)
 		await capture("empty-"+language)
 	groups+=1
-	for id in ["bread","rusty_sword","leather_armor","traveler_backpack","belt_pouch","health_potion"]:
+	for id in ["bread","rusty_sword","leather_armor","health_potion"]:
 		check(inv.add_item(id),"seed "+id)
 	await settle()
 	var bread: Dictionary = item("bread").duplicate(true)
-	var bag: Dictionary = item("traveler_backpack").duplicate(true)
-	var pouch: Dictionary = item("belt_pouch").duplicate(true)
 	var sword: Dictionary = item("rusty_sword").duplicate(true)
 	var armor: Dictionary = item("leather_armor").duplicate(true)
-	await carry(cell_pos(bag.instance_id),center("BackpackSlot"))
-	check(inv.get_worn_storage("backpack").get("instance_id","")==bag.instance_id,"touch equip backpack")
-	check(panel.get_node("%CharacterPreview").texture==load("res://assets/characters/courtyard/traveler_backpack_frames.tres").get_frame_texture("idle_front",0),"portrait switches to complete painted backpack frame")
-	var bag_id := "worn_storage:"+str(bag.instance_id)
-	check(panel.get("_tab_buttons").has(bag_id),"backpack tab becomes active")
-	await carry(cell_pos(pouch.instance_id),center("PouchSlot"))
-	check(inv.get_worn_storage("pouch").get("instance_id","")==pouch.instance_id,"touch equip pouch")
+	var bag_id := "traveler_wallet"
+	check(panel.get_node("%CharacterPreview").texture==load("res://assets/characters/courtyard/traveler_frames.tres").get_frame_texture("idle_front",0),"portrait stays the bare hero")
+	check(panel.get("_tab_buttons").has(bag_id),"wallet tab active")
 	groups+=1
 	await carry(cell_pos(bread.instance_id),tab_pos(bag_id))
-	check(inv.get_item_storage(bread.instance_id)==bag_id,"touch drag onto tab preserves colon ID")
+	check(inv.get_item_storage(bread.instance_id)==bag_id,"touch drag onto the wallet tab")
 	var before:=snap()
-	await carry(center("BackpackSlot"),center("ItemScroll"))
-	check(snap()==before,"occupied bag remains equipped")
+	await tap(center("ArmorSlot"))
+	check(snap()==before,"tapping an empty equipment slot changes nothing")
 	groups+=1
 	await carry(cell_pos(armor.instance_id),center("ArmorSlot"))
 	check(inv.get_equipped("armor").get("instance_id","")==armor.instance_id,"equip complete armor set")
@@ -208,7 +203,7 @@ func run() -> void:
 	check(close_count[0]==1,"touch close emits exactly once")
 	panel.close_panel()
 	before=snap()
-	await tap(center("BackpackSlot"))
+	await tap(center("WeaponSlot"))
 	check(snap()==before,"hidden panel ignores input")
 	groups+=1
 	print("ASHBOUND_TOUCH_INVENTORY_GROUPS=",groups)

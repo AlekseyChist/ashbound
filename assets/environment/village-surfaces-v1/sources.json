@@ -1,0 +1,69 @@
+{
+  "date": "2026-09-24",
+  "license": "CC0-1.0",
+  "files": [
+    {
+      "file": "forest_ground_04_diff_1k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/forest_ground_04/forest_ground_04_diff_1k.jpg",
+      "source": "https://polyhaven.com/a/forest_ground_04",
+      "license_url": "https://polyhaven.com/license",
+      "author": "Rob Tuytel; Rico Cilliers",
+      "sha256": "50a4dda30875020c64385261aa7e00e2155b592302fa6794165f58fae73cbd2c",
+      "bytes": 1113899,
+      "transformation": "none"
+    },
+    {
+      "file": "forest_ground_04_nor_gl_1k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/forest_ground_04/forest_ground_04_nor_gl_1k.jpg",
+      "source": "https://polyhaven.com/a/forest_ground_04",
+      "license_url": "https://polyhaven.com/license",
+      "author": "Rob Tuytel; Rico Cilliers",
+      "sha256": "9c3a0200e02ce40edffbbf9f5f623ef08ea9b1b7812b556182ec978f88887151",
+      "bytes": 1326812,
+      "transformation": "none"
+    },
+    {
+      "file": "forest_ground_04_rough_1k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/forest_ground_04/forest_ground_04_rough_1k.jpg",
+      "source": "https://polyhaven.com/a/forest_ground_04",
+      "license_url": "https://polyhaven.com/license",
+      "author": "Rob Tuytel; Rico Cilliers",
+      "sha256": "89d4d50395eb92824a64132c4bc8a5a09009071e0b325ab66dc3104c7a3090ed",
+      "bytes": 627507,
+      "transformation": "none"
+    },
+    {
+      "file": "Grass001_1K-JPG_Color.jpg",
+      "url": "https://ambientcg.com/get?file=Grass001_1K-JPG.zip",
+      "source": "https://ambientcg.com/view?id=Grass001",
+      "license_url": "https://docs.ambientcg.com/license/",
+      "author": "Lennart Demes / ambientCG",
+      "sha256": "b9b6d61bc3b6137b868a3447eef18737896acd26d58fe2f4b83ce8c0e9d3f8ad",
+      "bytes": 1764300,
+      "archive_sha256": "902f447a64171c8099589642d5bf2d1d6e52c40e94d957eb78eae722084b0cfb",
+      "transformation": "extracted unchanged"
+    },
+    {
+      "file": "Grass001_1K-JPG_NormalGL.jpg",
+      "url": "https://ambientcg.com/get?file=Grass001_1K-JPG.zip",
+      "source": "https://ambientcg.com/view?id=Grass001",
+      "license_url": "https://docs.ambientcg.com/license/",
+      "author": "Lennart Demes / ambientCG",
+      "sha256": "eef0b56db5f00a6fcb3d0e0f8463e4e141e88aa85b26527a04d617b75a4ab5d2",
+      "bytes": 2338245,
+      "archive_sha256": "902f447a64171c8099589642d5bf2d1d6e52c40e94d957eb78eae722084b0cfb",
+      "transformation": "extracted unchanged"
+    },
+    {
+      "file": "Grass001_1K-JPG_Roughness.jpg",
+      "url": "https://ambientcg.com/get?file=Grass001_1K-JPG.zip",
+      "source": "https://ambientcg.com/view?id=Grass001",
+      "license_url": "https://docs.ambientcg.com/license/",
+      "author": "Lennart Demes / ambientCG",
+      "sha256": "8810effd44756341170d551501b7d0c645dc2395dbce46a8c7f1e61045258a06",
+      "bytes": 823623,
+      "archive_sha256": "902f447a64171c8099589642d5bf2d1d6e52c40e94d957eb78eae722084b0cfb",
+      "transformation": "extracted unchanged"
+    }
+  ]
+}

@@ -8,6 +8,7 @@ const ROOT_KEYS := ["schema_version", "location", "quest", "progress", "inventor
 const QUEST_KEYS := ["state", "dummy_hits", "reward_claimed"]
 const PLAYER_KEYS := ["position", "facing"]
 const CAMERA_KEYS := ["yaw", "pitch"]
+## "worn_storage" is only read from saves made before D-057; Inventory migrates it.
 const INVENTORY_ROOT_KEYS := ["schema_version", "items", "equipped", "gold", "storage", "worn_storage"]
 
 const LOCATION := "first_courtyard"
@@ -145,7 +146,28 @@ func _is_bindable_id(id: String, inventory_data: Dictionary, inventory: Node) ->
 
 
 # --------------------------------------------------------------- validate ---
-func validate(data: Dictionary, inventory: Node) -> bool:
+## Saves made before D-057 may hold a dropped backpack or pouch on the ground; bags no longer exist.
+func _without_legacy_bags(data: Dictionary, inventory: Node) -> Dictionary:
+	var records: Variant = data.get("world_items", null)
+	if not (records is Array):
+		return data
+	var legacy: Variant = inventory.get("LEGACY_BAG_IDS")
+	if not (legacy is Array):
+		return data
+	var kept: Array = []
+	for record in records:
+		if record is Dictionary and record.get("item", null) is Dictionary and legacy.has(str(record["item"].get("id", ""))):
+			continue
+		kept.append(record)
+	if kept.size() == records.size():
+		return data
+	var copy := data.duplicate()
+	copy["world_items"] = kept
+	return copy
+
+
+func validate(source: Dictionary, inventory: Node) -> bool:
+	var data := _without_legacy_bags(source, inventory)
 	var expected := ROOT_KEYS.duplicate()
 	var schema_version = data.get("schema_version", null)
 	if not (schema_version is int) or schema_version < 1 or schema_version > 2:
@@ -329,14 +351,15 @@ func _finite(v: Vector3) -> bool:
 # ----------------------------------------------------------------- apply ---
 var _applying: bool = false
 
-func apply(level: Node, inventory: Node, data: Dictionary) -> bool:
+func apply(level: Node, inventory: Node, source: Dictionary) -> bool:
 	if _applying:
 		return false
+	var data := _without_legacy_bags(source, inventory)
 	if not validate(data, inventory):
 		return false
 	if data.get("world_items", []).size() > 0 and not level.has_node("WorldItems"):
 		return false
-	if inventory.get("_trade_guard") or inventory.get("_wearable_guard") or inventory.get("_storage_guard"):
+	if inventory.get("_trade_guard") or inventory.get("_storage_guard") or inventory.get("_commit_guard"):
 		return false
 
 	var player := level.get_node("Actors/Player")

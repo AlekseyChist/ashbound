@@ -1,0 +1,13 @@
+[remap]
+importer="texture"
+type="CompressedTexture2D"
+
+[deps]
+source_file="res://assets/environment/village-house-materials-v1/stone_wall_02_diff_1k.jpg"
+
+[params]
+compress/mode=2
+compress/high_quality=false
+compress/lossy_quality=0.7
+mipmaps/generate=true
+process/normal_map_invert_y=false

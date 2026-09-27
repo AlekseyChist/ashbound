@@ -137,28 +137,13 @@ func _run() -> void:
 	check(sections.current_section == "map","restored carried map reopens")
 	groups += 1
 
-	var defs: Array = inv.get_storage_containers()
-	defs.append({"id":"unworn_test_bag","kind":"backpack","capacity":2})
-	check(inv.configure_storage(defs),"configured spare bag fixture")
+	# D-057: no bags. The map is readable wherever it is carried on the hero: main inventory or wallet.
 	var handle := map_handle()
-	check(inv.move_item_to_storage(handle,"unworn_test_bag"),"move into unowned bag fixture")
-	check(map_handle().is_empty() and map_tab().disabled and sections.current_section == "items" and drawing().texture == null,"configured capacity alone is not worn ownership")
-	check(inv.move_item_to_storage(handle,str(pocket.storage_id)),"return map to actual pocket")
-	check(not map_handle().is_empty() and not map_tab().disabled,"pocket grants access again")
-	check(inv.configure_storage([{ "id":str(pocket.storage_id), "kind":"pocket", "capacity":6 }]),"remove empty off-body fixture")
-	groups += 1
-
-	check(inv.add_item("traveler_backpack"),"bag fixture item")
-	var bag: Dictionary = {}
-	for entry in inv.get_save_data().items:
-		if entry.id == "traveler_backpack": bag = entry
-	check(inv.equip_storage_item(bag),"wear real backpack")
-	var worn: Dictionary = inv.get_worn_storage("backpack")
-	check(inv.move_item_to_storage(handle,"worn_storage:"+str(worn.instance_id)),"move map to worn bag")
-	check(not map_handle().is_empty(),"worn bag grants map access")
-	check(not inv.unequip_storage_item("backpack",str(pocket.storage_id)),"cannot discard occupied map bag")
-	check(inv.move_item_to_storage(handle,str(pocket.storage_id)),"map back to pocket")
-	check(inv.unequip_storage_item("backpack",str(pocket.storage_id)),"empty bag can be removed")
+	check(inv.move_item_to_storage(handle,"traveler_wallet"),"move map into the wallet")
+	check(not map_handle().is_empty() and not map_tab().disabled,"map carried in the wallet stays readable")
+	check(inv.move_item_to_storage(handle,str(pocket.storage_id)),"return map to the main inventory")
+	check(not map_handle().is_empty() and not map_tab().disabled,"main inventory grants access again")
+	check(inv.configure_storage([{ "id":str(pocket.storage_id), "kind":"pocket", "capacity":6 }]),"narrow to a six-cell pocket for the full-inventory case")
 	groups += 1
 
 	tap(map_tab())
@@ -178,7 +163,6 @@ func _run() -> void:
 	menu.close_menu()
 	groups += 1
 
-	inv.remove_item("traveler_backpack")
 	for i in 6: check(inv.add_item("iron_sword"),"fill pocket "+str(i))
 	await settle(24)
 	var before := invariant()
@@ -202,7 +186,7 @@ func _run() -> void:
 	check(player.input_enabled,"control restored after map tests")
 	level.queue_free()
 	await settle()
-	check(groups == 10,"all ten scenario groups completed")
+	check(groups == 9,"all nine scenario groups completed (bag group removed, D-057)")
 	if failures.is_empty(): print("ASHBOUND_PHYSICAL_MAP_OK groups=",groups)
 	else: printerr("ASHBOUND_PHYSICAL_MAP_FAILED count=",failures.size())
 	quit(0 if failures.is_empty() else 1)

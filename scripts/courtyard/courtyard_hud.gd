@@ -8,9 +8,12 @@ signal interact_pressed()
 signal attack_pressed()
 signal restart_pressed()
 signal run_changed(enabled: bool)
+## JUMP-01: hidden unless a level shows it (the world, on a phone).
+signal jump_pressed()
 
 const MIN_SIZE := Vector2(960, 540)
 const ROOT_RES := Vector2(1920, 1080)
+const UI_THEME := preload("res://assets/ui/ashbound_ui.tres")
 
 @export var force_touch_controls: bool = false
 
@@ -22,8 +25,11 @@ var _run_enabled := false
 var _touch_move_index := -1
 var _touch_attack_index := -1
 var _touch_run_index := -1
-var _suppress_mouse_until_ms := 0
 var _message_visible := true
+const MOUSE_POINTER_ID := -2
+var _focus_out := false
+var _window_focus_out := false
+var _application_paused := false
 
 # --- Ссылки на дочерние узлы (заполняются в _ready) ---
 var _root: Control
@@ -39,6 +45,7 @@ var _dpad_down: Button
 var _dpad_left: Button
 var _dpad_right: Button
 var _btn_interact: Button
+var _btn_jump: Button
 var _btn_attack: Button
 var _btn_run: Button
 var _btn_restart: Button
@@ -71,12 +78,16 @@ func _ready() -> void:
 	_btn_attack = $RootControl/BottomRight/VBox/AttackButton
 	_btn_run = $RootControl/BottomRight/VBox/RunButton
 	_btn_restart = $RootControl/TopRightPanel/RestartButton
+	_btn_jump = Button.new()
+	_btn_jump.name = "JumpButton"
+	_btn_jump.visible = false
+	$RootControl.add_child(_btn_jump)
 
 	# Текст, который получает из Localization, не должен повторно
 	# автопереводиться (иначе ключ превратится в «перевод» самого себя).
 	for n in [_objective_label, _subtitle_label, _legend_label, _prompt_label,
 			_speaker_label, _message_text,
-			_btn_interact, _btn_attack, _btn_run, _btn_restart]:
+			_btn_interact, _btn_attack, _btn_run, _btn_restart, _btn_jump]:
 		n.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 
 	_refresh_localized_texts()
@@ -94,13 +105,14 @@ func _ready() -> void:
 		_legend_label.position = Vector2(0, 320)
 
 	_apply_styles()
+	_btn_run.draw.connect(_draw_run_marker)
 
-	# Кнопки: мышь (ПК) — button_down/button_up, тач обрабатывается в _input.
+	# One pointer path owns both real mouse and touch; GUI must not toggle twice.
 	for b in _all_buttons():
 		b.focus_mode = Control.FOCUS_NONE
 		b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-		b.button_down.connect(_on_button_down.bind(b))
-		b.button_up.connect(_on_button_up.bind(b))
+	for b in [_dpad_up, _dpad_down, _dpad_left, _dpad_right, _btn_attack, _btn_run]:
+		b.toggle_mode = true
 
 	_message_panel.gui_input.connect(_on_message_gui_input)
 
@@ -114,57 +126,13 @@ func _ready() -> void:
 
 
 func _all_buttons() -> Array[Button]:
-	return [_dpad_up, _dpad_down, _dpad_left, _dpad_right, _btn_interact, _btn_attack, _btn_run, _btn_restart]
+	return [_dpad_up, _dpad_down, _dpad_left, _dpad_right, _btn_interact, _btn_attack, _btn_run, _btn_restart, _btn_jump]
 
 
 func _apply_styles() -> void:
-	var charcoal := Color(0.13, 0.14, 0.16, 0.92)
-	var gold := Color(0.72, 0.58, 0.32)
-	var body := Color(0.93, 0.90, 0.84)
-
-	var panel_style := StyleBoxFlat.new()
-	panel_style.bg_color = charcoal
-	panel_style.border_width_left = 1
-	panel_style.border_width_top = 1
-	panel_style.border_width_right = 1
-	panel_style.border_width_bottom = 1
-	panel_style.border_color = gold
-	panel_style.set_corner_radius_all(6)
-	panel_style.content_margin_left = 14.0
-	panel_style.content_margin_top = 10.0
-	panel_style.content_margin_right = 14.0
-	panel_style.content_margin_bottom = 10.0
-
-	for p in [$RootControl/TopLeftPanel, $RootControl/MessagePanel]:
-		p.add_theme_stylebox_override("panel", panel_style)
-
-	var btn_style := StyleBoxFlat.new()
-	btn_style.bg_color = Color(0.17, 0.18, 0.21, 0.95)
-	btn_style.border_width_left = 1
-	btn_style.border_width_top = 1
-	btn_style.border_width_right = 1
-	btn_style.border_width_bottom = 1
-	btn_style.border_color = gold
-	btn_style.set_corner_radius_all(8)
-	btn_style.content_margin_left = 12.0
-	btn_style.content_margin_top = 8.0
-	btn_style.content_margin_right = 12.0
-	btn_style.content_margin_bottom = 8.0
-
-	var btn_hover := btn_style.duplicate()
-	btn_hover.bg_color = Color(0.22, 0.23, 0.27, 0.95)
-
-	var btn_pressed := btn_style.duplicate()
-	btn_pressed.bg_color = Color(0.28, 0.26, 0.22, 1.0)
-
-	for b in _all_buttons():
-		b.add_theme_stylebox_override("normal", btn_style)
-		b.add_theme_stylebox_override("hover", btn_hover)
-		b.add_theme_stylebox_override("pressed", btn_pressed)
-		b.add_theme_color_override("font_color", body)
-		b.add_theme_color_override("font_hover_color", body)
-		b.add_theme_color_override("font_pressed_color", body)
-		b.add_theme_font_size_override("font_size", 30)
+	_root.theme = UI_THEME
+	var gold: Color = (UI_THEME.get_stylebox("normal", "Button") as StyleBoxFlat).border_color
+	var body := UI_THEME.get_color("font_color", "Button")
 
 	# Заголовок: приглушённое золото, разрядка букв.
 	var title := $RootControl/TopLeftPanel/VBox/TitleLabel
@@ -228,9 +196,6 @@ func reset_controls() -> void:
 	_touch_attack_index = -1
 	_touch_run_index = -1
 	_tracked_touches.clear()
-	# Рестарт синхронно очищает трек-состояние — не даём тачу рестарта
-	# породить дублирующий эмулированный клик мышью.
-	_suppress_mouse_until_ms = Time.get_ticks_msec() + 350
 	if not is_node_ready():
 		return
 	_set_dpad_pressed(false)
@@ -265,7 +230,9 @@ func _refresh_localized_texts() -> void:
 	if _btn_restart:
 		_btn_restart.text = Localization.text("UI_RESTART")
 	if _btn_run:
-		_btn_run.text = Localization.text("UI_ACTION_RUN" if _run_enabled else "UI_ACTION_WALK")
+		_btn_run.text = Localization.text("UI_ACTION_RUN")
+	if _btn_jump:
+		_btn_jump.text = Localization.text("UI_ACTION_JUMP")
 	if _speaker_label:
 		_speaker_label.text = Localization.text(_speaker_key) if not _speaker_key.is_empty() else ""
 	# Обновляем текст открытого сообщения; закрытое не открываем.
@@ -280,11 +247,35 @@ func _deep_copy_dict(d: Dictionary) -> Dictionary:
 # ---------------------------------------------------------------- Ввод
 
 func _notification(what: int) -> void:
-	if what == NOTIFICATION_APPLICATION_FOCUS_OUT and is_node_ready():
+	if not is_node_ready() or not is_inside_tree() or is_queued_for_deletion():
+		return
+	match what:
+		NOTIFICATION_APPLICATION_FOCUS_OUT: _focus_out = true
+		NOTIFICATION_APPLICATION_FOCUS_IN: _focus_out = false
+		NOTIFICATION_WM_WINDOW_FOCUS_OUT: _window_focus_out = true
+		NOTIFICATION_WM_WINDOW_FOCUS_IN: _window_focus_out = false
+		NOTIFICATION_APPLICATION_PAUSED: _application_paused = true
+		NOTIFICATION_APPLICATION_RESUMED: _application_paused = false
+	if what in [NOTIFICATION_PAUSED, NOTIFICATION_APPLICATION_FOCUS_OUT,
+			NOTIFICATION_WM_WINDOW_FOCUS_OUT, NOTIFICATION_APPLICATION_PAUSED]:
 		reset_controls()
 
 
+func _input_available() -> bool:
+	return visible and _root.is_visible_in_tree() and can_process() \
+		and not _focus_out and not _window_focus_out and not _application_paused
+
+
+func _button_available(b: Button) -> bool:
+	return b.is_visible_in_tree() and not b.disabled
+
+
 func _input(event: InputEvent) -> void:
+	if not _input_available():
+		# Do not let native Button GUI toggle while this HUD is inactive.
+		if event is InputEventMouseButton and _point_in_owned_control(event.position):
+			get_viewport().set_input_as_handled()
+		return
 	# Закрытие диалога: interact или Escape (не эмуляция), либо реальный
 	# левый клик мыши при захваченном курсоре.
 	if _message_visible and _message_panel.is_visible_in_tree():
@@ -298,7 +289,7 @@ func _input(event: InputEvent) -> void:
 					return
 		elif event is InputEventMouseButton:
 			var mb := event as InputEventMouseButton
-			if mb.device != InputEvent.DEVICE_ID_EMULATION and mb.pressed \
+			if mb.device != InputEvent.DEVICE_ID_EMULATION and mb.pressed and not mb.canceled \
 					and mb.button_index == MOUSE_BUTTON_LEFT \
 					and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 				clear_message()
@@ -309,9 +300,26 @@ func _input(event: InputEvent) -> void:
 	# чтобы GUI button_down не переключал состояние раньше/позже тача.
 	if event is InputEventMouseButton:
 		var mb := event as InputEventMouseButton
-		if mb.device == InputEvent.DEVICE_ID_EMULATION and _point_in_owned_control(_to_root_position(mb.position)):
-			get_viewport().set_input_as_handled()
+		var pos := _to_root_position(mb.position)
+		if mb.device == InputEvent.DEVICE_ID_EMULATION:
+			if _point_in_owned_control(pos):
+				get_viewport().set_input_as_handled()
 			return
+		if mb.button_index != MOUSE_BUTTON_LEFT:
+			return
+		var owned := _is_tracked(MOUSE_POINTER_ID) or _point_in_owned_control(pos)
+		if owned:
+			if mb.canceled or not mb.pressed:
+				_on_touch_up(MOUSE_POINTER_ID)
+			else:
+				_on_touch_down(pos, MOUSE_POINTER_ID)
+			get_viewport().set_input_as_handled()
+		return
+	if event is InputEventMouseMotion and event.device != InputEvent.DEVICE_ID_EMULATION:
+		if _is_tracked(MOUSE_POINTER_ID):
+			_drag_pointer(_to_root_position(event.position), MOUSE_POINTER_ID)
+			get_viewport().set_input_as_handled()
+		return
 	if event is InputEventScreenTouch:
 		var t := event as InputEventScreenTouch
 		var pos := _to_root_position(t.position)
@@ -319,7 +327,7 @@ func _input(event: InputEvent) -> void:
 		# синхронно очищает трек-состояние, поэтому was_tracked после
 		# обработки мог бы потерять обработанный press.
 		var was_tracked := _is_tracked(t.index)
-		if t.pressed:
+		if t.pressed and not t.canceled:
 			was_tracked = was_tracked or _point_in_owned_control(pos)
 			_on_touch_down(pos, t.index)
 		else:
@@ -329,19 +337,16 @@ func _input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 	elif event is InputEventScreenDrag:
 		var d := event as InputEventScreenDrag
-		if d.index == _touch_move_index:
-			_update_move_from_point(_to_root_position(d.position))
-		elif d.index == _touch_attack_index:
-			# Палец удара ушёл за пределы — считаем отпусканием.
-			if not _point_in_attack(_to_root_position(d.position)):
-				_release_attack()
+		_drag_pointer(_to_root_position(d.position), d.index)
 		if _is_tracked(d.index):
 			get_viewport().set_input_as_handled()
 
 
-func _unhandled_input(event: InputEvent) -> void:
-	# Клавиатура остаётся в общем потоке; здесь только защита от дублей мыши.
-	pass
+func _drag_pointer(pos: Vector2, index: int) -> void:
+	if index == _touch_move_index:
+		_update_move_from_point(pos)
+	elif index == _touch_attack_index and not _point_in_attack(pos):
+		_release_attack()
 
 
 # ---------------------------------------------------------------- Тач-логика
@@ -359,32 +364,30 @@ func _is_tracked(index: int) -> bool:
 func _track(index: int) -> void:
 	if not _tracked_touches.has(index):
 		_tracked_touches.append(index)
-	_suppress_mouse_until_ms = Time.get_ticks_msec() + 350
 
 
 func _untrack(index: int) -> void:
 	_tracked_touches.erase(index)
-	_suppress_mouse_until_ms = Time.get_ticks_msec() + 350
 
 
 func _point_in_dpad(p: Vector2) -> int:
-	if _dpad_up.is_visible_in_tree() and _dpad_up.get_global_rect().has_point(p):
+	if _button_available(_dpad_up) and _dpad_up.get_global_rect().has_point(p):
 		return Dir.UP
-	if _dpad_down.is_visible_in_tree() and _dpad_down.get_global_rect().has_point(p):
+	if _button_available(_dpad_down) and _dpad_down.get_global_rect().has_point(p):
 		return Dir.DOWN
-	if _dpad_left.is_visible_in_tree() and _dpad_left.get_global_rect().has_point(p):
+	if _button_available(_dpad_left) and _dpad_left.get_global_rect().has_point(p):
 		return Dir.LEFT
-	if _dpad_right.is_visible_in_tree() and _dpad_right.get_global_rect().has_point(p):
+	if _button_available(_dpad_right) and _dpad_right.get_global_rect().has_point(p):
 		return Dir.RIGHT
 	return Dir.NONE
 
 
 func _point_in_attack(p: Vector2) -> bool:
-	return _btn_attack.is_visible_in_tree() and _btn_attack.get_global_rect().has_point(p)
+	return _button_available(_btn_attack) and _btn_attack.get_global_rect().has_point(p)
 
 
 func _point_in_run(p: Vector2) -> bool:
-	return _btn_run.is_visible_in_tree() and _btn_run.get_global_rect().has_point(p)
+	return _button_available(_btn_run) and _btn_run.get_global_rect().has_point(p)
 
 
 func _point_in_owned_control(p: Vector2) -> bool:
@@ -401,6 +404,8 @@ func _point_in_owned_control(p: Vector2) -> bool:
 
 
 func _on_touch_down(pos: Vector2, index: int) -> void:
+	if _is_tracked(index):
+		return
 	var dir := _point_in_dpad(pos)
 	if dir != Dir.NONE and _touch_move_index == -1:
 		_touch_move_index = index
@@ -423,16 +428,20 @@ func _on_touch_down(pos: Vector2, index: int) -> void:
 		_track(index)
 		_toggle_run_mode()
 		return
-	if _btn_interact.is_visible_in_tree() and _btn_interact.get_global_rect().has_point(pos):
+	if _button_available(_btn_interact) and _btn_interact.get_global_rect().has_point(pos):
 		_track(index)
 		if _message_visible:
 			clear_message()
 		else:
 			interact_pressed.emit()
 		return
-	if _btn_restart.is_visible_in_tree() and _btn_restart.get_global_rect().has_point(pos):
+	if _button_available(_btn_restart) and _btn_restart.get_global_rect().has_point(pos):
 		_track(index)
 		restart_pressed.emit()
+		return
+	if _button_available(_btn_jump) and _btn_jump.get_global_rect().has_point(pos):
+		_track(index)
+		jump_pressed.emit()
 		return
 	if _message_visible and _message_panel.get_global_rect().has_point(pos):
 		_track(index)
@@ -473,9 +482,9 @@ func _nearest_dpad_dir(p: Vector2) -> int:
 	var best := -1.0
 	var result := Dir.NONE
 	for b in _all_buttons():
-		if b == _btn_interact or b == _btn_attack or b == _btn_run or b == _btn_restart:
+		if b == _btn_interact or b == _btn_attack or b == _btn_run or b == _btn_restart or b == _btn_jump:
 			continue
-		if not b.is_visible_in_tree():
+		if not _button_available(b):
 			continue
 		var r := b.get_global_rect()
 		if r.grow(40).has_point(p):
@@ -500,7 +509,7 @@ func _dir_of_button(b: Button) -> int:
 
 func _set_dpad_pressed(pressed: bool, dir: int = -1) -> void:
 	for b in _all_buttons():
-		if b == _btn_interact or b == _btn_attack or b == _btn_run or b == _btn_restart:
+		if b == _btn_interact or b == _btn_attack or b == _btn_run or b == _btn_restart or b == _btn_jump:
 			continue
 		b.button_pressed = pressed and (dir == -1 or _dir_of_button(b) == dir)
 
@@ -519,42 +528,6 @@ func _emit_move() -> void:
 	move_changed.emit(v)
 
 
-# ---------------------------------------------------------------- Кнопки (мышь/ПК)
-
-func _on_button_down(b: Button) -> void:
-	if Time.get_ticks_msec() < _suppress_mouse_until_ms:
-		return
-	match b:
-		_dpad_up, _dpad_down, _dpad_left, _dpad_right:
-			var dir := _dir_of_button(b)
-			_held_dir = dir
-			_set_dpad_pressed(true, dir)
-			_emit_move()
-		_btn_interact:
-			interact_pressed.emit()
-		_btn_attack:
-			attack_pressed.emit()
-		_btn_run:
-			# Единственная точка переключения режима: эмулированные
-			# мышиные события не должны переключать его второй раз.
-			if _touch_run_index == -1:
-				_toggle_run_mode()
-		_btn_restart:
-			restart_pressed.emit()
-
-
-func _on_button_up(b: Button) -> void:
-	# Эмулированный mouse release от второго пальца не должен сбивать
-	# движение, удерживаемое первым (и наоборот).
-	if Time.get_ticks_msec() < _suppress_mouse_until_ms or _touch_move_index != -1:
-		return
-	if b == _dpad_up or b == _dpad_down or b == _dpad_left or b == _dpad_right:
-		if _held_dir == _dir_of_button(b):
-			_held_dir = Dir.NONE
-			_set_dpad_pressed(false)
-			_emit_move()
-
-
 # ---------------------------------------------------------------- Режим бега
 
 func _toggle_run_mode() -> void:
@@ -566,10 +539,20 @@ func _set_run_mode(enabled: bool, emit_change: bool) -> void:
 		return
 	_run_enabled = enabled
 	if is_node_ready() and _btn_run:
-		_btn_run.text = Localization.text("UI_ACTION_RUN" if enabled else "UI_ACTION_WALK")
+		_btn_run.text = Localization.text("UI_ACTION_RUN")
 		_btn_run.button_pressed = enabled
+		_btn_run.queue_redraw()
 	if emit_change:
 		run_changed.emit(enabled)
+
+
+func _draw_run_marker() -> void:
+	if not _run_enabled or not is_instance_valid(_btn_run):
+		return
+	# Geometry keeps the selected marker independent of font glyph coverage.
+	var x := _btn_run.size.x - 26.0
+	var ink := _btn_run.get_theme_color("font_disabled_color" if _btn_run.disabled else "font_color")
+	_btn_run.draw_polyline(PackedVector2Array([Vector2(x - 7, 23), Vector2(x - 2, 28), Vector2(x + 8, 16)]), ink, 2.0, true)
 
 
 func _on_message_gui_input(event: InputEvent) -> void:

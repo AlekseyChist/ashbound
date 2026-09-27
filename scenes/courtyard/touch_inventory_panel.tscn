@@ -114,44 +114,6 @@ theme_override_constants/icon_max_width = 100
 theme_override_font_sizes/font_size = 28
 text = "Weapon Slot"
 
-[node name="BackpackColumn" type="VBoxContainer" parent="Margin/RootVBox/Body/Left/EquipmentGrid"]
-layout_mode = 2
-
-[node name="BackpackLabel" type="Label" parent="Margin/RootVBox/Body/Left/EquipmentGrid/BackpackColumn"]
-unique_name_in_owner = true
-layout_mode = 2
-mouse_filter = 2
-theme_override_font_sizes/font_size = 28
-text = "Backpack"
-
-[node name="BackpackSlot" type="Button" parent="Margin/RootVBox/Body/Left/EquipmentGrid/BackpackColumn"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(180, 140)
-layout_mode = 2
-expand_icon = true
-theme_override_constants/icon_max_width = 100
-theme_override_font_sizes/font_size = 28
-text = "Backpack Slot"
-
-[node name="PouchColumn" type="VBoxContainer" parent="Margin/RootVBox/Body/Left/EquipmentGrid"]
-layout_mode = 2
-
-[node name="PouchLabel" type="Label" parent="Margin/RootVBox/Body/Left/EquipmentGrid/PouchColumn"]
-unique_name_in_owner = true
-layout_mode = 2
-mouse_filter = 2
-theme_override_font_sizes/font_size = 28
-text = "Pouch"
-
-[node name="PouchSlot" type="Button" parent="Margin/RootVBox/Body/Left/EquipmentGrid/PouchColumn"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(180, 140)
-layout_mode = 2
-expand_icon = true
-theme_override_constants/icon_max_width = 100
-theme_override_font_sizes/font_size = 28
-text = "Pouch Slot"
-
 [node name="Right" type="VBoxContainer" parent="Margin/RootVBox/Body"]
 layout_mode = 2
 size_flags_horizontal = 3

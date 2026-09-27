@@ -1,0 +1,34 @@
+{
+  "version": "B-1.1",
+  "status": "proposal-awaiting-owner-review",
+  "date": "2026-09-24",
+  "extent_m": [225,175],
+  "axes": "x east, y south; local proposal coordinates, not Godot world coordinates",
+  "source": "../starter-village-concepts-v1/concept-b.svg",
+  "models": {
+    "H01": {"width":6,"depth":8,"door_x":-1.25,"door_width":1.15,"front_clearance":3.0},
+    "W01": {"width":7,"depth":9,"door_x":0.5,"door_width":2.4,"front_clearance":3.5},
+    "B01": {"width":8,"depth":10,"door_x":0,"door_width":3,"front_clearance":4.0}
+  },
+  "buildings": [
+    {"id":"01","model":"H01","name":"Первый дом","x":73.5,"y":96.5,"angle":-90,"phase":1,"elevation_m":0.0,"yard":[65,88,17,18],"gate":[83.1875,97.625],"use":"Жилой двор: огород за домом, дрова под навесом. Роль дома начала игры пока предложение."},
+    {"id":"02","model":"H01","name":"Жилой двор","x":53.75,"y":81,"angle":165,"phase":2,"elevation_m":0.7,"yard":[45,74,17,16],"gate":[55.38,72.09],"use":"Резерв жилого дома. Огород с южной стороны; фасад смотрит к улице."},
+    {"id":"03","model":"H01","name":"Жилой двор","x":80.25,"y":70,"angle":8,"phase":2,"elevation_m":1.2,"yard":[72,63,17,17],"gate":[78.1,80.6],"use":"Резерв жилого дома на небольшом подъёме. Двор связывается с изгибом улицы."},
+    {"id":"04","model":"W01","name":"Мастерская","x":108.25,"y":75.75,"angle":-8,"phase":1,"elevation_m":0.4,"yard":[99,69,22,17],"gate":[110.1,88.5],"use":"Рабочая площадка, поленница и проход к широким дверям. Шумная работа вынесена из жилого двора."},
+    {"id":"05","model":"H01","name":"Верхний двор","x":132,"y":57,"angle":-90,"phase":2,"elevation_m":2.0,"yard":[124,49,18,17],"gate":[145.15,57],"use":"Резерв верхнего жилого двора. Сдвинут от прежнего условного значка, чтобы освободить дорогу и вход."},
+    {"id":"06","model":"H01","name":"Двор у рощи","x":131.25,"y":102.5,"angle":-80,"phase":2,"elevation_m":0.8,"yard":[124,94,16,18],"gate":[141.75,103],"use":"Резерв жилого двора, вход с пешеходной петли. Роща разделяет виды и не перекрывает обход."},
+    {"id":"07","model":"H01","name":"Нижний двор","x":143,"y":129,"angle":90,"phase":2,"elevation_m":-0.2,"yard":[136,121,15,17],"gate":[134.5,126.4],"use":"Резерв нижнего двора. Отодвинут от тропы под реальный размер дома и свободный вход."},
+    {"id":"08","model":"B01","name":"Общий амбар","x":92.5,"y":143,"angle":90,"phase":1,"elevation_m":-0.5,"yard":[83,136,21,17],"gate":[80.18,143],"use":"Хозяйственный конец улицы. Разгрузочная площадка 8 × 10 м; обход не проходит между створками."}
+  ],
+  "roads": [
+    {"id":"street","name":"Улица","width":3.2,"points":[[0,57.25],[33.5,67.25],[59.5,73],[82.75,82.5],[111.25,88.75],[131.75,79],[145.75,56],[157,39.75],[187,20.75],[198,0]]},
+    {"id":"barn-lane","name":"К амбару","width":3.2,"points":[[82.75,82.5],[83.25,102.5],[77.25,122.5],[80,141],[83,175]]},
+    {"id":"loop","name":"Пешая петля","width":1.8,"points":[[77.25,122.5],[100,130],[122.5,138.75],[134.5,126.4],[137.5,120.25],[141.75,103],[143.25,96.75],[131.75,79]]},
+    {"id":"cave","name":"К ранней пещере","width":1.8,"points":[[33.5,67.25],[37.25,50],[27.5,34.25],[17.25,13]]}
+  ],
+  "first_street":[[80.18,143],[80,141],[77.25,122.5],[83.25,102.5],[82.75,82.5],[111.25,88.75]],
+  "well":{"x":95.25,"y":93,"radius":1.0,"apron_radius":3.5,"gate":[95.25,85.24],"elevation_m":0.2},
+  "forest_polygons":[[[0,0],[177.5,0],[172.5,29.5],[141,43],[113,50.25],[84.75,55.25],[49.75,54.5],[0,40.5]],[[0,70],[32,76],[40,96],[45,118],[64,136],[64,175],[0,175]],[[184,36.75],[225,30],[225,175],[104.75,175],[109.75,153.5],[142.5,144],[153,125],[158,101],[174.5,91]],[[96,104.5],[106.75,101.5],[117.25,112.25],[120.75,122.25],[105.75,130],[91.5,124.75]]],
+  "height_profile":[{"name":"Амбар","gate":[80.18,143],"height_m":-0.5},{"name":"Первый дом","gate":[83.1875,97.625],"height_m":0},{"name":"Колодец","gate":[95.25,85.24],"height_m":0.2},{"name":"Мастерская","gate":[110.1,88.5],"height_m":0.4},{"name":"Верхний выход","gate":[145.75,56],"height_m":3}],
+  "proposal_notes":["Six homes plus workshop and barn remain a proposal, not approved population or quest roles.","Three existing models are the first proposed implementation slice. Five homes are reserves, not new production tasks.","Road width and approach checks concern schematic walls; roofs, stairs, fences and final terrain require 3D validation.","The ambient street painting is a prior illustration, not a rendering of these exact coordinates."]
+}

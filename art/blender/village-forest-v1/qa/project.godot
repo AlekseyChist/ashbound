@@ -1,0 +1,5 @@
+config_version=5
+[application]
+config/name="Forest Kit QA"
+[rendering]
+renderer/rendering_method="mobile"

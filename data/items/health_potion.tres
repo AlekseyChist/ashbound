@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/items/item_data.gd" id="1_8kas0"]
+
+[resource]
+script = ExtResource("1_8kas0")
+id = "health_potion"
+type = 2
+name = "Зелье здоровья"
+description = "Восстанавливает 50 здоровья."
+value = 25
+stackable = true
+max_stack = 10
+effect = {
+"heal": 50
+}
+category = "consumable"
+subtype = "potion"

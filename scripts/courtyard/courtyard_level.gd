@@ -4,17 +4,26 @@ extends Node3D
 
 signal journal_changed()
 
+## Stage indices of data/quests/courtyard_lesson.tres (the saved "state"); kept for saves and checks.
 enum State { MEET_HOST, FETCH_WOOD, RETURN_WOOD, MEET_GUARD, PRACTICE, REPORT, DONE }
 
 const FACING_DOT_MIN := 0.2
-const MAX_DUMMY_HITS := 3
 const PersistenceScript = preload("res://scripts/courtyard/courtyard_persistence.gd")
+const LessonQuest: QuestData = preload("res://data/quests/courtyard_lesson.tres")
 
 @export var interact_radius: float = 2.2
 @export var strike_range: float = 1.8
-var state: int = State.MEET_HOST
-var dummy_hits: int = 0
-var reward_claimed: bool = false
+## The lesson runs from data (PLAYER-WORLD-01B); these three stay the save format.
+var quest := QuestTracker.new(LessonQuest)
+var state: int:
+	get: return quest.stage_index
+	set(value): quest.stage_index = value
+var dummy_hits: int:
+	get: return int(quest.counters.get(&"dummy_hits", 0))
+	set(value): quest.counters[&"dummy_hits"] = value
+var reward_claimed: bool:
+	get: return bool(quest.flags.get(&"reward_claimed", false))
+	set(value): quest.flags[&"reward_claimed"] = value
 
 @onready var _player: CharacterBody3D = $Actors/Player
 @onready var _innkeeper: Node3D = $Actors/Innkeeper
@@ -252,16 +261,36 @@ func _on_interact_requested() -> void:
 
 
 func _on_point_interacted(point: Node) -> void:
-	match point.interaction_id:
-		"innkeeper":
-			_message_source = point as Node3D
-			_on_innkeeper_interact()
-		"woodpile":
-			_message_source = point as Node3D
-			_on_woodpile_interact()
-		"watchman":
-			_message_source = point as Node3D
-			_on_watchman_interact()
+	if quest.line_for(StringName(point.interaction_id)) == null:
+		return
+	_message_source = point as Node3D
+	talk_to(StringName(point.interaction_id))
+
+
+## One exchange with a speaker of the lesson: effects, the line, then flag/stage from the data.
+func talk_to(speaker: StringName) -> bool:
+	var line: DialogueLineData = quest.line_for(speaker)
+	if line == null:
+		return false
+	for effect in line.effects:
+		_run_quest_effect(effect)
+	_hud.show_message(line.name_key, line.line_key)
+	if quest.apply_line(line):
+		_refresh_objective()
+	return true
+
+
+func _run_quest_effect(effect: StringName) -> void:
+	match effect:
+		&"hide_woodpile_label":
+			if _woodpile.has_node("Label3D"):
+				_woodpile.get_node("Label3D").visible = false
+		&"complete_guard_practice":
+			var progression: Node = _player.get_node_or_null("Progression") if _player != null else null
+			if progression != null and progression.has_method("complete_guard_practice"):
+				progression.call("complete_guard_practice")
+		_:
+			push_error("courtyard: unknown quest effect %s" % effect)
 
 
 # --- Удары ----------------------------------------------------------------
@@ -271,7 +300,7 @@ func _on_hud_attack() -> void:
 
 
 func _eligible_attack_target() -> Node3D:
-	if state != State.PRACTICE:
+	if not quest.counts(&"dummy_hits"):
 		return null
 	var dummy: Node3D = _get_dummy()
 	if dummy == null:
@@ -293,12 +322,12 @@ func _on_strike_requested() -> void:
 	var dummy: Node3D = _eligible_attack_target()
 	if dummy == null:
 		return
-	dummy_hits = mini(dummy_hits + 1, MAX_DUMMY_HITS)
+	var reached: bool = quest.add_count(&"dummy_hits")
 	_flash_dummy()
 	_refresh_objective()
 	print("courtyard: strike hit %d/3" % dummy_hits)
-	if dummy_hits >= MAX_DUMMY_HITS:
-		_apply_state(State.REPORT)
+	if reached and quest.finish_counter():
+		_refresh_objective()
 
 
 func _strike_line_clear(from: Vector3, dummy: Node3D) -> bool:
@@ -361,33 +390,9 @@ func _apply_state(s: int) -> void:
 
 
 func get_journal_entry() -> Dictionary:
-	var entry := {
-		"id": "courtyard_lesson",
-		"title_key": "MENU_JOURNAL_COURTYARD",
-		"objective_key": "",
-		"params": {},
-		"completed": false,
-	}
-	match state:
-		State.MEET_HOST:
-			entry.objective_key = "COURTYARD_OBJECTIVE_MEET_HOST"
-		State.FETCH_WOOD:
-			entry.objective_key = "COURTYARD_OBJECTIVE_FETCH_WOOD"
-		State.RETURN_WOOD:
-			entry.objective_key = "COURTYARD_OBJECTIVE_RETURN_WOOD"
-		State.MEET_GUARD:
-			entry.objective_key = "COURTYARD_OBJECTIVE_MEET_GUARD"
-		State.PRACTICE:
-			entry.objective_key = "COURTYARD_OBJECTIVE_PRACTICE"
-			entry.params = {"hits": dummy_hits, "total": MAX_DUMMY_HITS}
-		State.REPORT:
-			entry.objective_key = "COURTYARD_OBJECTIVE_REPORT"
-		State.DONE:
-			entry.objective_key = "COURTYARD_OBJECTIVE_DONE"
-			entry.completed = true
-		_:
-			return {}
-	return entry
+	if state < 0 or state >= LessonQuest.stages.size():
+		return {}
+	return quest.journal_entry()
 
 func _refresh_objective() -> void:
 	var entry := get_journal_entry()
@@ -395,54 +400,6 @@ func _refresh_objective() -> void:
 		return
 	_hud.set_objective(entry.objective_key, entry.params)
 	journal_changed.emit()
-
-
-func _on_innkeeper_interact() -> void:
-	match state:
-		State.MEET_HOST:
-			_hud.show_message("COURTYARD_NAME_INNKEEPER", "COURTYARD_DIALOGUE_HOST_JOB")
-			_apply_state(State.FETCH_WOOD)
-		State.RETURN_WOOD:
-			if not reward_claimed:
-				reward_claimed = true
-				_hud.show_message("COURTYARD_NAME_INNKEEPER", "COURTYARD_DIALOGUE_HOST_REWARD")
-				_apply_state(State.MEET_GUARD)
-			else:
-				_hud.show_message("COURTYARD_NAME_INNKEEPER", "COURTYARD_DIALOGUE_HOST_ACCEPTED")
-		State.FETCH_WOOD:
-			_hud.show_message("COURTYARD_NAME_INNKEEPER", "COURTYARD_DIALOGUE_HOST_REMIND")
-		_:
-			_hud.show_message("COURTYARD_NAME_INNKEEPER", "COURTYARD_DIALOGUE_HOST_AFTER")
-
-
-func _on_woodpile_interact() -> void:
-	match state:
-		State.FETCH_WOOD:
-			_hud.show_message("", "COURTYARD_DIALOGUE_WOOD_TAKEN")
-			if _woodpile.has_node("Label3D"):
-				_woodpile.get_node("Label3D").visible = false
-			_apply_state(State.RETURN_WOOD)
-		State.MEET_HOST:
-			_hud.show_message("", "COURTYARD_DIALOGUE_WOOD_BEFORE")
-		_:
-			_hud.show_message("", "COURTYARD_DIALOGUE_WOOD_ALREADY")
-
-
-func _on_watchman_interact() -> void:
-	match state:
-		State.MEET_GUARD:
-			_hud.show_message("COURTYARD_NAME_WATCHMAN", "COURTYARD_DIALOGUE_GUARD_LESSON")
-			_apply_state(State.PRACTICE)
-		State.REPORT:
-			var _progression: Node = _player.get_node_or_null("Progression") if _player != null else null
-			if _progression != null and _progression.has_method("complete_guard_practice"):
-				_progression.call("complete_guard_practice")
-			_hud.show_message("COURTYARD_NAME_WATCHMAN", "COURTYARD_DIALOGUE_GUARD_REPORT")
-			_apply_state(State.DONE)
-		State.PRACTICE:
-			_hud.show_message("COURTYARD_NAME_WATCHMAN", "COURTYARD_DIALOGUE_GUARD_REMIND")
-		_:
-			_hud.show_message("COURTYARD_NAME_WATCHMAN", "COURTYARD_DIALOGUE_GUARD_OTHER")
 
 
 # --- Сброс ----------------------------------------------------------------
@@ -453,9 +410,7 @@ func reset_lesson() -> void:
 	var inventory_menu: Node = get_node_or_null("InventoryMenu")
 	if inventory_menu != null and inventory_menu.has_method("close_menu"):
 		inventory_menu.call("close_menu")
-	state = State.MEET_HOST
-	dummy_hits = 0
-	reward_claimed = false
+	quest.reset()
 	_current_target = null
 	_current_attack_target = null
 	_pending_interact = false

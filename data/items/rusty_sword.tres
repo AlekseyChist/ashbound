@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://scripts/items/item_data.gd" id="1_d53r6"]
+
+[resource]
+script = ExtResource("1_d53r6")
+id = "rusty_sword"
+type = 0
+name = "Ржавый меч"
+description = "Едва держится вместе, но лучше, чем ничего."
+value = 5
+slot = "weapon"
+icon = "res://assets/textures/items/rusty_sword.png"
+stats = {
+"damage": 8
+}
+category = "weapon"
+subtype = "sword"

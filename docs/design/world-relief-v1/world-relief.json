@@ -1,0 +1,30 @@
+{
+  "version": "0.2-proposal",
+  "status": "discussion_only_not_approved_terrain",
+  "extent_m": [2000, 2000],
+  "axes": "x east, z south, h relative to lowland outlet; not sea level",
+  "speeds_m_s": {"walk": 4.2, "run": 6.4},
+  "cities": [
+    {"id": "forest", "number": 1, "label": "Лесной город", "point": [400, 900, 110]},
+    {"id": "snow", "number": 2, "label": "Снежный город", "point": [980, 360, 310]},
+    {"id": "desert", "number": 3, "label": "Пустынный город", "point": [1650, 930, 100]},
+    {"id": "lowland", "number": 4, "label": "Город низин", "point": [1030, 1640, 12]}
+  ],
+  "start": {"label": "Возможный старт", "point": [420, 1210, 70]},
+  "pass": {"label": "Перевал", "point": [1180, 650, 260]},
+  "roads": [
+    {"id": "forest_snow", "label": "1 → 2  Лес / снежный город", "from": "forest", "to": "snow", "points": [[400,900,110],[350,750,120],[500,720,135],[440,570,160],[660,600,180],[630,470,205],[840,520,235],[820,370,265],[1050,460,290],[980,360,310]]},
+    {"id": "snow_desert", "label": "2 → 3  Перевал / сухая сторона", "from": "snow", "to": "desert", "points": [[980,360,310],[1100,480,300],[1040,650,275],[1180,650,260],[1280,520,240],[1370,680,220],[1280,820,195],[1450,870,170],[1390,1050,140],[1560,1080,115],[1650,930,100]]},
+    {"id": "desert_lowland", "label": "3 → 4  Сухая долина / низины", "from": "desert", "to": "lowland", "points": [[1650,930,100],[1770,1100,95],[1600,1340,62],[1350,1490,33],[1030,1640,12]]},
+    {"id": "lowland_forest", "label": "4 → 1  Низины / лес", "from": "lowland", "to": "forest", "points": [[1030,1640,12],[710,1550,22],[590,1360,42],[420,1210,70],[400,900,110]]},
+    {"id": "forest_desert", "label": "1 → 3  Обход через долину", "from": "forest", "to": "desert", "alternative": true, "points": [[400,900,110],[560,1060,90],[800,1140,70],[1010,1130,78],[1240,1150,92],[1470,1090,105],[1650,930,100]]}
+  ],
+  "rivers": [
+    {"id": "main", "points": [[880,480,300],[790,620,230],[740,820,140],[600,1000,85],[650,1250,50],[850,1450,22],[1030,1690,6],[1120,1990,0]]},
+    {"id": "west", "joins": "main", "points": [[350,400,260],[240,610,150],[280,800,110],[500,980,90],[600,1000,85]]},
+    {"id": "east", "joins": "main", "points": [[1350,540,210],[1450,700,160],[1550,850,120],[1720,1080,90],[1560,1320,70],[1320,1490,40],[1030,1690,6]]}
+  ],
+  "peaks": [[900,190,510],[390,230,430],[1290,430,460]],
+  "open_decisions": ["world_extent", "city_positions", "relative_heights", "faction_assignments", "jungle_or_swamp", "start_location", "streaming_boundaries"],
+  "notes": ["Road elevations are design constraints, not sampled gameplay geometry.", "Contour bands are schematic; this JSON is not a heightmap or navigation mesh.", "Travel times exclude slope speed changes, stops, combat and exploration."]
+}

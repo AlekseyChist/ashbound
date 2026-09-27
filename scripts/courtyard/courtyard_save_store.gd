@@ -8,6 +8,8 @@ var MAGIC: PackedByteArray = PackedByteArray([65, 66, 67, 83, 65, 86, 69, 49]) #
 const MIN_FILE_SIZE: int = 44
 
 var directory: String = "user://courtyard-save-v1"
+## The world save (WORLD-SAVE-01) reuses this store with its own format name and folder.
+var format_name: String = FORMAT_NAME
 var sequence: int = 0
 var active_slot: int = -1
 var blocked: bool = false
@@ -78,7 +80,7 @@ func commit(payload: Dictionary, validator: Callable) -> bool:
 		return false
 	var digest: PackedByteArray = _sha256(payload_bytes)
 	var envelope: Dictionary = {
-		"format": FORMAT_NAME,
+		"format": format_name,
 		"version": FORMAT_VERSION,
 		"sequence": next_seq,
 		"payload": payload_bytes,
@@ -198,7 +200,7 @@ func _read_slot_raw(path: String, expected_seq: int, expected_payload: Dictionar
 	if envelope.size() != 5:
 		last_error = "envelope field count"
 		return result
-	if not _is_strict(envelope, "format", FORMAT_NAME):
+	if not _is_strict(envelope, "format", format_name):
 		last_error = "bad format"
 		return result
 	if not _is_int_value(envelope, "version", FORMAT_VERSION):

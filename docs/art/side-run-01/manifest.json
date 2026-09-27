@@ -1,0 +1,10 @@
+{
+  "version": "0.19.1-side-run",
+  "base": "b2f1c8331c7368c77de212342acdd9a19bd679ef",
+  "platform": "Samsung S23 / Android 16",
+  "apkSHA256": "15c9b575eef8bcb1b7d81e5b043de5c8edc6b5c606de2f579463205008ef3712",
+  "files": {
+    "s23-motion.png": "7e501787849fceb3d5e44da02c4862fa6adf45931e721f3e9df29850b573a49a",
+    "s23-motion.mp4": "5ea760a8e99a9f5e48e1c2209934dc9e6ed176cbaa925e402758b25e64abe879"
+  }
+}

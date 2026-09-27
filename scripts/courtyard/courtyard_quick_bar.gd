@@ -65,6 +65,27 @@ func _shift_hud() -> void:
 					legend.position.y -= BAR_RESERVE
 		_hud_shifted = true
 
+## Undo _shift_hud() when a scene removes the bar (the world has no quick bar yet).
+func release_hud() -> void:
+	if not _hud_shifted or not is_instance_valid(_hud):
+		return
+	var force_touch := OS.has_feature("android") or bool(_hud.force_touch_controls)
+	var message_panel: Node = _hud.get_node_or_null("RootControl/MessagePanel")
+	if message_panel is Control:
+		message_panel.position.y += BAR_RESERVE
+	var bottom_left: Node = _hud.get_node_or_null("RootControl/BottomLeft")
+	if force_touch:
+		var bottom_right: Node = _hud.get_node_or_null("RootControl/BottomRight")
+		if bottom_left is Control:
+			bottom_left.position.y += BAR_RESERVE
+		if bottom_right is Control:
+			bottom_right.position.y += BAR_RESERVE
+	elif bottom_left != null:
+		var legend: Node = bottom_left.get_node_or_null("LegendLabel")
+		if legend is Control:
+			legend.position.y += BAR_RESERVE
+	_hud_shifted = false
+
 func _build_cells() -> void:
 	for i in range(10):
 		var btn := Button.new()
@@ -128,17 +149,22 @@ func _refresh_layout() -> void:
 	var vp := get_viewport()
 	if vp == null:
 		return
-	var viewport_size := vp.get_visible_rect().size
+	var parent := get_parent()
+	var base_size := Vector2.ZERO
+	if parent is Control:
+		base_size = (parent as Control).size
+	else:
+		base_size = vp.get_visible_rect().size
 	var total_w := 10.0 * CELL_SIZE.x + 9.0 * CELL_GAP
 	var cell_scale := 1.0
-	var max_w := viewport_size.x - 48.0
+	var max_w := base_size.x - 48.0
 	if total_w > max_w and total_w > 0.0:
 		cell_scale = max_w / total_w
 	var cell_w := CELL_SIZE.x * cell_scale
 	var gap := CELL_GAP * cell_scale
 	var bar_w := 10.0 * cell_w + 9.0 * gap
-	var start_x := (viewport_size.x - bar_w) * 0.5
-	var y := viewport_size.y - BOTTOM_MARGIN - CELL_SIZE.y * cell_scale
+	var start_x := (base_size.x - bar_w) * 0.5
+	var y := base_size.y - BOTTOM_MARGIN - CELL_SIZE.y * cell_scale
 	if cells.size() == 10:
 		for i in range(10):
 			var btn: Button = cells[i]
@@ -146,6 +172,7 @@ func _refresh_layout() -> void:
 			btn.position = Vector2(start_x + i * (cell_w + gap), y)
 			var qty: Label = btn.get_node("Qty")
 			qty.position = Vector2(cell_w - 34, CELL_SIZE.y * cell_scale - 30)
+
 
 func refresh_slots() -> void:
 	if not _setup_done or not is_instance_valid(_panel):
