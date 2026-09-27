@@ -49,11 +49,12 @@ func build(scene: Node3D) -> void:
 	surface.mesh = plane
 	surface.position = Vector3(0.0, level, (north + south) * 0.5)
 	surface.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	var material := StandardMaterial3D.new()
-	material.albedo_color = WATER
-	material.roughness = 0.12
-	material.metallic_specular = 0.6
-	surface.material_override = material
+	# WATER-01: the same living water as the rivers, still (swell instead of flow), a deeper colour.
+	var material: ShaderMaterial = scene.water_material(false) if scene.has_method("water_material") else null
+	if material != null:
+		material.set_shader_parameter("deep_colour", Color(0.05, 0.16, 0.24))
+		material.set_shader_parameter("ripple_metres", 4.0)
+		surface.material_override = material
 	add_child(surface)
 	# The map ends at its south edge; the water goes on, the hero stops (a safety behind the depth stop).
 	floor_body = StaticBody3D.new()
@@ -71,6 +72,12 @@ func build(scene: Node3D) -> void:
 ## Water depth over the ground at a scene point (0 on land): the sea, the lake inside its shore
 ## ellipse, a river within its width.
 func depth_at(p: Vector3) -> float:
+	var w := water_at(p)
+	return maxf(w.x - w.y, 0.0)
+
+
+## (water surface, ground) heights under a scene point, in the world frame.
+func water_at(p: Vector3) -> Vector2:
 	var local: Vector3 = world.world_root.to_local(p)
 	var at := Vector2(local.x, local.z)
 	var water := level
@@ -86,7 +93,7 @@ func depth_at(p: Vector3) -> float:
 			for point: Array in _river_cells.get(key + Vector2i(dx, dz), []):
 				if at.distance_to(point[0]) <= point[2]:
 					water = maxf(water, point[1])
-	return maxf(water - world.world_ground(local.x, local.z), 0.0)
+	return Vector2(water, world.world_ground(local.x, local.z))
 
 
 func _physics_process(_delta: float) -> void:
@@ -94,7 +101,10 @@ func _physics_process(_delta: float) -> void:
 		return
 	var player: CharacterBody3D = world.player
 	var at := player.global_position
-	if depth_at(at) <= STOP_DEPTH:
+	var w := water_at(at)
+	# Only in the water: on a bridge (feet over the surface) the depth under it does not matter.
+	var in_water: bool = world.world_root.to_local(at).y < w.x + 0.1
+	if not in_water or w.x - w.y <= STOP_DEPTH:
 		_safe = at
 		return
 	# Too deep: back to the last point he could stand in, no drift further out.
@@ -105,6 +115,11 @@ func _physics_process(_delta: float) -> void:
 	if now - _warned_at > WARN_EVERY:
 		_warned_at = now
 		_warn()
+
+
+## After a teleport the old safe point is far away: start over from here.
+func forget_safe_point() -> void:
+	_safe = Vector3.INF
 
 
 func _warn() -> void:

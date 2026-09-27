@@ -93,6 +93,8 @@ var far_forest: Node3D
 var sea: Node3D
 ## WORLD-EDGES-01: mountains, cliffs and boulders at the north, west and east edges.
 var edges: Node3D
+## BRIDGES-01: timber bridges over the river crossings.
+var bridges: Node3D
 ## DIALOG-CHOICE-01: answers to choose from in a conversation (the innkeeper first).
 var choices: CanvasLayer
 const DRINK_PRICE := 1
@@ -366,6 +368,11 @@ func _build_roads() -> void:
 	var shoulders := Shapes.new()
 	shoulders.name = "Shoulders"
 	world_root.add_child(shoulders)
+	# BRIDGES-01: a timber bridge shows over every deck; the deck strip only carries the hero.
+	bridges = preload("res://scripts/world/world_bridges.gd").new()
+	bridges.name = "Bridges"
+	world_root.add_child(bridges)
+	bridges.configure(self)
 	for road in world_layout.roads:
 		var points := _road_points(road)
 		if points.size() < 2:
@@ -389,6 +396,8 @@ func _build_roads() -> void:
 				if strip != null:
 					strip.name = "%s_bridge_%d" % [road.id, i]
 					_paint(strip, Color(ROAD_TINT.srgb_to_linear(), 1.0))
+					strip.visible = false
+					bridges.build_bridge(run, width)
 			run.clear()
 	_mark_surfaces(roads, "dirt")
 	_mark_surfaces(shoulders, "ground")
@@ -631,9 +640,50 @@ func _build_rivers() -> void:
 			var side := Vector3(-tangent.z, 0, tangent.x).normalized() * river_half_width(float(river.world_widths[i]))
 			left.append(points[i] + side)
 			right.append(points[i] - side)
-		var band: MeshInstance3D = water.add_band(left, right, Color("537d91"), false)
-		if band != null:
-			band.name = str(river.id)
+		var band := _river_mesh(points, left, right, river.world_widths)
+		band.name = str(river.id)
+		water.add_child(band)
+
+
+## WATER-01: a river ribbon with a flow frame for the water shader - UV.x across, UV.y metres
+## downstream, UV2 = (width in metres, steepness 0..1: rapids where the bed falls fast).
+func _river_mesh(points: PackedVector3Array, left: PackedVector3Array, right: PackedVector3Array, widths: Array) -> MeshInstance3D:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var along := 0.0
+	var rows := []
+	for i in points.size():
+		if i > 0:
+			along += Vector2(points[i].x - points[i - 1].x, points[i].z - points[i - 1].z).length()
+		var a := points[maxi(i - 2, 0)]
+		var b := points[mini(i + 2, points.size() - 1)]
+		var run := maxf(Vector2(b.x - a.x, b.z - a.z).length(), 0.1)
+		var steep := clampf((absf(b.y - a.y) / run - 0.03) / 0.12, 0.0, 1.0)
+		rows.append([left[i], right[i], along, left[i].distance_to(right[i]), steep])
+	for i in rows.size() - 1:
+		var r0: Array = rows[i]
+		var r1: Array = rows[i + 1]
+		var quad := [[r0[0], 0.0, r0], [r0[1], 1.0, r0], [r1[1], 1.0, r1], [r1[0], 0.0, r1]]
+		for k in [0, 1, 2, 0, 2, 3]:
+			var v: Array = quad[k]
+			var row: Array = v[2]
+			st.set_normal(Vector3.UP)
+			st.set_uv(Vector2(v[1], row[2]))
+			st.set_uv2(Vector2(row[3], row[4]))
+			st.add_vertex(v[0])
+	var band := MeshInstance3D.new()
+	band.mesh = st.commit()
+	band.material_override = water_material(true)
+	band.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	return band
+
+
+## The flowing (river) or still (lake, sea) water material.
+func water_material(flowing: bool) -> ShaderMaterial:
+	var material := ShaderMaterial.new()
+	material.shader = preload("res://assets/shaders/world_water.gdshader")
+	material.set_shader_parameter("river", flowing)
+	return material
 
 
 func _build_water_and_sites() -> void:
@@ -642,7 +692,9 @@ func _build_water_and_sites() -> void:
 	world_root.add_child(water)
 	for lake in world_layout.lakes:
 		var p: Array = lake.center
-		water.add_lake(Vector3(p[0] - HALF, p[2], p[1] - HALF), Vector2(lake.radii_m[0], lake.radii_m[1]))
+		var lake_mesh: MeshInstance3D = water.add_lake(Vector3(p[0] - HALF, p[2], p[1] - HALF), Vector2(lake.radii_m[0], lake.radii_m[1]))
+		if lake_mesh != null:
+			lake_mesh.material_override = water_material(false)
 	for spring in world_layout.springs:
 		var p: Array = spring.mouth
 		var direction: Array = spring.facing
@@ -712,6 +764,8 @@ func teleport_to(place: Dictionary) -> void:
 	camera_rig._apply_rotation()
 	camera_rig.snap_to_target()
 	player.get_node("Visual").reset_motion_interpolation()
+	if sea != null and sea.has_method("forget_safe_point"):
+		sea.forget_safe_point()
 	print("WORLD_TELEPORT id=%s at=%s" % [place.id, player.global_position])
 
 
