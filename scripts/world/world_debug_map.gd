@@ -17,7 +17,7 @@ var labels: Array[Label] = []
 
 func configure(scene: Node3D) -> void:
 	world = scene
-	layer = 50
+	layer = 100
 	visible = false
 	panel = Panel.new()
 	panel.set_anchors_preset(Control.PRESET_FULL_RECT)

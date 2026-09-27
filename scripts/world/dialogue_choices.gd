@@ -17,7 +17,7 @@ var is_open := false
 
 func configure(host: Node) -> void:
 	world = host
-	layer = 40
+	layer = 90
 	panel = PanelContainer.new()
 	panel.theme = preload("res://assets/ui/ashbound_ui.tres")
 	panel.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)

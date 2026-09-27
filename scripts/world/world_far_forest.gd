@@ -13,7 +13,8 @@ const RECORD_FLOATS := 5
 const CHUNK := 40.0
 ## Base visibility end at the default draw distance of 220 m (VillageSettings.apply_distance scales it).
 const VISIBLE_END := 230.0
-const NEAR_END := 110.0
+## On a phone the detailed trees reach 80 m (S23 in the forest: 42 FPS at 110 m and draw distance 300).
+var NEAR_END := 80.0 if OS.has_feature("mobile") else 110.0
 const NEAR_KINDS := ["pine_tall", "spruce", "pine_young"]
 ## Height of a cone tree at scale 1 (the detailed kinds are scaled to match it).
 const CONE_HEIGHT := 10.6
