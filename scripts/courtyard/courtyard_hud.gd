@@ -8,6 +8,8 @@ signal interact_pressed()
 signal attack_pressed()
 signal restart_pressed()
 signal run_changed(enabled: bool)
+## JUMP-01: hidden unless a level shows it (the world, on a phone).
+signal jump_pressed()
 
 const MIN_SIZE := Vector2(960, 540)
 const ROOT_RES := Vector2(1920, 1080)
@@ -43,6 +45,7 @@ var _dpad_down: Button
 var _dpad_left: Button
 var _dpad_right: Button
 var _btn_interact: Button
+var _btn_jump: Button
 var _btn_attack: Button
 var _btn_run: Button
 var _btn_restart: Button
@@ -75,12 +78,16 @@ func _ready() -> void:
 	_btn_attack = $RootControl/BottomRight/VBox/AttackButton
 	_btn_run = $RootControl/BottomRight/VBox/RunButton
 	_btn_restart = $RootControl/TopRightPanel/RestartButton
+	_btn_jump = Button.new()
+	_btn_jump.name = "JumpButton"
+	_btn_jump.visible = false
+	$RootControl.add_child(_btn_jump)
 
 	# Текст, который получает из Localization, не должен повторно
 	# автопереводиться (иначе ключ превратится в «перевод» самого себя).
 	for n in [_objective_label, _subtitle_label, _legend_label, _prompt_label,
 			_speaker_label, _message_text,
-			_btn_interact, _btn_attack, _btn_run, _btn_restart]:
+			_btn_interact, _btn_attack, _btn_run, _btn_restart, _btn_jump]:
 		n.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 
 	_refresh_localized_texts()
@@ -119,7 +126,7 @@ func _ready() -> void:
 
 
 func _all_buttons() -> Array[Button]:
-	return [_dpad_up, _dpad_down, _dpad_left, _dpad_right, _btn_interact, _btn_attack, _btn_run, _btn_restart]
+	return [_dpad_up, _dpad_down, _dpad_left, _dpad_right, _btn_interact, _btn_attack, _btn_run, _btn_restart, _btn_jump]
 
 
 func _apply_styles() -> void:
@@ -224,6 +231,8 @@ func _refresh_localized_texts() -> void:
 		_btn_restart.text = Localization.text("UI_RESTART")
 	if _btn_run:
 		_btn_run.text = Localization.text("UI_ACTION_RUN")
+	if _btn_jump:
+		_btn_jump.text = Localization.text("UI_ACTION_JUMP")
 	if _speaker_label:
 		_speaker_label.text = Localization.text(_speaker_key) if not _speaker_key.is_empty() else ""
 	# Обновляем текст открытого сообщения; закрытое не открываем.
@@ -430,6 +439,10 @@ func _on_touch_down(pos: Vector2, index: int) -> void:
 		_track(index)
 		restart_pressed.emit()
 		return
+	if _button_available(_btn_jump) and _btn_jump.get_global_rect().has_point(pos):
+		_track(index)
+		jump_pressed.emit()
+		return
 	if _message_visible and _message_panel.get_global_rect().has_point(pos):
 		_track(index)
 		clear_message()
@@ -469,7 +482,7 @@ func _nearest_dpad_dir(p: Vector2) -> int:
 	var best := -1.0
 	var result := Dir.NONE
 	for b in _all_buttons():
-		if b == _btn_interact or b == _btn_attack or b == _btn_run or b == _btn_restart:
+		if b == _btn_interact or b == _btn_attack or b == _btn_run or b == _btn_restart or b == _btn_jump:
 			continue
 		if not _button_available(b):
 			continue
@@ -496,7 +509,7 @@ func _dir_of_button(b: Button) -> int:
 
 func _set_dpad_pressed(pressed: bool, dir: int = -1) -> void:
 	for b in _all_buttons():
-		if b == _btn_interact or b == _btn_attack or b == _btn_run or b == _btn_restart:
+		if b == _btn_interact or b == _btn_attack or b == _btn_run or b == _btn_restart or b == _btn_jump:
 			continue
 		b.button_pressed = pressed and (dir == -1 or _dir_of_button(b) == dir)
 

@@ -345,7 +345,7 @@ func set_overview(enabled: bool) -> void:
 		camera_rig.get_camera().make_current()
 		camera_rig.snap_to_target()
 	zoom_controls.visible = enabled
-	hud.get_node("RootControl/BottomRight").visible = not enabled
+	hud.get_node("RootControl/BottomRight").visible = not enabled and hud.force_touch_controls
 	_refresh_text()
 
 func select_city(index: int) -> void:

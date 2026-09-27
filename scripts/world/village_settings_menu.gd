@@ -14,6 +14,7 @@ var grid: GridContainer
 var debug_button: Button
 var debug_page: VBoxContainer
 var restart_button: Button
+var teleport_button: MenuButton
 var labels: Dictionary={}
 var opened: bool:
 	get: return is_visible_in_tree() and world.pocket.state==world.pocket.State.OPEN
@@ -34,7 +35,7 @@ func configure(owner_world: Node3D, preferences: RefCounted) -> void:
 		var label:=Label.new();cell.add_child(label);labels[key]=label
 		var slider:=HSlider.new();slider.name=key.capitalize();slider.custom_minimum_size=Vector2(760,96)
 		slider.min_value=80 if key=="distance" else 15 if key=="grass_distance" else 0
-		slider.max_value=300 if key=="distance" else 45 if key=="grass_distance" else 100
+		slider.max_value=settings.MAX_DRAW_DISTANCE if key=="distance" else 45 if key=="grass_distance" else 100
 		slider.step=10 if key=="distance" or key=="grass" else 5 if key=="grass_distance" else 1
 		slider.value=settings.draw_distance if key=="distance" else settings.grass_percent if key=="grass" else settings.grass_distance if key=="grass_distance" else settings.music_percent if key=="music" else settings.sound_percent
 		cell.add_child(slider);sliders[key]=slider
@@ -67,6 +68,14 @@ func _build_debug_page() -> void:
 	restart_button=world._button(row,Vector2(360,120))
 	restart_button.name="RestartButton"
 	restart_button.pressed.connect(return_to_start)
+	if world.has_method("debug_locations"):
+		teleport_button=MenuButton.new();teleport_button.name="TeleportButton"
+		teleport_button.custom_minimum_size=Vector2(360,120);teleport_button.flat=false
+		row.add_child(teleport_button)
+		teleport_button.get_popup().add_theme_font_size_override("font_size",36)
+		teleport_button.get_popup().id_pressed.connect(func(id: int):
+			world.pocket.close_menu()
+			world.teleport_to(world.debug_locations()[id]))
 	debug_page.hide()
 
 ## Settings or the Debug page in the same place; the sliders make room for it on a phone.
@@ -107,4 +116,9 @@ func _refresh_text(_language: String="") -> void:
 	language_button.text="English" if Localization.get_language()=="ru" else "Русский"
 	debug_button.text=Localization.text("MENU_SECTION_SETTINGS" if debug_page.visible else "SETTINGS_DEBUG")
 	restart_button.text=Localization.text("FOREST_RETURN_START")
+	if teleport_button!=null:
+		teleport_button.text=Localization.text("SETTINGS_DEBUG_TELEPORT")
+		var popup:=teleport_button.get_popup();popup.clear()
+		var places: Array=world.debug_locations()
+		for i in places.size():popup.add_item(Localization.text(places[i].key),i)
 	hint.text=Localization.text("SETTINGS_DEBUG_HINT" if debug_page.visible else "VILLAGE_SETTINGS_HINT")

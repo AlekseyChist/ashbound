@@ -129,6 +129,16 @@ func _layout_play_controls() -> void:
 	var prompt: Control = hud.get_node("RootControl/PromptLabel")
 	prompt.offset_left = -300.0
 	prompt.offset_right = 300.0
+	# JUMP-01: Jump sits above Block, left of Action (phone only; Space on a PC).
+	var jump: Button = hud.get_node("RootControl/JumpButton")
+	jump.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	jump.offset_right = -COLUMN_RIGHT-COLUMN_WIDTH-12.0
+	jump.offset_left = jump.offset_right-COLUMN_WIDTH
+	jump.offset_bottom = -32.0-120.0-12.0
+	jump.offset_top = jump.offset_bottom-120.0
+	jump.visible = hud.force_touch_controls
+	if not hud.jump_pressed.is_connected(player.request_jump):
+		hud.jump_pressed.connect(player.request_jump)
 
 ## From Settings -> Debug: close the menu and go to the next house.
 func _on_picker_pressed() -> void:

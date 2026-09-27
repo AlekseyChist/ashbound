@@ -864,3 +864,9 @@ msgstr "Утро. Осмотри деревню и лес вокруг."
 
 msgid "HUD_ACTION_IDLE"
 msgstr "Действие"
+
+msgid "SETTINGS_DEBUG_TELEPORT"
+msgstr "Телепорт"
+
+msgid "UI_ACTION_JUMP"
+msgstr "Прыжок"

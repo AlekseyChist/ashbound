@@ -806,3 +806,9 @@ msgstr ""
 
 msgid "HUD_ACTION_IDLE"
 msgstr ""
+
+msgid "SETTINGS_DEBUG_TELEPORT"
+msgstr ""
+
+msgid "UI_ACTION_JUMP"
+msgstr ""

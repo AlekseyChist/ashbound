@@ -863,3 +863,9 @@ msgstr "Morning. Look around the village and the forest."
 
 msgid "HUD_ACTION_IDLE"
 msgstr "Action"
+
+msgid "SETTINGS_DEBUG_TELEPORT"
+msgstr "Teleport"
+
+msgid "UI_ACTION_JUMP"
+msgstr "Jump"
