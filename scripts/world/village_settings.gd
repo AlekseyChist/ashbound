@@ -34,7 +34,11 @@ func save_settings() -> Error:
 func apply_distance(world: Node3D) -> void:
 	draw_distance = clampf(draw_distance, 80, 300)
 	world.camera_rig.get_camera().far = draw_distance
-	for node: GeometryInstance3D in world.dressing.find_children("*", "GeometryInstance3D", true, false):
+	# WORLD-DRESS-01A: batches outside the village dressing join through a group.
+	var scaled: Array = world.dressing.find_children("*", "GeometryInstance3D", true, false)
+	for node in world.get_tree().get_nodes_in_group(&"draw_distance_scaled"):
+		if node is GeometryInstance3D and not scaled.has(node): scaled.append(node)
+	for node: GeometryInstance3D in scaled:
 		if not node.has_meta("base_visibility_end"):
 			node.set_meta("base_visibility_end", node.visibility_range_end)
 		var base: float = node.get_meta("base_visibility_end")

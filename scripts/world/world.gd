@@ -76,6 +76,8 @@ var inn_talk: QuestTracker
 var lodging: Node
 ## TRAIL-01: the pine forest along the trail from the village to the forest inn.
 var trail_dressing: Node3D
+## WORLD-DRESS-01A: low-poly forest over the rest of the map (baked positions).
+var far_forest: Node3D
 
 
 func _ready() -> void:
@@ -85,6 +87,11 @@ func _ready() -> void:
 	add_child(trail_dressing)
 	trail_dressing.build_trail(self)
 	trail_dressing.borrow_wind(dressing)
+	far_forest = preload("res://scripts/world/world_far_forest.gd").new()
+	far_forest.name = "FarForest"
+	world_root.add_child(far_forest)
+	far_forest.build(self)
+	settings.apply_distance(self)
 	lesson = preload("res://scripts/world/village_lesson.gd").new()
 	lesson.name = "VillageLesson"
 	add_child(lesson)
