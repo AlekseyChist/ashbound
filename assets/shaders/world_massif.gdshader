@@ -17,26 +17,13 @@ uniform float fog_density = 0.002;
 // The scene also blends the sky into distant ground (aerial perspective); the range matches it with
 // a stronger haze, or it stands out darker than the ridge in front of it.
 uniform float haze_boost = 2.5;
-// The camera's far plane (the Draw distance setting). The range lies farther than that; its vertices
-// are drawn along their view ray inside it (same direction, so the same size on screen, and the
-// same order in depth), so the whole range shows at any draw distance, like a backdrop.
-uniform float camera_far = 220.0;
+
 varying vec3 world_pos;
 varying vec3 world_normal;
 
 void vertex() {
 	world_pos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	world_normal = normalize((MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz);
-	vec3 eye = INV_VIEW_MATRIX[3].xyz;
-	vec3 ray = world_pos - eye;
-	float d = length(ray);
-	float keep = camera_far * 0.5;
-	if (d > keep) {
-		float drawn = keep + camera_far * 0.45 * (1.0 - exp(-(d - keep) / camera_far));
-		POSITION = PROJECTION_MATRIX * VIEW_MATRIX * vec4(eye + ray / d * drawn, 1.0);
-	} else {
-		POSITION = PROJECTION_MATRIX * VIEW_MATRIX * vec4(world_pos, 1.0);
-	}
 }
 
 vec3 triplanar(sampler2D tex, vec3 p, vec3 n) {

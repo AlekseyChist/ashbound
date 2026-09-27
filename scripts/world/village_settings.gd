@@ -6,6 +6,7 @@ var sound_percent := 80.0
 var draw_distance := 220.0
 ## Owner 27 Sep: up to 1 km on PC and on a strong phone; the default stays 220 m.
 const MAX_DRAW_DISTANCE := 1000.0
+const TERRAIN_FAR := 3000.0
 ## GRASS-02: share of the full grass density; 0 turns the grass off.
 var grass_percent := 100.0
 ## GRASS-02 / D-088: how far grass is drawn, metres.
@@ -35,7 +36,10 @@ func save_settings() -> Error:
 
 func apply_distance(world: Node3D) -> void:
 	draw_distance = clampf(draw_distance, 80, MAX_DRAW_DISTANCE)
-	world.camera_rig.get_camera().far = draw_distance
+	# The ground and the mountains are always drawn to the horizon (the fog hides the far end); the
+	# setting limits the objects on them (trees, grass, props) through their visibility ranges.
+	# Clipping the ground at the draw distance left the sky showing under distant mountains.
+	world.camera_rig.get_camera().far = maxf(draw_distance, TERRAIN_FAR)
 	# WORLD-DRESS-01A: batches outside the village dressing join through a group.
 	var scaled: Array = world.dressing.find_children("*", "GeometryInstance3D", true, false)
 	for node in world.get_tree().get_nodes_in_group(&"draw_distance_scaled"):

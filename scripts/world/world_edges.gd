@@ -113,8 +113,6 @@ func _build_massif() -> void:
 	material.set_shader_parameter("rock_normal", rock.normal_texture)
 	massif.material_override = material
 	_massif_material = material
-	# Always drawn: the shader keeps it inside the camera range, the bounds must not cull it.
-	massif.extra_cull_margin = 16384.0
 	# The same scanned rock on every steep slope of the map itself.
 	var ground: ShaderMaterial = world.terrain.material
 	ground.set_shader_parameter("use_cliff", true)
@@ -144,7 +142,6 @@ func _build_walls() -> void:
 func _process(_delta: float) -> void:
 	if _massif_material == null or world.camera_rig == null:
 		return
-	_massif_material.set_shader_parameter("camera_far", world.camera_rig.get_camera().far)
 	var environment: Environment = world.get("environment")
 	if environment != null:
 		_massif_material.set_shader_parameter("fog_density", environment.fog_density if environment.fog_enabled else 0.0)
