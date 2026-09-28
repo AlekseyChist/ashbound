@@ -54,6 +54,48 @@ for extra in D.get('extra_ridges',[]):
     heights=np.maximum(heights,base+(top-base)*np.exp(-np.square(distance/135)))
 heights+=7*np.sin(x/95)*np.cos(z/113)+3*np.sin((x+z)/54)
 
+# RIVER-NATURAL-01 (owner 28 Sep: "if I were the river I'd flow into that valley below ... it must look
+# natural, not a wild fantasy"): the plan's water stood up to 70-100 m over the land around it, and the
+# valley shaping below raised a wide embankment to carry it. The water now takes its height from this
+# natural ground along its own course: the lowest ground across its bed (within 15 m), 1.5 m into it,
+# never rising downstream, a drop spread upstream at most 45 % (cascades, no walls). A lake fills to its outlet;
+# a tributary meets the river it flows into at that river's water. The courses themselves are the plan's.
+def natural_floor(px,pz,reach=15.0):
+    i0,i1=max(0,int((pz-reach)/STEP)),min(WIDTH,int((pz+reach)/STEP)+2)
+    j0,j1=max(0,int((px-reach)/STEP)),min(WIDTH,int((px+reach)/STEP)+2)
+    win=heights[i0:i1,j0:j1];near=np.hypot(x[i0:i1,j0:j1]-px,z[i0:i1,j0:j1]-pz)<=reach
+    return float(win[near].min())
+RIVER_INTO_GROUND=1.5;RAPIDS=0.45;RIVER_STEP=8.0
+for lake in D['lakes']:
+    ox,oz=lake['outlet'][:2]
+    lake['center'][2]=round(min(float(lake['center'][2]),natural_floor(ox,oz)-1.0),2)
+    lake['outlet'][2]=lake['center'][2]
+lake_of={l['river_id']:l for l in D['lakes'] if l.get('river_id')}
+settled_courses={}
+def natural_course(rv):
+    pts=rv['points'];cols=[rv['widths_m'],rv['depth_widths_m']];out=[];ws=[[],[]]
+    for a,b,*w in zip(pts,pts[1:],*[c for c in cols],*[c[1:] for c in cols]):
+        n=max(1,math.ceil(math.dist(a[:2],b[:2])/RIVER_STEP))
+        for i in range(n):
+            t=i/n;out.append([a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t])
+            ws[0].append(w[0]+(w[2]-w[0])*t);ws[1].append(w[1]+(w[3]-w[1])*t)
+    out.append(list(pts[-1]));ws[0].append(cols[0][-1]);ws[1].append(cols[1][-1])
+    level=[min(p[2],natural_floor(p[0],p[1])-RIVER_INTO_GROUND) for p in out]
+    if rv['id'] in lake_of:level[0]=float(lake_of[rv['id']]['center'][2])
+    for i in range(1,len(level)):level[i]=min(level[i],level[i-1])
+    # A tributary ends in its river's water (that river is settled first).
+    end=out[-1]
+    for other,(opts,olevel) in settled_courses.items():
+        d=[math.dist(end[:2],q[:2]) for q in opts];k=int(np.argmin(d))
+        if d[k]<20.0:level[-1]=min(level[-1],olevel[k])
+    for i in range(len(level)-2,-1,-1):
+        level[i]=min(level[i],level[i+1]+RAPIDS*math.dist(out[i][:2],out[i+1][:2]))
+    for p,h in zip(out,level):p[2]=round(h,2)
+    rv['points']=out;rv['widths_m']=ws[0];rv['depth_widths_m']=ws[1]
+    settled_courses[rv['id']]=(out,level)
+# Rivers others flow into come first (main before its tributaries).
+for rv in sorted(D['rivers'],key=lambda r:0 if r['id']=='main' else 1):natural_course(rv)
+
 # The city coordinates on the plan are road anchors. Small plazas sit on dry banks.
 offsets={'forest':[-35,35],'snow':[0,0],'desert':[45,-35],'lowland':[45,-45]}
 roads=[dict(r) for r in D['roads']]
@@ -170,7 +212,13 @@ water_distance,water_height=nearest([r['points'] for r in D['rivers']])
 _,water_width=nearest([[[p[0],p[1],w] for p,w in zip(r['points'],r['widths_m'])] for r in D['rivers']])
 _,depth_width=nearest([[[p[0],p[1],w] for p,w in zip(r['points'],r['depth_widths_m'])] for r in D['rivers']])
 valley_weight=1-smooth((water_distance-16)/95)
-heights=heights*(1-valley_weight)+(water_height+2)*valley_weight
+# RIVER-NATURAL-01: the valley is cut down to the water, never built up to it (that was the embankment),
+# and only as a valley. Low down a broad floodplain (40 m each side 2 m over the water, then 1:3) where
+# the roads, junctions and towns by the river lie - people keep to the rivers (owner 28 Sep); in the
+# mountains a narrow one (16 m, then 1:1.7), not a trench sawn under the pass roads.
+_mountain=smooth((water_height-100.0)/80.0)
+_floor=40.0+(16.0-40.0)*_mountain;_side=0.33+(0.6-0.33)*_mountain
+heights=np.minimum(heights,water_height+2+np.maximum(water_distance-_floor,0)*_side)
 # D-099: the sea along the south edge. Shaped before the roads: they follow the beach, and they
 # only touch their own narrow band, so they cannot lift the seabed.
 # The coast is a function z = c(x); d > 0 is the sea side. West and the fishing cove: a beach
@@ -228,8 +276,9 @@ for s in sites:
     dist=np.hypot(x-px,z-pz);w=1-ease((dist-18)/40)
     heights=heights*(1-w)+level_*w
 # The river banks come back to their water after the basins (a basin must not undercut a river).
-bank_weight=valley_weight*((d_sea<-30) if SEA else 1.0)
-heights=heights*(1-bank_weight)+np.maximum(heights,water_height+2)*bank_weight
+# RIVER-NATURAL-01: only the banks themselves (a few metres past the water), 0.5 m over it.
+bank_weight=(1-smooth((water_distance-np.maximum(water_width*.5,3.0)-2.0)/6.0))*((d_sea<-30) if SEA else 1.0)
+heights=heights*(1-bank_weight)+np.maximum(heights,water_height+.5)*bank_weight
 for c in cities:
     # The approach connector starts on the plaza.
     for r in roads:
@@ -263,7 +312,10 @@ for r in roads:
     grade0=GRADE.get(int(r.get('width_m',6)),.16)
     slope=np.abs(np.gradient(gauss_smooth(ground,step,20.0),np.concatenate([[0],np.cumsum(step)])))
     steep=smooth((gauss_smooth(slope,step,20.0)-grade0)/grade0)
-    keep=steep*smooth((np.abs(planned-ground)-4.0)/10.0)*smooth((to_city-150.0)/250.0)
+    # RIVER-NATURAL-01: by a river the road keeps to the valley floor, whatever the old plan said.
+    iz_=np.clip(np.round(pts[:,1]/STEP).astype(int),0,WIDTH-1);ix_=np.clip(np.round(pts[:,0]/STEP).astype(int),0,WIDTH-1)
+    to_river=water_distance[iz_,ix_]
+    keep=steep*smooth((np.abs(planned-ground)-4.0)/10.0)*smooth((to_city-150.0)/250.0)*smooth((to_river-120.0)/120.0)
     mixed=ground*(1-keep)+planned*keep
     # A median first removes single-sample spikes of the plan at road corners.
     padded=np.pad(mixed,3,mode='edge')
@@ -302,7 +354,8 @@ for a_i,ra in enumerate(ids):
 for key in nodes:
     for rid,(pts,h,step,grade,pins) in profiles.items():
         d=np.hypot(pts[:,0]-key[0],pts[:,1]-key[1]);i=int(d.argmin())
-        if d[i]<3.0:nodes[key].append((rid,i))
+        # 5 m: a rounded corner passes a junction up to ~3.5 m off (snow_desert at J1 missed its plate).
+        if d[i]<5.0:nodes[key].append((rid,i))
 for key,hits in nodes.items():
     if not hits:continue
     # A branch joins a through road at the through road's level; only road ends meeting each other
@@ -440,7 +493,17 @@ for rid,(pts,h,step,grade,pins) in profiles.items():
         while e<len(pts) and wet[e]:e+=1
         levels=[settled_water(*pts[j])+BRIDGE_CLEAR for j in range(k,e)]
         # A crossing is level; a long wet stretch (a road along the water) follows the water down.
-        if float(step[k:e-1].sum())<=40.0:levels=[max(levels)]*len(levels)
+        if float(step[k:e-1].sum())<=40.0:
+            deck=max(levels)
+            # RIVER-NATURAL-01: a junction or a place plate close above a valley cannot be left at the
+            # road's grade down to the water - the bridge then stands that much higher over a ravine
+            # (it was a 76 % drop to the desert crossroads bridge).
+            along=np.concatenate([[0],np.cumsum(step)])
+            for j,v in pins.items():
+                if k<=j<e:continue
+                gap=min(abs(along[j]-along[k]),abs(along[j]-along[e-1]))
+                if gap<=60.0:deck=max(deck,v-grade*gap)
+            levels=[deck]*len(levels)
         for j,deck in zip(range(k,e),levels):pins[j]=max(pins[j],deck) if j in pins else deck
         k=e
 # Pins are hard; the grade limit carries each correction along the road (no jumps). Between two
