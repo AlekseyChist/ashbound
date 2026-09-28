@@ -71,26 +71,136 @@ static func add(house: Node3D, ground: Callable, stone: Material, skirt_front: f
 		var d := Vector3(box.position.x, low, run_out)
 		var e := Vector3(box.position.x, low, flat)
 		var f := Vector3(box.end.x, low, flat)
-		for tri in [[a, d, c], [a, c, b], [a, e, d], [b, c, f]]:
-			for v in tri:
+		# The slope faces up, the two sides outwards; drawn two-sided (no culling), lit by these normals.
+		var up := (d - a).cross(b - a).normalized()
+		if up.y < 0.0:
+			up = -up
+		# Godot faces front clockwise: seen from above the slope is a, c, d and a, b, c.
+		for face in [[[a, c, d], up], [[a, b, c], up], [[a, d, e], Vector3.LEFT], [[b, f, c], Vector3.RIGHT]]:
+			for v in face[0]:
+				st.set_normal(face[1])
 				st.set_uv(Vector2(v.x, v.z) * 0.5)
 				st.add_vertex(v)
-		st.generate_normals()
 		var apron := MeshInstance3D.new()
 		apron.name = "EntryApron"
+		apron.set_meta("extras", {"part_role": "foundation"})
 		apron.mesh = st.commit()
-		apron.material_override = stone
+		var surface := _stone_for(_foundation_material(house, stone))
+		if surface is BaseMaterial3D:
+			surface = surface.duplicate()
+			(surface as BaseMaterial3D).cull_mode = BaseMaterial3D.CULL_DISABLED
+		apron.material_override = surface
 		house.add_child(apron)
 
 
-## A solid stone skirt under everything of the house that stands on the ground (walls, porch, steps,
-## ramp) down to the lowest ground under it, its top level with the floor of the wedge (0.02). Returns
-## its front edge (+z) for add(), or -INF when the ground is level enough to need none.
+## Compact stone supports down to the ground on a slope (Codex 061: no slab under the whole
+## rectangle): a plinth under the body's foundation, one under the entry steps / ramp, a small pier
+## under each canopy post. Each is solid, its top level with the wedge (0.02), 0.35 m below the lowest
+## ground under it, in the house's own foundation stone. Returns the front edge (+z) of the steps'
+## support for add(), or -INF when the steps need none.
 static func skirt(house: Node3D, ground: Callable, stone: Material) -> float:
-	var base := ground_rect(house)
-	if base == Rect2():
-		return -INF
-	return _skirt(house, ground, stone, base)
+	var parts: Array = []           # [Rect2 in the house's x/z, is_steps]
+	var material: Material = null
+	var posts: Array[Rect2] = []
+	for node in house.find_children("*", "MeshInstance3D", true, false):
+		var mesh := node as MeshInstance3D
+		if mesh.mesh == null or mesh.is_queued_for_deletion():
+			continue
+		var extras: Dictionary = mesh.get_meta("extras", {})
+		var role := str(extras.get("part_role", ""))
+		var steps := str(extras.get("item_id", "")) == "entry_steps"
+		if not (steps or role == "foundation" or role == "canopy"):
+			continue
+		var xf := Transform3D.IDENTITY
+		var n: Node = mesh
+		while n != house and n is Node3D:
+			xf = (n as Node3D).transform * xf
+			n = n.get_parent()
+		var box: AABB = xf * mesh.get_aabb()
+		if role == "foundation" and not steps:
+			if material == null:
+				material = mesh.material_override if mesh.material_override else mesh.get_active_material(0)
+			parts.append([Rect2(box.position.x, box.position.z, box.size.x, box.size.z), false])
+		elif steps:
+			parts.append([Rect2(box.position.x, box.position.z, box.size.x, box.size.z), true])
+		else:
+			# The canopy's posts: its vertices near the ground, gathered post by post.
+			for v in mesh.mesh.get_faces():
+				var p: Vector3 = xf * v
+				if p.y > 0.25:
+					continue
+				var q := Vector2(p.x, p.z)
+				var found := false
+				for i in posts.size():
+					if posts[i].grow(0.4).has_point(q):
+						posts[i] = posts[i].expand(q)
+						found = true
+						break
+				if not found:
+					posts.append(Rect2(q, Vector2.ZERO))
+	for post in posts:
+		parts.append([post.grow(0.12), false])
+	var surface := _stone_for(material if material != null else stone)
+	var front := -INF
+	for part in parts:
+		var rect: Rect2 = part[0]
+		var low := 0.0
+		for gx in 3:
+			for gz in 3:
+				var local := rect.position + rect.size * Vector2(gx / 2.0, gz / 2.0)
+				low = minf(low, float(ground.call(house.transform * Vector3(local.x, 0, local.y))) - house.position.y)
+		if low > -0.05:
+			continue
+		_support(house, rect, low, surface)
+		if part[1]:
+			front = maxf(front, rect.end.y)
+	return front
+
+
+static func _support(house: Node3D, rect: Rect2, low: float, surface: Material) -> void:
+	var size := Vector3(rect.size.x, -low + 0.37, rect.size.y)
+	var at := Vector3(rect.get_center().x, 0.02 - size.y * 0.5, rect.get_center().y)
+	var mesh := MeshInstance3D.new()
+	mesh.name = "Support"
+	mesh.set_meta("extras", {"part_role": "foundation"})
+	var box_mesh := BoxMesh.new()
+	box_mesh.size = size
+	mesh.mesh = box_mesh
+	mesh.material_override = surface
+	mesh.position = at
+	house.add_child(mesh)
+	var body := StaticBody3D.new()
+	body.name = "SupportCollision"
+	body.set_meta("footstep_surface", "stone")
+	body.collision_layer = 1
+	body.collision_mask = 0
+	var shape := CollisionShape3D.new()
+	var hull := BoxShape3D.new()
+	hull.size = size
+	shape.shape = hull
+	shape.position = at
+	body.add_child(shape)
+	house.add_child(body)
+
+
+## The material of the house's own foundation (the kit's stone plinth), else `fallback`.
+static func _foundation_material(house: Node3D, fallback: Material) -> Material:
+	for node in house.find_children("*", "MeshInstance3D", true, false):
+		var mesh := node as MeshInstance3D
+		var extras: Dictionary = mesh.get_meta("extras", {})
+		if str(extras.get("part_role", "")) == "foundation" and str(extras.get("item_id", "")) != "entry_steps" and mesh.mesh != null and mesh.name != "Support":
+			return mesh.material_override if mesh.material_override else mesh.get_active_material(0)
+	return fallback
+
+
+## The house's own foundation stone, laid in world space so a tall support is not one stretched tile.
+static func _stone_for(source: Material) -> Material:
+	if source is StandardMaterial3D:
+		var m := (source as StandardMaterial3D).duplicate() as StandardMaterial3D
+		m.uv1_triplanar = true
+		m.uv1_scale = Vector3.ONE * 0.5
+		return m
+	return source
 
 
 ## Everything of the house that stands on the ground (walls, porch, steps, ramp), in its x/z.
@@ -114,37 +224,3 @@ static func ground_rect(house: Node3D) -> Rect2:
 		base = r if first else base.merge(r)
 		first = false
 	return base
-
-
-static func _skirt(house: Node3D, ground: Callable, stone: Material, base: Rect2) -> float:
-	var low := 0.0
-	for gx in 5:
-		for gz in 5:
-			var local := base.position + base.size * Vector2(gx / 4.0, gz / 4.0)
-			low = minf(low, float(ground.call(house.transform * Vector3(local.x, 0, local.y))) - house.position.y)
-	if low > -0.05:
-		return -INF
-	# 0.35 m below the lowest sample: the rendered ground between the samples may dip a little lower.
-	var size := Vector3(base.size.x + 0.2, -low + 0.45, base.size.y + 0.2)
-	var at := Vector3(base.get_center().x, 0.02 - size.y * 0.5, base.get_center().y)
-	var mesh := MeshInstance3D.new()
-	mesh.name = "Skirt"
-	var box_mesh := BoxMesh.new()
-	box_mesh.size = size
-	mesh.mesh = box_mesh
-	mesh.material_override = stone
-	mesh.position = at
-	house.add_child(mesh)
-	var body := StaticBody3D.new()
-	body.name = "SkirtCollision"
-	body.set_meta("footstep_surface", "stone")
-	body.collision_layer = 1
-	body.collision_mask = 0
-	var shape := CollisionShape3D.new()
-	var hull := BoxShape3D.new()
-	hull.size = size
-	shape.shape = hull
-	shape.position = at
-	body.add_child(shape)
-	house.add_child(body)
-	return base.end.y + 0.1

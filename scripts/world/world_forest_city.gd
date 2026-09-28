@@ -242,28 +242,10 @@ func _closed_house(b: Dictionary, kit: String) -> void:
 		body.add_child(shape)
 		mesh.add_child(body)
 	add_child(house)
-	# The base goes down to the real ground on a slope: a stone skirt, never a floor on air.
-	if high - low > 0.05:
-		var foot: Vector2 = base.get_center()
-		# Its top is at 0.02, level with the wedge's flat (a hero does not step up a lip of a few cm).
-		var skirt_size := Vector3(base.size.x + 0.2, high - low + 0.1, base.size.y + 0.2)
-		var skirt_at := Vector3(foot.x, 0.02 - skirt_size.y * 0.5, foot.y)
-		_box(house, skirt_at, skirt_size, _stone())
-		# The skirt is solid: its flat top round the porch is stood on, never sunk into.
-		var skirt := StaticBody3D.new()
-		skirt.name = "SkirtCollision"
-		skirt.set_meta("footstep_surface", "stone")
-		skirt.collision_layer = 1
-		skirt.collision_mask = 0
-		var skirt_shape := CollisionShape3D.new()
-		var skirt_box := BoxShape3D.new()
-		skirt_box.size = skirt_size
-		skirt_shape.shape = skirt_box
-		skirt_shape.position = skirt_at
-		skirt.add_child(skirt_shape)
-		house.add_child(skirt)
-	# The skirt's front edge (it spans the porch too): the apron starts there.
-	Entry.add(house, func(p: Vector3) -> float: return world.shore_ground(p.x, p.z), _stone(), base.end.y + 0.1 if high - low > 0.05 else -INF)
+	# On a slope: compact stone supports under the body, the steps and the canopy posts, and the
+	# steps walked on down to the ground (closed_house_entry, shared with the village neighbours).
+	var ground := func(p: Vector3) -> float: return world.shore_ground(p.x, p.z)
+	Entry.add(house, ground, _stone(), Entry.skirt(house, ground, _stone()))
 	house_count += 1
 
 
