@@ -327,13 +327,21 @@ func _neighbours(buildings: Array[Node3D]) -> void:
 			low = minf(low, h)
 			high = maxf(high, h)
 		if high - low > 1.2: continue
-		neighbours.append(_neighbour(record, Vector3(point.x, high, point.y), yaw, high - low))
+		var neighbour := _neighbour(record, Vector3(point.x, high, point.y), yaw, high - low)
+		neighbours.append(neighbour)
 		placed.append(point)
-		# The blade grass keeps off the footprint.
-		for gx in [-.3, .3]:
-			for gz in [-.3, .3]:
-				var c: Vector3 = basis * Vector3(gx * float(record.width), 0, gz * float(record.depth))
-				clearings.append(Vector3(point.x + c.x, point.y + c.z, half * .75))
+		# No blade grass on anything of it that stands on the ground - walls, stone skirt, steps and
+		# the apron 1.5 m before them: circles 1.5 m apart whose fully cleared core (0.55 r,
+		# village_grass.gd) covers the whole rectangle.
+		var ground_rect: Rect2 = preload("res://scripts/world/closed_house_entry.gd").ground_rect(neighbour).grow(0.2)
+		ground_rect.size.y += 1.6
+		var nx := ceili(ground_rect.size.x / 1.5) + 1
+		var nz := ceili(ground_rect.size.y / 1.5) + 1
+		for gx in nx:
+			for gz in nz:
+				var local := ground_rect.position + ground_rect.size * Vector2(float(gx) / (nx - 1), float(gz) / (nz - 1))
+				var c: Vector3 = basis * Vector3(local.x, 0, local.y)
+				clearings.append(Vector3(point.x + c.x, point.y + c.z, 2.0))
 	floor_counts["neighbours"] = neighbours.size()
 
 func _neighbour(record: Dictionary, at: Vector3, yaw: float, drop: float) -> Node3D:
@@ -365,21 +373,12 @@ func _neighbour(record: Dictionary, at: Vector3, yaw: float, drop: float) -> Nod
 		collider.shape = mesh.mesh.create_trimesh_shape()
 		body.add_child(collider)
 		mesh.visibility_range_end = 160.0
-	if drop > .05:
-		# On a slope the downhill side stands on a stone plinth, like the inn.
-		var plinth := MeshInstance3D.new()
-		plinth.name = "Plinth"
-		var box := BoxMesh.new()
-		box.size = Vector3(float(record.width) + .2, drop + .1, float(record.depth) + .2)
-		plinth.mesh = box
-		var stone := StandardMaterial3D.new()
-		stone.albedo_color = Color(0.46, 0.44, 0.4)
-		stone.roughness = .95
-		plinth.material_override = stone
-		plinth.position = Vector3(0, -drop * .5, 0)
-		house.add_child(plinth)
+	# On a slope the house - its steps included - stands on a solid stone skirt down to the ground,
+	# and the steps are walked on to it (closed_house_entry).
 	var stone := StandardMaterial3D.new()
 	stone.albedo_color = Color(0.46, 0.44, 0.4)
 	stone.roughness = .95
-	preload("res://scripts/world/closed_house_entry.gd").add(house, func(p: Vector3) -> float: return terrain.height_at(p.x, p.z), stone, -INF)
+	var entry := preload("res://scripts/world/closed_house_entry.gd")
+	var ground := func(p: Vector3) -> float: return terrain.height_at(p.x, p.z)
+	entry.add(house, ground, stone, entry.skirt(house, ground, stone))
 	return house

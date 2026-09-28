@@ -81,3 +81,70 @@ static func add(house: Node3D, ground: Callable, stone: Material, skirt_front: f
 		apron.mesh = st.commit()
 		apron.material_override = stone
 		house.add_child(apron)
+
+
+## A solid stone skirt under everything of the house that stands on the ground (walls, porch, steps,
+## ramp) down to the lowest ground under it, its top level with the floor of the wedge (0.02). Returns
+## its front edge (+z) for add(), or -INF when the ground is level enough to need none.
+static func skirt(house: Node3D, ground: Callable, stone: Material) -> float:
+	var base := ground_rect(house)
+	if base == Rect2():
+		return -INF
+	return _skirt(house, ground, stone, base)
+
+
+## Everything of the house that stands on the ground (walls, porch, steps, ramp), in its x/z.
+static func ground_rect(house: Node3D) -> Rect2:
+	var base := Rect2()
+	var first := true
+	for node in house.find_children("*", "MeshInstance3D", true, false):
+		var mesh := node as MeshInstance3D
+		var role := str(mesh.get_meta("extras", {}).get("part_role", ""))
+		if role == "furniture" or role == "ceiling" or role == "interior" or mesh.mesh == null:
+			continue
+		var xf := Transform3D.IDENTITY
+		var n: Node = mesh
+		while n != house and n is Node3D:
+			xf = (n as Node3D).transform * xf
+			n = n.get_parent()
+		var box: AABB = xf * mesh.get_aabb()
+		if box.position.y > 0.6:
+			continue
+		var r := Rect2(Vector2(box.position.x, box.position.z), Vector2(box.size.x, box.size.z))
+		base = r if first else base.merge(r)
+		first = false
+	return base
+
+
+static func _skirt(house: Node3D, ground: Callable, stone: Material, base: Rect2) -> float:
+	var low := 0.0
+	for gx in 5:
+		for gz in 5:
+			var local := base.position + base.size * Vector2(gx / 4.0, gz / 4.0)
+			low = minf(low, float(ground.call(house.transform * Vector3(local.x, 0, local.y))) - house.position.y)
+	if low > -0.05:
+		return -INF
+	# 0.35 m below the lowest sample: the rendered ground between the samples may dip a little lower.
+	var size := Vector3(base.size.x + 0.2, -low + 0.45, base.size.y + 0.2)
+	var at := Vector3(base.get_center().x, 0.02 - size.y * 0.5, base.get_center().y)
+	var mesh := MeshInstance3D.new()
+	mesh.name = "Skirt"
+	var box_mesh := BoxMesh.new()
+	box_mesh.size = size
+	mesh.mesh = box_mesh
+	mesh.material_override = stone
+	mesh.position = at
+	house.add_child(mesh)
+	var body := StaticBody3D.new()
+	body.name = "SkirtCollision"
+	body.set_meta("footstep_surface", "stone")
+	body.collision_layer = 1
+	body.collision_mask = 0
+	var shape := CollisionShape3D.new()
+	var hull := BoxShape3D.new()
+	hull.size = size
+	shape.shape = hull
+	shape.position = at
+	body.add_child(shape)
+	house.add_child(body)
+	return base.end.y + 0.1

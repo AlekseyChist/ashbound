@@ -196,6 +196,15 @@ def main():
             for obj in asset.objects:
                 if obj.get("part_role", "") == "shutter_hinge":
                     obj.rotation_euler[2] = 0.0
+            # A leaf is its half of the opening less 0.1 (shell.py) - shut, each fills its half
+            # exactly: no slit in the middle or at the top (Codex 051).
+            for obj in asset.objects:
+                if obj.get("part_role", "") == "shutter" and obj.type == "MESH":
+                    d = obj.dimensions
+                    across = 0 if d.x >= d.y else 1
+                    grow = [1.0, 1.0, (d.z + 0.12) / d.z]
+                    grow[across] = (d[across] + 0.12) / d[across]    # 1 cm over the middle seam
+                    obj.scale = (obj.scale[0] * grow[0], obj.scale[1] * grow[1], obj.scale[2] * grow[2])
             bpy.context.view_layer.update()
         else:
             build_furniture(spec, mats)
