@@ -42,7 +42,249 @@ func build(scene: Node3D) -> void:
 	roof.uv1_triplanar = true
 	roof.uv1_scale = Vector3.ONE * 0.5
 	_palisade()
-	print("FOREST_CITY stakes=%d towers=%d" % [stake_count, tower_count])
+	_outer_buildings()
+	_wheat_field()
+	_water_wheels()
+	print("FOREST_CITY stakes=%d towers=%d houses=%d wheat=%d wheels=%d" % [stake_count, tower_count, house_count, wheat_count, wheels.size()])
+
+
+# --- Step 4 (first part): the suburbs, the field, the water wheels ----------------------------------
+
+## The village's log cabins stand in for the suburbs' houses: closed (no furniture, one box to collide
+## with), their door towards the nearest road. The workshops use them too until their own models
+## (Codex's concept sheets) are built - then they get interiors.
+const KIT := {
+	"H01": {"path": "res://assets/buildings/forest-village-v1/h01.glb", "size": Vector3(6, 3.2, 8)},
+	"W01": {"path": "res://assets/buildings/forest-village-v1/w01.glb", "size": Vector3(7, 3.2, 9)},
+	"B01": {"path": "res://assets/buildings/forest-village-v1/b01.glb", "size": Vector3(8, 3.7, 10)},
+}
+const WORKSHOP_KIT := {"water_mill": "W01", "sawmill": "B01", "log_yard": "B01", "bakery": "W01", "granary": "H01",
+	"carpenter": "H01", "smithy": "H01", "charcoal_burner": "H01", "tar_kiln": "H01"}
+var house_count := 0
+
+func _outer_buildings() -> void:
+	for b in plan.buildings:
+		var kind := str(b.kind)
+		var kit := ""
+		if kind == "house":
+			var area := float(b.size[0]) * float(b.size[1])
+			kit = "H01" if area <= 48.0 else ("W01" if area <= 63.0 else "B01")
+		elif WORKSHOP_KIT.has(kind):
+			kit = WORKSHOP_KIT[kind]
+		else:
+			continue
+		_closed_house(b, kit)
+
+
+func _closed_house(b: Dictionary, kit: String) -> void:
+	var map := Vector2(float(b.map[0]), float(b.map[1]))
+	var at := ground_at(map)
+	var yaw := -deg_to_rad(float(b.yaw_deg))
+	var road := _nearest_road(Vector2(at.x, at.z), 40.0)
+	if road != Vector2.INF:
+		# The kit's entry is on its +z side.
+		var to_road := road - Vector2(at.x, at.z)
+		yaw = atan2(to_road.x, to_road.y)
+	var size: Vector3 = KIT[kit].size
+	var basis := Basis(Vector3.UP, yaw)
+	var high := -INF
+	for c in [Vector3(-1, 0, -1), Vector3(1, 0, -1), Vector3(-1, 0, 1), Vector3(1, 0, 1)]:
+		var corner: Vector3 = at + basis * (c * Vector3(size.x * 0.5, 0, size.z * 0.5))
+		high = maxf(high, world.world_ground(corner.x, corner.z))
+	var house: Node3D = (load(KIT[kit].path) as PackedScene).instantiate()
+	house.name = "%s_%s_%d" % [str(b.kind), kit, house_count]
+	house.position = Vector3(at.x, high, at.z)
+	house.rotation.y = yaw
+	for mesh in house.find_children("*", "MeshInstance3D", true, false):
+		var role := str((mesh as MeshInstance3D).get_meta("extras", {}).get("part_role", ""))
+		if role == "furniture" or role == "ceiling":
+			mesh.queue_free()
+		else:
+			(mesh as MeshInstance3D).visibility_range_end = VISIBLE
+	add_child(house)
+	var body := StaticBody3D.new()
+	body.set_meta("footstep_surface", "wood")
+	var shape := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = size + Vector3(0.3, 0.6, 0.3)
+	shape.shape = box
+	shape.position = Vector3(0, size.y * 0.5, 0)
+	body.add_child(shape)
+	house.add_child(body)
+	house_count += 1
+
+
+func _nearest_road(at: Vector2, reach: float) -> Vector2:
+	var best := Vector2.INF
+	var nearest := reach
+	for road in world.world_layout.roads:
+		for p in road.world_points:
+			var q := Vector2(float(p[0]), float(p[2]))
+			var d := q.distance_to(at)
+			if d < nearest:
+				nearest = d
+				best = q
+	return best
+
+
+## WHEAT: tufts of stalks over the field polygon (one MultiMesh), swaying a little in the wind.
+var wheat_count := 0
+const WHEAT_SHADER := """
+shader_type spatial;
+render_mode cull_disabled, diffuse_lambert;
+uniform vec3 base_colour : source_color = vec3(0.55, 0.45, 0.2);
+uniform vec3 ear_colour : source_color = vec3(0.86, 0.72, 0.36);
+void vertex() {
+	float sway = sin(TIME * 1.3 + (MODEL_MATRIX[3].x + MODEL_MATRIX[3].z) * 0.35) * 0.08 * UV.y;
+	VERTEX.x += sway;
+}
+void fragment() {
+	// Thin stalks: the card is cut into five blades, an ear at the top of each.
+	float blade = abs(fract(UV.x * 5.0) - 0.5);
+	float width = mix(0.18, 0.06, UV.y);
+	if (blade > width + (UV.y > 0.72 ? 0.12 : 0.0)) discard;
+	ALBEDO = mix(base_colour, ear_colour, smoothstep(0.35, 0.8, UV.y));
+	ROUGHNESS = 0.9;
+}
+"""
+
+func _wheat_field() -> void:
+	var polygon := PackedVector2Array()
+	for p in plan.wheat_field:
+		polygon.append(Vector2(float(p[0]), float(p[1])))
+	var lo := polygon[0]
+	var hi := polygon[0]
+	for p in polygon:
+		lo = lo.min(p)
+		hi = hi.max(p)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 1402
+	var transforms: Array[Transform3D] = []
+	var step := 0.75
+	var z := lo.y
+	while z <= hi.y:
+		var x := lo.x
+		while x <= hi.x:
+			var m := Vector2(x + rng.randf_range(-0.3, 0.3), z + rng.randf_range(-0.3, 0.3))
+			if Geometry2D.is_point_in_polygon(m, polygon):
+				var at := ground_at(m)
+				var s := rng.randf_range(0.85, 1.15)
+				transforms.append(Transform3D(Basis(Vector3.UP, rng.randf() * PI).scaled(Vector3(s, s, s)), at))
+			x += step
+		z += step
+	var card := QuadMesh.new()
+	card.size = Vector2(0.9, 1.0)
+	card.center_offset = Vector3(0, 0.5, 0)
+	var st := SurfaceTool.new()
+	st.create_from(card, 0)
+	# Two crossed cards per tuft.
+	var cross := ArrayMesh.new()
+	st.commit(cross)
+	st.create_from(card, 0)
+	var turned := Transform3D(Basis(Vector3.UP, PI * 0.5), Vector3.ZERO)
+	st.append_from(card, 0, turned)
+	var tuft := st.commit()
+	var multimesh := MultiMesh.new()
+	multimesh.transform_format = MultiMesh.TRANSFORM_3D
+	multimesh.mesh = tuft
+	multimesh.instance_count = transforms.size()
+	for i in transforms.size():
+		multimesh.set_instance_transform(i, transforms[i])
+	var material := ShaderMaterial.new()
+	var shader := Shader.new()
+	shader.code = WHEAT_SHADER
+	material.shader = shader
+	var field := MultiMeshInstance3D.new()
+	field.name = "WheatField"
+	field.multimesh = multimesh
+	field.material_override = material
+	field.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	field.visibility_range_end = 220.0
+	add_child(field)
+	wheat_count = transforms.size()
+
+
+## WATER WHEELS: by the mill and the sawmill, dipping into the river, turning with the flow.
+var wheels: Array[Node3D] = []
+const WHEEL_RADIUS := 2.3
+
+func _water_wheels() -> void:
+	for p in plan.water_wheels:
+		var map := Vector2(float(p[0]), float(p[1]))
+		var here := Vector2(map.x - float(world.HALF), map.y - float(world.HALF))
+		# The nearest river point and the flow there.
+		var best := INF
+		var axis := Vector3.ZERO
+		var flow := Vector3.FORWARD
+		var water := 0.0
+		var half := 4.0
+		for river in world.world_layout.rivers:
+			var pts: Array = river.world_points
+			for i in range(1, pts.size() - 1):
+				var q := Vector2(float(pts[i][0]), float(pts[i][2]))
+				var d := q.distance_to(here)
+				if d < best:
+					best = d
+					axis = Vector3(q.x, float(pts[i][1]), q.y)
+					flow = Vector3(float(pts[i + 1][0]) - float(pts[i - 1][0]), 0, float(pts[i + 1][2]) - float(pts[i - 1][2])).normalized()
+					water = float(pts[i][1])
+					half = float(river.world_widths[i]) * 0.5
+		# On the building's side of the river, just inside the water's edge.
+		var side := Vector3(here.x - axis.x, 0, here.y - axis.z)
+		var normal := Vector3(-flow.z, 0, flow.x)
+		if normal.dot(side) < 0.0:
+			normal = -normal
+		var centre := Vector3(axis.x, water + WHEEL_RADIUS - 0.9, axis.z) + normal * (half - 1.2)
+		var wheel := _wheel()
+		wheel.position = centre
+		# The wheel turns about the axis across the flow.
+		wheel.basis = Basis.looking_at(normal, Vector3.UP)
+		add_child(wheel)
+		wheels.append(wheel)
+
+
+func _wheel() -> Node3D:
+	var root := Node3D.new()
+	root.name = "WaterWheel"
+	var spin := Node3D.new()
+	spin.name = "Spin"
+	root.add_child(spin)
+	var paddles := 12
+	for k in paddles:
+		var a := TAU * k / paddles
+		var dir := Vector3(0, sin(a), cos(a))
+		# Spoke from the hub, a paddle board at the rim, rim segments between.
+		_box_at(spin, dir * WHEEL_RADIUS * 0.5, Vector3(0.12, WHEEL_RADIUS, 0.12), a, timber)
+		_box_at(spin, dir * WHEEL_RADIUS, Vector3(1.2, 0.08, 0.55), a, timber)
+		var b := TAU * (k + 0.5) / paddles
+		_box_at(spin, Vector3(0, sin(b), cos(b)) * (WHEEL_RADIUS - 0.05), Vector3(0.14, 0.14, TAU * WHEEL_RADIUS / paddles), b + PI * 0.5, timber)
+	var hub := CylinderMesh.new()
+	hub.top_radius = 0.28
+	hub.bottom_radius = 0.28
+	hub.height = 1.6
+	var hub_mesh := MeshInstance3D.new()
+	hub_mesh.mesh = hub
+	hub_mesh.material_override = timber
+	hub_mesh.rotation.z = PI * 0.5
+	root.add_child(hub_mesh)
+	return root
+
+
+func _box_at(parent: Node3D, at: Vector3, size: Vector3, angle: float, material: Material) -> void:
+	var mesh := BoxMesh.new()
+	mesh.size = size
+	var instance := MeshInstance3D.new()
+	instance.mesh = mesh
+	instance.material_override = material
+	instance.position = at
+	instance.rotation.x = -angle
+	instance.visibility_range_end = VISIBLE
+	parent.add_child(instance)
+
+
+func _process(delta: float) -> void:
+	for wheel in wheels:
+		(wheel.get_node("Spin") as Node3D).rotate_x(-0.6 * delta)
 
 
 ## The world-frame point of a map point on the ground.
