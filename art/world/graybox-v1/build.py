@@ -675,7 +675,9 @@ OUT.mkdir(parents=True,exist_ok=True)
 (OUT/'colors.bin').write_bytes(colors.astype('<f4').tobytes())
 def water_record(r):
     points,widths=settled[r['id']]
-    return {**r,'world_points':points,'world_widths':widths}
+    # SHORE-MESH-01: the game rebuilds the banks at 1.25 m along the water from these.
+    depths=[round(float(river_depth_for(w)),3) for w in river_widths(r,'depth_widths_m')]
+    return {**r,'world_points':points,'world_widths':widths,'world_depths':depths}
 
 layout={'version':'0.21.2-headwaters','width':WIDTH,'spacing':STEP,'extent_m':2000,
         'source_sha256':hashlib.sha256(SOURCE.read_bytes()).hexdigest(),

@@ -217,6 +217,12 @@ func _build_world() -> void:
 	world_terrain.skip_cell = func(x: int, z: int) -> bool: return pad.covers_cell(x, z, GRID)
 	world_terrain.material = terrain.material
 	world_terrain.surface_meta = "ground"
+	# SHORE-MESH-01: the banks along the water in 1.25 m cells, on the channel's own profile.
+	_index_shore()
+	world_terrain.refine_cell = func(x: int, z: int) -> bool:
+		var near := _shore_near((x + 0.5) * GRID - HALF, (z + 0.5) * GRID - HALF)
+		return not near.is_empty() and near[0] < near[2] + SHORE_REACH + GRID * 0.75
+	world_terrain.shore_height = _shore_height
 	world_root.add_child(world_terrain)
 	world_colors = _world_colors()
 	world_terrain.build(world_heights, world_colors, world_width, GRID)
@@ -457,6 +463,82 @@ func _build_roads() -> void:
 			core.clear()
 	_mark_surfaces(roads, "dirt")
 	_mark_surfaces(shoulders, "ground")
+
+
+## SHORE-MESH-01 (owner 28 Sep: "the banks are still triangles, zigzags"): within SHORE_REACH of the
+## water's edge the ground follows the channel as build.py cuts it - the bed under the water, a
+## smooth rise to 0.5 m over it just past the edge, then 1:1 - and blends back to the 5 m ground.
+const SHORE_REACH := 5.0
+const SHORE_CELL := 12.0
+var _shore_cells := {}
+var _shore_rivers: Array = []
+
+func _index_shore() -> void:
+	for r in world_layout.rivers.size():
+		var river: Dictionary = world_layout.rivers[r]
+		var pts := PackedVector3Array()
+		var halves := PackedFloat32Array()
+		var depths := PackedFloat32Array()
+		for i in river.world_points.size():
+			var p: Array = river.world_points[i]
+			pts.append(Vector3(float(p[0]), float(p[1]), float(p[2])))
+			halves.append(float(river.world_widths[i]) * 0.5)
+			depths.append(float(river.world_depths[i]) if river.has("world_depths") else 1.0)
+			var key := Vector2i(floori(float(p[0]) / SHORE_CELL), floori(float(p[2]) / SHORE_CELL))
+			if not _shore_cells.has(key):
+				_shore_cells[key] = []
+			_shore_cells[key].append(Vector2i(r, i))
+		_shore_rivers.append([pts, halves, depths])
+
+## [distance from the axis, water height, half width, depth] of the nearest river, or [] far from one.
+func _shore_near(wx: float, wz: float) -> Array:
+	var cell := Vector2i(floori(wx / SHORE_CELL), floori(wz / SHORE_CELL))
+	var best := INF
+	var hit := Vector2i(-1, -1)
+	for dz in range(-1, 2):
+		for dx in range(-1, 2):
+			for ref: Vector2i in _shore_cells.get(cell + Vector2i(dx, dz), []):
+				var q: Vector3 = _shore_rivers[ref.x][0][ref.y]
+				var d := (q.x - wx) * (q.x - wx) + (q.z - wz) * (q.z - wz)
+				if d < best:
+					best = d
+					hit = ref
+	if hit.x < 0:
+		return []
+	var pts: PackedVector3Array = _shore_rivers[hit.x][0]
+	var halves: PackedFloat32Array = _shore_rivers[hit.x][1]
+	var depths: PackedFloat32Array = _shore_rivers[hit.x][2]
+	var result := [sqrt(best), pts[hit.y].y, halves[hit.y], depths[hit.y]]
+	# The segments either side of the nearest point give the true distance to the axis.
+	for k in [hit.y - 1, hit.y]:
+		if k < 0 or k + 1 >= pts.size():
+			continue
+		var a := Vector2(pts[k].x, pts[k].z)
+		var b := Vector2(pts[k + 1].x, pts[k + 1].z)
+		var ab := b - a
+		var t := clampf((Vector2(wx, wz) - a).dot(ab) / maxf(ab.length_squared(), 1e-6), 0.0, 1.0)
+		var d := (a + ab * t).distance_to(Vector2(wx, wz))
+		if d < result[0]:
+			result = [d, lerpf(pts[k].y, pts[k + 1].y, t), lerpf(halves[k], halves[k + 1], t), lerpf(depths[k], depths[k + 1], t)]
+	return result
+
+## The ground under a world-frame point as the terrain shows it, the finer banks included.
+func shore_ground(wx: float, wz: float) -> float:
+	var base := world_ground(wx, wz)
+	var near := _shore_near(wx, wz)
+	if near.is_empty() or near[0] >= near[2] + SHORE_REACH:
+		return base
+	return _shore_height(wx, wz, base)
+
+func _shore_height(wx: float, wz: float, base: float) -> float:
+	var near := _shore_near(wx, wz)
+	if near.is_empty():
+		return base
+	var d: float = near[0]
+	var water: float = near[1]
+	var edge: float = near[2]
+	var profile := water - float(near[3]) + (float(near[3]) + 0.5) * smoothstep(edge - 1.5, edge + 0.5, d) + maxf(d - (edge + 0.5), 0.0)
+	return lerpf(profile, base, smoothstep(edge + 1.0, edge + SHORE_REACH, d))
 
 
 ## BRIDGES-02: a bridge only over a river. On a steep switchback the 5 m ground mesh can dip more than

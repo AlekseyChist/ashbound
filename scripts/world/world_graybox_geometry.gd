@@ -10,6 +10,13 @@ var skip_cell: Callable
 var material: Material
 ## Optional: footstep surface stored on every terrain collider.
 var surface_meta: String = ""
+## SHORE-MESH-01 (owner 28 Sep: "the banks are still triangles, zigzags"): the water line cut the
+## 5 m triangles in saw teeth. Optional: refine_cell(x, z) -> bool splits a cell REFINE x REFINE;
+## shore_height(world_x, world_z, coarse_height) -> float gives its inner points (the banks). Points on
+## an edge towards an unrefined cell keep the coarse surface, so the two meshes meet without a crack.
+var refine_cell: Callable
+var shore_height: Callable
+const REFINE := 4
 
 
 func build(heights: PackedFloat32Array, colors: PackedColorArray, width: int, spacing: float) -> void:
@@ -67,6 +74,9 @@ func _build_chunk(
 		for x in range(x0, x1):
 			if skip_cell.is_valid() and skip_cell.call(x, z):
 				continue
+			if _refined(x, z, width):
+				_add_refined(heights, colors, width, spacing, half, x, z, verts, normals, cols, idx)
+				continue
 			var a := (z - z0) * (x1 - x0 + 1) + (x - x0)
 			var b := a + 1
 			var c := a + (x1 - x0 + 1)
@@ -102,6 +112,64 @@ func _build_chunk(
 	body.add_child(shape)
 	mi.add_child(body)
 	add_child(mi)
+
+
+func _refined(x: int, z: int, width: int) -> bool:
+	if not refine_cell.is_valid() or not shore_height.is_valid():
+		return false
+	if x < 0 or z < 0 or x >= width - 1 or z >= width - 1:
+		return false
+	return refine_cell.call(x, z)
+
+
+## One cell as REFINE x REFINE quads; the coarse surface is its two triangles [a,b,c], [b,d,c].
+func _add_refined(heights: PackedFloat32Array, colors: PackedColorArray, width: int, spacing: float, half: float,
+		x: int, z: int, verts: PackedVector3Array, normals: PackedVector3Array, cols: PackedColorArray, idx: PackedInt32Array) -> void:
+	var ha := heights[z * width + x]
+	var hb := heights[z * width + x + 1]
+	var hc := heights[(z + 1) * width + x]
+	var hd := heights[(z + 1) * width + x + 1]
+	var ca := colors[z * width + x]
+	var cb := colors[z * width + x + 1]
+	var cc := colors[(z + 1) * width + x]
+	var cd := colors[(z + 1) * width + x + 1]
+	var open_w := not _refined(x - 1, z, width)
+	var open_e := not _refined(x + 1, z, width)
+	var open_n := not _refined(x, z - 1, width)
+	var open_s := not _refined(x, z + 1, width)
+	var n := REFINE + 1
+	var grid := PackedFloat32Array()
+	grid.resize(n * n)
+	for j in n:
+		for i in n:
+			var u := float(i) / REFINE
+			var v := float(j) / REFINE
+			var base := ha + (hb - ha) * u + (hc - ha) * v if u + v <= 1.0 else hd + (hc - hd) * (1.0 - u) + (hb - hd) * (1.0 - v)
+			var corner := (i == 0 or i == REFINE) and (j == 0 or j == REFINE)
+			var border := (i == 0 and open_w) or (i == REFINE and open_e) or (j == 0 and open_n) or (j == REFINE and open_s)
+			grid[j * n + i] = base if corner or border else float(shore_height.call((x + u) * spacing - half, (z + v) * spacing - half, base))
+	var first := verts.size()
+	var step := spacing / REFINE
+	for j in n:
+		for i in n:
+			var u := float(i) / REFINE
+			var v := float(j) / REFINE
+			verts.append(Vector3((x + u) * spacing - half, grid[j * n + i], (z + v) * spacing - half))
+			var il := maxi(i - 1, 0)
+			var ir := mini(i + 1, REFINE)
+			var jl := maxi(j - 1, 0)
+			var jr := mini(j + 1, REFINE)
+			var dhdx := (grid[j * n + ir] - grid[j * n + il]) / float((ir - il) * step)
+			var dhdz := (grid[jr * n + i] - grid[jl * n + i]) / float((jr - jl) * step)
+			normals.append(Vector3(-dhdx, 1.0, -dhdz).normalized())
+			cols.append(ca.lerp(cb, u).lerp(cc.lerp(cd, u), v))
+	for j in REFINE:
+		for i in REFINE:
+			var a := first + j * n + i
+			var b := a + 1
+			var c := a + n
+			var d := c + 1
+			idx.append_array([a, b, c, b, d, c])
 
 
 func _normal_at(heights: PackedFloat32Array, width: int, x: int, z: int, spacing: float) -> Vector3:

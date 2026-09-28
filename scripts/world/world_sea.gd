@@ -87,13 +87,23 @@ func water_at(p: Vector3) -> Vector2:
 		var q := Vector2((at.x + world.HALF - float(c[0])) / float(r[0]), (at.y + world.HALF - float(c[1])) / float(r[1]))
 		if q.length() < 1.05:
 			water = maxf(water, float(c[2]))
+	# RIVER-DEPTH-01 (owner 28 Sep, video: a fall into a cascade kept the hero under the water for
+	# 20 s): the water over the hero is that of the nearest river point, not the highest one within
+	# reach - on a cascade falling 45 % that was 2-3 m too high, and every step counted as too deep.
 	var key := Vector2i(floori(at.x / RIVER_CELL), floori(at.y / RIVER_CELL))
+	var nearest := INF
+	var river_water := -INF
 	for dz in range(-1, 2):
 		for dx in range(-1, 2):
 			for point: Array in _river_cells.get(key + Vector2i(dx, dz), []):
-				if at.distance_to(point[0]) <= point[2]:
-					water = maxf(water, point[1])
-	return Vector2(water, world.world_ground(local.x, local.z))
+				var d := at.distance_to(point[0])
+				if d <= point[2] and d < nearest:
+					nearest = d
+					river_water = point[1]
+	water = maxf(water, river_water)
+	# The banks are finer than the 5 m grid (SHORE-MESH-01): the ground from their own profile.
+	var ground: float = world.shore_ground(local.x, local.z) if world.has_method("shore_ground") else world.world_ground(local.x, local.z)
+	return Vector2(water, ground)
 
 
 func _physics_process(_delta: float) -> void:
