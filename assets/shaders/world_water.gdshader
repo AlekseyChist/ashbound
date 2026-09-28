@@ -12,6 +12,13 @@ uniform vec3 foam_colour : source_color = vec3(0.86, 0.9, 0.9);
 uniform float flow_speed = 0.9;
 uniform float ripple_metres = 2.2;
 uniform float wetness_gloss = 0.06;
+// SHORE-SOFT-01 (owner 28 Sep: "the river banks are triangular"): where the water plane cuts the 5 m
+// ground triangles its edge ran in straight saw teeth. Now the water thins out over the last
+// shore_fade metres of water in front of the ground (depth buffer) and a thin foam line follows the
+// wet edge, so the shore reads as a soft line, not the triangles.
+uniform sampler2D depth_texture : hint_depth_texture, filter_nearest;
+uniform float shore_fade = 0.9;
+uniform float shore_foam = 0.45;
 
 varying vec3 world_pos;
 
@@ -60,8 +67,14 @@ void fragment() {
 	// Foam: in a band along the banks and over the rapids, broken by the moving noise.
 	float churn = noise((p + drift1 * 1.6) * 3.1);
 	float foam = river ? max(smoothstep(3.6, 3.0, edge) * 0.55, rapids * 0.8) * smoothstep(0.45, 0.8, churn) : 0.0;
+	// Water in front of the ground behind it along the view ray (metres).
+	float raw = texture(depth_texture, SCREEN_UV).r;
+	vec4 behind = INV_PROJECTION_MATRIX * vec4(SCREEN_UV * 2.0 - 1.0, raw, 1.0);
+	float thickness = -behind.z / behind.w + VERTEX.z;
+	float line = (1.0 - smoothstep(0.0, shore_foam, thickness)) * smoothstep(0.3, 0.7, noise(p * 4.0 + drift1 * 2.0) + 0.35);
+	foam = max(foam, line * 0.8);
 	ALBEDO = mix(colour, foam_colour, foam);
 	ROUGHNESS = mix(wetness_gloss, 0.6, foam);
 	SPECULAR = 0.55;
-	ALPHA = mix(0.86, 1.0, foam);
+	ALPHA = mix(0.86, 1.0, foam) * smoothstep(0.0, shore_fade, thickness);
 }
