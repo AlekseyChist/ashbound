@@ -159,6 +159,9 @@ for j in range(steps):
         h = height(x, z)
         w *= 1.0 - smooth(*TREELINE, h)
         w *= 1.0 - smooth(*SLOPE, slope_deg(x, z))
+        # WORLD-EDGES-01: no tree on the edge ridge (north, west, east) - it stood on the crest as a spike.
+        if min(x, 2000.0 - x, z) < 70.0:
+            w = 0.0
         if w <= 0.0:
             counts['terrain'] += 1
             continue

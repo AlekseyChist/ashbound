@@ -31,7 +31,7 @@ const INN_KEEPER_TALK: QuestData = preload("res://data/quests/forest_inn_keeper.
 const INN_TALK_RADIUS := 2.8
 const Pad = preload("res://scripts/world/world_settlement_pad.gd")
 
-const VERSION := "0.35.0"
+const VERSION := "0.36.3"
 const WORLD_LAYOUT := "res://assets/world/graybox-v1/layout.json"
 const WORLD_HEIGHTS := "res://assets/world/graybox-v1/heights.bin"
 const WORLD_COLORS := "res://assets/world/graybox-v1/colors.bin"
@@ -91,6 +91,22 @@ var trail_dressing: Node3D
 var far_forest: Node3D
 ## WORLD-SEA-01: the sea along the south edge (D-099).
 var sea: Node3D
+## WORLD-EDGES-01: mountains, cliffs and boulders at the north, west and east edges.
+var edges: Node3D
+## BRIDGES-01: timber bridges over the river crossings.
+var bridges: Node3D
+## WORLD-PROPS-01: desert rocks and plants, ships and piers in the harbours.
+var props: Node3D
+## SNOW-01 / SAND-01: prints in the snow and the sand.
+var footprints: Node3D
+## WATER-01: spray over the rapids; SAND-01: whirls of sand in the desert wind.
+var water_spray: Node3D
+var dust_devils: Node3D
+## DIALOG-CHOICE-01: answers to choose from in a conversation (the innkeeper first).
+var choices: CanvasLayer
+const DRINK_PRICE := 1
+## DEBUG-MAP-01: Settings -> Debug -> Map.
+var debug_map: CanvasLayer
 
 
 func _ready() -> void:
@@ -125,6 +141,27 @@ func _ready() -> void:
 	lodging.configure(self)
 	lodging.changed.connect(_update_prompt)
 	lodging.changed.connect(func(): journal_changed.emit())
+	choices = preload("res://scripts/world/dialogue_choices.gd").new()
+	choices.name = "DialogueChoices"
+	add_child(choices)
+	choices.configure(self)
+	footprints = preload("res://scripts/world/world_footprints.gd").new()
+	footprints.name = "Footprints"
+	add_child(footprints)
+	footprints.configure(self)
+	audio.stepped.connect(footprints.step)
+	water_spray = preload("res://scripts/world/world_water_spray.gd").new()
+	water_spray.name = "WaterSpray"
+	add_child(water_spray)
+	water_spray.configure(self)
+	dust_devils = preload("res://scripts/world/world_dust_devils.gd").new()
+	dust_devils.name = "DustDevils"
+	add_child(dust_devils)
+	dust_devils.configure(self)
+	debug_map = preload("res://scripts/world/world_debug_map.gd").new()
+	debug_map.name = "DebugMap"
+	add_child(debug_map)
+	debug_map.configure(self)
 	_start_save.call_deferred()
 	lesson.sync_pack.call_deferred()
 	_update_prompt()
@@ -182,6 +219,14 @@ func _build_world() -> void:
 	sea.name = "Sea"
 	world_root.add_child(sea)
 	sea.build(self)
+	edges = preload("res://scripts/world/world_edges.gd").new()
+	edges.name = "Edges"
+	world_root.add_child(edges)
+	edges.build(self)
+	props = preload("res://scripts/world/world_props.gd").new()
+	props.name = "Props"
+	world_root.add_child(props)
+	props.build(self)
 
 
 ## The map ends 45 m west of the village. A steep rise there (steeper than the hero can climb)
@@ -347,6 +392,11 @@ func _build_roads() -> void:
 	var shoulders := Shapes.new()
 	shoulders.name = "Shoulders"
 	world_root.add_child(shoulders)
+	# BRIDGES-01: a timber bridge shows over every deck; the deck strip only carries the hero.
+	bridges = preload("res://scripts/world/world_bridges.gd").new()
+	bridges.name = "Bridges"
+	world_root.add_child(bridges)
+	bridges.configure(self)
 	for road in world_layout.roads:
 		var points := _road_points(road)
 		if points.size() < 2:
@@ -370,6 +420,8 @@ func _build_roads() -> void:
 				if strip != null:
 					strip.name = "%s_bridge_%d" % [road.id, i]
 					_paint(strip, Color(ROAD_TINT.srgb_to_linear(), 1.0))
+					strip.visible = false
+					bridges.build_bridge(run, width)
 			run.clear()
 	_mark_surfaces(roads, "dirt")
 	_mark_surfaces(shoulders, "ground")
@@ -486,7 +538,7 @@ func _index_grass_obstacles() -> void:
 	for river in world_layout.rivers:
 		var points := _points_of(river)
 		for i in range(points.size() - 1):
-			pieces.append([Vector2(points[i].x, points[i].z) + offset, Vector2(points[i + 1].x, points[i + 1].z) + offset, float(river.world_widths[i]) + 2.0])
+			pieces.append([Vector2(points[i].x, points[i].z) + offset, Vector2(points[i + 1].x, points[i + 1].z) + offset, river_half_width(float(river.world_widths[i])) * 2.0])
 	for n in pieces.size():
 		var piece: Array = pieces[n]
 		var segment := {"id": n, "a": piece[0], "b": piece[1], "width": piece[2]}
@@ -511,6 +563,35 @@ func _index_grass_obstacles() -> void:
 	for lake in world_layout.lakes:
 		var c: Array = lake.center
 		_grass_blocks.append(Vector3(float(c[0]) - HALF + offset.x, float(c[1]) - HALF + offset.y, maxf(float(lake.radii_m[0]), float(lake.radii_m[1])) + 2.0))
+
+
+## MUSIC-REGION-01: which track plays here - "main" at home (the village and its ring), otherwise the
+## biome of the map as build.py colours it: mountains over 165 m, the desert east, the lowlands south.
+func music_region(at: Vector3) -> String:
+	var map := Vector2(at.x - world_root.position.x + HALF, at.z - world_root.position.z + HALF)
+	if VILLAGE_RECT.grow(RING).has_point(map):
+		return "main"
+	if at.y - world_root.position.y > 165.0:
+		return "mountains"
+	if map.x > 1210.0 and map.y < 1570.0:
+		return "desert"
+	if map.y > 1390.0 + 110.0 * sin(map.x / 200.0):
+		return "lowlands"
+	return "forest"
+
+
+## SNOW-01 / SAND-01: what the ground is at a scene point - "snow" (the white of the mountains),
+## "sand" (the desert), otherwise "ground".
+func ground_kind(x: float, z: float) -> String:
+	if _scene_in_village(x, z):
+		return "ground"
+	var c := grass_color(x, z)
+	var luminance := c.r * 0.2126 + c.g * 0.7152 + c.b * 0.0722
+	if luminance > 0.22:
+		return "snow"
+	if c.r > c.g * 1.15 and music_region(Vector3(x, 0.0, z)) == "desert":
+		return "sand"
+	return "ground"
 
 
 ## How much a scene point is road (0..1): the village ground's own paint inside it, the mask outside.
@@ -578,6 +659,12 @@ func _mark_surfaces(root: Node, surface: String) -> void:
 		body.set_meta("footstep_surface", surface)
 
 
+## RIVER-BANKS-01: the water ribbon reaches 3 m past the channel (at least 3 m from the axis), so its
+## edges tuck under the banks that build.py raises over the water; the bank hides the rest.
+func river_half_width(width: float) -> float:
+	return maxf(width * 0.5, 3.0) + 3.0
+
+
 func _build_rivers() -> void:
 	var water := Shapes.new()
 	water.name = "Rivers"
@@ -588,12 +675,53 @@ func _build_rivers() -> void:
 		var right := PackedVector3Array()
 		for i in range(points.size()):
 			var tangent := points[mini(i + 1, points.size() - 1)] - points[maxi(i - 1, 0)]
-			var side := Vector3(-tangent.z, 0, tangent.x).normalized() * float(river.world_widths[i]) * 0.5
+			var side := Vector3(-tangent.z, 0, tangent.x).normalized() * river_half_width(float(river.world_widths[i]))
 			left.append(points[i] + side)
 			right.append(points[i] - side)
-		var band: MeshInstance3D = water.add_band(left, right, Color("537d91"), false)
-		if band != null:
-			band.name = str(river.id)
+		var band := _river_mesh(points, left, right, river.world_widths)
+		band.name = str(river.id)
+		water.add_child(band)
+
+
+## WATER-01: a river ribbon with a flow frame for the water shader - UV.x across, UV.y metres
+## downstream, UV2 = (width in metres, steepness 0..1: rapids where the bed falls fast).
+func _river_mesh(points: PackedVector3Array, left: PackedVector3Array, right: PackedVector3Array, widths: Array) -> MeshInstance3D:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var along := 0.0
+	var rows := []
+	for i in points.size():
+		if i > 0:
+			along += Vector2(points[i].x - points[i - 1].x, points[i].z - points[i - 1].z).length()
+		var a := points[maxi(i - 2, 0)]
+		var b := points[mini(i + 2, points.size() - 1)]
+		var run := maxf(Vector2(b.x - a.x, b.z - a.z).length(), 0.1)
+		var steep := clampf((absf(b.y - a.y) / run - 0.03) / 0.12, 0.0, 1.0)
+		rows.append([left[i], right[i], along, left[i].distance_to(right[i]), steep])
+	for i in rows.size() - 1:
+		var r0: Array = rows[i]
+		var r1: Array = rows[i + 1]
+		var quad := [[r0[0], 0.0, r0], [r0[1], 1.0, r0], [r1[1], 1.0, r1], [r1[0], 0.0, r1]]
+		for k in [0, 1, 2, 0, 2, 3]:
+			var v: Array = quad[k]
+			var row: Array = v[2]
+			st.set_normal(Vector3.UP)
+			st.set_uv(Vector2(v[1], row[2]))
+			st.set_uv2(Vector2(row[3], row[4]))
+			st.add_vertex(v[0])
+	var band := MeshInstance3D.new()
+	band.mesh = st.commit()
+	band.material_override = water_material(true)
+	band.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	return band
+
+
+## The flowing (river) or still (lake, sea) water material.
+func water_material(flowing: bool) -> ShaderMaterial:
+	var material := ShaderMaterial.new()
+	material.shader = preload("res://assets/shaders/world_water.gdshader")
+	material.set_shader_parameter("river", flowing)
+	return material
 
 
 func _build_water_and_sites() -> void:
@@ -602,7 +730,9 @@ func _build_water_and_sites() -> void:
 	world_root.add_child(water)
 	for lake in world_layout.lakes:
 		var p: Array = lake.center
-		water.add_lake(Vector3(p[0] - HALF, p[2], p[1] - HALF), Vector2(lake.radii_m[0], lake.radii_m[1]))
+		var lake_mesh: MeshInstance3D = water.add_lake(Vector3(p[0] - HALF, p[2], p[1] - HALF), Vector2(lake.radii_m[0], lake.radii_m[1]))
+		if lake_mesh != null:
+			lake_mesh.material_override = water_material(false)
 	for spring in world_layout.springs:
 		var p: Array = spring.mouth
 		var direction: Array = spring.facing
@@ -634,6 +764,10 @@ func _build_water_and_sites() -> void:
 		var direction: Array = site.facing
 		var s: Array = site.spawn
 		landmark.build(site.kind, Vector3(s[0], float(site.point[2]), s[2]), Vector3(direction[0], 0, direction[2]))
+
+
+func open_debug_map() -> void:
+	debug_map.open()
 
 
 ## Settings -> Debug: the four cities and every site of the atlas, for checking the world by hand.
@@ -668,6 +802,8 @@ func teleport_to(place: Dictionary) -> void:
 	camera_rig._apply_rotation()
 	camera_rig.snap_to_target()
 	player.get_node("Visual").reset_motion_interpolation()
+	if sea != null and sea.has_method("forget_safe_point"):
+		sea.forget_safe_point()
 	print("WORLD_TELEPORT id=%s at=%s" % [place.id, player.global_position])
 
 
@@ -697,7 +833,7 @@ func interact() -> void:
 			return
 		if inn_keeper_in_reach():
 			if inn_talk.flags.get(&"greeted", false):
-				lodging.rent()
+				await keeper_menu()
 			else:
 				talk_to_inn_keeper()
 			_update_prompt()
@@ -722,7 +858,7 @@ func _update_prompt() -> void:
 	if point == null and is_input_available() and inn_keeper_in_reach():
 		point = inn_keeper
 		if inn_talk.flags.get(&"greeted", false):
-			action = lodging.keeper_prompt()
+			action = Localization.text("COURTYARD_ACTION_TALK")
 	if point == null and is_input_available() and lodging.bed_in_reach():
 		action = Localization.text("INN_ACTION_SLEEP")
 	elif point == null:
@@ -865,6 +1001,33 @@ func inn_keeper_in_reach() -> bool:
 		return false
 	var offset := inn_keeper.global_position - player.global_position
 	return Vector2(offset.x, offset.z).length() <= INN_TALK_RADIUS and absf(offset.y) < 1.2
+
+## After the greeting the innkeeper asks what the hero wants: a bed (until one is rented), a mug of
+## ale, or nothing. The answer is carried out and the innkeeper replies.
+func keeper_menu() -> void:
+	var answers := []
+	if not lodging.rented:
+		answers.append([&"rent", Localization.text("INN_ANSWER_RENT", {"price": str(lodging.PRICE)})])
+	answers.append([&"drink", Localization.text("INN_ANSWER_DRINK", {"price": str(DRINK_PRICE)})])
+	answers.append([&"leave", Localization.text("INN_ANSWER_LEAVE")])
+	choices.open("INN_KEEPER_NAME", "INN_KEEPER_ASK", answers)
+	var id: StringName = await choices.chosen
+	match id:
+		&"rent":
+			lodging.rent()
+		&"drink":
+			var purse: Node = get_node("/root/Inventory")
+			if purse.has_gold(DRINK_PRICE) and purse.remove_gold(DRINK_PRICE):
+				hud.show_message("INN_KEEPER_NAME", "INN_KEEPER_DRINK")
+			else:
+				hud.show_message("INN_KEEPER_NAME", "INN_KEEPER_DRINK_NO_MONEY", {"price": str(DRINK_PRICE)})
+		_:
+			hud.show_message("INN_KEEPER_NAME", "INN_KEEPER_BYE")
+
+
+func is_input_available() -> bool:
+	return super.is_input_available() and (choices == null or not choices.is_open)
+
 
 func talk_to_inn_keeper() -> bool:
 	var line: DialogueLineData = inn_talk.line_for(&"inn_keeper")

@@ -37,7 +37,7 @@ func state_checks() -> void:
 	var collider_count:=world.find_children("*","CollisionShape3D",true,false).size()
 	for distance in [80.0,1000.0,220.0,80.0,1000.0,220.0]:
 		world.settings.draw_distance=distance;world.settings.apply_distance(world)
-		check(is_equal_approx(world.camera_rig.get_camera().far,distance),"camera far "+str(distance))
+		check(is_equal_approx(world.camera_rig.get_camera().far,maxf(distance,world.settings.TERRAIN_FAR)),"the ground is drawn to the horizon "+str(distance))
 		var batch: MultiMeshInstance3D=world.dressing.foliage_batches[0]
 		check(is_equal_approx(batch.visibility_range_end,float(batch.get_meta("base_visibility_end"))*distance/220),"foliage distance no compound scale "+str(distance))
 	check(world.find_children("*","CollisionShape3D",true,false).size()==collider_count,"draw setting retains collisions")

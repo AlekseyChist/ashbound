@@ -75,6 +75,18 @@ func update_visual(action: StringName, facing_direction: Vector3, walk_pose_fps:
 		return
 
 	var new_action := action
+	# JUMP-01 (owner): in the air the first run frame is held (no separate jump drawing yet).
+	if new_action == &"jump":
+		if _current_action != &"jump" or new_view != _current_view:
+			_current_action = &"jump"
+			_current_view = new_view
+			body.animation = _resolve_clip_name(body.sprite_frames, &"run", new_view)
+			body.frame = 0
+			body.frame_progress = 0.0
+			body.pause()
+		body.flip_h = _current_view == &"left"
+		_apply_sprite_scale(body)
+		return
 	var moving := new_action == &"walk" or new_action == &"run"
 
 	var action_changed := new_action != _current_action

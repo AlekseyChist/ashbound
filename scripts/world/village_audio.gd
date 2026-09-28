@@ -22,7 +22,18 @@ var exposure := 1.0
 var cover_timer := 0.0
 var covered := false
 var thunder_timer := 9.0
+## MUSIC-REGION-01 (owner): the main theme at home, one track per biome outside; a region must hold
+## for REGION_HOLD seconds before the music crossfades (no flicker on a border).
+const REGION_HOLD := 4.0
+const MUSIC_DB := -7.0
+var music_region := "forest"
+var _region_candidate := ""
+var _region_time := 0.0
+var _region_check := 0.0
+var _music_fade: Tween
 var rng := RandomNumberGenerator.new()
+## SNOW-01 / SAND-01: every footstep with where it fell and on what ("snow", "sand", "grass"...).
+signal stepped(at: Vector3, kind: String)
 
 func configure(owner_world: Node3D, preferences: RefCounted) -> void:
 	world=owner_world; settings=preferences
@@ -40,8 +51,9 @@ func configure(owner_world: Node3D, preferences: RefCounted) -> void:
 		var streams: Array[AudioStream]=[]
 		for path in Catalog.footsteps(surface): streams.append(load(path))
 		samples[surface]=streams
-	music=_player("Music",Catalog.music("forest"),true,MUSIC_BUS)
-	music.volume_db=-7
+	if world.has_method("music_region"): music_region=world.music_region(world.player.global_position)
+	music=_player("Music",Catalog.music(music_region),true,MUSIC_BUS)
+	music.volume_db=MUSIC_DB
 	wind=_player("Wind",Catalog.WIND,true,SOUND_BUS)
 	rain=_player("Rain",Catalog.RAIN,true,SOUND_BUS)
 	thunder=_player("Thunder",Catalog.THUNDER,false,SOUND_BUS)
@@ -69,6 +81,32 @@ func _player(label: String, path: String, looped: bool, bus: String) -> AudioStr
 	add_child(sound)
 	return sound
 
+func _follow_region(delta: float) -> void:
+	if not world.has_method("music_region"): return
+	_region_check-=delta
+	if _region_check>0: return
+	_region_check=.5
+	var region: String=world.music_region(world.player.global_position)
+	if region==music_region:
+		_region_candidate="";return
+	if region!=_region_candidate:
+		_region_candidate=region;_region_time=0.0;return
+	_region_time+=.5
+	if _region_time>=REGION_HOLD: switch_music(region)
+
+## Crossfade to another region's track (1.5 s out, 1.5 s in).
+func switch_music(region: String) -> void:
+	var path: String=Catalog.music(region)
+	if path.is_empty() or region==music_region: return
+	music_region=region;_region_candidate=""
+	if _music_fade!=null: _music_fade.kill()
+	_music_fade=create_tween()
+	_music_fade.tween_property(music,"volume_db",-40.0,1.5)
+	_music_fade.tween_callback(func():
+		music.stream=_stream(path,true);music.play())
+	_music_fade.tween_property(music,"volume_db",MUSIC_DB,1.5)
+	print("VILLAGE_MUSIC region=%s" % region)
+
 func apply_volume() -> void:
 	for pair in [[MUSIC_BUS,settings.music_percent],[SOUND_BUS,settings.sound_percent]]:
 		var index:=AudioServer.get_bus_index(pair[0])
@@ -84,6 +122,7 @@ func _process(delta: float) -> void:
 	for sound in [wind,rain,thunder,step,fire]: sound.stream_paused=not active
 	for building in world.buildings: building.door.audio.stream_paused=not active
 	if not active: return
+	_follow_region(delta)
 	cover_timer-=delta
 	if cover_timer<=0:
 		cover_timer=.15
@@ -94,7 +133,9 @@ func _process(delta: float) -> void:
 	var weather: Dictionary=world.atmosphere.current
 	var gust:=.86+.14*sin(world.atmosphere.effect_time*.71)
 	wind.volume_db=linear_to_db(maxf(.30*float(weather.wind)*exposure*gust,.0001))
-	rain.volume_db=linear_to_db(maxf(.48*float(weather.rain)*exposure,.0001))
+	# WEATHER-BIOME-01: no rain sound where it snows (the mountains) or never rains (the desert).
+	var raining: float=1.0 if world.atmosphere.rain.precipitation_here()=="rain" else 0.0
+	rain.volume_db=linear_to_db(maxf(.48*float(weather.rain)*exposure*raining,.0001))
 	if world.atmosphere.weather_index==4 and float(weather.rain)>.75:
 		thunder_timer-=delta
 		if thunder_timer<=0:
@@ -125,6 +166,7 @@ func _physics_process(_delta: float) -> void:
 	var variant:=rng.randi_range(0,choices.size()-2)
 	if variant>=last_variant: variant+=1
 	last_variant=variant;last_surface=surface;step_count+=1
+	stepped.emit(at,world.ground_kind(at.x,at.z) if world.has_method("ground_kind") else surface)
 	step.stream=choices[variant]
 	step.pitch_scale=rng.randf_range(.95,1.05)
 	step.volume_db=-9 if running else -13
@@ -137,6 +179,10 @@ func surface_at(at: Vector3) -> String:
 	var surface: String=hit.collider.get_meta("footstep_surface","stone")
 	if surface=="ground":
 		var road: float=world.road_at(hit.position.x,hit.position.z) if world.has_method("road_at") else world.terrain.color_at(hit.position.x,hit.position.z).a
+		if world.has_method("ground_kind") and road<=.5:
+			var kind: String=world.ground_kind(hit.position.x,hit.position.z)
+			if kind=="snow": return "snow"
+			if kind=="sand": return "dirt"
 		return "dirt" if road>.5 else "grass"
 	return surface if samples.has(surface) else "stone"
 

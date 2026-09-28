@@ -812,3 +812,33 @@ msgstr ""
 
 msgid "UI_ACTION_JUMP"
 msgstr ""
+
+msgid "WORLD_SEA_TOO_DEEP"
+msgstr ""
+
+msgid "SETTINGS_DEBUG_MAP"
+msgstr ""
+
+msgid "DEBUG_MAP_HINT"
+msgstr ""
+
+msgid "INN_KEEPER_ASK"
+msgstr ""
+
+msgid "INN_ANSWER_RENT"
+msgstr ""
+
+msgid "INN_ANSWER_DRINK"
+msgstr ""
+
+msgid "INN_ANSWER_LEAVE"
+msgstr ""
+
+msgid "INN_KEEPER_DRINK"
+msgstr ""
+
+msgid "INN_KEEPER_DRINK_NO_MONEY"
+msgstr ""
+
+msgid "INN_KEEPER_BYE"
+msgstr ""

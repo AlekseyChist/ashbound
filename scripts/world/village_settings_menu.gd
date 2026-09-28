@@ -15,6 +15,7 @@ var debug_button: Button
 var debug_page: VBoxContainer
 var restart_button: Button
 var teleport_button: MenuButton
+var map_button: Button
 var labels: Dictionary={}
 var opened: bool:
 	get: return is_visible_in_tree() and world.pocket.state==world.pocket.State.OPEN
@@ -76,6 +77,11 @@ func _build_debug_page() -> void:
 		teleport_button.get_popup().id_pressed.connect(func(id: int):
 			world.pocket.close_menu()
 			world.teleport_to(world.debug_locations()[id]))
+	if world.has_method("open_debug_map"):
+		map_button=world._button(row,Vector2(300,120));map_button.name="MapButton"
+		map_button.pressed.connect(func():
+			world.pocket.close_menu()
+			world.open_debug_map())
 	debug_page.hide()
 
 ## Settings or the Debug page in the same place; the sliders make room for it on a phone.
@@ -116,6 +122,7 @@ func _refresh_text(_language: String="") -> void:
 	language_button.text="English" if Localization.get_language()=="ru" else "Русский"
 	debug_button.text=Localization.text("MENU_SECTION_SETTINGS" if debug_page.visible else "SETTINGS_DEBUG")
 	restart_button.text=Localization.text("FOREST_RETURN_START")
+	if map_button!=null: map_button.text=Localization.text("SETTINGS_DEBUG_MAP")
 	if teleport_button!=null:
 		teleport_button.text=Localization.text("SETTINGS_DEBUG_TELEPORT")
 		var popup:=teleport_button.get_popup();popup.clear()

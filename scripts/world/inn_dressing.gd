@@ -76,6 +76,92 @@ func build() -> void:
 	for rug in RUGS:
 		_rug(rug[0], rug[1], rug[2])
 	_hearth_fire()
+	_roof_frame()
+
+## ROOF-FRAME-01 (owner 27 Sep): under the roof - board lining, rafters in pairs, a ridge beam the whole
+## length of the roof, collar ties, and king posts with braces holding the ridge beam. Measured inner
+## roof surface: y = ROOF_APEX - ROOF_SLOPE * |x| (inn frame); everything sits just under it.
+const ROOF_APEX := 10.49
+const ROOF_SLOPE := 1.015
+const ROOF_HALF_LENGTH := 10.15
+const ROOF_EAVE_X := 6.1
+const RAFTER_STEP := 1.2
+const COLLAR_Y := 8.2
+const BOARDS := "res://assets/props/tavern-v1/roof/brown_planks_04_%s_1k.jpg"
+const OAK := "res://assets/buildings/forest-inn-v1/t03a_Forest_oak.png"
+
+func _roof_frame() -> void:
+	var frame := Node3D.new()
+	frame.name = "RoofFrame"
+	add_child(frame)
+	var timber := StandardMaterial3D.new()
+	timber.albedo_texture = load(OAK)
+	timber.albedo_color = Color(0.72, 0.62, 0.52)
+	timber.uv1_triplanar = true
+	timber.uv1_scale = Vector3.ONE * 0.8
+	timber.roughness = 0.9
+	# Lining: two slopes of boards running along the ridge, 3 cm under the roof.
+	var boards := StandardMaterial3D.new()
+	boards.albedo_texture = load(BOARDS % "diff")
+	boards.normal_enabled = true
+	boards.normal_texture = load(BOARDS % "nor_gl")
+	boards.roughness_texture = load(BOARDS % "rough")
+	boards.albedo_color = Color(0.85, 0.78, 0.7)
+	var rise := ROOF_APEX - ROOF_SLOPE * ROOF_EAVE_X
+	for side in [-1.0, 1.0]:
+		var st := SurfaceTool.new()
+		st.begin(Mesh.PRIMITIVE_TRIANGLES)
+		var eave := Vector3(side * ROOF_EAVE_X, rise - 0.03, 0.0)
+		var top := Vector3(side * 0.02, ROOF_APEX - 0.03, 0.0)
+		var slope_len := eave.distance_to(top)
+		var corners := [eave + Vector3(0, 0, -ROOF_HALF_LENGTH), top + Vector3(0, 0, -ROOF_HALF_LENGTH),
+			top + Vector3(0, 0, ROOF_HALF_LENGTH), eave + Vector3(0, 0, ROOF_HALF_LENGTH)]
+		# Texture u along the ridge (the boards), v up the slope; one tile per 2 m.
+		var uvs := [Vector2(-ROOF_HALF_LENGTH, 0), Vector2(-ROOF_HALF_LENGTH, slope_len), Vector2(ROOF_HALF_LENGTH, slope_len), Vector2(ROOF_HALF_LENGTH, 0)]
+		var order := [0, 1, 2, 0, 2, 3] if side > 0 else [0, 2, 1, 0, 3, 2]
+		for k in order:
+			st.set_uv(uvs[k] / 2.0)
+			st.add_vertex(corners[k])
+		st.generate_normals()
+		st.generate_tangents()
+		var lining := MeshInstance3D.new()
+		lining.name = "Lining"
+		lining.mesh = st.commit()
+		lining.material_override = boards
+		frame.add_child(lining)
+	# Ridge beam along the whole roof.
+	_beam(frame, timber, Vector3(0, ROOF_APEX - 0.25, 0), Vector3(0.3, 0.35, ROOF_HALF_LENGTH * 2.0), Basis.IDENTITY)
+	var angle := atan(ROOF_SLOPE)
+	var slope_len := Vector2(ROOF_EAVE_X, ROOF_SLOPE * ROOF_EAVE_X).length()
+	var z := -ROOF_HALF_LENGTH + 0.3
+	var n := 0
+	while z <= ROOF_HALF_LENGTH - 0.29:
+		for side in [-1.0, 1.0]:
+			# A rafter 14 x 20 cm, 13 cm under the lining, from the eave up to the ridge.
+			var mid := Vector3(side * ROOF_EAVE_X * 0.5, (ROOF_APEX + rise) * 0.5 - 0.16, z)
+			var tilt := Basis(Vector3.FORWARD, side * angle)
+			_beam(frame, timber, mid, Vector3(slope_len, 0.2, 0.14), tilt)
+		if n % 2 == 0:
+			var half := (ROOF_APEX - COLLAR_Y) / ROOF_SLOPE - 0.1
+			_beam(frame, timber, Vector3(0, COLLAR_Y, z), Vector3(half * 2.0, 0.18, 0.14), Basis.IDENTITY)
+			var post_h := ROOF_APEX - 0.42 - COLLAR_Y
+			_beam(frame, timber, Vector3(0, COLLAR_Y + post_h * 0.5, z), Vector3(0.16, post_h, 0.16), Basis.IDENTITY)
+			for along in [-1.0, 1.0]:
+				if absf(z + along * 0.55) > ROOF_HALF_LENGTH - 0.2: continue
+				var brace := Basis(Vector3.RIGHT, along * deg_to_rad(45.0))
+				_beam(frame, timber, Vector3(0, COLLAR_Y + post_h * 0.55, z + along * 0.38), Vector3(0.12, 1.0, 0.12), brace)
+		z += RAFTER_STEP
+		n += 1
+
+func _beam(parent: Node3D, material: Material, centre: Vector3, size: Vector3, basis: Basis) -> void:
+	var box := BoxMesh.new()
+	box.size = size
+	var beam := MeshInstance3D.new()
+	beam.mesh = box
+	beam.material_override = material
+	beam.transform = Transform3D(basis, centre)
+	beam.visibility_range_end = 40.0
+	parent.add_child(beam)
 
 func _place(model: String, at: Vector3, yaw: float, scale_factor: float) -> Node3D:
 	var scene: PackedScene = load(PROPS % model)

@@ -6,6 +6,7 @@ var sound_percent := 80.0
 var draw_distance := 220.0
 ## Owner 27 Sep: up to 1 km on PC and on a strong phone; the default stays 220 m.
 const MAX_DRAW_DISTANCE := 1000.0
+const TERRAIN_FAR := 3000.0
 ## GRASS-02: share of the full grass density; 0 turns the grass off.
 var grass_percent := 100.0
 ## GRASS-02 / D-088: how far grass is drawn, metres.
@@ -35,7 +36,10 @@ func save_settings() -> Error:
 
 func apply_distance(world: Node3D) -> void:
 	draw_distance = clampf(draw_distance, 80, MAX_DRAW_DISTANCE)
-	world.camera_rig.get_camera().far = draw_distance
+	# The ground and the mountains are always drawn to the horizon (the fog hides the far end); the
+	# setting limits the objects on them (trees, grass, props) through their visibility ranges.
+	# Clipping the ground at the draw distance left the sky showing under distant mountains.
+	world.camera_rig.get_camera().far = maxf(draw_distance, TERRAIN_FAR)
 	# WORLD-DRESS-01A: batches outside the village dressing join through a group.
 	var scaled: Array = world.dressing.find_children("*", "GeometryInstance3D", true, false)
 	for node in world.get_tree().get_nodes_in_group(&"draw_distance_scaled"):
@@ -44,6 +48,9 @@ func apply_distance(world: Node3D) -> void:
 		if not node.has_meta("base_visibility_end"):
 			node.set_meta("base_visibility_end", node.visibility_range_end)
 		var base: float = node.get_meta("base_visibility_end")
+		# TREES-01: where near trees end and the far cones begin moves with the setting too.
+		if node.has_meta("base_visibility_begin"):
+			node.visibility_range_begin = float(node.get_meta("base_visibility_begin")) * draw_distance / 220.0
 		if base <= 0: continue
 		node.visibility_range_end = base * draw_distance / 220.0
 		node.visibility_range_end_margin = minf(10, node.visibility_range_end * .15)
