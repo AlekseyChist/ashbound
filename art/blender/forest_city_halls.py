@@ -345,7 +345,8 @@ def barracks(mats):
 
     gable_roof(P, -HX, HX, Y0, Y1, EAVE, RIDGE, over=0.7)
     xs = roof_frame(P, -HX + 0.35, HX - 0.35, Y0 + 0.3, Y1 - 0.3, EAVE, RIDGE, clear_x0=1.7)
-    hearth(P, bid, -HX + 0.3, 1.8, FLOOR, RIDGE)
+    # The hearth at the middle of the blind gable, clear of the bunks along the rear (Codex 046).
+    hearth(P, bid, -HX + 0.3, -1.5, FLOOR, RIDGE)
     for i, lx in enumerate((xs[1], xs[-2])):
         empty(f"{bid}_lamp{i}", (lx, ym - 1.0, EAVE - 0.3), "lamp")
 

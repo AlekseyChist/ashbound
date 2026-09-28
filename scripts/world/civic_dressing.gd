@@ -29,7 +29,7 @@ const PLACED := {
 	"K01": [
 		["wine_barrel_01", Vector3(9.0, 0.0, -2.4), 0.0, 1.0], ["wine_barrel_01", Vector3(9.0, 0.0, -1.5), 40.0, 1.0],
 		["jug_01", Vector3(4.2, 0.78, 0.6), 0.0, 1.0], ["carved_wooden_plate", Vector3(5.4, 0.78, 0.6), 0.0, 1.0],
-		["carved_wooden_plate", Vector3(6.2, 0.78, 0.6), 0.0, 1.0], ["wicker_basket_01", Vector3(-8.6, 0.0, 3.0), 0.0, 1.0],
+		["carved_wooden_plate", Vector3(6.2, 0.78, 0.6), 0.0, 1.0], ["wicker_basket_01", Vector3(-8.2, 0.0, 4.0), 0.0, 1.0],
 	],
 }
 ## Rugs: [centre (y = floor), size, tint]. The hall's long rug under the council table, a darker

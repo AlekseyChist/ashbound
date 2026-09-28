@@ -63,6 +63,7 @@ const CIVIC := {
 		"title_key": "WORLD_FOREST_CITY_BARRACKS"},
 }
 const Hall = preload("res://scripts/world/village_building.gd")
+const Entry = preload("res://scripts/world/closed_house_entry.gd")
 var halls: Array[Node3D] = []
 
 func _civic_buildings() -> void:
@@ -117,10 +118,11 @@ func _civic_buildings() -> void:
 ## The village's log cabins stand in for the suburbs' houses: closed (no furniture, one box to collide
 ## with), their door towards the nearest road. The workshops use them too until their own models
 ## (Codex's concept sheets) are built - then they get interiors.
+## The closed shells (forest_village_kit.py --closed): no furniture or ceilings, shutters shut.
 const KIT := {
-	"H01": {"path": "res://assets/buildings/forest-village-v1/h01.glb", "size": Vector3(6, 3.2, 8)},
-	"W01": {"path": "res://assets/buildings/forest-village-v1/w01.glb", "size": Vector3(7, 3.2, 9)},
-	"B01": {"path": "res://assets/buildings/forest-village-v1/b01.glb", "size": Vector3(8, 3.7, 10)},
+	"H01": {"path": "res://assets/buildings/forest-village-v1/h01_closed.glb", "size": Vector3(6, 3.2, 8)},
+	"W01": {"path": "res://assets/buildings/forest-village-v1/w01_closed.glb", "size": Vector3(7, 3.2, 9)},
+	"B01": {"path": "res://assets/buildings/forest-village-v1/b01_closed.glb", "size": Vector3(8, 3.7, 10)},
 }
 const WORKSHOP_KIT := {"water_mill": "W01", "sawmill": "B01", "log_yard": "B01", "bakery": "W01", "granary": "H01",
 	"carpenter": "H01", "smithy": "H01", "charcoal_burner": "H01", "tar_kiln": "H01"}
@@ -157,6 +159,8 @@ func _closed_house(b: Dictionary, kit: String) -> void:
 	# The whole model - porch, ramp, roof overhang - not the kit's nominal walls.
 	# The stone skirt reaches 0.1 m past the model; the clearance keeps it in the footprint too.
 	var rect := _extent(house).grow(0.15)
+	# The entry apron (_entry_wedge) may run up to 1.5 m out in front (+z): it keeps clear too.
+	rect.size.y += 1.5
 	# Placement audit (Codex 023, owner 28 Sep): the turned footprint keeps off the road bed and its
 	# shoulder and off the river - pushed straight away from what it touches, never across it.
 	var pushed := _clear_spot(Vector2(at.x, at.z), basis, rect)
@@ -203,6 +207,11 @@ func _closed_house(b: Dictionary, kit: String) -> void:
 			if absf(local.x) <= size.x * 0.5 + 0.2 and absf(local.y) <= size.z * 0.5 + 0.2:
 				high = maxf(high, g)
 			low = minf(low, g)
+	# A house far above the ground at its door is set lower, its back into the slope: the apron down
+	# from the steps then stays short (at most 0.6 m of drop, 1.5 m long).
+	var door_ground: float = world.shore_ground((at + basis * Vector3(0, 0, size.z * 0.5 + 1.5)).x, (at + basis * Vector3(0, 0, size.z * 0.5 + 1.5)).z)
+	if high - door_ground > 0.6:
+		high = door_ground + 0.6
 	house.name = "%s_%s_%d" % [str(b.kind), kit, house_count]
 	house.position = Vector3(at.x, high, at.z)
 	house.rotation.y = yaw
@@ -221,6 +230,9 @@ func _closed_house(b: Dictionary, kit: String) -> void:
 			mesh.queue_free()
 			continue
 		mesh.visibility_range_end = VISIBLE
+		# Steps and the barn ramp are walked on a smooth wedge (below), not their risers.
+		if str(mesh.get_meta("extras", {}).get("item_id", "")) == "entry_steps":
+			continue
 		var body := StaticBody3D.new()
 		body.set_meta("footstep_surface", "stone" if role == "foundation" else "wood")
 		body.collision_layer = 1
@@ -233,7 +245,25 @@ func _closed_house(b: Dictionary, kit: String) -> void:
 	# The base goes down to the real ground on a slope: a stone skirt, never a floor on air.
 	if high - low > 0.05:
 		var foot: Vector2 = base.get_center()
-		_box(house, Vector3(foot.x, -(high - low) * 0.5 + 0.02, foot.y), Vector3(base.size.x + 0.2, high - low + 0.1, base.size.y + 0.2), _stone())
+		# Its top is at 0.02, level with the wedge's flat (a hero does not step up a lip of a few cm).
+		var skirt_size := Vector3(base.size.x + 0.2, high - low + 0.1, base.size.y + 0.2)
+		var skirt_at := Vector3(foot.x, 0.02 - skirt_size.y * 0.5, foot.y)
+		_box(house, skirt_at, skirt_size, _stone())
+		# The skirt is solid: its flat top round the porch is stood on, never sunk into.
+		var skirt := StaticBody3D.new()
+		skirt.name = "SkirtCollision"
+		skirt.set_meta("footstep_surface", "stone")
+		skirt.collision_layer = 1
+		skirt.collision_mask = 0
+		var skirt_shape := CollisionShape3D.new()
+		var skirt_box := BoxShape3D.new()
+		skirt_box.size = skirt_size
+		skirt_shape.shape = skirt_box
+		skirt_shape.position = skirt_at
+		skirt.add_child(skirt_shape)
+		house.add_child(skirt)
+	# The skirt's front edge (it spans the porch too): the apron starts there.
+	Entry.add(house, func(p: Vector3) -> float: return world.shore_ground(p.x, p.z), _stone(), base.end.y + 0.1 if high - low > 0.05 else -INF)
 	house_count += 1
 
 

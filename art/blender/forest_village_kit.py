@@ -22,6 +22,9 @@ def parse_args():
     parser.add_argument("--data", default=str(BUILD_DATA))
     parser.add_argument("--out", default=str(PREVIEW_DIR))
     parser.add_argument("--ortho", type=float, default=17.0)
+    # HOUSES-CLOSED (owner 28 Sep): the shell alone - no furniture, no ceiling - exported as
+    # <slug>_closed.glb for the houses nobody enters (forest city suburbs, village neighbours).
+    parser.add_argument("--closed", action="store_true")
     return parser.parse_args(argv)
 
 def load_specs():
@@ -171,7 +174,7 @@ def main():
     built_assets = []
     for spec in specs:
         spec_id = spec["id"]
-        slug = spec.get("slug", spec_id.lower())
+        slug = spec.get("slug", spec_id.lower()) + ("_closed" if args.closed else "")
         out_dir = BUILD_DATA.parent
         out_dir.mkdir(parents=True, exist_ok=True)
         tex_dir = out_dir / "textures"
@@ -181,7 +184,21 @@ def main():
         asset = C.ASSET
         mats = make_materials(tex_dir)
         build_shell(spec, mats)
-        build_furniture(spec, mats)
+        if args.closed:
+            for obj in list(asset.objects):
+                if obj.get("part_role", "") in ("ceiling", "interior", "furniture"):
+                    bpy.data.objects.remove(obj, do_unlink=True)
+            # The entry steps / ramp stay their own mesh: the game walks them on a smooth wedge.
+            for obj in asset.objects:
+                if "_step" in obj.name or "_ramp" in obj.name:
+                    obj["item_id"] = "entry_steps"
+            # Shutters shut over the windows: nothing to see through into an empty house.
+            for obj in asset.objects:
+                if obj.get("part_role", "") == "shutter_hinge":
+                    obj.rotation_euler[2] = 0.0
+            bpy.context.view_layer.update()
+        else:
+            build_furniture(spec, mats)
         # FOREST-CITY-01: a building entered from its long side is built with the entry on the right
         # and turned so the entry faces the front (-y in Blender, +z in Godot) like every other one.
         if spec.get('turn_z_deg'):

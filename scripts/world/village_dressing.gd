@@ -342,7 +342,8 @@ func _neighbour(record: Dictionary, at: Vector3, yaw: float, drop: float) -> Nod
 	house.position = at
 	house.rotation.y = yaw
 	add_child(house)
-	var model := (load(record.scene_path) as PackedScene).instantiate() as Node3D
+	# The closed shell of the same house (forest_village_kit.py --closed): nothing inside is loaded.
+	var model := (load(str(record.scene_path).replace(".glb", "_closed.glb")) as PackedScene).instantiate() as Node3D
 	model.name = "Model"
 	house.add_child(model)
 	preload("res://scripts/world/village_house_materials.gd").new().apply(model, str(record.id))
@@ -351,6 +352,10 @@ func _neighbour(record: Dictionary, at: Vector3, yaw: float, drop: float) -> Nod
 		# Closed house: nothing inside is ever seen.
 		if role == "furniture" or role == "interior":
 			mesh.visible = false
+			continue
+		# The steps are walked on closed_house_entry's slope, not on their stone risers.
+		if str(mesh.get_meta("extras", {}).get("item_id", "")) == "entry_steps":
+			mesh.visibility_range_end = 160.0
 			continue
 		var body := StaticBody3D.new()
 		body.collision_layer = 1
@@ -373,4 +378,8 @@ func _neighbour(record: Dictionary, at: Vector3, yaw: float, drop: float) -> Nod
 		plinth.material_override = stone
 		plinth.position = Vector3(0, -drop * .5, 0)
 		house.add_child(plinth)
+	var stone := StandardMaterial3D.new()
+	stone.albedo_color = Color(0.46, 0.44, 0.4)
+	stone.roughness = .95
+	preload("res://scripts/world/closed_house_entry.gd").add(house, func(p: Vector3) -> float: return terrain.height_at(p.x, p.z), stone, -INF)
 	return house
