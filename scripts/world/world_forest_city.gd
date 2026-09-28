@@ -89,6 +89,7 @@ func _civic_buildings() -> void:
 		hall.rotation.y = yaw
 		if high - low > 0.05:
 			_box(hall, Vector3(0, -(high - low) * 0.5 + 0.02, 0), Vector3(float(record.width) + 0.4, high - low + 0.1, float(record.depth) + 0.4), _stone())
+		_civic_skin(hall.model)
 		halls.append(hall)
 		_placed.append([Vector2(at.x, at.z), basis, float(record.width) * 0.5, float(record.depth) * 0.5])
 
@@ -476,8 +477,40 @@ func _skin(kind: String) -> StandardMaterial3D:
 			m.roughness_texture = load(STONE_MAPS % "rough")
 			m.roughness = 1.0
 			m.uv1_scale = Vector3(0.5, 0.5, 1)
+		"timber_across":
+			m.albedo_texture = load(SKIN_DIR + "weathered_timber_across_1k.jpg")
+			m.uv1_triplanar = true
+			m.uv1_scale = Vector3.ONE * 0.6
+		"shingles_tri":
+			m.albedo_texture = load(SKIN_DIR + "wood_shingles_1k.jpg")
+			m.uv1_triplanar = true
+			m.uv1_triplanar_sharpness = 4.0
+			m.uv1_scale = Vector3.ONE / 1.8
+		"stone_tri":
+			m.albedo_texture = load(STONE_MAPS % "diff")
+			m.normal_enabled = true
+			m.normal_texture = load(STONE_MAPS % "nor_gl")
+			m.uv1_triplanar = true
+			m.uv1_scale = Vector3.ONE * 0.5
 	_skins[kind] = m
 	return m
+
+## The kit halls (R01, K01) carry planar UVs, not grain-aligned ones: their shell takes Codex's
+## finishes world-triplanar - the timber turned so its grain runs level along the logs, the shingle
+## courses level on the side projections of the roof pitches. Furniture keeps its own look.
+const CIVIC_ROLES := ["shell", "gable", "roof", "foundation", "chimney", "canopy", "door", "shutter"]
+
+func _civic_skin(model: Node3D) -> void:
+	for node in model.find_children("*", "MeshInstance3D", true, false):
+		var mesh := node as MeshInstance3D
+		if not str(mesh.get_meta("extras", {}).get("part_role", "")) in CIVIC_ROLES:
+			continue
+		for i in mesh.mesh.get_surface_count():
+			var source := mesh.mesh.surface_get_material(i)
+			var kind := source.resource_name.trim_prefix("Forest_") if source else ""
+			var skin: String = {"oak": "timber_across", "roof": "shingles_tri", "stone": "stone_tri"}.get(kind, "")
+			if skin != "":
+				mesh.set_surface_override_material(i, _skin(skin))
 
 func _workshop_skin(model: Node3D) -> void:
 	for node in model.find_children("*", "MeshInstance3D", true, false):
