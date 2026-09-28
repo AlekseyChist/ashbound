@@ -491,7 +491,7 @@ def build_furniture(spec, mats):
         for i, (bx, by) in enumerate([(-2.5, -5.0), (-2.5, -2.2), (-2.5, 0.6), (1.6, -5.0), (1.6, -2.2)]):
             _bed(spec, mats, bx, by, 1.0, 2.0, "loft_bed%d" % i, loft)
         _chest(spec, mats, -2.5, 3.0, 1.0, 0.6, 0.6, "loft_chest")
-    elif fid == "T03A":
+    elif fid in ("T03A", "T03B"):  # T03B: the same inn in stone (INN-STONE-01)
         # Forest inn v3, 13 x 21 m: x -6.5..6.5, y -10.5 (front door) .. 10.5 (rear).
         floor = spec["floor"]
         loft = spec["ceiling_z"] + 0.05

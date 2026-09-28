@@ -348,9 +348,12 @@ def build_shell(spec, mats):
         chim = C.box(f"{spec['id']}_chimney", Vector((cx, cy, (wt - .3 + top_z) / 2)), (cw, cd, top_z - wt + .3), mats['stone'])
         _tag(chim, spec, 'chimney')
 
-    # Timber architecture: corner posts and wall top rails
+    # Timber architecture: corner posts and wall top rails. A log wall has its own corners and
+    # courses (LOG-HOUSES-01, owner 28 Sep: the logs ran through the plinth), so no posts or stone
+    # course on it.
+    log_style = spec.get('wall_style') == 'log'
     post_size = .15
-    for px in (-hw + .04, hw - .04):
+    for px in (() if log_style else (-hw + .04, hw - .04)):
         for py in (-hd + .04, hd - .04):
             post = C.box(f"{spec['id']}_post_{px}_{py}", Vector((px, py, floor + (wt - floor) / 2)), (post_size, post_size, wt - floor), mats['oak'])
             _tag(post, spec, 'shell', 'front' if py < 0 else 'rear')
@@ -367,7 +370,7 @@ def build_shell(spec, mats):
 
     # Low stone courses along wall outside only
     course_h = .3
-    for face in ('front', 'rear'):
+    for face in (() if log_style else ('front', 'rear')):
         y = -hd - .075 if face == 'front' else hd + .075
         course = C.box(f"{spec['id']}_stonecourse_{face}", Vector((0, y, floor + course_h / 2)), (w, .15, course_h), mats['stone'])
         _tag(course, spec, 'shell', face)
@@ -375,7 +378,7 @@ def build_shell(spec, mats):
             if op['face'] == face and op['kind'] in ('door', 'double_door'):
                 cutter = C.box('cut_plinth_entry', (op['center'], y, floor + course_h / 2), (op['width'], .5, course_h + .1), mats['stone'], bevel=0)
                 _apply_bool(course, cutter)
-    for face in ('left', 'right'):
+    for face in (() if log_style else ('left', 'right')):
         x = -hw - .075 if face == 'left' else hw + .075
         course = C.box(f"{spec['id']}_stonecourse_{face}", Vector((x, 0, floor + course_h / 2)), (.15, d, course_h), mats['stone'])
         _tag(course, spec, 'shell', face)
