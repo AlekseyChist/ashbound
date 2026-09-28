@@ -17,7 +17,7 @@ from mathutils import Vector
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import buildings_common as C
 from forest_village_materials import make_materials
-from water_workshops import OUT, Parts, door, export, log_wall
+from water_workshops import OUT, Parts, door, empty, export, log_wall
 
 BOX_FACES = [(0, 1, 2, 3), (4, 7, 6, 5), (0, 4, 5, 1), (1, 5, 6, 2), (2, 6, 7, 3), (3, 7, 4, 0)]
 
@@ -99,6 +99,67 @@ def lit_windows(P, face, fixed, alongs, z0, out, R, w=0.8, h=0.8):
     return opens
 
 
+def roof_frame(P, x0, x1, y0, y1, eave, ridge, step=2.4, clear_x0=0.5):
+    """The inside of the roof, as in the tavern: board lining under both pitches, trusses every `step`
+    (a tie beam over the walls, a king post, two rafters, two struts) and an inner ridge beam - all of
+    it under the roof plane, nothing through it."""
+    ym = (y0 + y1) * 0.5
+    half = (y1 - y0) * 0.5
+    slope = (ridge - eave) / half
+    for sy in (-1, 1):
+        yw = y0 if sy < 0 else y1
+        # Lining 4 cm under the deck, from the wall line to the ridge.
+        v = [(x0, yw, eave - 0.04), (x0, ym, ridge - 0.04), (x1, ym, ridge - 0.04), (x1, yw, eave - 0.04)]
+        v += [(x, y, z - 0.03) for x, y, z in v]
+        P.poly(v, BOX_FACES, "oak", "lining", grain=(1, 0, 0))
+    P.box((x0, ym - 0.13, ridge - 0.62), (x1, ym + 0.13, ridge - 0.34), "oak", "frame", "roof_frame")
+    # clear_x0 keeps the first truss off the hearth's flue at the x0 end.
+    n = max(1, int((x1 - x0 - clear_x0 - 0.5) / step))
+    xs = []
+    for i in range(n + 1):
+        x = x0 + clear_x0 + (x1 - x0 - clear_x0 - 0.5) * i / n
+        xs.append(x)
+        P.box((x - 0.12, y0 + 0.05, eave - 0.3), (x + 0.12, y1 - 0.05, eave - 0.06), "oak", "frame", "roof_frame")
+        P.box((x - 0.1, ym - 0.1, eave - 0.06), (x + 0.1, ym + 0.1, ridge - 0.62), "oak", "frame", "roof_frame")
+        for sy in (-1, 1):
+            yw = y0 if sy < 0 else y1
+            # Rafter: its top 6 cm under the plane all along.
+            a = (x, yw - sy * 0.15, eave + 0.15 * slope - 0.16)
+            b = (x, ym - sy * 0.12, ridge - 0.2)
+            P.beam(a, b, 0.14, 0.18, "oak", "frame", "roof_frame", up=(0, 0, 1))
+            # Strut from the king post's foot to the rafter's middle.
+            mid_y = ym - sy * half * 0.5
+            P.beam((x, ym - sy * 0.1, eave + 0.2), (x, mid_y, eave + slope * half * 0.5 - 0.3), 0.1, 0.1, "oak", "frame", "roof_frame")
+    return xs
+
+
+def hearth(P, bid, x_wall, yc, floor, ridge, facing=1):
+    """A stone hearth against a gable wall: base slab, cheeks and back round an open firebox, a
+    stone lintel with an oak mantel shelf, the breast above narrowing into the flue up through the
+    roof. The `<bid>_fire` marker sits on the logs in the firebox."""
+    def X(d):
+        return x_wall + facing * d
+    def box(d0, d1, ya, yb, z0, z1, mat="stone", name="hearth"):
+        P.box((min(X(d0), X(d1)), ya, z0), (max(X(d0), X(d1)), yb, z1), mat, "furniture", name)
+    f = floor
+    box(0.2, 1.9, yc - 1.05, yc + 1.05, f, f + 0.32)
+    box(0.2, 1.55, yc - 1.0, yc - 0.68, f + 0.32, f + 1.3)
+    box(0.2, 1.55, yc + 0.68, yc + 1.0, f + 0.32, f + 1.3)
+    box(0.2, 0.5, yc - 0.68, yc + 0.68, f + 0.32, f + 1.3)
+    box(0.2, 1.6, yc - 1.02, yc + 1.02, f + 1.3, f + 1.55)
+    box(1.45, 1.75, yc - 1.15, yc + 1.15, f + 1.55, f + 1.65, "oak", "mantel")
+    box(0.2, 1.35, yc - 0.85, yc + 0.85, f + 1.55, f + 2.4)
+    box(0.25, 1.05, yc - 0.6, yc + 0.6, f + 2.4, ridge + 1.3, "stone", "flue")
+    box(0.18, 1.12, yc - 0.67, yc + 0.67, ridge + 1.3, ridge + 1.45, "stone", "flue")
+    for k, dy in enumerate((-0.25, 0.0, 0.25)):
+        P.cyl((X(0.75), yc + dy - 0.05, f + 0.4 + 0.05 * k), (X(1.25), yc + dy + 0.05, f + 0.4 + 0.05 * k), 0.07, "oak", "furniture", "firewood", seg=6)
+    empty(f"{bid}_fire", (X(1.0), yc, f + 0.4), "fire")
+    # Firewood stacked beside the hearth.
+    for k in range(4):
+        P.cyl((X(0.3), yc + 1.2, f + 0.08 + 0.15 * k), (X(1.3), yc + 1.2, f + 0.08 + 0.15 * k), 0.07, "oak", "furniture", "firewood", seg=6)
+        P.cyl((X(0.3), yc + 1.37, f + 0.08 + 0.15 * k), (X(1.3), yc + 1.37, f + 0.08 + 0.15 * k), 0.07, "oak", "furniture", "firewood", seg=6)
+
+
 def chimney(P, x, y, z0, z1):
     P.box((x - 0.4, y - 0.4, z0), (x + 0.4, y + 0.4, z1), "stone", "chimney")
     P.box((x - 0.5, y - 0.5, z1), (x + 0.5, y + 0.5, z1 + 0.15), "stone", "chimney")
@@ -169,7 +230,7 @@ def town_hall(mats):
     front = lit_windows(P, "y", Y0, (-9.5, -6.5, -3.5, 3.5, 6.5, 9.5), FLOOR + 1.3, -1, R)
     front.append((-1.1, 1.1, FLOOR, FLOOR + 2.7))
     rear = lit_windows(P, "y", Y1, (-9.0, -5.0, -1.5, 1.5, 5.0, 9.0), FLOOR + 1.3, 1, R)
-    left = lit_windows(P, "x", -HX, (ym - 2.2, ym + 2.2), FLOOR + 1.3, -1, R)
+    left = lit_windows(P, "x", -HX, (ym - 2.6, ym - 0.2), FLOOR + 1.3, -1, R)    # the hearth takes the rear end
     left += lit_windows(P, "x", -HX, (ym,), EAVE + 1.0, -1, R, 0.7, 0.9)
     right = lit_windows(P, "x", HX, (ym - 2.2, ym + 2.2), FLOOR + 1.3, 1, R)
     right += lit_windows(P, "x", HX, (ym,), EAVE + 1.0, 1, R, 0.7, 0.9)
@@ -187,7 +248,12 @@ def town_hall(mats):
     gable_roof(P, -HX, HX, Y0, Y1, EAVE, RIDGE, over=0.8)
     for vx in (-5.0, 5.0):
         vent(P, vx, ym, RIDGE)
-    chimney(P, -HX + 1.2, Y1 - 1.6, FLOOR, RIDGE - 0.4)
+    xs = roof_frame(P, -HX + 0.35, HX - 0.35, Y0 + 0.3, Y1 - 0.3, EAVE, RIDGE, clear_x0=1.7)
+    hearth(P, bid, -HX + 0.3, Y1 - 2.2, FLOOR, RIDGE)
+    # Lanterns hang from two tie beams, one over each half of the council table; the marker is the
+    # tie beam's underside.
+    for i, lx in enumerate((xs[2], xs[-3])):
+        empty(f"{bid}_lamp{i}", (lx, ym - 1.2, EAVE - 0.3), "lamp")
 
     # The gallery: posts with brackets, a railing, a lean-to roof from the wall.
     # Every 2.34 m along the front, the middle one left out: the porch bay stays open over the steps.
@@ -237,8 +303,6 @@ def town_hall(mats):
     F.box((10.6, 1.4, 0.8), (10.8, 2.4, 2.2), "oak", "furniture", "seat")
     for dy in (1.4, 2.3):
         F.box((9.8, dy, 0.8), (10.8, dy + 0.1, 1.2), "oak", "furniture", "seat")
-    F.box((-HX + 0.3, Y1 - 2.6, 0), (-HX + 1.8, Y1 - 0.6, 1.3), "stone", "furniture", "hearth")
-    F.box((-HX + 0.3, Y1 - 2.4, 1.3), (-HX + 1.2, Y1 - 0.8, 2.6), "stone", "furniture", "hearth")
     for x in (-8.5, 4.0, 7.2):
         F.box((x, Y1 - 0.95, 0), (x + 1.1, Y1 - 0.35, 0.6), "oak", "furniture", "chest")
     for x in (-8.0, -3.0, 3.0, 8.0):
@@ -280,7 +344,10 @@ def barracks(mats):
     P.box((DX - 1.1, Y0 - 0.14, FLOOR + 2.4), (DX + 1.1, Y0 + 0.1, FLOOR + 2.6), "oak", "frame")
 
     gable_roof(P, -HX, HX, Y0, Y1, EAVE, RIDGE, over=0.7)
-    chimney(P, -HX + 1.0, 1.8, FLOOR, RIDGE - 0.2)
+    xs = roof_frame(P, -HX + 0.35, HX - 0.35, Y0 + 0.3, Y1 - 0.3, EAVE, RIDGE, clear_x0=1.7)
+    hearth(P, bid, -HX + 0.3, 1.8, FLOOR, RIDGE)
+    for i, lx in enumerate((xs[1], xs[-2])):
+        empty(f"{bid}_lamp{i}", (lx, ym - 1.0, EAVE - 0.3), "lamp")
 
     # The shield canopy along the left of the front: posts, a lean-to, the rack of round shields.
     CX0, CX1, CY = -9.4, 0.4, Y0 - 2.0
@@ -324,7 +391,6 @@ def barracks(mats):
         F.cyl((HX - 0.5, y, 2.4), (HX - 0.5, y, 2.65), 0.05, "iron", "furniture", "spear", seg=4, r2=0.0)
     for x in (4.5, 6.2, 7.9):
         F.box((x, Y1 - 0.95, 0), (x + 1.0, Y1 - 0.35, 0.55), "oak", "furniture", "chest")
-    F.box((-HX + 0.3, 0.9, 0), (-HX + 1.6, 2.7, 1.2), "stone", "furniture", "stove")
 
     P.emit(None, f"{bid}_")
     door(P, bid, DX - 0.8, DX + 0.8, Y0 + 0.08, FLOOR, FLOOR + 2.3, mats)

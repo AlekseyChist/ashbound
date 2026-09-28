@@ -42,6 +42,9 @@ func build(data: Dictionary) -> void:
 	door.name = "Door"
 	add_child(door)
 	door.configure(model, record.id, record.entry)
+	# FOREST-CITY-01: the civic halls light themselves (civic_dressing: hearth, lanterns on the ties).
+	if record.get("own_lights", false):
+		return
 	var light := OmniLight3D.new()
 	light.name = "InteriorFill"
 	light.position = Vector3(0, float(record.get("lantern_y", 2.35)), 0)

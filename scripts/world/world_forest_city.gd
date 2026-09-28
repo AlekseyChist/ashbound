@@ -56,10 +56,10 @@ const CIVIC := {
 	# art/blender/forest_city_halls.py: the door is in the body's front wall; the steps start at the
 	# front of the gallery / porch (stair_front) and climb the plinth over stair_run.
 	"town_hall": {"id": "R01", "scene_path": "res://assets/buildings/forest-city-v1/r01.glb", "width": 24.0, "depth": 12.0,
-		"entry": Vector3(0, 1.0, 3.6), "floor_height": 1.0, "stair_front": 6.0, "stair_run": 2.0, "lantern_y": 3.6,
+		"entry": Vector3(0, 1.0, 3.6), "floor_height": 1.0, "stair_front": 6.0, "stair_run": 2.0, "own_lights": true,
 		"title_key": "WORLD_FOREST_CITY_TOWN_HALL"},
 	"barracks": {"id": "K01", "scene_path": "res://assets/buildings/forest-city-v1/k01.glb", "width": 20.0, "depth": 10.0,
-		"entry": Vector3(2.5, 0.8, 5.0), "floor_height": 0.8, "stair_run": 1.8, "lantern_y": 3.2,
+		"entry": Vector3(2.5, 0.8, 5.0), "floor_height": 0.8, "stair_run": 1.8, "own_lights": true,
 		"title_key": "WORLD_FOREST_CITY_BARRACKS"},
 }
 const Hall = preload("res://scripts/world/village_building.gd")
@@ -107,6 +107,7 @@ func _civic_buildings() -> void:
 		if high - low > 1.0:
 			_box(hall, Vector3(0, -(high - low) * 0.5 + 0.02, 0), Vector3(float(record.width) + 0.4, high - low + 0.1, float(record.depth) + 0.4), _stone())
 		_workshop_skin(hall.model)
+		preload("res://scripts/world/civic_dressing.gd").new().dress(hall, str(record.id), float(record.floor_height))
 		halls.append(hall)
 		_placed.append([Vector2(at.x, at.z), basis, rect])
 
@@ -154,7 +155,8 @@ func _closed_house(b: Dictionary, kit: String) -> void:
 	var basis := Basis(Vector3.UP, yaw)
 	var house: Node3D = (load(KIT[kit].path) as PackedScene).instantiate()
 	# The whole model - porch, ramp, roof overhang - not the kit's nominal walls.
-	var rect := _extent(house)
+	# The stone skirt reaches 0.1 m past the model; the clearance keeps it in the footprint too.
+	var rect := _extent(house).grow(0.15)
 	# Placement audit (Codex 023, owner 28 Sep): the turned footprint keeps off the road bed and its
 	# shoulder and off the river - pushed straight away from what it touches, never across it.
 	var pushed := _clear_spot(Vector2(at.x, at.z), basis, rect)
@@ -210,26 +212,28 @@ func _closed_house(b: Dictionary, kit: String) -> void:
 	var yard: Vector3 = at + basis * Vector3(mid.x, 0, mid.y)
 	yards.append(Vector3(yard.x, yard.z, rect.size.length() * 0.5 + 0.5))
 	house.set_meta("cleared_m", pushed.distance_to(Vector2(float(b.map[0]) - float(world.HALF), float(b.map[1]) - float(world.HALF))))
-	for mesh in house.find_children("*", "MeshInstance3D", true, false):
-		var role := str((mesh as MeshInstance3D).get_meta("extras", {}).get("part_role", ""))
-		if role == "furniture" or role == "ceiling":
+	# A closed house (owner 28 Sep): no interior - furniture and ceilings go - and the shell is solid
+	# by its real geometry, the porch and its steps included; the shut door keeps the hero out.
+	for node in house.find_children("*", "MeshInstance3D", true, false):
+		var mesh := node as MeshInstance3D
+		var role := str(mesh.get_meta("extras", {}).get("part_role", ""))
+		if role == "furniture" or role == "ceiling" or role == "interior":
 			mesh.queue_free()
-		else:
-			(mesh as MeshInstance3D).visibility_range_end = VISIBLE
+			continue
+		mesh.visibility_range_end = VISIBLE
+		var body := StaticBody3D.new()
+		body.set_meta("footstep_surface", "stone" if role == "foundation" else "wood")
+		body.collision_layer = 1
+		body.collision_mask = 0
+		var shape := CollisionShape3D.new()
+		shape.shape = mesh.mesh.create_trimesh_shape()
+		body.add_child(shape)
+		mesh.add_child(body)
 	add_child(house)
 	# The base goes down to the real ground on a slope: a stone skirt, never a floor on air.
 	if high - low > 0.05:
 		var foot: Vector2 = base.get_center()
 		_box(house, Vector3(foot.x, -(high - low) * 0.5 + 0.02, foot.y), Vector3(base.size.x + 0.2, high - low + 0.1, base.size.y + 0.2), _stone())
-	var body := StaticBody3D.new()
-	body.set_meta("footstep_surface", "wood")
-	var shape := CollisionShape3D.new()
-	var box := BoxShape3D.new()
-	box.size = size + Vector3(0.3, 0.6, 0.3)
-	shape.shape = box
-	shape.position = Vector3(0, size.y * 0.5, 0)
-	body.add_child(shape)
-	house.add_child(body)
 	house_count += 1
 
 
