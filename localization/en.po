@@ -628,6 +628,12 @@ msgstr "Town hall"
 msgid "WORLD_FOREST_CITY_BARRACKS"
 msgstr "Militia barracks"
 
+msgid "WORLD_FOREST_CITY_WATER_MILL"
+msgstr "Water mill"
+
+msgid "WORLD_FOREST_CITY_SAWMILL"
+msgstr "Sawmill"
+
 #. World exploration graybox; working place label.
 msgid "WORLD_SITE_FOREST_CAVE"
 msgstr "Forest cave"

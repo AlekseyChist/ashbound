@@ -20,6 +20,8 @@ func build(data: Dictionary) -> void:
 		var metadata: Dictionary = mesh.get_meta("extras", {})
 		var role := str(metadata.get("part_role", ""))
 		if role == "foundation" and record.id != "B01": continue
+		# WATER-WORKSHOPS-02: a turning wheel gets no static trimesh; its pier and posts stop the hero.
+		if role == "wheel": continue
 		# A straight flight of stairs is walked on a hidden ramp: the hero does not step up 19 cm risers.
 		if "stairs" in str(metadata.get("item_id", "")):
 			_stairs_ramp(mesh)
@@ -42,7 +44,7 @@ func build(data: Dictionary) -> void:
 	door.configure(model, record.id, record.entry)
 	var light := OmniLight3D.new()
 	light.name = "InteriorFill"
-	light.position = Vector3(0, 2.35, 0)
+	light.position = Vector3(0, float(record.get("lantern_y", 2.35)), 0)
 	light.omni_range = 6.5
 	light.light_energy = 0.9
 	light.light_color = Color(1.0, 0.83, 0.64)
@@ -93,8 +95,13 @@ func _stair_proxy() -> void:
 	var width := 1.8 if record.id == "H01" else 3.0
 	var front: float = record.entry.z
 	var top: float = record.floor_height
+	# WATER-WORKSHOPS-02: a high floor (the mill's 1.05 m) climbs one even slope over its whole flight.
+	var profile := [Vector2(0, front + 1.75), Vector2(top * 0.5, front + 1.4), Vector2(top, front + 0.8), Vector2(top, front + 0.2), Vector2(0, front + 0.2)]
+	if record.has("stair_run"):
+		var run: float = record.stair_run
+		profile = [Vector2(0, front + run), Vector2(top, front + 0.3), Vector2(top, front + 0.2), Vector2(0, front + 0.2)]
 	for x in [-width * 0.5, width * 0.5]:
-		for yz in [Vector2(0, front + 1.75), Vector2(top * 0.5, front + 1.4), Vector2(top, front + 0.8), Vector2(top, front + 0.2), Vector2(0, front + 0.2)]:
+		for yz in profile:
 			points.append(Vector3(record.entry.x + x, yz.x, yz.y))
 	var ramp := ConvexPolygonShape3D.new()
 	ramp.points = points

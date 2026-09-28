@@ -719,6 +719,14 @@ func _index_grass_obstacles() -> void:
 		var inn_frame := _inn_frame(site_id)
 		if not inn_frame.is_empty():
 			_grass_blocks.append(Vector3(inn_frame.center.x + offset.x, inn_frame.center.z + offset.y, 14.0))
+	# WATER-WORKSHOPS-02: the forest city's enterable halls (the mill stands outside the palisade).
+	if forest_city != null:
+		for hall in forest_city.halls + forest_city.sheds:
+			var at: Vector3 = hall.global_position
+			_grass_blocks.append(Vector3(at.x, at.z, maxf(float(hall.record.width), float(hall.record.depth)) * 0.55))
+			# A trodden patch before the door and its steps.
+			var door: Vector3 = hall.global_transform * (hall.record.entry + Vector3(0, 0, 1.8))
+			_grass_blocks.append(Vector3(door.x, door.z, 3.2))
 	# LAKE-SHORE-01: a lake is an ellipse; one circle over its long radius kept the whole shore bare.
 	# Circles of the short radius along the long axis cover the water and leave the shore to the grass.
 	for lake in world_layout.lakes:

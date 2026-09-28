@@ -629,6 +629,12 @@ msgstr "Ратуша"
 msgid "WORLD_FOREST_CITY_BARRACKS"
 msgstr "Казарма ополчения"
 
+msgid "WORLD_FOREST_CITY_WATER_MILL"
+msgstr "Водяная мельница"
+
+msgid "WORLD_FOREST_CITY_SAWMILL"
+msgstr "Лесопилка"
+
 #. World exploration graybox; working place label.
 msgid "WORLD_SITE_FOREST_CAVE"
 msgstr "Лесная пещера"

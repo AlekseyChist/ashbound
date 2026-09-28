@@ -250,16 +250,11 @@ func _wheat_field() -> void:
 	wheat_count = transforms.size()
 
 
-## WATER WHEELS (owner 28 Sep, via Codex: "the wheel came apart in pieces, apart from the house, the
-## house stood in the river"): the mill and the sawmill are built as one unit each - the house on the
-## dry bank with a wall to the river, the wheel in the water at that wall (its plane along the flow,
-## the lower paddles 0.4 m in the water), the axle from the hub into the wall, a post in the river
-## under its outer end. The plan's water_wheels are [water mill, sawmill].
+## WATER WORKSHOPS: the plan's water_wheels are [water mill, sawmill]; each is found its nearest river
+## point and flow and built there as one workshop (below).
 var wheels: Array[Node3D] = []
 var wheel_speeds: Array[float] = []
-const WHEEL_RADIUS := 2.3
-const WATER_WORKS := [["water_mill", "W01"], ["sawmill", "B01"]]
-const BANK_GAP := 0.8
+const WATER_WORKS := ["water_mill", "sawmill"]
 
 func _water_wheels() -> void:
 	for w in plan.water_wheels.size():
@@ -271,7 +266,6 @@ func _water_wheels() -> void:
 		var flow := Vector3.FORWARD
 		var water := 0.0
 		var half := 4.0
-		var depth := 0.8
 		for river in world.world_layout.rivers:
 			var pts: Array = river.world_points
 			for i in range(1, pts.size() - 1):
@@ -283,71 +277,124 @@ func _water_wheels() -> void:
 					flow = Vector3(float(pts[i + 1][0]) - float(pts[i - 1][0]), 0, float(pts[i + 1][2]) - float(pts[i - 1][2])).normalized()
 					water = float(pts[i][1])
 					half = float(river.world_widths[i]) * 0.5
-					depth = float(river.world_depths[i]) if river.has("world_depths") else 0.8
 		# n: across the flow, towards the side the plan puts the building on.
 		var n := Vector3(-flow.z, 0, flow.x)
 		if n.dot(Vector3(here.x - axis.x, 0, here.y - axis.z)) < 0.0:
 			n = -n
-		var kind: String = WATER_WORKS[w][0]
-		var kit: String = WATER_WORKS[w][1]
-		var size: Vector3 = KIT[kit].size
-		# The house: its +x wall to the river, BANK_GAP past the water's edge.
-		var x_b := -n
-		var z_b := x_b.cross(Vector3.UP)
-		var house_basis := Basis(x_b, Vector3.UP, z_b)
-		var centre := Vector3(axis.x, 0, axis.z) + n * (half + BANK_GAP + size.x * 0.5)
-		var high := -INF
-		var low := INF
-		for c in [Vector2(-1, -1), Vector2(1, -1), Vector2(-1, 1), Vector2(1, 1)]:
-			var corner: Vector3 = centre + x_b * (c.x * size.x * 0.5) + z_b * (c.y * size.z * 0.5)
-			var g: float = world.shore_ground(corner.x, corner.z)
-			high = maxf(high, g)
-			low = minf(low, g)
-		high = maxf(high, water + 0.4)
-		var house := _kit_house(kit, "%s_%s" % [kind, kit], Vector3(centre.x, high, centre.z), house_basis)
-		if high - low > 0.05:
-			_box(house, Vector3(0, -(high - low) * 0.5 + 0.02, 0), Vector3(size.x + 0.4, high - low + 0.1, size.z + 0.4), _stone())
-		# The wheel: local x along the axle (towards the house), turning in its y-z plane.
-		var root := _wheel()
-		root.name = "WaterWheel_%s" % kind
-		var wheel_basis := Basis(n, Vector3.UP, n.cross(Vector3.UP))
-		root.transform = Transform3D(wheel_basis, Vector3(axis.x, water + WHEEL_RADIUS - 0.4, axis.z) + n * (half - 0.9))
-		add_child(root)
-		# The axle into the wall, a bearing block on the wall, a post in the river under the outer end.
-		var to_wall := BANK_GAP + 0.9
-		_axle(root, -1.0, to_wall + 0.3)
-		_box(root, Vector3(to_wall, 0, 0), Vector3(0.3, 0.7, 0.7), timber)
-		var post_bottom := -WHEEL_RADIUS + 0.4 - depth - 0.3
-		_box(root, Vector3(-0.95, (post_bottom + 0.35) * 0.5, 0), Vector3(0.26, 0.35 - post_bottom, 0.26), timber)
-		wheels.append(root)
-		# The lower paddles go with the water: v(bottom) = -w R z_local.
-		var z_local: Vector3 = wheel_basis.z
-		wheel_speeds.append(-0.6 * signf(z_local.dot(flow)))
+		_workshop(WORKSHOPS[WATER_WORKS[w]], axis, flow, n, water, half)
 
 
-func _kit_house(kit: String, label: String, at: Vector3, basis: Basis) -> Node3D:
-	var house: Node3D = (load(KIT[kit].path) as PackedScene).instantiate()
-	house.name = label
-	house.transform = Transform3D(basis, at)
-	for mesh in house.find_children("*", "MeshInstance3D", true, false):
-		var role := str((mesh as MeshInstance3D).get_meta("extras", {}).get("part_role", ""))
-		if role == "furniture" or role == "ceiling":
-			mesh.queue_free()
-		else:
-			(mesh as MeshInstance3D).visibility_range_end = VISIBLE
-	add_child(house)
-	var size: Vector3 = KIT[kit].size
-	var body := StaticBody3D.new()
-	body.set_meta("footstep_surface", "wood")
-	var shape := CollisionShape3D.new()
-	var box := BoxShape3D.new()
-	box.size = size + Vector3(0.3, 0.6, 0.3)
-	shape.shape = box
-	shape.position = Vector3(0, size.y * 0.5, 0)
-	body.add_child(shape)
-	house.add_child(body)
+## WATER-WORKSHOPS-02 (owner 28 Sep: "build new buildings, don't bolt a wheel onto a house"): each
+## workshop is one model from art/blender/water_workshops.py - body, wheel bay, axle, pier, frame, dry
+## entry in one frame. Local +x is the river side, the entry +z; the origin is the land-side ground,
+## the design water `water` below it. The wheel turns on its `*_wheel_hinge` about local x.
+const WORKSHOPS := {
+	"water_mill": {"id": "M01", "name": "WaterMill", "scene_path": "res://assets/buildings/forest-city-v1/m01.glb",
+		"width": 9.0, "depth": 11.0, "entry": Vector3(0, 1.05, 5.5), "floor_height": 1.05, "lantern_y": 3.5, "stair_run": 2.2,
+		"title_key": "WORLD_FOREST_CITY_WATER_MILL", "water": -0.5, "river_wall": 4.5, "door": true},
+	# The sawmill is an open shed: walked into over the log skids, no door to offer.
+	"sawmill": {"id": "S01", "name": "Sawmill", "scene_path": "res://assets/buildings/forest-city-v1/s01.glb",
+		"width": 8.0, "depth": 12.0, "entry": Vector3(-0.3, 0.6, 6.0), "floor_height": 0.6, "lantern_y": 3.1,
+		"title_key": "WORLD_FOREST_CITY_SAWMILL", "water": -0.5, "river_wall": 4.0, "door": false},
+}
+## Enterable workshops without a door (the sawmill): kept apart from `halls`, which get a door offer.
+var sheds: Array[Node3D] = []
+
+func _workshop(spec: Dictionary, axis: Vector3, flow: Vector3, n: Vector3, water: float, half: float) -> void:
+	var x_b := -n
+	var z_b := x_b.cross(Vector3.UP)
+	var basis := Basis(x_b, Vector3.UP, z_b)
+	# The river wall stands 0.3 m into the water: the wheel, the pier and the race are in the river.
+	var origin := Vector3(axis.x, water - float(spec.water), axis.z) + n * (half + float(spec.river_wall) - 0.3)
+	var record := spec.duplicate()
+	record.position = Vector3.ZERO
+	record.entry_width = 2.0
+	var hall := Hall.new()
+	add_child(hall)
+	hall.build(record)
+	hall.name = str(spec.name)
+	_workshop_skin(hall.model)
+	hall.transform = Transform3D(basis, origin)
+	if spec.door:
+		halls.append(hall)
+	else:
+		sheds.append(hall)
 	house_count += 1
-	return house
+	var land := INF
+	var high := -INF
+	for c in [Vector2(-1, -1), Vector2(-1, 1), Vector2(0, 1), Vector2(0, -1)]:
+		var corner: Vector3 = origin + basis * Vector3(c.x * float(spec.width) * 0.5, 0, c.y * float(spec.depth) * 0.5)
+		var g: float = world.shore_ground(corner.x, corner.z)
+		land = minf(land, g)
+		high = maxf(high, g)
+	print("WORKSHOP %s origin=%s water=%.2f half=%.2f land=%.2f..%.2f (origin y %.2f)" % [spec.id, origin, water, half, land, high, origin.y])
+	# Loose logs waiting outside lie on the real bank, each on its own.
+	for node in hall.model.find_children("*logpile*", "MeshInstance3D", true, false):
+		var log_mesh := node as MeshInstance3D
+		var box := log_mesh.get_aabb()
+		var centre: Vector3 = log_mesh.global_transform * box.get_center()
+		var bottom: float = (log_mesh.global_transform * box.position).y
+		log_mesh.global_position.y += float(world.shore_ground(centre.x, centre.z)) - 0.06 - bottom
+	var hinge := hall.model.find_child("*_wheel_hinge", true, false) as Node3D
+	if hinge:
+		wheels.append(hinge)
+		# The lower paddles go with the water: v(bottom) = -w R z_local.
+		wheel_speeds.append(-0.5 * signf(z_b.dot(flow)))
+
+
+## Codex's workshop finishes (local/previews/water-workshops-02/materials, 1K copies in
+## assets/buildings/forest-city-v1/materials): the model's UVs are metres with V along the grain / the
+## roof's fall line. Timber for logs and beams, shingles for the roofs, the CC0 stone for the base,
+## planks for floors and doors.
+const SKIN_DIR := "res://assets/buildings/forest-city-v1/materials/"
+const STONE_MAPS := "res://assets/environment/village-house-materials-v1/stone_wall_02_%s_1k.jpg"
+var _skins := {}
+
+func _skin(kind: String) -> StandardMaterial3D:
+	if _skins.has(kind):
+		return _skins[kind]
+	var m := StandardMaterial3D.new()
+	m.roughness = 0.9
+	m.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
+	match kind:
+		"timber":
+			m.albedo_texture = load(SKIN_DIR + "weathered_timber_1k.jpg")
+			m.uv1_scale = Vector3(1.0 / 1.2, 1.0 / 1.6, 1)
+		"shingles":
+			m.albedo_texture = load(SKIN_DIR + "wood_shingles_1k.jpg")
+			m.uv1_scale = Vector3(1.0 / 1.8, 1.0 / 1.8, 1)
+		"planks":
+			m.albedo_texture = load(BOARDS % "diff")
+			m.normal_enabled = true
+			m.normal_texture = load(BOARDS % "nor_gl")
+			m.uv1_scale = Vector3(0.5, 0.5, 1)
+		"stone":
+			m.albedo_texture = load(STONE_MAPS % "diff")
+			m.normal_enabled = true
+			m.normal_texture = load(STONE_MAPS % "nor_gl")
+			m.roughness_texture = load(STONE_MAPS % "rough")
+			m.roughness = 1.0
+			m.uv1_scale = Vector3(0.5, 0.5, 1)
+	_skins[kind] = m
+	return m
+
+func _workshop_skin(model: Node3D) -> void:
+	for node in model.find_children("*", "MeshInstance3D", true, false):
+		var mesh := node as MeshInstance3D
+		var role := str(mesh.get_meta("extras", {}).get("part_role", ""))
+		for i in mesh.mesh.get_surface_count():
+			var source := mesh.mesh.surface_get_material(i)
+			var kind := source.resource_name.trim_prefix("Forest_") if source else ""
+			var skin := ""
+			if kind == "oak":
+				skin = "planks" if role in ["floor", "loft", "door"] else "timber"
+			elif kind == "roof":
+				skin = "shingles"
+			elif kind == "stone":
+				skin = "stone"
+			if skin != "":
+				mesh.set_surface_override_material(i, _skin(skin))
+		mesh.visibility_range_end = VISIBLE
 
 
 var _stone_material: StandardMaterial3D
@@ -359,66 +406,9 @@ func _stone() -> StandardMaterial3D:
 	return _stone_material
 
 
-func _axle(root: Node3D, from_x: float, to_x: float) -> void:
-	var shaft := CylinderMesh.new()
-	shaft.top_radius = 0.2
-	shaft.bottom_radius = 0.2
-	shaft.height = to_x - from_x
-	shaft.radial_segments = 10
-	var mesh := MeshInstance3D.new()
-	mesh.mesh = shaft
-	mesh.material_override = timber
-	# A cylinder stands on y; laid along x.
-	mesh.transform = Transform3D(Basis(Vector3.FORWARD, PI * 0.5), Vector3((from_x + to_x) * 0.5, 0, 0))
-	mesh.visibility_range_end = VISIBLE
-	root.add_child(mesh)
-
-
-## Local x is the axle; every part is a box with its y radial, z tangential, x axial.
-func _wheel() -> Node3D:
-	var root := Node3D.new()
-	var spin := Node3D.new()
-	spin.name = "Spin"
-	root.add_child(spin)
-	var paddles := 12
-	for k in paddles:
-		var a := TAU * k / paddles
-		var dir := Vector3(0, sin(a), cos(a))
-		for side in [-0.45, 0.45]:
-			_part(spin, dir * WHEEL_RADIUS * 0.5 + Vector3(side, 0, 0), Vector3(0.12, WHEEL_RADIUS - 0.2, 0.12), a)
-		_part(spin, dir * (WHEEL_RADIUS - 0.3), Vector3(1.2, 0.6, 0.08), a)
-		var b := TAU * (k + 0.5) / paddles
-		var chord := 2.0 * (WHEEL_RADIUS - 0.07) * sin(PI / paddles) + 0.06
-		for side in [-0.45, 0.45]:
-			_part(spin, Vector3(0, sin(b), cos(b)) * (WHEEL_RADIUS - 0.07) + Vector3(side, 0, 0), Vector3(0.12, 0.14, chord), b)
-	var hub := CylinderMesh.new()
-	hub.top_radius = 0.34
-	hub.bottom_radius = 0.34
-	hub.height = 1.1
-	hub.radial_segments = 10
-	var hub_mesh := MeshInstance3D.new()
-	hub_mesh.mesh = hub
-	hub_mesh.material_override = timber
-	hub_mesh.transform = Transform3D(Basis(Vector3.FORWARD, PI * 0.5), Vector3.ZERO)
-	spin.add_child(hub_mesh)
-	return root
-
-
-func _part(parent: Node3D, at: Vector3, size: Vector3, angle: float) -> void:
-	var mesh := BoxMesh.new()
-	mesh.size = size
-	var instance := MeshInstance3D.new()
-	instance.mesh = mesh
-	instance.material_override = timber
-	# About x by pi/2 - a: y -> (0, sin a, cos a), radial; z -> (0, -cos a, sin a), tangential.
-	instance.transform = Transform3D(Basis(Vector3.RIGHT, PI * 0.5 - angle), at)
-	instance.visibility_range_end = VISIBLE
-	parent.add_child(instance)
-
-
 func _process(delta: float) -> void:
 	for i in wheels.size():
-		(wheels[i].get_node("Spin") as Node3D).rotate_x(wheel_speeds[i] * delta)
+		wheels[i].rotate_object_local(Vector3.RIGHT, wheel_speeds[i] * delta)
 
 
 ## The world-frame point of a map point on the ground.

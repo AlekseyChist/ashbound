@@ -626,6 +626,12 @@ msgstr ""
 msgid "WORLD_FOREST_CITY_BARRACKS"
 msgstr ""
 
+msgid "WORLD_FOREST_CITY_WATER_MILL"
+msgstr ""
+
+msgid "WORLD_FOREST_CITY_SAWMILL"
+msgstr ""
+
 #. World exploration graybox; working place label.
 msgid "WORLD_SITE_FOREST_CAVE"
 msgstr ""
