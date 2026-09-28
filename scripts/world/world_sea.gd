@@ -105,7 +105,10 @@ func _physics_process(_delta: float) -> void:
 	# Only in the water: on a bridge (feet over the surface) the depth under it does not matter.
 	var in_water: bool = world.world_root.to_local(at).y < w.x + 0.1
 	if not in_water or w.x - w.y <= STOP_DEPTH:
-		_safe = at
+		# JUMP-WATER-01 (owner 28 Sep: a running jump into deep water stuck the hero sinking there
+		# again and again): a point in the air over deep water is not safe; only where he stands.
+		if player.is_on_floor():
+			_safe = at
 		return
 	# Too deep: back to the last point he could stand in, no drift further out.
 	if _safe != Vector3.INF:

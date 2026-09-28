@@ -415,19 +415,42 @@ func _build_roads() -> void:
 			if points[i].y - world_ground(points[i].x, points[i].z) > BRIDGE_RISE and _over_river(points[i]):
 				for k in range(maxi(0, i - 2), mini(points.size(), i + 3)):
 					bridge[k] = 1
+		# BRIDGES-02 (owner 28 Sep: "a ramp to the bridge, no gaps, a smooth way up"): each bridge runs
+		# on until the road meets the ground on the bank, so its ramp can end on the ground itself -
+		# at most 2 m up or down the bank (on a steep bank the road beyond is the ground's own).
+		for i in points.size():
+			if bridge[i] == 1 and (i == 0 or bridge[i - 1] == 0):
+				var k := i - 1
+				while k >= 0 and i - k <= 8 and points[k].y - world_ground(points[k].x, points[k].z) > 0.12 and absf(points[k].y - points[i].y) < 2.0:
+					bridge[k] = 2
+					k -= 1
+				if k >= 0:
+					bridge[k] = 2
+		for i in range(points.size() - 1, -1, -1):
+			if bridge[i] == 1 and (i == points.size() - 1 or bridge[i + 1] == 0):
+				var k := i + 1
+				while k < points.size() and k - i <= 8 and points[k].y - world_ground(points[k].x, points[k].z) > 0.12 and absf(points[k].y - points[i].y) < 2.0:
+					bridge[k] = 2
+					k += 1
+				if k < points.size():
+					bridge[k] = 2
 		var run := PackedVector3Array()
+		var core := PackedByteArray()
 		for i in points.size() + 1:
-			if i < points.size() and bridge[i] == 1:
+			if i < points.size() and bridge[i] > 0:
 				run.append(points[i])
+				core.append(1 if bridge[i] == 1 else 0)
 				continue
 			if run.size() >= 2:
-				var strip: MeshInstance3D = roads.add_strip(run, width, ROAD_TINT, true)
+				# The hero walks the same profile the bridge shows: ramps down to the ground at both ends.
+				var strip: MeshInstance3D = roads.add_strip(bridges.deck_profile(run, core), width, ROAD_TINT, true)
 				if strip != null:
 					strip.name = "%s_bridge_%d" % [road.id, i]
 					_paint(strip, Color(ROAD_TINT.srgb_to_linear(), 1.0))
 					strip.visible = false
-					bridges.build_bridge(run, width)
+					bridges.build_bridge(run, width, core)
 			run.clear()
+			core.clear()
 	_mark_surfaces(roads, "dirt")
 	_mark_surfaces(shoulders, "ground")
 
