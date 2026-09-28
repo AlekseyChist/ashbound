@@ -284,7 +284,9 @@
       },
       "entrance_style": "ramp",
       "approach_width": 3.5,
-      "wall_material": "oak"
+      "wall_material": "oak",
+      "wall_style": "log",
+      "log_diameter": 0.25
     }
   ]
 }
