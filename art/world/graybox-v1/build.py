@@ -19,8 +19,10 @@ MIN_RIVER_WIDTH=8.0
 for _rv in D['rivers']:
     _rv['depth_widths_m']=[float(w) for w in _rv['widths_m']]
     _rv['widths_m']=[max(float(w),MIN_RIVER_WIDTH) for w in _rv['widths_m']]
+# RIVERS-SHALLOW-01 (owner 28 Sep: "make the rivers shallow so one can run across them"): knee-deep,
+# 0.6 m for a stream to 0.8 m for the widest river (was 1.0-2.8 m).
 def river_depth_for(w):
-    return 1+1.8*np.clip((np.asarray(w,float)-2)/10,0,1)
+    return 0.6+0.2*np.clip((np.asarray(w,float)-2)/10,0,1)
 
 def smooth(t):
     t=np.clip(t,0,1);return t*t*(3-2*t)
