@@ -163,15 +163,44 @@ func _closed_house(b: Dictionary, kit: String) -> void:
 		yaw = atan2(road_after.x - pushed.x, road_after.y - pushed.y)
 		basis = Basis(Vector3.UP, yaw)
 		pushed = _clear_spot(pushed, basis, rect)
+	var left: float = _intrusion(pushed, basis, rect)[0]
+	if left > 0.0:
+		# Wedged between two keep-outs (a road and the river, a neighbour): the nearest free spot on
+		# rings round the plan point, each turned to its own road.
+		var found := false
+		for ring in range(1, 31):
+			var count := ring * 6
+			for k in count:
+				var angle := TAU * k / count
+				var cand := Vector2(float(b.map[0]) - float(world.HALF), float(b.map[1]) - float(world.HALF)) + Vector2(cos(angle), sin(angle)) * ring
+				var cand_road := _nearest_road(cand, 40.0)
+				var cand_basis := basis if cand_road == Vector2.INF else Basis(Vector3.UP, atan2(cand_road.x - cand.x, cand_road.y - cand.y))
+				if float(_intrusion(cand, cand_basis, rect)[0]) <= 0.0:
+					pushed = cand
+					basis = cand_basis
+					yaw = basis.get_euler().y
+					found = true
+					break
+			if found:
+				break
+		left = _intrusion(pushed, basis, rect)[0]
+	if left > 0.0:
+		push_warning("FOREST_CITY %s %s still %.2f m into a road, the river or a neighbour" % [str(b.kind), str(b.map), left])
 	at = Vector3(pushed.x, world.world_ground(pushed.x, pushed.y), pushed.y)
+	# What stands on the ground - walls, porch, steps, ramp - not the roof overhang.
+	var base := _extent(house, 0.6)
 	var high := -INF
 	var low := INF
-	for c in [Vector3(-1, 0, -1), Vector3(1, 0, -1), Vector3(-1, 0, 1), Vector3(1, 0, 1), Vector3.ZERO]:
-		var corner: Vector3 = at + basis * (c * Vector3(size.x * 0.5 + 0.2, 0, size.z * 0.5 + 0.2))
-		# The real (shore-refined) ground: on a river bank the base grid lies higher than the mesh.
-		var g: float = world.shore_ground(corner.x, corner.z)
-		high = maxf(high, g)
-		low = minf(low, g)
+	for gx in 5:
+		for gz in 5:
+			var local := base.position + base.size * Vector2(gx / 4.0, gz / 4.0)
+			var corner: Vector3 = at + basis * Vector3(local.x, 0, local.y)
+			# The real (shore-refined) ground: on a river bank the base grid lies higher than the mesh.
+			var g: float = world.shore_ground(corner.x, corner.z)
+			# The floor sits on the walls' ground; the porch and the ramp only reach down to theirs.
+			if absf(local.x) <= size.x * 0.5 + 0.2 and absf(local.y) <= size.z * 0.5 + 0.2:
+				high = maxf(high, g)
+			low = minf(low, g)
 	house.name = "%s_%s_%d" % [str(b.kind), kit, house_count]
 	house.position = Vector3(at.x, high, at.z)
 	house.rotation.y = yaw
@@ -190,7 +219,8 @@ func _closed_house(b: Dictionary, kit: String) -> void:
 	add_child(house)
 	# The base goes down to the real ground on a slope: a stone skirt, never a floor on air.
 	if high - low > 0.05:
-		_box(house, Vector3(0, -(high - low) * 0.5 + 0.05, 0), Vector3(size.x + 0.3, high - low + 0.2, size.z + 0.3), _stone())
+		var foot: Vector2 = base.get_center()
+		_box(house, Vector3(foot.x, -(high - low) * 0.5 + 0.02, foot.y), Vector3(base.size.x + 0.2, high - low + 0.1, base.size.y + 0.2), _stone())
 	var body := StaticBody3D.new()
 	body.set_meta("footstep_surface", "wood")
 	var shape := CollisionShape3D.new()
@@ -237,7 +267,7 @@ func _keepout_segments() -> Array:
 
 ## The model's footprint in its own x/z (every mesh's box through the node chain; furniture and
 ## ceilings, which the closed houses drop, left out).
-func _extent(model: Node3D) -> Rect2:
+func _extent(model: Node3D, below := INF) -> Rect2:
 	var rect := Rect2()
 	var first := true
 	for node in model.find_children("*", "MeshInstance3D", true, false):
@@ -251,6 +281,8 @@ func _extent(model: Node3D) -> Rect2:
 			xf = (n as Node3D).transform * xf
 			n = n.get_parent()
 		var box := mesh.get_aabb()
+		if below != INF and (xf * box).position.y > below:
+			continue
 		for i in 8:
 			var p: Vector3 = xf * box.get_endpoint(i)
 			if first:
@@ -263,47 +295,63 @@ func _extent(model: Node3D) -> Rect2:
 ## Where the footprint (`rect` in the model's x/z about `at`, turned by `basis`) is clear of every
 ## keep-out segment and every placed building: the worst intrusion pushes it away, 0.5 m a step.
 func _clear_spot(at: Vector2, basis: Basis, rect: Rect2) -> Vector2:
-	var segments := _keepout_segments()
+	for step in 80:
+		var hit := _intrusion(at, basis, rect)
+		if float(hit[0]) <= 0.0:
+			return at
+		at += (hit[1] as Vector2) * minf(float(hit[0]) + 0.1, 0.5)
+	return at
+
+## [worst intrusion in metres (<= 0 when clear), the direction to push]: the footprint sampled every
+## 1.5 m (its edges and corners included) against the keep-out segments and the placed buildings.
+func _intrusion(at: Vector2, basis: Basis, rect: Rect2) -> Array:
 	var ax := Vector2(basis.x.x, basis.x.z)
 	var az := Vector2(basis.z.x, basis.z.z)
+	# Only what can touch the footprint: one distance per segment and building, not one per sample.
+	var centre := at + ax * rect.get_center().x + az * rect.get_center().y
+	var reach := rect.size.length() * 0.5
+	var segments: Array = []
+	for seg in _keepout_segments():
+		if centre.distance_to(Geometry2D.get_closest_point_to_segment(centre, seg[0], seg[1])) < reach + float(seg[2]):
+			segments.append(seg)
+	var neighbours: Array = []
+	for other in _placed:
+		if centre.distance_to(other[0]) < reach + (other[2] as Rect2).size.length() + HOUSE_GAP:
+			neighbours.append(other)
 	var nx := maxi(3, ceili(rect.size.x / 1.5) + 1)
 	var nz := maxi(3, ceili(rect.size.y / 1.5) + 1)
-	for step in 40:
-		var worst := 0.0
-		var away := Vector2.ZERO
-		for gx in nx:
-			for gz in nz:
-				var local := rect.position + rect.size * Vector2(float(gx) / (nx - 1), float(gz) / (nz - 1))
-				var q := at + ax * local.x + az * local.y
-				for seg in segments:
-					var near := Geometry2D.get_closest_point_to_segment(q, seg[0], seg[1])
-					var into: float = float(seg[2]) - q.distance_to(near)
+	var worst := -INF
+	var away := Vector2.ZERO
+	for gx in nx:
+		for gz in nz:
+			var local := rect.position + rect.size * Vector2(float(gx) / (nx - 1), float(gz) / (nz - 1))
+			var q := at + ax * local.x + az * local.y
+			for seg in segments:
+				var near := Geometry2D.get_closest_point_to_segment(q, seg[0], seg[1])
+				var into: float = float(seg[2]) - q.distance_to(near)
+				if into > worst:
+					worst = into
+					# Across the segment, to the side the house's centre is on (outwards if on it).
+					var dir: Vector2 = (seg[1] - seg[0]).normalized()
+					var normal := Vector2(-dir.y, dir.x)
+					var side := normal.dot(at - seg[0])
+					if absf(side) < 0.3:
+						side = normal.dot(at - _city_centre())
+					away = normal * signf(side if side != 0.0 else 1.0)
+			# Other buildings: [origin, basis, footprint rect], kept HOUSE_GAP apart.
+			for other in neighbours:
+				var ob: Basis = other[1]
+				var orect: Rect2 = other[2]
+				var d: Vector2 = q - other[0]
+				var l := Vector2(d.dot(Vector2(ob.x.x, ob.x.z)), d.dot(Vector2(ob.z.x, ob.z.z)))
+				var grown := orect.grow(HOUSE_GAP)
+				if grown.has_point(l):
+					var into := minf(minf(l.x - grown.position.x, grown.end.x - l.x), minf(l.y - grown.position.y, grown.end.y - l.y))
 					if into > worst:
 						worst = into
-						# Across the segment, to the side the house's centre is on (outwards if on it).
-						var dir: Vector2 = (seg[1] - seg[0]).normalized()
-						var normal := Vector2(-dir.y, dir.x)
-						var side := normal.dot(at - seg[0])
-						if absf(side) < 0.3:
-							side = normal.dot(at - _city_centre())
-						away = normal * signf(side if side != 0.0 else 1.0)
-				# Other buildings: [origin, basis, footprint rect], kept HOUSE_GAP apart.
-				for other in _placed:
-					var ob: Basis = other[1]
-					var orect: Rect2 = other[2]
-					var d: Vector2 = q - other[0]
-					var l := Vector2(d.dot(Vector2(ob.x.x, ob.x.z)), d.dot(Vector2(ob.z.x, ob.z.z)))
-					var grown := orect.grow(HOUSE_GAP)
-					if grown.has_point(l):
-						var into := minf(minf(l.x - grown.position.x, grown.end.x - l.x), minf(l.y - grown.position.y, grown.end.y - l.y))
-						if into > worst:
-							worst = into
-							var c: Vector2 = orect.get_center()
-							away = (at - (other[0] + Vector2(ob.x.x, ob.x.z) * c.x + Vector2(ob.z.x, ob.z.z) * c.y)).normalized()
-		if worst <= 0.0:
-			return at
-		at += away * minf(worst + 0.1, 0.5)
-	return at
+						var c: Vector2 = orect.get_center()
+						away = (at - (other[0] + Vector2(ob.x.x, ob.x.z) * c.x + Vector2(ob.z.x, ob.z.z) * c.y)).normalized()
+	return [worst, away]
 
 
 func _nearest_road(at: Vector2, reach: float) -> Vector2:

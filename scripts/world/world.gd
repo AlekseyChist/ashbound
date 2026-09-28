@@ -727,7 +727,9 @@ func _index_grass_obstacles() -> void:
 			# A trodden patch before the door and its steps.
 			var door: Vector3 = hall.global_transform * (hall.record.entry + Vector3(0, 0, 1.8))
 			_grass_blocks.append(Vector3(door.x, door.z, 3.2))
-		_grass_blocks.append_array(forest_city.yards)
+		# The yards are in the world_root frame, the grass blocks in the scene's.
+		for yard in forest_city.yards:
+			_grass_blocks.append(Vector3(yard.x + offset.x, yard.y + offset.y, yard.z))
 	# LAKE-SHORE-01: a lake is an ellipse; one circle over its long radius kept the whole shore bare.
 	# Circles of the short radius along the long axis cover the water and leave the shore to the grass.
 	for lake in world_layout.lakes:
