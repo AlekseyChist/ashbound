@@ -182,6 +182,16 @@ def main():
         mats = make_materials(tex_dir)
         build_shell(spec, mats)
         build_furniture(spec, mats)
+        # FOREST-CITY-01: a building entered from its long side is built with the entry on the right
+        # and turned so the entry faces the front (-y in Blender, +z in Godot) like every other one.
+        if spec.get('turn_z_deg'):
+            from mathutils import Matrix
+            import math as _m
+            turn = Matrix.Rotation(_m.radians(spec['turn_z_deg']), 4, 'Z')
+            for obj in asset.objects:
+                if obj.parent is None:
+                    obj.matrix_world = turn @ obj.matrix_world
+            bpy.context.view_layer.update()
 
         for obj in asset.objects:
             if obj.type == "MESH":

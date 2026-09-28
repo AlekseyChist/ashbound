@@ -620,6 +620,12 @@ msgstr ""
 msgid "WORLD_SITE_CROSSROADS_INN"
 msgstr ""
 
+msgid "WORLD_FOREST_CITY_TOWN_HALL"
+msgstr ""
+
+msgid "WORLD_FOREST_CITY_BARRACKS"
+msgstr ""
+
 #. World exploration graybox; working place label.
 msgid "WORLD_SITE_FOREST_CAVE"
 msgstr ""

@@ -919,6 +919,9 @@ func _build_water_and_sites() -> void:
 			forest_city.name = "ForestCity"
 			world_root.add_child(forest_city)
 			forest_city.build(self)
+			# Its halls open like the inns' doors (the action button when no village door is nearer).
+			for hall in forest_city.halls:
+				inns.append(hall)
 			continue
 		var p: Array = city.spawn
 		for offset in [Vector3(-28, 0, 15), Vector3(26, 0, 18), Vector3(-20, 0, -25)]:

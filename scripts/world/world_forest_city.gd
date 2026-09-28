@@ -42,10 +42,54 @@ func build(scene: Node3D) -> void:
 	roof.uv1_triplanar = true
 	roof.uv1_scale = Vector3.ONE * 0.5
 	_palisade()
+	_civic_buildings()
 	_outer_buildings()
 	_wheat_field()
 	_water_wheels()
 	print("FOREST_CITY stakes=%d towers=%d houses=%d wheat=%d wheels=%d" % [stake_count, tower_count, house_count, wheat_count, wheels.size()])
+
+
+# --- Step 2: the town hall and the barracks (Codex civic-concept-v1, owner-approved) ---------------
+
+## Enterable halls from art/blender/forest-city-v1 (built by the village kit, entry turned to +z).
+const CIVIC := {
+	"town_hall": {"id": "R01", "scene_path": "res://assets/buildings/forest-city-v1/r01.glb", "width": 24.0, "depth": 12.0,
+		"entry": Vector3(0, 0.6, 6.0), "floor_height": 0.6, "title_key": "WORLD_FOREST_CITY_TOWN_HALL"},
+	"barracks": {"id": "K01", "scene_path": "res://assets/buildings/forest-city-v1/k01.glb", "width": 20.0, "depth": 10.0,
+		"entry": Vector3(2.5, 0.5, 5.0), "floor_height": 0.5, "title_key": "WORLD_FOREST_CITY_BARRACKS"},
+}
+const Hall = preload("res://scripts/world/village_building.gd")
+var halls: Array[Node3D] = []
+
+func _civic_buildings() -> void:
+	var plaza := Vector2(float(plan.plaza.center[0]), float(plan.plaza.center[1]))
+	for b in plan.buildings:
+		if not CIVIC.has(str(b.kind)):
+			continue
+		var record: Dictionary = CIVIC[str(b.kind)].duplicate()
+		record.position = Vector3.ZERO
+		record.entry_width = 2.4
+		var map := Vector2(float(b.map[0]), float(b.map[1]))
+		var at := ground_at(map)
+		# The entry (+z) faces the plaza.
+		var to_plaza := plaza - map
+		var yaw := atan2(to_plaza.x, to_plaza.y)
+		var basis := Basis(Vector3.UP, yaw)
+		var high := -INF
+		var low := INF
+		for c in [Vector2(-1, -1), Vector2(1, -1), Vector2(-1, 1), Vector2(1, 1)]:
+			var corner: Vector3 = at + basis * Vector3(c.x * float(record.width) * 0.5, 0, c.y * float(record.depth) * 0.5)
+			var g: float = world.world_ground(corner.x, corner.z)
+			high = maxf(high, g)
+			low = minf(low, g)
+		var hall := Hall.new()
+		add_child(hall)
+		hall.build(record)
+		hall.position = Vector3(at.x, high, at.z)
+		hall.rotation.y = yaw
+		if high - low > 0.05:
+			_box(hall, Vector3(0, -(high - low) * 0.5 + 0.02, 0), Vector3(float(record.width) + 0.4, high - low + 0.1, float(record.depth) + 0.4), _stone())
+		halls.append(hall)
 
 
 # --- Step 4 (first part): the suburbs, the field, the water wheels ----------------------------------
