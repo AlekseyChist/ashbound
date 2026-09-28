@@ -43,9 +43,9 @@ func build(scene: Node3D) -> void:
 	roof.uv1_scale = Vector3.ONE * 0.5
 	_palisade()
 	_civic_buildings()
+	_water_wheels()
 	_outer_buildings()
 	_wheat_field()
-	_water_wheels()
 	print("FOREST_CITY stakes=%d towers=%d houses=%d wheat=%d wheels=%d" % [stake_count, tower_count, house_count, wheat_count, wheels.size()])
 
 
@@ -90,6 +90,7 @@ func _civic_buildings() -> void:
 		if high - low > 0.05:
 			_box(hall, Vector3(0, -(high - low) * 0.5 + 0.02, 0), Vector3(float(record.width) + 0.4, high - low + 0.1, float(record.depth) + 0.4), _stone())
 		halls.append(hall)
+		_placed.append([Vector2(at.x, at.z), basis, float(record.width) * 0.5, float(record.depth) * 0.5])
 
 
 # --- Step 4 (first part): the suburbs, the field, the water wheels ----------------------------------
@@ -133,6 +134,15 @@ func _closed_house(b: Dictionary, kit: String) -> void:
 		yaw = atan2(to_road.x, to_road.y)
 	var size: Vector3 = KIT[kit].size
 	var basis := Basis(Vector3.UP, yaw)
+	# Placement audit (Codex 023, owner 28 Sep): the turned footprint keeps off the road bed and its
+	# shoulder and off the river - pushed straight away from what it touches, never across it.
+	var pushed := _clear_spot(Vector2(at.x, at.z), basis, size)
+	var road_after := _nearest_road(pushed, 40.0)
+	if road_after != Vector2.INF and pushed.distance_to(Vector2(at.x, at.z)) > 0.05:
+		yaw = atan2(road_after.x - pushed.x, road_after.y - pushed.y)
+		basis = Basis(Vector3.UP, yaw)
+		pushed = _clear_spot(pushed, basis, size)
+	at = Vector3(pushed.x, world.world_ground(pushed.x, pushed.y), pushed.y)
 	var high := -INF
 	for c in [Vector3(-1, 0, -1), Vector3(1, 0, -1), Vector3(-1, 0, 1), Vector3(1, 0, 1)]:
 		var corner: Vector3 = at + basis * (c * Vector3(size.x * 0.5, 0, size.z * 0.5))
@@ -141,6 +151,8 @@ func _closed_house(b: Dictionary, kit: String) -> void:
 	house.name = "%s_%s_%d" % [str(b.kind), kit, house_count]
 	house.position = Vector3(at.x, high, at.z)
 	house.rotation.y = yaw
+	_placed.append([Vector2(at.x, at.z), basis, size.x * 0.5, size.z * 0.5])
+	house.set_meta("cleared_m", pushed.distance_to(Vector2(float(b.map[0]) - float(world.HALF), float(b.map[1]) - float(world.HALF))))
 	for mesh in house.find_children("*", "MeshInstance3D", true, false):
 		var role := str((mesh as MeshInstance3D).get_meta("extras", {}).get("part_role", ""))
 		if role == "furniture" or role == "ceiling":
@@ -158,6 +170,76 @@ func _closed_house(b: Dictionary, kit: String) -> void:
 	body.add_child(shape)
 	house.add_child(body)
 	house_count += 1
+
+
+func _city_centre() -> Vector2:
+	return Vector2(float(plan.palisade.center[0]) - float(world.HALF), float(plan.palisade.center[1]) - float(world.HALF))
+
+const ROAD_SHOULDER := 1.5
+const HOUSE_GAP := 2.0
+var _placed: Array = []
+const RIVER_BANK := 1.5
+## Segments of the roads and rivers near the city: [a, b, keep-off distance from the axis].
+var _keepout: Array = []
+
+func _keepout_segments() -> Array:
+	if not _keepout.is_empty():
+		return _keepout
+	var centre := Vector2(float(plan.palisade.center[0]) - float(world.HALF), float(plan.palisade.center[1]) - float(world.HALF))
+	for road in world.world_layout.roads:
+		var pts: Array = road.world_points
+		for i in range(pts.size() - 1):
+			var a := Vector2(float(pts[i][0]), float(pts[i][2]))
+			var b := Vector2(float(pts[i + 1][0]), float(pts[i + 1][2]))
+			if a.distance_to(centre) < 220.0:
+				_keepout.append([a, b, float(road.get("width_m", 6.0)) * 0.5 + ROAD_SHOULDER])
+	for river in world.world_layout.rivers:
+		var pts: Array = river.world_points
+		for i in range(pts.size() - 1):
+			var a := Vector2(float(pts[i][0]), float(pts[i][2]))
+			var b := Vector2(float(pts[i + 1][0]), float(pts[i + 1][2]))
+			if a.distance_to(centre) < 220.0:
+				_keepout.append([a, b, float(river.world_widths[i]) * 0.5 + RIVER_BANK])
+	return _keepout
+
+## Where the footprint (size x/z about `at`, turned by `basis`) is clear of every keep-out segment:
+## the worst intrusion pushes the house away from its segment, 0.5 m a step, up to 20 m.
+func _clear_spot(at: Vector2, basis: Basis, size: Vector3) -> Vector2:
+	var segments := _keepout_segments()
+	var ax := Vector2(basis.x.x, basis.x.z)
+	var az := Vector2(basis.z.x, basis.z.z)
+	for step in 40:
+		var worst := 0.0
+		var away := Vector2.ZERO
+		for gx in range(-2, 3):
+			for gz in range(-2, 3):
+				var q := at + ax * (size.x * 0.25 * gx) + az * (size.z * 0.25 * gz)
+				for seg in segments:
+					var near := Geometry2D.get_closest_point_to_segment(q, seg[0], seg[1])
+					var into: float = float(seg[2]) - q.distance_to(near)
+					if into > worst:
+						worst = into
+						# Across the segment, to the side the house's centre is on (outwards if on it).
+						var dir: Vector2 = (seg[1] - seg[0]).normalized()
+						var normal := Vector2(-dir.y, dir.x)
+						var side := normal.dot(at - seg[0])
+						if absf(side) < 0.3:
+							side = normal.dot(at - _city_centre())
+						away = normal * signf(side if side != 0.0 else 1.0)
+				# Other buildings: [centre, basis, half x, half z], kept HOUSE_GAP apart.
+				for other in _placed:
+					var ob: Basis = other[1]
+					var d: Vector2 = q - other[0]
+					var lx := absf(d.dot(Vector2(ob.x.x, ob.x.z)))
+					var lz := absf(d.dot(Vector2(ob.z.x, ob.z.z)))
+					var into := minf(float(other[2]) + HOUSE_GAP - lx, float(other[3]) + HOUSE_GAP - lz)
+					if into > worst:
+						worst = into
+						away = (at - other[0]).normalized()
+		if worst <= 0.0:
+			return at
+		at += away * minf(worst + 0.1, 0.5)
+	return at
 
 
 func _nearest_road(at: Vector2, reach: float) -> Vector2:
@@ -194,6 +276,17 @@ void fragment() {
 }
 """
 
+func _field_blocked(q: Vector2, segments: Array) -> bool:
+	for seg in segments:
+		if q.distance_to(Geometry2D.get_closest_point_to_segment(q, seg[0], seg[1])) < float(seg[2]):
+			return true
+	for other in _placed:
+		var ob: Basis = other[1]
+		var d: Vector2 = q - other[0]
+		if absf(d.dot(Vector2(ob.x.x, ob.x.z))) < float(other[2]) + 1.0 and absf(d.dot(Vector2(ob.z.x, ob.z.z))) < float(other[3]) + 1.0:
+			return true
+	return false
+
 func _wheat_field() -> void:
 	var polygon := PackedVector2Array()
 	for p in plan.wheat_field:
@@ -207,12 +300,18 @@ func _wheat_field() -> void:
 	rng.seed = 1402
 	var transforms: Array[Transform3D] = []
 	var step := 0.75
+	# The field keeps the same shoulder off the roads and the river as the houses, and off buildings.
+	var box := Rect2(lo - Vector2(float(world.HALF), float(world.HALF)), hi - lo).grow(12.0)
+	var near_segments: Array = []
+	for seg in _keepout_segments():
+		if box.intersects(Rect2(seg[0], Vector2.ZERO).expand(seg[1]).grow(float(seg[2]))):
+			near_segments.append(seg)
 	var z := lo.y
 	while z <= hi.y:
 		var x := lo.x
 		while x <= hi.x:
 			var m := Vector2(x + rng.randf_range(-0.3, 0.3), z + rng.randf_range(-0.3, 0.3))
-			if Geometry2D.is_point_in_polygon(m, polygon):
+			if Geometry2D.is_point_in_polygon(m, polygon) and not _field_blocked(m - Vector2(float(world.HALF), float(world.HALF)), near_segments):
 				var at := ground_at(m)
 				var s := rng.randf_range(0.85, 1.15)
 				transforms.append(Transform3D(Basis(Vector3.UP, rng.randf() * PI).scaled(Vector3(s, s, s)), at))
@@ -315,6 +414,8 @@ func _workshop(spec: Dictionary, axis: Vector3, flow: Vector3, n: Vector3, water
 	hall.name = str(spec.name)
 	_workshop_skin(hall.model)
 	hall.transform = Transform3D(basis, origin)
+	# The whole unit with its wheel bay and porch keeps the houses off.
+	_placed.append([Vector2(origin.x, origin.z) + Vector2(x_b.x, x_b.z) * 1.5, basis, float(spec.width) * 0.5 + 2.5, float(spec.depth) * 0.5 + 2.0])
 	if spec.door:
 		halls.append(hall)
 	else:
