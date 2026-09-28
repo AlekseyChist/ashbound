@@ -1,0 +1,486 @@
+{
+ "id": "forest_city",
+ "source": "Watabou MFCG Middlehill seed 7736 (https://watabou.github.io/city-generator/?size=12&seed=7736&citadel=0&urban_castle=0&plaza=1&temple=1&walls=1&shantytown=1&coast=0&river=1&greens=0&gates=-1), adapted, D-111",
+ "frame": "map metres (x east, z south); the game frame is map - 1000",
+ "palisade": {
+  "center": [
+   333.0,
+   955.0
+  ],
+  "radius": 47.0,
+  "towers": 10,
+  "gates": [
+   {
+    "id": "NE",
+    "deg": -36
+   },
+   {
+    "id": "SE",
+    "deg": 55
+   },
+   {
+    "id": "W",
+    "deg": 195
+   }
+  ],
+  "height_m": 5.0
+ },
+ "plaza": {
+  "center": [
+   333.0,
+   955.0
+  ],
+  "radius": 13.0,
+  "well": true
+ },
+ "watch_tower": {
+  "map": [
+   376.0,
+   872.0
+  ],
+  "size": [
+   8,
+   8
+  ]
+ },
+ "water_wheels": [
+  [
+   419.0,
+   895.0
+  ],
+  [
+   452.0,
+   952.0
+  ]
+ ],
+ "wheat_field": [
+  [
+   438,
+   818
+  ],
+  [
+   505,
+   806
+  ],
+  [
+   525,
+   868
+  ],
+  [
+   468,
+   884
+  ],
+  [
+   446,
+   872
+  ]
+ ],
+ "buildings": [
+  {
+   "code": "Р",
+   "kind": "town_hall",
+   "map": [
+    325.0,
+    929.0
+   ],
+   "size": [
+    24,
+    12
+   ],
+   "yaw_deg": 0,
+   "enterable": true
+  },
+  {
+   "code": "К",
+   "kind": "barracks",
+   "map": [
+    360.0,
+    943.0
+   ],
+   "size": [
+    20,
+    10
+   ],
+   "yaw_deg": -36,
+   "enterable": true
+  },
+  {
+   "code": "Ц",
+   "kind": "church_tent",
+   "map": [
+    302.0,
+    953.0
+   ],
+   "size": [
+    11,
+    11
+   ],
+   "yaw_deg": 0,
+   "enterable": true
+  },
+  {
+   "code": "T1",
+   "kind": "terem_1",
+   "map": [
+    361.0,
+    967.0
+   ],
+   "size": [
+    13,
+    11
+   ],
+   "yaw_deg": 90,
+   "enterable": true
+  },
+  {
+   "code": "T2",
+   "kind": "terem_2",
+   "map": [
+    339.0,
+    987.0
+   ],
+   "size": [
+    14,
+    11
+   ],
+   "yaw_deg": 0,
+   "enterable": true
+  },
+  {
+   "code": "T3",
+   "kind": "terem_3",
+   "map": [
+    321.0,
+    987.0
+   ],
+   "size": [
+    13,
+    11
+   ],
+   "yaw_deg": 15,
+   "enterable": true
+  },
+  {
+   "code": "T4",
+   "kind": "terem_4",
+   "map": [
+    303.0,
+    937.0
+   ],
+   "size": [
+    12,
+    13
+   ],
+   "yaw_deg": -30,
+   "enterable": true
+  },
+  {
+   "code": "T5",
+   "kind": "terem_5",
+   "map": [
+    347.0,
+    923.0
+   ],
+   "size": [
+    12,
+    10
+   ],
+   "yaw_deg": -15,
+   "enterable": true
+  },
+  {
+   "code": "T6",
+   "kind": "terem_6",
+   "map": [
+    304.0,
+    975.0
+   ],
+   "size": [
+    11,
+    11
+   ],
+   "yaw_deg": 0,
+   "enterable": true
+  },
+  {
+   "code": "М",
+   "kind": "water_mill",
+   "map": [
+    425,
+    890
+   ],
+   "size": [
+    11,
+    9
+   ],
+   "yaw_deg": -50,
+   "enterable": true
+  },
+  {
+   "code": "А",
+   "kind": "granary",
+   "map": [
+    446,
+    880
+   ],
+   "size": [
+    9,
+    7
+   ],
+   "yaw_deg": -50,
+   "enterable": true
+  },
+  {
+   "code": "3",
+   "kind": "house",
+   "map": [
+    458,
+    868
+   ],
+   "size": [
+    7,
+    6
+   ],
+   "yaw_deg": -40,
+   "enterable": false
+  },
+  {
+   "code": "Кз",
+   "kind": "smithy",
+   "map": [
+    360,
+    896
+   ],
+   "size": [
+    8,
+    6
+   ],
+   "yaw_deg": -20,
+   "enterable": true
+  },
+  {
+   "code": "5",
+   "kind": "house",
+   "map": [
+    348,
+    892
+   ],
+   "size": [
+    7,
+    6
+   ],
+   "yaw_deg": -30,
+   "enterable": false
+  },
+  {
+   "code": "6",
+   "kind": "house",
+   "map": [
+    402,
+    905
+   ],
+   "size": [
+    7,
+    6
+   ],
+   "yaw_deg": 40,
+   "enterable": false
+  },
+  {
+   "code": "7",
+   "kind": "house",
+   "map": [
+    392,
+    925
+   ],
+   "size": [
+    7,
+    6
+   ],
+   "yaw_deg": 30,
+   "enterable": false
+  },
+  {
+   "code": "П",
+   "kind": "bakery",
+   "map": [
+    396,
+    962
+   ],
+   "size": [
+    10,
+    8
+   ],
+   "yaw_deg": 10,
+   "enterable": true
+  },
+  {
+   "code": "9",
+   "kind": "house",
+   "map": [
+    403,
+    978
+   ],
+   "size": [
+    7,
+    6
+   ],
+   "yaw_deg": 10,
+   "enterable": false
+  },
+  {
+   "code": "10",
+   "kind": "house",
+   "map": [
+    392,
+    995
+   ],
+   "size": [
+    7,
+    6
+   ],
+   "yaw_deg": 5,
+   "enterable": false
+  },
+  {
+   "code": "11",
+   "kind": "house",
+   "map": [
+    404,
+    1012
+   ],
+   "size": [
+    7,
+    6
+   ],
+   "yaw_deg": 10,
+   "enterable": false
+  },
+  {
+   "code": "Л",
+   "kind": "sawmill",
+   "map": [
+    458,
+    960
+   ],
+   "size": [
+    12,
+    8
+   ],
+   "yaw_deg": 40,
+   "enterable": true
+  },
+  {
+   "code": "Ск",
+   "kind": "log_yard",
+   "map": [
+    472,
+    982
+   ],
+   "size": [
+    12,
+    7
+   ],
+   "yaw_deg": 40,
+   "enterable": false
+  },
+  {
+   "code": "Пл",
+   "kind": "carpenter",
+   "map": [
+    444,
+    982
+   ],
+   "size": [
+    8,
+    7
+   ],
+   "yaw_deg": 40,
+   "enterable": true
+  },
+  {
+   "code": "15",
+   "kind": "house",
+   "map": [
+    456,
+    1000
+   ],
+   "size": [
+    7,
+    6
+   ],
+   "yaw_deg": 40,
+   "enterable": false
+  },
+  {
+   "code": "Уг",
+   "kind": "charcoal_burner",
+   "map": [
+    262,
+    952
+   ],
+   "size": [
+    8,
+    7
+   ],
+   "yaw_deg": 0,
+   "enterable": true
+  },
+  {
+   "code": "См",
+   "kind": "tar_kiln",
+   "map": [
+    270,
+    985
+   ],
+   "size": [
+    8,
+    7
+   ],
+   "yaw_deg": -10,
+   "enterable": false
+  },
+  {
+   "code": "18",
+   "kind": "house",
+   "map": [
+    283,
+    1002
+   ],
+   "size": [
+    6,
+    5
+   ],
+   "yaw_deg": 30,
+   "enterable": false
+  },
+  {
+   "code": "19",
+   "kind": "house",
+   "map": [
+    262,
+    968
+   ],
+   "size": [
+    6,
+    5
+   ],
+   "yaw_deg": 20,
+   "enterable": false
+  },
+  {
+   "code": "20",
+   "kind": "house",
+   "map": [
+    292,
+    1016
+   ],
+   "size": [
+    6,
+    5
+   ],
+   "yaw_deg": 10,
+   "enterable": false
+  }
+ ]
+}
