@@ -13,7 +13,11 @@ const InnBuilding = preload("res://scripts/world/village_building.gd")
 const INN_SITE := "forest_inn"
 ## INN-CROSSROADS-01 (owner 28 Sep: "put our ready tavern there"): the same hall with its dressing
 ## stands at the crossroads inn; the innkeeper, his talk and the rented bed stay in the forest inn.
-const INN_SITES := {"forest_inn": "ForestInn", "crossroads_inn": "CrossroadsInn"}
+## INN-STONE-01 (owner 28 Sep): in the forest a log hall, in the desert the same hall in stone (T03B).
+const INN_SITES := {
+	"forest_inn": {"name": "ForestInn", "id": "T03A", "scene_path": "res://assets/buildings/forest-inn-v1/t03a.glb"},
+	"crossroads_inn": {"name": "CrossroadsInn", "id": "T03B", "scene_path": "res://assets/buildings/desert-inn-v1/t03b.glb"},
+}
 ## TAVERN-02 (owner 25 Sep): twice the floor, an L-shaped bar, straight stairs to the loft.
 const INN_RECORD := {
 	"id": "T03A",
@@ -998,10 +1002,13 @@ func _build_inn(site: Dictionary) -> void:
 		low = minf(low, h)
 	var hall := InnBuilding.new()
 	world_root.add_child(hall)
+	var kind: Dictionary = INN_SITES[str(site.id)]
 	var record := INN_RECORD.duplicate()
 	record.title_key = str(site.key)
+	record.id = kind.id
+	record.scene_path = kind.scene_path
 	hall.build(record)
-	hall.name = INN_SITES[str(site.id)]
+	hall.name = kind.name
 	hall.position = Vector3(center.x, high, center.z)
 	hall.rotation.y = yaw
 	inns.append(hall)

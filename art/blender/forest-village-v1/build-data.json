@@ -99,7 +99,9 @@
         "z_inner": 2.95,
         "z_outer": 2.68
       },
-      "wall_material": "plaster"
+      "wall_material": "oak",
+      "wall_style": "log",
+      "log_diameter": 0.25
     },
     {
       "id": "W01",
@@ -197,7 +199,9 @@
       },
       "entrance_style": "steps",
       "approach_width": 3.0,
-      "wall_material": "plaster"
+      "wall_material": "oak",
+      "wall_style": "log",
+      "log_diameter": 0.25
     },
     {
       "id": "B01",
@@ -280,7 +284,9 @@
       },
       "entrance_style": "ramp",
       "approach_width": 3.5,
-      "wall_material": "oak"
+      "wall_material": "oak",
+      "wall_style": "log",
+      "log_diameter": 0.25
     }
   ]
 }
