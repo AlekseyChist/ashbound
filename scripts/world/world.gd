@@ -104,6 +104,8 @@ var sea: Node3D
 var edges: Node3D
 ## BRIDGES-01: timber bridges over the river crossings.
 var bridges: Node3D
+## FOREST-CITY-01: the forest city of the Exiles.
+var forest_city: Node3D
 ## WORLD-PROPS-01: desert rocks and plants, ships and piers in the harbours.
 var props: Node3D
 ## SNOW-01 / SAND-01: prints in the snow and the sand.
@@ -911,6 +913,13 @@ func _build_water_and_sites() -> void:
 		var direction: Array = spring.facing
 		water.add_spring_cave(Vector3(p[0] - HALF, p[2] - 1, p[1] - HALF), Vector3(direction[0], 0, direction[2]))
 	for city in world_layout.cities:
+		# FOREST-CITY-01 (D-111): the forest city is built by its plan, not grey blocks.
+		if str(city.id) == "forest":
+			forest_city = preload("res://scripts/world/world_forest_city.gd").new()
+			forest_city.name = "ForestCity"
+			world_root.add_child(forest_city)
+			forest_city.build(self)
+			continue
 		var p: Array = city.spawn
 		for offset in [Vector3(-28, 0, 15), Vector3(26, 0, 18), Vector3(-20, 0, -25)]:
 			var size := Vector3(12, 12 + float(city.number) * 3, 16)

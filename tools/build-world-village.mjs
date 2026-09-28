@@ -51,7 +51,7 @@ resources.push(...['hit','block','perfect_block','windup','swing'].map(id=>'asse
 if(qa)resources.push('scripts/tools/validate_world_village.gd');
 let presets=fs.readFileSync(path.join(stage,'export_presets.cfg'),'utf8')
  .replaceAll('export_files=PackedStringArray(',`export_files=PackedStringArray(${resources.map(v=>JSON.stringify('res://'+v)).join(', ')}, `)
- .replaceAll('include_filter="localization/*.po,assets/ui/fonts/OFL.txt"','include_filter="localization/*.po,assets/ui/fonts/OFL.txt,assets/world/*.json,assets/world/graybox-v1/*,assets/world/far-forest-v1/*"')
+ .replaceAll('include_filter="localization/*.po,assets/ui/fonts/OFL.txt"','include_filter="localization/*.po,assets/ui/fonts/OFL.txt,assets/world/*.json,assets/world/graybox-v1/*,assets/world/far-forest-v1/*,assets/world/forest-city-v1/*"')
  .replaceAll('org.ashbound.courtyard',packageId)
  .replaceAll('package/name="AshBound Courtyard"',`package/name="${title}"`)
  .replace(/version\/code=\d+/,`version/code=${code}`)
