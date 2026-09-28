@@ -67,6 +67,8 @@ func build_bridge(run: PackedVector3Array, width: float) -> void:
 	var sides: Array[Vector3] = []
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	# Flat normals: smoothed with the side faces the top leaned 45 degrees and the boards lit dim.
+	st.set_smooth_group(0xFFFFFFFF)
 	var along := 0.0
 	var rows := []
 	for i in run.size():
@@ -78,6 +80,18 @@ func build_bridge(run: PackedVector3Array, width: float) -> void:
 		var top := run[i] + Vector3.UP * 0.06
 		rows.append([top - side * half, top + side * half, along, side])
 	# Deck: the top with boards across the road, and its two side faces.
+	# BRIDGES-02 (owner 28 Sep, forest city: rails but no deck): the faces' winding follows the road's
+	# direction, so on a road drawn the other way the deck faced down and was culled from above.
+	# Swap the sides so the top always faces up.
+	if rows.size() >= 2:
+		var r0: Array = rows[0]
+		var r1: Array = rows[1]
+		if ((r0[1] as Vector3) - (r0[0] as Vector3)).cross((r1[0] as Vector3) - (r0[0] as Vector3)).y > 0.0:
+			for row in rows:
+				var left: Vector3 = row[0]
+				row[0] = row[1]
+				row[1] = left
+				row[3] = -(row[3] as Vector3)
 	for i in rows.size() - 1:
 		var r0: Array = rows[i]
 		var r1: Array = rows[i + 1]

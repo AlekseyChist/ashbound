@@ -11,6 +11,9 @@ const Landmarks = preload("res://scripts/world/world_graybox_landmarks.gd")
 ## the grey landmark at the forest_inn site, door towards the trail.
 const InnBuilding = preload("res://scripts/world/village_building.gd")
 const INN_SITE := "forest_inn"
+## INN-CROSSROADS-01 (owner 28 Sep: "put our ready tavern there"): the same hall with its dressing
+## stands at the crossroads inn; the innkeeper, his talk and the rented bed stay in the forest inn.
+const INN_SITES := {"forest_inn": "ForestInn", "crossroads_inn": "CrossroadsInn"}
 ## TAVERN-02 (owner 25 Sep): twice the floor, an L-shaped bar, straight stairs to the loft.
 const INN_RECORD := {
 	"id": "T03A",
@@ -81,6 +84,8 @@ var combat: Node
 ## WORLD-SAVE-01: inventory, hero place and progress; only when the world is the running scene.
 var save: Node
 var inn: Node3D
+## Every inn hall on the map (the forest inn first); their doors work like the village doors.
+var inns: Array[Node3D] = []
 var inn_keeper: Node3D
 var inn_talk: QuestTracker
 ## INN-REST-01: the rented bed in the inn loft and sleeping until the morning.
@@ -407,7 +412,7 @@ func _build_roads() -> void:
 		var bridge := PackedByteArray()
 		bridge.resize(points.size())
 		for i in points.size():
-			if points[i].y - world_ground(points[i].x, points[i].z) > BRIDGE_RISE:
+			if points[i].y - world_ground(points[i].x, points[i].z) > BRIDGE_RISE and _over_river(points[i]):
 				for k in range(maxi(0, i - 2), mini(points.size(), i + 3)):
 					bridge[k] = 1
 		var run := PackedVector3Array()
@@ -425,6 +430,27 @@ func _build_roads() -> void:
 			run.clear()
 	_mark_surfaces(roads, "dirt")
 	_mark_surfaces(shoulders, "ground")
+
+
+## BRIDGES-02: a bridge only over a river. On a steep switchback the 5 m ground mesh can dip more than
+## BRIDGE_RISE under the road; a bridge stood there on the hillside with no water under it.
+var _bridge_river_cells := {}
+func _over_river(p: Vector3) -> bool:
+	if _bridge_river_cells.is_empty():
+		for river in world_layout.rivers:
+			for i in river.world_points.size():
+				var q: Array = river.world_points[i]
+				var key := Vector2i(floori(float(q[0]) / 32.0), floori(float(q[2]) / 32.0))
+				if not _bridge_river_cells.has(key):
+					_bridge_river_cells[key] = []
+				_bridge_river_cells[key].append(Vector3(float(q[0]), float(river.world_widths[i]) * 0.5 + 3.0, float(q[2])))
+	var cell := Vector2i(floori(p.x / 32.0), floori(p.z / 32.0))
+	for dz in range(-1, 2):
+		for dx in range(-1, 2):
+			for q: Vector3 in _bridge_river_cells.get(cell + Vector2i(dx, dz), []):
+				if Vector2(p.x - q.x, p.z - q.z).length() <= q.y:
+					return true
+	return false
 
 
 ## The baked mask, with the village ring redrawn from the trail heads built here at run time
@@ -557,12 +583,22 @@ func _index_grass_obstacles() -> void:
 			continue
 		var radius := 30.0 if site.kind == "settlement" else 16.0
 		_grass_blocks.append(Vector3(float(site.spawn[0]) + offset.x, float(site.spawn[2]) + offset.y, radius))
-	var inn_frame := _inn_frame()
-	if not inn_frame.is_empty():
-		_grass_blocks.append(Vector3(inn_frame.center.x + offset.x, inn_frame.center.z + offset.y, 14.0))
+	for site_id in INN_SITES:
+		var inn_frame := _inn_frame(site_id)
+		if not inn_frame.is_empty():
+			_grass_blocks.append(Vector3(inn_frame.center.x + offset.x, inn_frame.center.z + offset.y, 14.0))
+	# LAKE-SHORE-01: a lake is an ellipse; one circle over its long radius kept the whole shore bare.
+	# Circles of the short radius along the long axis cover the water and leave the shore to the grass.
 	for lake in world_layout.lakes:
 		var c: Array = lake.center
-		_grass_blocks.append(Vector3(float(c[0]) - HALF + offset.x, float(c[1]) - HALF + offset.y, maxf(float(lake.radii_m[0]), float(lake.radii_m[1])) + 2.0))
+		var rx := float(lake.radii_m[0])
+		var rz := float(lake.radii_m[1])
+		var r := minf(rx, rz) + 2.0
+		var reach := absf(rx - rz)
+		for k in range(-2, 3):
+			var along := reach * k / 2.0
+			var at := Vector2(along, 0.0) if rx >= rz else Vector2(0.0, along)
+			_grass_blocks.append(Vector3(float(c[0]) - HALF + at.x + offset.x, float(c[1]) - HALF + at.y + offset.y, r))
 
 
 ## MUSIC-REGION-01: which track plays here - "main" at home (the village and its ring), otherwise the
@@ -755,7 +791,7 @@ func _build_water_and_sites() -> void:
 	for site in world_layout.sites:
 		if str(site.id) == SITE_SKIPPED or site.kind == "lake" or site.kind == "spring_cave":
 			continue
-		if str(site.id) == INN_SITE:
+		if INN_SITES.has(str(site.id)):
 			_build_inn(site)
 			continue
 		var landmark := Landmarks.new()
@@ -882,10 +918,10 @@ func _start_save() -> void:
 	save.initialize(self)
 
 
-## Where the inn stands (world frame): centre, yaw and the level of its pad (the trail end).
-func _inn_frame() -> Dictionary:
+## Where an inn stands (world frame): centre, yaw and the level of its pad (the trail end).
+func _inn_frame(site_id: String = INN_SITE) -> Dictionary:
 	for site in world_layout.sites:
-		if str(site.id) != INN_SITE:
+		if str(site.id) != site_id:
 			continue
 		var s: Array = site.spawn
 		var direction: Array = site.facing
@@ -898,10 +934,14 @@ func _inn_frame() -> Dictionary:
 ## A level pad under the inn: the footprint grown by one grid step is flat at the trail's height,
 ## then 10 m blend back to the slope. Without it the door stood a metre above the ground.
 func _flatten_inn(grid: PackedFloat32Array) -> PackedFloat32Array:
-	var frame := _inn_frame()
-	if frame.is_empty():
-		return grid
 	var result := grid.duplicate()
+	for site_id in INN_SITES:
+		_flatten_inn_pad(result, _inn_frame(site_id))
+	return result
+
+func _flatten_inn_pad(result: PackedFloat32Array, frame: Dictionary) -> void:
+	if frame.is_empty():
+		return
 	var inverse := Basis(Vector3.UP, frame.yaw).inverse()
 	# Footprint plus 0.2 m, and the entry steps/canopy in front (+z).
 	var half_x: float = INN_RECORD.width * .5 + .2 + GRID
@@ -918,10 +958,9 @@ func _flatten_inn(grid: PackedFloat32Array) -> PackedFloat32Array:
 				continue
 			var index := gz * world_width + gx
 			result[index] = lerpf(float(frame.level), result[index], smoothstep(0.0, 10.0, d))
-	return result
 
 func _build_inn(site: Dictionary) -> void:
-	var frame := _inn_frame()
+	var frame := _inn_frame(str(site.id))
 	var yaw: float = frame.yaw
 	var basis := Basis(Vector3.UP, yaw)
 	var center: Vector3 = frame.center
@@ -934,12 +973,15 @@ func _build_inn(site: Dictionary) -> void:
 		var h := world_ground(at.x, at.z)
 		high = maxf(high, h)
 		low = minf(low, h)
-	inn = InnBuilding.new()
-	world_root.add_child(inn)
-	inn.build(INN_RECORD)
-	inn.name = "ForestInn"
-	inn.position = Vector3(center.x, high, center.z)
-	inn.rotation.y = yaw
+	var hall := InnBuilding.new()
+	world_root.add_child(hall)
+	var record := INN_RECORD.duplicate()
+	record.title_key = str(site.key)
+	hall.build(record)
+	hall.name = INN_SITES[str(site.id)]
+	hall.position = Vector3(center.x, high, center.z)
+	hall.rotation.y = yaw
+	inns.append(hall)
 	var drop := high - low
 	if drop > 0.02:
 		var plinth := MeshInstance3D.new()
@@ -952,21 +994,29 @@ func _build_inn(site: Dictionary) -> void:
 		stone.roughness = .95
 		plinth.material_override = stone
 		plinth.position = Vector3(0, -drop * 0.5 + 0.02, 0)
-		inn.add_child(plinth)
-	_add_inn_keeper()
+		hall.add_child(plinth)
+	if str(site.id) == INN_SITE:
+		inn = hall
+		_add_inn_keeper()
 	# TAVERN-03: props, rugs, lanterns and candles, the hearth fire with its light and crackle.
 	var dressing := preload("res://scripts/world/inn_dressing.gd").new()
 	dressing.name = "InnDressing"
-	inn.add_child(dressing)
+	hall.add_child(dressing)
 	dressing.build()
 
 
 ## The inn is not one of the village yards (the house picker and the yard tests stay three),
 ## but its door works with the same action button when no village door is nearer.
 func _offer_inn_door() -> void:
-	if inn == null or inn.door == null:
+	var door: Node3D = null
+	for hall in inns:
+		if hall.door == null:
+			continue
+		hall.door.set_highlight(false)
+		if door == null or hall.door.can_interact(player):
+			door = hall.door
+	if door == null:
 		return
-	var door: Node3D = inn.door
 	var usable: bool = is_input_available() and door.can_interact(player)
 	door.set_highlight(usable and current_door == null)
 	if not usable or current_door != null:

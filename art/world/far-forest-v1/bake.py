@@ -112,6 +112,14 @@ for s in layout['sites']:
     discs.append(((s['point'][0], s['point'][1]), SITE_CLEAR.get(s['kind'], 30.0)))
 lakes = [(l['center'][0], l['center'][1], l['radii_m'][0] + 10.0, l['radii_m'][1] + 10.0) for l in layout['lakes']]
 
+def lakeside(x, z):
+    # 1 on the shore ring just outside the kept-clear water (+10 m), fading out ~0.5 radii further.
+    best = 0.0
+    for cx, cz, rx, rz in lakes:
+        q = math.hypot((x - cx) / rx, (z - cz) / rz)
+        best = max(best, 1.0 - smooth(1.35, 1.8, q))
+    return best
+
 def village_distance(x, z):
     x0, z0, x1, z1 = VILLAGE_RECT
     return math.hypot(max(x0 - x, 0.0, x - x1), max(z0 - z, 0.0, z - z1))
@@ -166,7 +174,8 @@ for j in range(steps):
             counts['terrain'] += 1
             continue
         # Forest masses with clearings: below 0.38 open ground, above 0.55 full density.
-        p = w * smooth(0.38, 0.55, masses(x, z))
+        # LAKE-SHORE-01 (owner 28 Sep: no trees by the mountain lake): the shore is forest, no clearing.
+        p = w * max(smooth(0.38, 0.55, masses(x, z)), lakeside(x, z))
         if roll >= p:
             counts['biome'] += 1
             continue
