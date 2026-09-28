@@ -642,7 +642,7 @@ def export(info):
             lo = Vector(map(min, lo, w))
             hi = Vector(map(max, hi, w))
     print(f"WORKSHOP_BUILT id={info['id']} tris={tris} bbox={tuple(round(c, 2) for c in lo)}..{tuple(round(c, 2) for c in hi)} "
-          f"wheel={info['wheel_centre']} r={info['wheel_radius']} water={info['water']} floor={info['floor']}")
+          f"wheel={info.get('wheel_centre')} r={info.get('wheel_radius')} water={info.get('water')} floor={info['floor']}")
 
 
 def main():

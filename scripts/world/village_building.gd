@@ -93,7 +93,7 @@ func _stair_proxy() -> void:
 	_add_shape("FoundationCollision", platform, Vector3(0, record.floor_height * 0.5, 0))
 	var points := PackedVector3Array()
 	var width := 1.8 if record.id == "H01" else 3.0
-	var front: float = record.entry.z
+	var front: float = record.get("stair_front", record.entry.z)
 	var top: float = record.floor_height
 	# WATER-WORKSHOPS-02: a high floor (the mill's 1.05 m) climbs one even slope over its whole flight.
 	var profile := [Vector2(0, front + 1.75), Vector2(top * 0.5, front + 1.4), Vector2(top, front + 0.8), Vector2(top, front + 0.2), Vector2(0, front + 0.2)]

@@ -53,10 +53,14 @@ func build(scene: Node3D) -> void:
 
 ## Enterable halls from art/blender/forest-city-v1 (built by the village kit, entry turned to +z).
 const CIVIC := {
+	# art/blender/forest_city_halls.py: the door is in the body's front wall; the steps start at the
+	# front of the gallery / porch (stair_front) and climb the plinth over stair_run.
 	"town_hall": {"id": "R01", "scene_path": "res://assets/buildings/forest-city-v1/r01.glb", "width": 24.0, "depth": 12.0,
-		"entry": Vector3(0, 0.6, 6.0), "floor_height": 0.6, "title_key": "WORLD_FOREST_CITY_TOWN_HALL"},
+		"entry": Vector3(0, 1.0, 3.6), "floor_height": 1.0, "stair_front": 6.0, "stair_run": 2.0, "lantern_y": 3.6,
+		"title_key": "WORLD_FOREST_CITY_TOWN_HALL"},
 	"barracks": {"id": "K01", "scene_path": "res://assets/buildings/forest-city-v1/k01.glb", "width": 20.0, "depth": 10.0,
-		"entry": Vector3(2.5, 0.5, 5.0), "floor_height": 0.5, "title_key": "WORLD_FOREST_CITY_BARRACKS"},
+		"entry": Vector3(2.5, 0.8, 5.0), "floor_height": 0.8, "stair_run": 1.8, "lantern_y": 3.2,
+		"title_key": "WORLD_FOREST_CITY_BARRACKS"},
 }
 const Hall = preload("res://scripts/world/village_building.gd")
 var halls: Array[Node3D] = []
@@ -85,13 +89,26 @@ func _civic_buildings() -> void:
 		var hall := Hall.new()
 		add_child(hall)
 		hall.build(record)
+		var rect := _extent(hall.model)
+		var spot := _clear_spot(Vector2(at.x, at.z), basis, rect)
+		if spot.distance_to(Vector2(at.x, at.z)) > 0.05:
+			print("FOREST_CITY_CLEARED %s moved %.1f m" % [record.id, spot.distance_to(Vector2(at.x, at.z))])
+			at = Vector3(spot.x, 0, spot.y)
+			high = -INF
+			low = INF
+			for c in [Vector2(-1, -1), Vector2(1, -1), Vector2(-1, 1), Vector2(1, 1)]:
+				var corner: Vector3 = at + basis * Vector3(c.x * float(record.width) * 0.5, 0, c.y * float(record.depth) * 0.5)
+				var g: float = world.world_ground(corner.x, corner.z)
+				high = maxf(high, g)
+				low = minf(low, g)
 		hall.position = Vector3(at.x, high, at.z)
 		hall.rotation.y = yaw
-		if high - low > 0.05:
+		# The model's plinth reaches 1.2 m down; a steeper site gets a stone pad under it.
+		if high - low > 1.0:
 			_box(hall, Vector3(0, -(high - low) * 0.5 + 0.02, 0), Vector3(float(record.width) + 0.4, high - low + 0.1, float(record.depth) + 0.4), _stone())
-		_civic_skin(hall.model)
+		_workshop_skin(hall.model)
 		halls.append(hall)
-		_placed.append([Vector2(at.x, at.z), basis, float(record.width) * 0.5, float(record.depth) * 0.5])
+		_placed.append([Vector2(at.x, at.z), basis, rect])
 
 
 # --- Step 4 (first part): the suburbs, the field, the water wheels ----------------------------------
@@ -135,24 +152,34 @@ func _closed_house(b: Dictionary, kit: String) -> void:
 		yaw = atan2(to_road.x, to_road.y)
 	var size: Vector3 = KIT[kit].size
 	var basis := Basis(Vector3.UP, yaw)
+	var house: Node3D = (load(KIT[kit].path) as PackedScene).instantiate()
+	# The whole model - porch, ramp, roof overhang - not the kit's nominal walls.
+	var rect := _extent(house)
 	# Placement audit (Codex 023, owner 28 Sep): the turned footprint keeps off the road bed and its
 	# shoulder and off the river - pushed straight away from what it touches, never across it.
-	var pushed := _clear_spot(Vector2(at.x, at.z), basis, size)
+	var pushed := _clear_spot(Vector2(at.x, at.z), basis, rect)
 	var road_after := _nearest_road(pushed, 40.0)
 	if road_after != Vector2.INF and pushed.distance_to(Vector2(at.x, at.z)) > 0.05:
 		yaw = atan2(road_after.x - pushed.x, road_after.y - pushed.y)
 		basis = Basis(Vector3.UP, yaw)
-		pushed = _clear_spot(pushed, basis, size)
+		pushed = _clear_spot(pushed, basis, rect)
 	at = Vector3(pushed.x, world.world_ground(pushed.x, pushed.y), pushed.y)
 	var high := -INF
-	for c in [Vector3(-1, 0, -1), Vector3(1, 0, -1), Vector3(-1, 0, 1), Vector3(1, 0, 1)]:
-		var corner: Vector3 = at + basis * (c * Vector3(size.x * 0.5, 0, size.z * 0.5))
-		high = maxf(high, world.world_ground(corner.x, corner.z))
-	var house: Node3D = (load(KIT[kit].path) as PackedScene).instantiate()
+	var low := INF
+	for c in [Vector3(-1, 0, -1), Vector3(1, 0, -1), Vector3(-1, 0, 1), Vector3(1, 0, 1), Vector3.ZERO]:
+		var corner: Vector3 = at + basis * (c * Vector3(size.x * 0.5 + 0.2, 0, size.z * 0.5 + 0.2))
+		# The real (shore-refined) ground: on a river bank the base grid lies higher than the mesh.
+		var g: float = world.shore_ground(corner.x, corner.z)
+		high = maxf(high, g)
+		low = minf(low, g)
 	house.name = "%s_%s_%d" % [str(b.kind), kit, house_count]
 	house.position = Vector3(at.x, high, at.z)
 	house.rotation.y = yaw
-	_placed.append([Vector2(at.x, at.z), basis, size.x * 0.5, size.z * 0.5])
+	_placed.append([Vector2(at.x, at.z), basis, rect])
+	# A trodden yard round the house: no grass on its steps, ramp or porch.
+	var mid: Vector2 = rect.get_center()
+	var yard: Vector3 = at + basis * Vector3(mid.x, 0, mid.y)
+	yards.append(Vector3(yard.x, yard.z, rect.size.length() * 0.5 + 0.5))
 	house.set_meta("cleared_m", pushed.distance_to(Vector2(float(b.map[0]) - float(world.HALF), float(b.map[1]) - float(world.HALF))))
 	for mesh in house.find_children("*", "MeshInstance3D", true, false):
 		var role := str((mesh as MeshInstance3D).get_meta("extras", {}).get("part_role", ""))
@@ -161,6 +188,9 @@ func _closed_house(b: Dictionary, kit: String) -> void:
 		else:
 			(mesh as MeshInstance3D).visibility_range_end = VISIBLE
 	add_child(house)
+	# The base goes down to the real ground on a slope: a stone skirt, never a floor on air.
+	if high - low > 0.05:
+		_box(house, Vector3(0, -(high - low) * 0.5 + 0.05, 0), Vector3(size.x + 0.3, high - low + 0.2, size.z + 0.3), _stone())
 	var body := StaticBody3D.new()
 	body.set_meta("footstep_surface", "wood")
 	var shape := CollisionShape3D.new()
@@ -178,6 +208,8 @@ func _city_centre() -> Vector2:
 
 const ROAD_SHOULDER := 1.5
 const HOUSE_GAP := 2.0
+## Grass-free circles (x, z, radius) round the closed houses, read by world.gd's grass obstacles.
+var yards: Array[Vector3] = []
 var _placed: Array = []
 const RIVER_BANK := 1.5
 ## Segments of the roads and rivers near the city: [a, b, keep-off distance from the axis].
@@ -203,18 +235,46 @@ func _keepout_segments() -> Array:
 				_keepout.append([a, b, float(river.world_widths[i]) * 0.5 + RIVER_BANK])
 	return _keepout
 
-## Where the footprint (size x/z about `at`, turned by `basis`) is clear of every keep-out segment:
-## the worst intrusion pushes the house away from its segment, 0.5 m a step, up to 20 m.
-func _clear_spot(at: Vector2, basis: Basis, size: Vector3) -> Vector2:
+## The model's footprint in its own x/z (every mesh's box through the node chain; furniture and
+## ceilings, which the closed houses drop, left out).
+func _extent(model: Node3D) -> Rect2:
+	var rect := Rect2()
+	var first := true
+	for node in model.find_children("*", "MeshInstance3D", true, false):
+		var mesh := node as MeshInstance3D
+		var role := str(mesh.get_meta("extras", {}).get("part_role", ""))
+		if role == "furniture" or role == "ceiling" or mesh.mesh == null:
+			continue
+		var xf := Transform3D.IDENTITY
+		var n: Node = mesh
+		while n != model and n is Node3D:
+			xf = (n as Node3D).transform * xf
+			n = n.get_parent()
+		var box := mesh.get_aabb()
+		for i in 8:
+			var p: Vector3 = xf * box.get_endpoint(i)
+			if first:
+				rect = Rect2(Vector2(p.x, p.z), Vector2.ZERO)
+				first = false
+			else:
+				rect = rect.expand(Vector2(p.x, p.z))
+	return rect
+
+## Where the footprint (`rect` in the model's x/z about `at`, turned by `basis`) is clear of every
+## keep-out segment and every placed building: the worst intrusion pushes it away, 0.5 m a step.
+func _clear_spot(at: Vector2, basis: Basis, rect: Rect2) -> Vector2:
 	var segments := _keepout_segments()
 	var ax := Vector2(basis.x.x, basis.x.z)
 	var az := Vector2(basis.z.x, basis.z.z)
+	var nx := maxi(3, ceili(rect.size.x / 1.5) + 1)
+	var nz := maxi(3, ceili(rect.size.y / 1.5) + 1)
 	for step in 40:
 		var worst := 0.0
 		var away := Vector2.ZERO
-		for gx in range(-2, 3):
-			for gz in range(-2, 3):
-				var q := at + ax * (size.x * 0.25 * gx) + az * (size.z * 0.25 * gz)
+		for gx in nx:
+			for gz in nz:
+				var local := rect.position + rect.size * Vector2(float(gx) / (nx - 1), float(gz) / (nz - 1))
+				var q := at + ax * local.x + az * local.y
 				for seg in segments:
 					var near := Geometry2D.get_closest_point_to_segment(q, seg[0], seg[1])
 					var into: float = float(seg[2]) - q.distance_to(near)
@@ -227,16 +287,19 @@ func _clear_spot(at: Vector2, basis: Basis, size: Vector3) -> Vector2:
 						if absf(side) < 0.3:
 							side = normal.dot(at - _city_centre())
 						away = normal * signf(side if side != 0.0 else 1.0)
-				# Other buildings: [centre, basis, half x, half z], kept HOUSE_GAP apart.
+				# Other buildings: [origin, basis, footprint rect], kept HOUSE_GAP apart.
 				for other in _placed:
 					var ob: Basis = other[1]
+					var orect: Rect2 = other[2]
 					var d: Vector2 = q - other[0]
-					var lx := absf(d.dot(Vector2(ob.x.x, ob.x.z)))
-					var lz := absf(d.dot(Vector2(ob.z.x, ob.z.z)))
-					var into := minf(float(other[2]) + HOUSE_GAP - lx, float(other[3]) + HOUSE_GAP - lz)
-					if into > worst:
-						worst = into
-						away = (at - other[0]).normalized()
+					var l := Vector2(d.dot(Vector2(ob.x.x, ob.x.z)), d.dot(Vector2(ob.z.x, ob.z.z)))
+					var grown := orect.grow(HOUSE_GAP)
+					if grown.has_point(l):
+						var into := minf(minf(l.x - grown.position.x, grown.end.x - l.x), minf(l.y - grown.position.y, grown.end.y - l.y))
+						if into > worst:
+							worst = into
+							var c: Vector2 = orect.get_center()
+							away = (at - (other[0] + Vector2(ob.x.x, ob.x.z) * c.x + Vector2(ob.z.x, ob.z.z) * c.y)).normalized()
 		if worst <= 0.0:
 			return at
 		at += away * minf(worst + 0.1, 0.5)
@@ -284,7 +347,7 @@ func _field_blocked(q: Vector2, segments: Array) -> bool:
 	for other in _placed:
 		var ob: Basis = other[1]
 		var d: Vector2 = q - other[0]
-		if absf(d.dot(Vector2(ob.x.x, ob.x.z))) < float(other[2]) + 1.0 and absf(d.dot(Vector2(ob.z.x, ob.z.z))) < float(other[3]) + 1.0:
+		if (other[2] as Rect2).grow(1.0).has_point(Vector2(d.dot(Vector2(ob.x.x, ob.x.z)), d.dot(Vector2(ob.z.x, ob.z.z)))):
 			return true
 	return false
 
@@ -416,7 +479,7 @@ func _workshop(spec: Dictionary, axis: Vector3, flow: Vector3, n: Vector3, water
 	_workshop_skin(hall.model)
 	hall.transform = Transform3D(basis, origin)
 	# The whole unit with its wheel bay and porch keeps the houses off.
-	_placed.append([Vector2(origin.x, origin.z) + Vector2(x_b.x, x_b.z) * 1.5, basis, float(spec.width) * 0.5 + 2.5, float(spec.depth) * 0.5 + 2.0])
+	_placed.append([Vector2(origin.x, origin.z), basis, _extent(hall.model)])
 	if spec.door:
 		halls.append(hall)
 	else:
@@ -477,40 +540,8 @@ func _skin(kind: String) -> StandardMaterial3D:
 			m.roughness_texture = load(STONE_MAPS % "rough")
 			m.roughness = 1.0
 			m.uv1_scale = Vector3(0.5, 0.5, 1)
-		"timber_across":
-			m.albedo_texture = load(SKIN_DIR + "weathered_timber_across_1k.jpg")
-			m.uv1_triplanar = true
-			m.uv1_scale = Vector3.ONE * 0.6
-		"shingles_tri":
-			m.albedo_texture = load(SKIN_DIR + "wood_shingles_1k.jpg")
-			m.uv1_triplanar = true
-			m.uv1_triplanar_sharpness = 4.0
-			m.uv1_scale = Vector3.ONE / 1.8
-		"stone_tri":
-			m.albedo_texture = load(STONE_MAPS % "diff")
-			m.normal_enabled = true
-			m.normal_texture = load(STONE_MAPS % "nor_gl")
-			m.uv1_triplanar = true
-			m.uv1_scale = Vector3.ONE * 0.5
 	_skins[kind] = m
 	return m
-
-## The kit halls (R01, K01) carry planar UVs, not grain-aligned ones: their shell takes Codex's
-## finishes world-triplanar - the timber turned so its grain runs level along the logs, the shingle
-## courses level on the side projections of the roof pitches. Furniture keeps its own look.
-const CIVIC_ROLES := ["shell", "gable", "roof", "foundation", "chimney", "canopy", "door", "shutter"]
-
-func _civic_skin(model: Node3D) -> void:
-	for node in model.find_children("*", "MeshInstance3D", true, false):
-		var mesh := node as MeshInstance3D
-		if not str(mesh.get_meta("extras", {}).get("part_role", "")) in CIVIC_ROLES:
-			continue
-		for i in mesh.mesh.get_surface_count():
-			var source := mesh.mesh.surface_get_material(i)
-			var kind := source.resource_name.trim_prefix("Forest_") if source else ""
-			var skin: String = {"oak": "timber_across", "roof": "shingles_tri", "stone": "stone_tri"}.get(kind, "")
-			if skin != "":
-				mesh.set_surface_override_material(i, _skin(skin))
 
 func _workshop_skin(model: Node3D) -> void:
 	for node in model.find_children("*", "MeshInstance3D", true, false):
