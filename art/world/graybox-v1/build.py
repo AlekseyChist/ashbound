@@ -11,6 +11,18 @@ SOURCE=ROOT/'docs/design/world-exploration-v1/world-exploration.json'
 D=json.loads(SOURCE.read_text(encoding='utf8'))
 STEP=5.0; WIDTH=401; HALF=1000.0
 z,x=np.mgrid[0:WIDTH,0:WIDTH].astype(float)*STEP
+# RIVER-GRID-01 (owner 28 Sep: at the crossroads inn the water lies under the ground in pieces): a
+# 2-3 m stream falls between the 5 m grid points, so the ground covers it in patches. Water and
+# channel are at least 8 m wide: every grid row within 2.5 m of the axis then lies on the bed.
+# The depth still follows the planned width: a stream stays wadeable (1-1.2 m, the hero stops at 1.2).
+MIN_RIVER_WIDTH=8.0
+for _rv in D['rivers']:
+    _rv['depth_widths_m']=[float(w) for w in _rv['widths_m']]
+    _rv['widths_m']=[max(float(w),MIN_RIVER_WIDTH) for w in _rv['widths_m']]
+# RIVERS-SHALLOW-01 (owner 28 Sep: "make the rivers shallow so one can run across them"): knee-deep,
+# 0.6 m for a stream to 0.8 m for the widest river (was 1.0-2.8 m).
+def river_depth_for(w):
+    return 0.6+0.2*np.clip((np.asarray(w,float)-2)/10,0,1)
 
 def smooth(t):
     t=np.clip(t,0,1);return t*t*(3-2*t)
@@ -43,6 +55,48 @@ for extra in D.get('extra_ridges',[]):
     distance,top=nearest([extra])
     heights=np.maximum(heights,base+(top-base)*np.exp(-np.square(distance/135)))
 heights+=7*np.sin(x/95)*np.cos(z/113)+3*np.sin((x+z)/54)
+
+# RIVER-NATURAL-01 (owner 28 Sep: "if I were the river I'd flow into that valley below ... it must look
+# natural, not a wild fantasy"): the plan's water stood up to 70-100 m over the land around it, and the
+# valley shaping below raised a wide embankment to carry it. The water now takes its height from this
+# natural ground along its own course: the lowest ground across its bed (within 15 m), 1.5 m into it,
+# never rising downstream, a drop spread upstream at most 45 % (cascades, no walls). A lake fills to its outlet;
+# a tributary meets the river it flows into at that river's water. The courses themselves are the plan's.
+def natural_floor(px,pz,reach=15.0):
+    i0,i1=max(0,int((pz-reach)/STEP)),min(WIDTH,int((pz+reach)/STEP)+2)
+    j0,j1=max(0,int((px-reach)/STEP)),min(WIDTH,int((px+reach)/STEP)+2)
+    win=heights[i0:i1,j0:j1];near=np.hypot(x[i0:i1,j0:j1]-px,z[i0:i1,j0:j1]-pz)<=reach
+    return float(win[near].min())
+RIVER_INTO_GROUND=1.5;RAPIDS=0.45;RIVER_STEP=8.0
+for lake in D['lakes']:
+    ox,oz=lake['outlet'][:2]
+    lake['center'][2]=round(min(float(lake['center'][2]),natural_floor(ox,oz)-1.0),2)
+    lake['outlet'][2]=lake['center'][2]
+lake_of={l['river_id']:l for l in D['lakes'] if l.get('river_id')}
+settled_courses={}
+def natural_course(rv):
+    pts=rv['points'];cols=[rv['widths_m'],rv['depth_widths_m']];out=[];ws=[[],[]]
+    for a,b,*w in zip(pts,pts[1:],*[c for c in cols],*[c[1:] for c in cols]):
+        n=max(1,math.ceil(math.dist(a[:2],b[:2])/RIVER_STEP))
+        for i in range(n):
+            t=i/n;out.append([a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t])
+            ws[0].append(w[0]+(w[2]-w[0])*t);ws[1].append(w[1]+(w[3]-w[1])*t)
+    out.append(list(pts[-1]));ws[0].append(cols[0][-1]);ws[1].append(cols[1][-1])
+    level=[min(p[2],natural_floor(p[0],p[1])-RIVER_INTO_GROUND) for p in out]
+    if rv['id'] in lake_of:level[0]=float(lake_of[rv['id']]['center'][2])
+    for i in range(1,len(level)):level[i]=min(level[i],level[i-1])
+    # A tributary ends in its river's water (that river is settled first).
+    end=out[-1]
+    for other,(opts,olevel) in settled_courses.items():
+        d=[math.dist(end[:2],q[:2]) for q in opts];k=int(np.argmin(d))
+        if d[k]<20.0:level[-1]=min(level[-1],olevel[k])
+    for i in range(len(level)-2,-1,-1):
+        level[i]=min(level[i],level[i+1]+RAPIDS*math.dist(out[i][:2],out[i+1][:2]))
+    for p,h in zip(out,level):p[2]=round(h,2)
+    rv['points']=out;rv['widths_m']=ws[0];rv['depth_widths_m']=ws[1]
+    settled_courses[rv['id']]=(out,level)
+# Rivers others flow into come first (main before its tributaries).
+for rv in sorted(D['rivers'],key=lambda r:0 if r['id']=='main' else 1):natural_course(rv)
 
 # The city coordinates on the plan are road anchors. Small plazas sit on dry banks.
 offsets={'forest':[-35,35],'snow':[0,0],'desert':[45,-35],'lowland':[45,-45]}
@@ -134,6 +188,23 @@ for r in roads:
         de=min(i,n-1-i)*2.0
         fade=float(smooth((min(dn,de)-8.0)/16.0))
         g[i][0]+=float(sm[i,0])*fade;g[i][1]+=float(sm[i,1])*fade
+    # BRIDGES-02: where the road crosses the river at a shallow angle, the samples before the crossing
+    # went to one bank and those after it to the other - one 20-30 m segment spanned the water with no
+    # sample on it, so no bridge pin (the deck stayed at bank height, 7 m over the water). Resample.
+    dense_g=[g[0]]
+    for a,b in zip(g,g[1:]):
+        n=max(1,math.ceil(math.dist(a[:2],b[:2])/2.0))
+        dense_g.extend([a[k]+(b[k]-a[k])*j/n for k in range(3)] for j in range(1,n+1))
+    # The jump between the banks left an 80 deg zigzag at each bridge end: the road strip folded into
+    # a wall there and the bridge rails ran across the road. Round it (~6 m), ends and nodes stay put.
+    Q=np.array(dense_g,float);m=len(Q)
+    kz=np.exp(-.5*(np.arange(-9,10)/3.0)**2);kz/=kz.sum()
+    sq=np.stack([np.convolve(np.pad(Q[:,c],9,mode='edge'),kz,mode='valid') for c in (0,1)],axis=1)
+    for i in range(m):
+        dn=float(np.min(np.hypot(*(node_pts-Q[i,:2]).T))) if len(node_pts) else 1e9
+        fade=float(smooth((min(dn,min(i,m-1-i)*2.0)-8.0)/16.0))
+        dense_g[i][0]=float(Q[i,0]+(sq[i,0]-Q[i,0])*fade);dense_g[i][1]=float(Q[i,1]+(sq[i,1]-Q[i,1])*fade)
+    r['geometry_points']=dense_g
     moved_roads+=1
 print('RIVERSIDE_ROADS moved',moved_roads)
 
@@ -141,8 +212,15 @@ print('RIVERSIDE_ROADS moved',moved_roads)
 # Merely carving with min() leaves the water suspended above an unrelated base.
 water_distance,water_height=nearest([r['points'] for r in D['rivers']])
 _,water_width=nearest([[[p[0],p[1],w] for p,w in zip(r['points'],r['widths_m'])] for r in D['rivers']])
+_,depth_width=nearest([[[p[0],p[1],w] for p,w in zip(r['points'],r['depth_widths_m'])] for r in D['rivers']])
 valley_weight=1-smooth((water_distance-16)/95)
-heights=heights*(1-valley_weight)+(water_height+2)*valley_weight
+# RIVER-NATURAL-01: the valley is cut down to the water, never built up to it (that was the embankment),
+# and only as a valley. Low down a broad floodplain (40 m each side 2 m over the water, then 1:3) where
+# the roads, junctions and towns by the river lie - people keep to the rivers (owner 28 Sep); in the
+# mountains a narrow one (16 m, then 1:1.7), not a trench sawn under the pass roads.
+_mountain=smooth((water_height-100.0)/80.0)
+_floor=40.0+(16.0-40.0)*_mountain;_side=0.33+(0.6-0.33)*_mountain
+heights=np.minimum(heights,water_height+2+np.maximum(water_distance-_floor,0)*_side)
 # D-099: the sea along the south edge. Shaped before the roads: they follow the beach, and they
 # only touch their own narrow band, so they cannot lift the seabed.
 # The coast is a function z = c(x); d > 0 is the sea side. West and the fishing cove: a beach
@@ -200,8 +278,9 @@ for s in sites:
     dist=np.hypot(x-px,z-pz);w=1-ease((dist-18)/40)
     heights=heights*(1-w)+level_*w
 # The river banks come back to their water after the basins (a basin must not undercut a river).
-bank_weight=valley_weight*((d_sea<-30) if SEA else 1.0)
-heights=heights*(1-bank_weight)+np.maximum(heights,water_height+2)*bank_weight
+# RIVER-NATURAL-01: only the banks themselves (a few metres past the water), 0.5 m over it.
+bank_weight=(1-smooth((water_distance-np.maximum(water_width*.5,3.0)-2.0)/6.0))*((d_sea<-30) if SEA else 1.0)
+heights=heights*(1-bank_weight)+np.maximum(heights,water_height+.5)*bank_weight
 for c in cities:
     # The approach connector starts on the plaza.
     for r in roads:
@@ -235,7 +314,10 @@ for r in roads:
     grade0=GRADE.get(int(r.get('width_m',6)),.16)
     slope=np.abs(np.gradient(gauss_smooth(ground,step,20.0),np.concatenate([[0],np.cumsum(step)])))
     steep=smooth((gauss_smooth(slope,step,20.0)-grade0)/grade0)
-    keep=steep*smooth((np.abs(planned-ground)-4.0)/10.0)*smooth((to_city-150.0)/250.0)
+    # RIVER-NATURAL-01: by a river the road keeps to the valley floor, whatever the old plan said.
+    iz_=np.clip(np.round(pts[:,1]/STEP).astype(int),0,WIDTH-1);ix_=np.clip(np.round(pts[:,0]/STEP).astype(int),0,WIDTH-1)
+    to_river=water_distance[iz_,ix_]
+    keep=steep*smooth((np.abs(planned-ground)-4.0)/10.0)*smooth((to_city-150.0)/250.0)*smooth((to_river-120.0)/120.0)
     mixed=ground*(1-keep)+planned*keep
     # A median first removes single-sample spikes of the plan at road corners.
     padded=np.pad(mixed,3,mode='edge')
@@ -274,7 +356,8 @@ for a_i,ra in enumerate(ids):
 for key in nodes:
     for rid,(pts,h,step,grade,pins) in profiles.items():
         d=np.hypot(pts[:,0]-key[0],pts[:,1]-key[1]);i=int(d.argmin())
-        if d[i]<3.0:nodes[key].append((rid,i))
+        # 5 m: a rounded corner passes a junction up to ~3.5 m off (snow_desert at J1 missed its plate).
+        if d[i]<5.0:nodes[key].append((rid,i))
 for key,hits in nodes.items():
     if not hits:continue
     # A branch joins a through road at the through road's level; only road ends meeting each other
@@ -293,12 +376,138 @@ for key,hits in nodes.items():
         pts_,h_,step_,grade_,pins_=profiles[rid]
         along=np.concatenate([[0],np.cumsum(step_)])
         for k in np.where(np.abs(along-along[i])<=plate)[0]:pins_[int(k)]=target
-# River crossings are bridges: the deck stays at least 0.6 m over the water there.
+# Actual channel is below water; road strips cross it as decks.
+# RIVER-BANKS-01 (owner 27 Sep: "the river hangs in the air"): the water lies *inside* its channel.
+# The bed is under the water; the bank starts 1.5 m inside the water's edge (so the water ribbon
+# tucks into it) and half a metre past the edge stands 0.5 m over the water, then 1:1 up to the land. Where the land by a river is lower than that (after
+# the basins, sea and roads), a low bank rises to it - never into the sea. The old channel was a
+# flat trench 3+14 m wider than the water, so the water ribbon hung over its own bed.
+river_depth=river_depth_for(depth_width)
+river_half=np.maximum(water_width*.5,3.0)
+river_bed=water_height-river_depth
+river_bank=water_height+.5
+def channel_profile():
+    t=np.clip((water_distance-(river_half-1.5))/2.0,0,1)
+    return river_bed+(river_bank-river_bed)*t*t*(3-2*t)+np.maximum(water_distance-(river_half+1.5),0)
+def carve(h):
+    h=np.minimum(h,channel_profile())
+    inland=(d_sea<-30) if SEA else np.ones_like(h,bool)
+    # A low bank on the downhill side: 0.5 m over the water to 4 m past the edge, then 1:1 down
+    # to the land, so a grid triangle by the water never dips under it on a slope.
+    ring=(water_distance>=river_half+.5)&(water_distance<=river_half+12.0)&inland
+    levee=river_bank-np.maximum(water_distance-(river_half+4.0),0)
+    return np.where(ring,np.maximum(h,levee),h)
+
+def sample(px,pz):
+    gx=np.clip(px/STEP,0,WIDTH-1.000001);gz=np.clip(pz/STEP,0,WIDTH-1.000001)
+    ix,iz=int(gx),int(gz);u,v=gx-ix,gz-iz
+    a,b,c,d=heights[iz,ix],heights[iz,ix+1],heights[iz+1,ix],heights[iz+1,ix+1]
+    # Same diagonal as clockwise Godot mesh triangles [a,b,c], [b,d,c].
+    return float(a+(b-a)*u+(c-a)*v if u+v<=1 else d+(c-d)*(1-u)+(b-d)*(1-v))
+
+def dense(path,road=False):
+    result=[]
+    for a,b in zip(path,path[1:]):
+        n=math.ceil(math.dist(a[:2],b[:2])/2)
+        for i in range(n):
+            t=i/n;p=[a[k]+(b[k]-a[k])*t for k in range(3)]
+            if road:p[2]+=.08
+            result.append([p[0]-HALF,p[2],p[1]-HALF])
+    p=path[-1];result.append([p[0]-HALF,p[2]+.08 if road else p[2],p[1]-HALF])
+    return result
+
+# RIVER-BANKS-01: where the planned water would stand over its own banks (steep headwaters, the lake
+# outlet, a confluence) the water comes down to them: at every point it stays 0.15 m under the lower
+# bank just past the (widened) ribbon's edge and never rises downstream; the bed is cut under it again.
+def river_widths(r,key='widths_m'):
+    widths=[]
+    for a,b,wa,wb in zip(r['points'],r['points'][1:],r[key],r[key][1:]):
+        n=math.ceil(math.dist(a[:2],b[:2])/2)
+        widths.extend(wa+(wb-wa)*i/n for i in range(n))
+    widths.append(r[key][-1])
+    return widths
+def settle_river(r):
+    pts=dense(r['points']);widths=river_widths(r)
+    assert len(widths)==len(pts)
+    planned=[p[1] for p in pts]
+    for i,(p,w) in enumerate(zip(pts,widths)):
+        a=pts[max(i-1,0)];b=pts[min(i+1,len(pts)-1)]
+        tx,tz=b[0]-a[0],b[2]-a[2];n=math.hypot(tx,tz) or 1.0
+        reach=max(w*.5,3.0)+3.0
+        banks=[sample(p[0]+HALF-tz/n*s*reach,p[2]+HALF+tx/n*s*reach) for s in (-1,1)]
+        if p[1]>1.0:p[1]=min(p[1],min(banks)-.15)
+        if i:p[1]=min(p[1],pts[i-1][1])
+    # No steps in the water: a drop spreads upstream at no more than 15 % (rapids, not a wall) -
+    # or the plan's own fall where the river is planned steeper (RIVER-GRID-01: mountain rivers fall
+    # up to ~55 %; at 15 % the water was dragged 50 m under its valley and recut() sawed a slot
+    # canyon down to it, under the foothill cave bridge and below the spring cave).
+    for i in range(len(pts)-2,-1,-1):
+        run=math.dist((pts[i][0],pts[i][2]),(pts[i+1][0],pts[i+1][2]))
+        fall=max(.15*run,(planned[i]-planned[i+1])*1.05)
+        pts[i][1]=min(pts[i][1],pts[i+1][1]+fall)
+    return pts,widths
+# RIVER-GRID-01 (owner 28 Sep: the spring cave canyon is "cut up by textures along it"): where the
+# settled water lies under the planned channel, the bed used to be sawn straight down inside the
+# ribbon - a slot with vertical 5 m-grid walls that covered the water and stretched the texture.
+# Now the banks come down to the water at 1:1 up to WALL_REACH from the edge; the ground under a
+# road (road_cells, once the roads are laid) keeps its deck, so no road is undercut.
+WALL_REACH=30.0
+road_cells=None
+def recut(settled):
+    for rid,(pts,widths) in settled.items():
+        planned=river_widths(next(r for r in D['rivers'] if r['id']==rid),'depth_widths_m')
+        for a,b,w,pw in zip(pts,pts[1:],widths,planned):
+            depth=float(river_depth_for(pw));half=max(w*.5,3.0)-.5;reach=half+WALL_REACH
+            ax,az,bx,bz=a[0]+HALF,a[2]+HALF,b[0]+HALF,b[2]+HALF
+            sl=(slice(max(0,int((min(az,bz)-reach)/STEP)),min(WIDTH,int((max(az,bz)+reach)/STEP)+2)),slice(max(0,int((min(ax,bx)-reach)/STEP)),min(WIDTH,int((max(ax,bx)+reach)/STEP)+2)))
+            xx,zz=x[sl],z[sl];dx,dz=bx-ax,bz-az
+            t=np.clip(((xx-ax)*dx+(zz-az)*dz)/max(dx*dx+dz*dz,1e-9),0,1)
+            dist=np.hypot(xx-(ax+t*dx),zz-(az+t*dz))
+            water=a[1]+t*(b[1]-a[1])
+            profile=np.where(dist<=half,water-depth,water+.5+np.maximum(dist-(half+1.0),0))
+            free=dist<=reach
+            if road_cells is not None:free&=~(road_cells[sl]&(dist>half))
+            heights[sl]=np.where(free,np.minimum(heights[sl],profile),heights[sl])
+
+# River crossings are bridges. BRIDGES-02 (owner 28 Sep: "fix all the bridges" - a deck 50 m over the
+# foothill gorge, 12 m over the lowland river, climbing across the water): the whole crossing is one
+# level deck BRIDGE_CLEAR over the water - the road comes down its banks to it at its own grade -
+# unless a junction or place plate pins the road higher there.
+BRIDGE_CLEAR=1.0
+# The water the bridge stands over is the settled one (it sinks under the plan where the banks are
+# lower, up to 4 m by the lowland loop): settle it once on the carved ground as it is now, before
+# the roads, and read the deck from that.
+_ground=heights;heights=carve(_ground.copy())
+for _ in range(2):
+    _settled={r['id']:settle_river(r) for r in D['rivers']}
+    recut(_settled)
+heights=_ground
+_water=np.array([[p[0]+HALF,p[2]+HALF,p[1]] for pts_,_w in _settled.values() for p in pts_])
+def settled_water(px,pz):
+    return float(_water[int(np.argmin(np.hypot(_water[:,0]-px,_water[:,1]-pz))),2])
 for rid,(pts,h,step,grade,pins) in profiles.items():
     iz=np.clip(np.round(pts[:,1]/STEP).astype(int),0,WIDTH-1);ix=np.clip(np.round(pts[:,0]/STEP).astype(int),0,WIDTH-1)
     wet=water_distance[iz,ix]<water_width[iz,ix]*.5+4.0
-    for k in np.where(wet)[0]:
-        k=int(k);pins[k]=max(pins.get(k,h[k]),float(water_height[iz[k],ix[k]])+.6)
+    k=0
+    while k<len(pts):
+        if not wet[k]:k+=1;continue
+        e=k
+        while e<len(pts) and wet[e]:e+=1
+        levels=[settled_water(*pts[j])+BRIDGE_CLEAR for j in range(k,e)]
+        # A crossing is level; a long wet stretch (a road along the water) follows the water down.
+        if float(step[k:e-1].sum())<=40.0:
+            deck=max(levels)
+            # RIVER-NATURAL-01: a junction or a place plate close above a valley cannot be left at the
+            # road's grade down to the water - the bridge then stands that much higher over a ravine
+            # (it was a 76 % drop to the desert crossroads bridge).
+            along=np.concatenate([[0],np.cumsum(step)])
+            for j,v in pins.items():
+                if k<=j<e:continue
+                gap=min(abs(along[j]-along[k]),abs(along[j]-along[e-1]))
+                if gap<=60.0:deck=max(deck,v-grade*gap)
+            levels=[deck]*len(levels)
+        for j,deck in zip(range(k,e),levels):pins[j]=max(pins[j],deck) if j in pins else deck
+        k=e
 # Pins are hard; the grade limit carries each correction along the road (no jumps). Between two
 # pins that cannot be joined at the usual grade, only that stretch gets exactly the grade it needs.
 def settle(pts,h,step,grade,pins):
@@ -342,27 +551,6 @@ for lake in D['lakes']:
     bed=level-7*(1-np.minimum(q,1)**2)+10*smooth((q-1)/.35)
     influence=1-smooth((q-1.08)/.45)
     heights=heights*(1-influence)+bed*influence
-# Actual channel is below water; road strips cross it as decks.
-# RIVER-BANKS-01 (owner 27 Sep: "the river hangs in the air"): the water lies *inside* its channel.
-# The bed is under the water; the bank starts 1.5 m inside the water's edge (so the water ribbon
-# tucks into it) and half a metre past the edge stands 0.5 m over the water, then 1:1 up to the land. Where the land by a river is lower than that (after
-# the basins, sea and roads), a low bank rises to it - never into the sea. The old channel was a
-# flat trench 3+14 m wider than the water, so the water ribbon hung over its own bed.
-river_depth=1+1.8*np.clip((water_width-2)/10,0,1)
-river_half=np.maximum(water_width*.5,3.0)
-river_bed=water_height-river_depth
-river_bank=water_height+.5
-def channel_profile():
-    t=np.clip((water_distance-(river_half-1.5))/2.0,0,1)
-    return river_bed+(river_bank-river_bed)*t*t*(3-2*t)+np.maximum(water_distance-(river_half+1.5),0)
-def carve(h):
-    h=np.minimum(h,channel_profile())
-    inland=(d_sea<-30) if SEA else np.ones_like(h,bool)
-    # A low bank on the downhill side: 0.5 m over the water to 4 m past the edge, then 1:1 down
-    # to the land, so a grid triangle by the water never dips under it on a slope.
-    ring=(water_distance>=river_half+.5)&(water_distance<=river_half+12.0)&inland
-    levee=river_bank-np.maximum(water_distance-(river_half+4.0),0)
-    return np.where(ring,np.maximum(h,levee),h)
 river_weight=(water_distance<=river_half+1.0).astype(float)
 heights=carve(heights)
 # WORLD-TERRAIN-02: soften what the shaping left (cut edges, crossings) everywhere except the road
@@ -426,6 +614,7 @@ for r in roads:
 target=np.where(target-lowest<1.0,lowest,target)
 channel=water_distance<=river_half+.5
 heights=np.where(np.isfinite(best)&~channel,target,heights)
+road_cells=np.isfinite(best)
 
 # WORLD-EDGES-01 (owner 27 Sep): the world ends in mountains - along the north, west and east edges
 # the land rises 45-95 m within ~30 m (steeper than 60 deg, the hero climbs 45 at most), a ridge that
@@ -445,11 +634,34 @@ crest=np.maximum(heights+ridge_h,near_top+20+ridge_h)
 wall=1-smooth((edge_e-12.0)/30.0)
 heights=heights*(1-wall)+crest*wall
 
+# Twice: the cut bed moves the ground by the water's edge, the water settles to it once more.
+# Before the colours (RIVER-GRID-01): the cut banks are 1:1 and turn bare rock like any steep slope.
+for _ in range(2):
+    settled={r['id']:settle_river(r) for r in D['rivers']}
+    recut(settled)
+# WATER-02 (owner 28 Sep: "on the drops and joints the water looks untidy"): the settled water kept
+# small steps (0.5-1 m within 2 m) where a bank pulled it down; each is spread into a ramp: the
+# water sinks to the mean of +-10 m, twice, and is never raised (it stays inside its banks).
+for rid,(pts,widths) in settled.items():
+    for _ in range(2):
+        ys=[p[1] for p in pts]
+        for i in range(len(pts)):
+            lo,hi=max(0,i-5),min(len(pts),i+6)
+            pts[i][1]=min(ys[i],sum(ys[lo:hi])/(hi-lo))
+
 # Clay color masses only. Roads come from the road mask, water from its own strips.
 colors=np.zeros((WIDTH,WIDTH,4));colors[:,:,:]=[.43,.52,.43,1]
 desert=(x>1210)&(z<1570);colors[desert]=[.66,.57,.43,1]
 low=z>1390+110*np.sin(x/200);colors[low]=[.37,.52,.49,1]
 rock=smooth((heights-165)/155)[:,:,None]
+# LAKE-SHORE-01 (owner 28 Sep: no grass and no trees by the mountain lake): a meadow ring round each
+# lake, below the treeline, keeps the forest colour instead of the altitude's bare rock, so grass and
+# the far forest (bake.py reads the forest green) grow on its shore. Steep slopes stay rock.
+for lake in D['lakes']:
+    lx,lz,_lv=lake['center'];lrx,lrz=lake['radii_m']
+    lq=np.hypot((x-lx)/lrx,(z-lz)/lrz)
+    meadow=(1-smooth((lq-1.7)/.6))*(1-smooth((heights-300)/30))
+    rock=rock*(1-meadow[:,:,None])
 colors[:,:,:3]=colors[:,:,:3]*(1-rock)+np.array([.55,.56,.54])*rock
 # WORLD-EDGES-01: bare rock on every slope steeper than ~35 deg (the edge ridge, gorges, cliffs), so
 # no meadow colour - and no grass - climbs a cliff.
@@ -469,71 +681,14 @@ if SEA:
     colors[:,:,:3]=colors[:,:,:3]*(1-face)+np.array([.50,.49,.46])*face
 colors[:,:,:3]=np.where(colors[:,:,:3]<=.04045,colors[:,:,:3]/12.92,((colors[:,:,:3]+.055)/1.055)**2.4)
 
-def sample(px,pz):
-    gx=np.clip(px/STEP,0,WIDTH-1.000001);gz=np.clip(pz/STEP,0,WIDTH-1.000001)
-    ix,iz=int(gx),int(gz);u,v=gx-ix,gz-iz
-    a,b,c,d=heights[iz,ix],heights[iz,ix+1],heights[iz+1,ix],heights[iz+1,ix+1]
-    # Same diagonal as clockwise Godot mesh triangles [a,b,c], [b,d,c].
-    return float(a+(b-a)*u+(c-a)*v if u+v<=1 else d+(c-d)*(1-u)+(b-d)*(1-v))
-
-def dense(path,road=False):
-    result=[]
-    for a,b in zip(path,path[1:]):
-        n=math.ceil(math.dist(a[:2],b[:2])/2)
-        for i in range(n):
-            t=i/n;p=[a[k]+(b[k]-a[k])*t for k in range(3)]
-            if road:p[2]+=.08
-            result.append([p[0]-HALF,p[2],p[1]-HALF])
-    p=path[-1];result.append([p[0]-HALF,p[2]+.08 if road else p[2],p[1]-HALF])
-    return result
-
-# RIVER-BANKS-01: where the planned water would stand over its own banks (steep headwaters, the lake
-# outlet, a confluence) the water comes down to them: at every point it stays 0.15 m under the lower
-# bank just past the (widened) ribbon's edge and never rises downstream; the bed is cut under it again.
-def river_widths(r):
-    widths=[]
-    for a,b,wa,wb in zip(r['points'],r['points'][1:],r['widths_m'],r['widths_m'][1:]):
-        n=math.ceil(math.dist(a[:2],b[:2])/2)
-        widths.extend(wa+(wb-wa)*i/n for i in range(n))
-    widths.append(r['widths_m'][-1])
-    return widths
-def settle_river(r):
-    pts=dense(r['points']);widths=river_widths(r)
-    assert len(widths)==len(pts)
-    for i,(p,w) in enumerate(zip(pts,widths)):
-        a=pts[max(i-1,0)];b=pts[min(i+1,len(pts)-1)]
-        tx,tz=b[0]-a[0],b[2]-a[2];n=math.hypot(tx,tz) or 1.0
-        reach=max(w*.5,3.0)+3.0
-        banks=[sample(p[0]+HALF-tz/n*s*reach,p[2]+HALF+tx/n*s*reach) for s in (-1,1)]
-        if p[1]>1.0:p[1]=min(p[1],min(banks)-.15)
-        if i:p[1]=min(p[1],pts[i-1][1])
-    # No steps in the water: a drop spreads upstream at no more than 15 % (rapids, not a wall).
-    for i in range(len(pts)-2,-1,-1):
-        run=math.dist((pts[i][0],pts[i][2]),(pts[i+1][0],pts[i+1][2]))
-        pts[i][1]=min(pts[i][1],pts[i+1][1]+.15*run)
-    return pts,widths
-def recut(settled):
-    for rid,(pts,widths) in settled.items():
-        for a,b,w in zip(pts,pts[1:],widths):
-            depth=1+1.8*min(max((w-2)/10,0),1);half=max(w*.5,3.0)-.5
-            ax,az,bx,bz=a[0]+HALF,a[2]+HALF,b[0]+HALF,b[2]+HALF
-            sl=(slice(max(0,int((min(az,bz)-half)/STEP)),min(WIDTH,int((max(az,bz)+half)/STEP)+2)),slice(max(0,int((min(ax,bx)-half)/STEP)),min(WIDTH,int((max(ax,bx)+half)/STEP)+2)))
-            xx,zz=x[sl],z[sl];dx,dz=bx-ax,bz-az
-            t=np.clip(((xx-ax)*dx+(zz-az)*dz)/max(dx*dx+dz*dz,1e-9),0,1)
-            dist=np.hypot(xx-(ax+t*dx),zz-(az+t*dz))
-            heights[sl]=np.where(dist<=half,np.minimum(heights[sl],a[1]+t*(b[1]-a[1])-depth),heights[sl])
-
-# Twice: the cut bed moves the ground by the water's edge, the water settles to it once more.
-for _ in range(2):
-    settled={r['id']:settle_river(r) for r in D['rivers']}
-    recut(settled)
-
 OUT.mkdir(parents=True,exist_ok=True)
 (OUT/'heights.bin').write_bytes(heights.astype('<f4').tobytes())
 (OUT/'colors.bin').write_bytes(colors.astype('<f4').tobytes())
 def water_record(r):
     points,widths=settled[r['id']]
-    return {**r,'world_points':points,'world_widths':widths}
+    # SHORE-MESH-01: the game rebuilds the banks at 1.25 m along the water from these.
+    depths=[round(float(river_depth_for(w)),3) for w in river_widths(r,'depth_widths_m')]
+    return {**r,'world_points':points,'world_widths':widths,'world_depths':depths}
 
 layout={'version':'0.21.2-headwaters','width':WIDTH,'spacing':STEP,'extent_m':2000,
         'source_sha256':hashlib.sha256(SOURCE.read_bytes()).hexdigest(),

@@ -9,7 +9,8 @@ const FINISH={
 	"plaster":["plaster",Color(1,.94,.82,1),.55,.12],
 	"oak":["wood",Color.WHITE,.75,.12],
 	"roof":["wood",Color(.76,.79,.83,1),.85,.10],
-	"stone":["stone",Color(.96,1.02,1.13,1),.75,.10]
+	"stone":["stone",Color(.96,1.02,1.13,1),.75,.10],
+	"sandstone":["stone",Color(1.22,1.06,.86,1),.8,.10]
 }
 
 static func create(kind: String) -> Material:

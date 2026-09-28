@@ -11,14 +11,20 @@ const DECK_THICKNESS := 0.18
 const PILE_STEP := 2.5
 const RAIL_HEIGHT := 1.0
 const VISIBLE := 180.0
+## The ramp at each end starts this far over the ground and climbs at most this grade.
+const RAMP_TOE := 0.04
+const RAMP_GRADE := 0.25
 
 var world: Node3D
 var boards: StandardMaterial3D
 var timber: StandardMaterial3D
+## The ramp side boards: the deck's boards, seen from both sides (a single wall, no back face).
+var skirt_material: StandardMaterial3D
 var bridge_count := 0
 var _rails: StaticBody3D
 ## Centres of the bridges built so far: where two roads share a crossing, one bridge stands.
 var _centres: Array[Vector3] = []
+var _spans: Array[PackedVector3Array] = []
 
 
 func configure(scene: Node3D) -> void:
@@ -29,6 +35,8 @@ func configure(scene: Node3D) -> void:
 	boards.normal_texture = load(BOARDS % "nor_gl")
 	boards.roughness_texture = load(BOARDS % "rough")
 	boards.albedo_color = Color(0.8, 0.72, 0.62)
+	skirt_material = boards.duplicate()
+	skirt_material.cull_mode = BaseMaterial3D.CULL_DISABLED
 	timber = StandardMaterial3D.new()
 	timber.albedo_texture = load(OAK)
 	timber.albedo_color = Color(0.6, 0.5, 0.42)
@@ -41,25 +49,64 @@ func configure(scene: Node3D) -> void:
 	add_child(_rails)
 
 
+## The deck's own heights over `run`: level over the water; at both ends a ramp (BRIDGES-02, owner
+## 28 Sep: "a ramp to the bridge, no gaps, a smooth way up") from the ground on the bank up to it.
+## `core` marks the samples over the water (the deck height comes from them, not from the road
+## climbing the bank); `on_land` (optional) is filled with 1 where the ramp stands over the bank.
+func deck_profile(run: PackedVector3Array, core: PackedByteArray, on_land: PackedByteArray = PackedByteArray()) -> PackedVector3Array:
+	var deck_top := -INF
+	for i in run.size():
+		if core[i] == 1:
+			deck_top = maxf(deck_top, run[i].y)
+	var along := PackedFloat32Array([0.0])
+	for i in range(1, run.size()):
+		along.append(along[i - 1] + Vector2(run[i].x - run[i - 1].x, run[i].z - run[i - 1].z).length())
+	var total: float = along[along.size() - 1]
+	var ends := [world.world_ground(run[0].x, run[0].z) + RAMP_TOE, world.world_ground(run[run.size() - 1].x, run[run.size() - 1].z) + RAMP_TOE]
+	var result := PackedVector3Array()
+	on_land.resize(run.size())
+	for i in run.size():
+		var from_start: float = along[i]
+		var from_end: float = total - along[i]
+		var near_start := from_start <= from_end
+		var toe: float = ends[0] if near_start else ends[1]
+		# At most RAMP_GRADE, never longer than a third of the bridge.
+		var length := clampf(absf(deck_top - toe) / RAMP_GRADE, 1.0, total / 3.0)
+		var t := smoothstep(0.0, length, from_start if near_start else from_end)
+		result.append(Vector3(run[i].x, lerpf(toe, deck_top, t), run[i].z))
+		on_land[i] = 1 if t < 1.0 else 0
+	return result
+
+
 ## One bridge over `run` (deck points in the world frame) for a road `width` metres wide.
-func build_bridge(run: PackedVector3Array, width: float) -> void:
+func build_bridge(run: PackedVector3Array, width: float, core: PackedByteArray) -> void:
 	if run.size() < 2:
 		return
-	var mid := (run[0] + run[run.size() - 1]) * 0.5
+	# The centre of the part over the water: two roads sharing a crossing reach different banks.
+	var first := core.find(1)
+	var last := core.rfind(1)
+	var mid := (run[first] + run[last]) * 0.5 if first >= 0 else (run[0] + run[run.size() - 1]) * 0.5
 	for other in _centres:
 		if Vector2(other.x - mid.x, other.z - mid.z).length() < 12.0:
 			return
-	_centres.append(mid)
-	# A level deck: a bridge does not climb with the road; its ends meet the road's own height.
-	var deck_top := -INF
-	for p in run:
-		deck_top = maxf(deck_top, p.y)
-	var level := PackedVector3Array()
+	# Two roads sharing a crossing but not its middle (they leave it for different banks): the second
+	# is skipped when most of its span over the water lies on a bridge already built.
+	var span := PackedVector3Array()
 	for i in run.size():
-		var t := float(i) / float(run.size() - 1)
-		var ramp := smoothstep(0.0, 0.25, t) * (1.0 - smoothstep(0.75, 1.0, t))
-		level.append(Vector3(run[i].x, lerpf(run[i].y, deck_top, ramp), run[i].z))
-	run = level
+		if core[i] == 1:
+			span.append(run[i])
+	var shared := 0
+	for p in span:
+		for built in _spans:
+			if _near(p, built, 4.0):
+				shared += 1
+				break
+	if shared * 2 >= span.size() and span.size() > 0:
+		return
+	_spans.append(span)
+	_centres.append(mid)
+	var on_land := PackedByteArray()
+	run = deck_profile(run, core, on_land)
 	var bridge := Node3D.new()
 	bridge.name = "Bridge_%d" % bridge_count
 	add_child(bridge)
@@ -67,6 +114,8 @@ func build_bridge(run: PackedVector3Array, width: float) -> void:
 	var sides: Array[Vector3] = []
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	# Flat normals: smoothed with the side faces the top leaned 45 degrees and the boards lit dim.
+	st.set_smooth_group(0xFFFFFFFF)
 	var along := 0.0
 	var rows := []
 	for i in run.size():
@@ -78,6 +127,18 @@ func build_bridge(run: PackedVector3Array, width: float) -> void:
 		var top := run[i] + Vector3.UP * 0.06
 		rows.append([top - side * half, top + side * half, along, side])
 	# Deck: the top with boards across the road, and its two side faces.
+	# BRIDGES-02 (owner 28 Sep, forest city: rails but no deck): the faces' winding follows the road's
+	# direction, so on a road drawn the other way the deck faced down and was culled from above.
+	# Swap the sides so the top always faces up.
+	if rows.size() >= 2:
+		var r0: Array = rows[0]
+		var r1: Array = rows[1]
+		if ((r0[1] as Vector3) - (r0[0] as Vector3)).cross((r1[0] as Vector3) - (r0[0] as Vector3)).y > 0.0:
+			for row in rows:
+				var left: Vector3 = row[0]
+				row[0] = row[1]
+				row[1] = left
+				row[3] = -(row[3] as Vector3)
 	for i in rows.size() - 1:
 		var r0: Array = rows[i]
 		var r1: Array = rows[i + 1]
@@ -96,6 +157,34 @@ func build_bridge(run: PackedVector3Array, width: float) -> void:
 	deck.material_override = boards
 	deck.visibility_range_end = VISIBLE
 	bridge.add_child(deck)
+	# Under the ramps, boards from the deck edge down into the bank: no gap to see through at the sides.
+	var skirt := SurfaceTool.new()
+	skirt.begin(Mesh.PRIMITIVE_TRIANGLES)
+	skirt.set_smooth_group(0xFFFFFFFF)
+	var skirted := false
+	for i in rows.size() - 1:
+		if on_land[i] == 0 and on_land[i + 1] == 0:
+			continue
+		var r0: Array = rows[i]
+		var r1: Array = rows[i + 1]
+		for s in [0, 1]:
+			var a: Vector3 = (r0[s] as Vector3) + Vector3.DOWN * DECK_THICKNESS
+			var b: Vector3 = (r1[s] as Vector3) + Vector3.DOWN * DECK_THICKNESS
+			var a_low := Vector3(a.x, minf(world.world_ground(a.x, a.z) - 0.3, a.y), a.z)
+			var b_low := Vector3(b.x, minf(world.world_ground(b.x, b.z) - 0.3, b.y), b.z)
+			var quad := [a, b, b_low, a_low]
+			for k in [0, 1, 2, 0, 2, 3]:
+				skirt.set_uv(Vector2(float(r0[2] if k in [0, 3] else r1[2]), (quad[k] as Vector3).y) * 0.5)
+				skirt.add_vertex(quad[k])
+			skirted = true
+	if skirted:
+		skirt.generate_normals()
+		var ramp_sides := MeshInstance3D.new()
+		ramp_sides.name = "RampSides"
+		ramp_sides.mesh = skirt.commit()
+		ramp_sides.material_override = skirt_material
+		ramp_sides.visibility_range_end = VISIBLE
+		bridge.add_child(ramp_sides)
 	# Stringers, rails and piles, segment by segment.
 	var next_pile := 0.0
 	for i in rows.size() - 1:
@@ -116,6 +205,13 @@ func build_bridge(run: PackedVector3Array, width: float) -> void:
 				_post(bridge, Vector3(top.x, bed, top.z), top.y + RAIL_HEIGHT + 0.05 - bed)
 			next_pile += PILE_STEP
 	bridge_count += 1
+
+
+func _near(p: Vector3, points: PackedVector3Array, reach: float) -> bool:
+	for q in points:
+		if Vector2(p.x - q.x, p.z - q.z).length() < reach:
+			return true
+	return false
 
 
 func _beam(parent: Node3D, from: Vector3, to: Vector3, section: Vector2, solid: bool = false) -> void:

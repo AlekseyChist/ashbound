@@ -11,6 +11,13 @@ const Landmarks = preload("res://scripts/world/world_graybox_landmarks.gd")
 ## the grey landmark at the forest_inn site, door towards the trail.
 const InnBuilding = preload("res://scripts/world/village_building.gd")
 const INN_SITE := "forest_inn"
+## INN-CROSSROADS-01 (owner 28 Sep: "put our ready tavern there"): the same hall with its dressing
+## stands at the crossroads inn; the innkeeper, his talk and the rented bed stay in the forest inn.
+## INN-STONE-01 (owner 28 Sep): in the forest a log hall, in the desert the same hall in stone (T03B).
+const INN_SITES := {
+	"forest_inn": {"name": "ForestInn", "id": "T03A", "scene_path": "res://assets/buildings/forest-inn-v1/t03a.glb"},
+	"crossroads_inn": {"name": "CrossroadsInn", "id": "T03B", "scene_path": "res://assets/buildings/desert-inn-v1/t03b.glb"},
+}
 ## TAVERN-02 (owner 25 Sep): twice the floor, an L-shaped bar, straight stairs to the loft.
 const INN_RECORD := {
 	"id": "T03A",
@@ -31,7 +38,7 @@ const INN_KEEPER_TALK: QuestData = preload("res://data/quests/forest_inn_keeper.
 const INN_TALK_RADIUS := 2.8
 const Pad = preload("res://scripts/world/world_settlement_pad.gd")
 
-const VERSION := "0.36.3"
+const VERSION := "0.36.4"
 const WORLD_LAYOUT := "res://assets/world/graybox-v1/layout.json"
 const WORLD_HEIGHTS := "res://assets/world/graybox-v1/heights.bin"
 const WORLD_COLORS := "res://assets/world/graybox-v1/colors.bin"
@@ -81,6 +88,8 @@ var combat: Node
 ## WORLD-SAVE-01: inventory, hero place and progress; only when the world is the running scene.
 var save: Node
 var inn: Node3D
+## Every inn hall on the map (the forest inn first); their doors work like the village doors.
+var inns: Array[Node3D] = []
 var inn_keeper: Node3D
 var inn_talk: QuestTracker
 ## INN-REST-01: the rented bed in the inn loft and sleeping until the morning.
@@ -208,6 +217,12 @@ func _build_world() -> void:
 	world_terrain.skip_cell = func(x: int, z: int) -> bool: return pad.covers_cell(x, z, GRID)
 	world_terrain.material = terrain.material
 	world_terrain.surface_meta = "ground"
+	# SHORE-MESH-01: the banks along the water in 1.25 m cells, on the channel's own profile.
+	_index_shore()
+	world_terrain.refine_cell = func(x: int, z: int) -> bool:
+		var near := _shore_near((x + 0.5) * GRID - HALF, (z + 0.5) * GRID - HALF)
+		return not near.is_empty() and near[0] < near[2] + SHORE_REACH + GRID * 0.75
+	world_terrain.shore_height = _shore_height
 	world_root.add_child(world_terrain)
 	world_colors = _world_colors()
 	world_terrain.build(world_heights, world_colors, world_width, GRID)
@@ -407,24 +422,144 @@ func _build_roads() -> void:
 		var bridge := PackedByteArray()
 		bridge.resize(points.size())
 		for i in points.size():
-			if points[i].y - world_ground(points[i].x, points[i].z) > BRIDGE_RISE:
+			if points[i].y - world_ground(points[i].x, points[i].z) > BRIDGE_RISE and _over_river(points[i]):
 				for k in range(maxi(0, i - 2), mini(points.size(), i + 3)):
 					bridge[k] = 1
+		# BRIDGES-02 (owner 28 Sep: "a ramp to the bridge, no gaps, a smooth way up"): each bridge runs
+		# on until the road meets the ground on the bank, so its ramp can end on the ground itself -
+		# at most 2 m up or down the bank (on a steep bank the road beyond is the ground's own).
+		for i in points.size():
+			if bridge[i] == 1 and (i == 0 or bridge[i - 1] == 0):
+				var k := i - 1
+				while k >= 0 and i - k <= 8 and points[k].y - world_ground(points[k].x, points[k].z) > 0.12 and absf(points[k].y - points[i].y) < 2.0:
+					bridge[k] = 2
+					k -= 1
+				if k >= 0:
+					bridge[k] = 2
+		for i in range(points.size() - 1, -1, -1):
+			if bridge[i] == 1 and (i == points.size() - 1 or bridge[i + 1] == 0):
+				var k := i + 1
+				while k < points.size() and k - i <= 8 and points[k].y - world_ground(points[k].x, points[k].z) > 0.12 and absf(points[k].y - points[i].y) < 2.0:
+					bridge[k] = 2
+					k += 1
+				if k < points.size():
+					bridge[k] = 2
 		var run := PackedVector3Array()
+		var core := PackedByteArray()
 		for i in points.size() + 1:
-			if i < points.size() and bridge[i] == 1:
+			if i < points.size() and bridge[i] > 0:
 				run.append(points[i])
+				core.append(1 if bridge[i] == 1 else 0)
 				continue
 			if run.size() >= 2:
-				var strip: MeshInstance3D = roads.add_strip(run, width, ROAD_TINT, true)
+				# The hero walks the same profile the bridge shows: ramps down to the ground at both ends.
+				var strip: MeshInstance3D = roads.add_strip(bridges.deck_profile(run, core), width, ROAD_TINT, true)
 				if strip != null:
 					strip.name = "%s_bridge_%d" % [road.id, i]
 					_paint(strip, Color(ROAD_TINT.srgb_to_linear(), 1.0))
 					strip.visible = false
-					bridges.build_bridge(run, width)
+					bridges.build_bridge(run, width, core)
 			run.clear()
+			core.clear()
 	_mark_surfaces(roads, "dirt")
 	_mark_surfaces(shoulders, "ground")
+
+
+## SHORE-MESH-01 (owner 28 Sep: "the banks are still triangles, zigzags"): within SHORE_REACH of the
+## water's edge the ground follows the channel as build.py cuts it - the bed under the water, a
+## smooth rise to 0.5 m over it just past the edge, then 1:1 - and blends back to the 5 m ground.
+const SHORE_REACH := 5.0
+const SHORE_CELL := 12.0
+var _shore_cells := {}
+var _shore_rivers: Array = []
+
+func _index_shore() -> void:
+	for r in world_layout.rivers.size():
+		var river: Dictionary = world_layout.rivers[r]
+		var pts := PackedVector3Array()
+		var halves := PackedFloat32Array()
+		var depths := PackedFloat32Array()
+		for i in river.world_points.size():
+			var p: Array = river.world_points[i]
+			pts.append(Vector3(float(p[0]), float(p[1]), float(p[2])))
+			halves.append(float(river.world_widths[i]) * 0.5)
+			depths.append(float(river.world_depths[i]) if river.has("world_depths") else 1.0)
+			var key := Vector2i(floori(float(p[0]) / SHORE_CELL), floori(float(p[2]) / SHORE_CELL))
+			if not _shore_cells.has(key):
+				_shore_cells[key] = []
+			_shore_cells[key].append(Vector2i(r, i))
+		_shore_rivers.append([pts, halves, depths])
+
+## [distance from the axis, water height, half width, depth] of the nearest river, or [] far from one.
+func _shore_near(wx: float, wz: float) -> Array:
+	var cell := Vector2i(floori(wx / SHORE_CELL), floori(wz / SHORE_CELL))
+	var best := INF
+	var hit := Vector2i(-1, -1)
+	for dz in range(-1, 2):
+		for dx in range(-1, 2):
+			for ref: Vector2i in _shore_cells.get(cell + Vector2i(dx, dz), []):
+				var q: Vector3 = _shore_rivers[ref.x][0][ref.y]
+				var d := (q.x - wx) * (q.x - wx) + (q.z - wz) * (q.z - wz)
+				if d < best:
+					best = d
+					hit = ref
+	if hit.x < 0:
+		return []
+	var pts: PackedVector3Array = _shore_rivers[hit.x][0]
+	var halves: PackedFloat32Array = _shore_rivers[hit.x][1]
+	var depths: PackedFloat32Array = _shore_rivers[hit.x][2]
+	var result := [sqrt(best), pts[hit.y].y, halves[hit.y], depths[hit.y]]
+	# The segments either side of the nearest point give the true distance to the axis.
+	for k in [hit.y - 1, hit.y]:
+		if k < 0 or k + 1 >= pts.size():
+			continue
+		var a := Vector2(pts[k].x, pts[k].z)
+		var b := Vector2(pts[k + 1].x, pts[k + 1].z)
+		var ab := b - a
+		var t := clampf((Vector2(wx, wz) - a).dot(ab) / maxf(ab.length_squared(), 1e-6), 0.0, 1.0)
+		var d := (a + ab * t).distance_to(Vector2(wx, wz))
+		if d < result[0]:
+			result = [d, lerpf(pts[k].y, pts[k + 1].y, t), lerpf(halves[k], halves[k + 1], t), lerpf(depths[k], depths[k + 1], t)]
+	return result
+
+## The ground under a world-frame point as the terrain shows it, the finer banks included.
+func shore_ground(wx: float, wz: float) -> float:
+	var base := world_ground(wx, wz)
+	var near := _shore_near(wx, wz)
+	if near.is_empty() or near[0] >= near[2] + SHORE_REACH:
+		return base
+	return _shore_height(wx, wz, base)
+
+func _shore_height(wx: float, wz: float, base: float) -> float:
+	var near := _shore_near(wx, wz)
+	if near.is_empty():
+		return base
+	var d: float = near[0]
+	var water: float = near[1]
+	var edge: float = near[2]
+	var profile := water - float(near[3]) + (float(near[3]) + 0.5) * smoothstep(edge - 1.5, edge + 0.5, d) + maxf(d - (edge + 0.5), 0.0)
+	return lerpf(profile, base, smoothstep(edge + 1.0, edge + SHORE_REACH, d))
+
+
+## BRIDGES-02: a bridge only over a river. On a steep switchback the 5 m ground mesh can dip more than
+## BRIDGE_RISE under the road; a bridge stood there on the hillside with no water under it.
+var _bridge_river_cells := {}
+func _over_river(p: Vector3) -> bool:
+	if _bridge_river_cells.is_empty():
+		for river in world_layout.rivers:
+			for i in river.world_points.size():
+				var q: Array = river.world_points[i]
+				var key := Vector2i(floori(float(q[0]) / 32.0), floori(float(q[2]) / 32.0))
+				if not _bridge_river_cells.has(key):
+					_bridge_river_cells[key] = []
+				_bridge_river_cells[key].append(Vector3(float(q[0]), float(river.world_widths[i]) * 0.5 + 3.0, float(q[2])))
+	var cell := Vector2i(floori(p.x / 32.0), floori(p.z / 32.0))
+	for dz in range(-1, 2):
+		for dx in range(-1, 2):
+			for q: Vector3 in _bridge_river_cells.get(cell + Vector2i(dx, dz), []):
+				if Vector2(p.x - q.x, p.z - q.z).length() <= q.y:
+					return true
+	return false
 
 
 ## The baked mask, with the village ring redrawn from the trail heads built here at run time
@@ -557,12 +692,22 @@ func _index_grass_obstacles() -> void:
 			continue
 		var radius := 30.0 if site.kind == "settlement" else 16.0
 		_grass_blocks.append(Vector3(float(site.spawn[0]) + offset.x, float(site.spawn[2]) + offset.y, radius))
-	var inn_frame := _inn_frame()
-	if not inn_frame.is_empty():
-		_grass_blocks.append(Vector3(inn_frame.center.x + offset.x, inn_frame.center.z + offset.y, 14.0))
+	for site_id in INN_SITES:
+		var inn_frame := _inn_frame(site_id)
+		if not inn_frame.is_empty():
+			_grass_blocks.append(Vector3(inn_frame.center.x + offset.x, inn_frame.center.z + offset.y, 14.0))
+	# LAKE-SHORE-01: a lake is an ellipse; one circle over its long radius kept the whole shore bare.
+	# Circles of the short radius along the long axis cover the water and leave the shore to the grass.
 	for lake in world_layout.lakes:
 		var c: Array = lake.center
-		_grass_blocks.append(Vector3(float(c[0]) - HALF + offset.x, float(c[1]) - HALF + offset.y, maxf(float(lake.radii_m[0]), float(lake.radii_m[1])) + 2.0))
+		var rx := float(lake.radii_m[0])
+		var rz := float(lake.radii_m[1])
+		var r := minf(rx, rz) + 2.0
+		var reach := absf(rx - rz)
+		for k in range(-2, 3):
+			var along := reach * k / 2.0
+			var at := Vector2(along, 0.0) if rx >= rz else Vector2(0.0, along)
+			_grass_blocks.append(Vector3(float(c[0]) - HALF + at.x + offset.x, float(c[1]) - HALF + at.y + offset.y, r))
 
 
 ## MUSIC-REGION-01: which track plays here - "main" at home (the village and its ring), otherwise the
@@ -690,14 +835,21 @@ func _river_mesh(points: PackedVector3Array, left: PackedVector3Array, right: Pa
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var along := 0.0
 	var rows := []
+	# WATER-02 (owner 28 Sep: "on the drops and joints the water looks untidy"): the steepness over
+	# +-10 m and only from 12 % (the natural rivers made nearly every mountain stretch a white
+	# rapid), UV.y the distance along the water itself, and the ribbon's own tilted normal.
 	for i in points.size():
 		if i > 0:
-			along += Vector2(points[i].x - points[i - 1].x, points[i].z - points[i - 1].z).length()
-		var a := points[maxi(i - 2, 0)]
-		var b := points[mini(i + 2, points.size() - 1)]
+			along += points[i].distance_to(points[i - 1])
+		var a := points[maxi(i - 5, 0)]
+		var b := points[mini(i + 5, points.size() - 1)]
 		var run := maxf(Vector2(b.x - a.x, b.z - a.z).length(), 0.1)
-		var steep := clampf((absf(b.y - a.y) / run - 0.03) / 0.12, 0.0, 1.0)
-		rows.append([left[i], right[i], along, left[i].distance_to(right[i]), steep])
+		var steep := clampf((absf(b.y - a.y) / run - 0.12) / 0.3, 0.0, 1.0)
+		var tangent := (b - a).normalized()
+		var normal := (right[i] - left[i]).cross(tangent).normalized()
+		if normal.y < 0.0:
+			normal = -normal
+		rows.append([left[i], right[i], along, left[i].distance_to(right[i]), steep, normal])
 	for i in rows.size() - 1:
 		var r0: Array = rows[i]
 		var r1: Array = rows[i + 1]
@@ -705,7 +857,7 @@ func _river_mesh(points: PackedVector3Array, left: PackedVector3Array, right: Pa
 		for k in [0, 1, 2, 0, 2, 3]:
 			var v: Array = quad[k]
 			var row: Array = v[2]
-			st.set_normal(Vector3.UP)
+			st.set_normal(row[5])
 			st.set_uv(Vector2(v[1], row[2]))
 			st.set_uv2(Vector2(row[3], row[4]))
 			st.add_vertex(v[0])
@@ -755,7 +907,7 @@ func _build_water_and_sites() -> void:
 	for site in world_layout.sites:
 		if str(site.id) == SITE_SKIPPED or site.kind == "lake" or site.kind == "spring_cave":
 			continue
-		if str(site.id) == INN_SITE:
+		if INN_SITES.has(str(site.id)):
 			_build_inn(site)
 			continue
 		var landmark := Landmarks.new()
@@ -882,10 +1034,10 @@ func _start_save() -> void:
 	save.initialize(self)
 
 
-## Where the inn stands (world frame): centre, yaw and the level of its pad (the trail end).
-func _inn_frame() -> Dictionary:
+## Where an inn stands (world frame): centre, yaw and the level of its pad (the trail end).
+func _inn_frame(site_id: String = INN_SITE) -> Dictionary:
 	for site in world_layout.sites:
-		if str(site.id) != INN_SITE:
+		if str(site.id) != site_id:
 			continue
 		var s: Array = site.spawn
 		var direction: Array = site.facing
@@ -898,10 +1050,14 @@ func _inn_frame() -> Dictionary:
 ## A level pad under the inn: the footprint grown by one grid step is flat at the trail's height,
 ## then 10 m blend back to the slope. Without it the door stood a metre above the ground.
 func _flatten_inn(grid: PackedFloat32Array) -> PackedFloat32Array:
-	var frame := _inn_frame()
-	if frame.is_empty():
-		return grid
 	var result := grid.duplicate()
+	for site_id in INN_SITES:
+		_flatten_inn_pad(result, _inn_frame(site_id))
+	return result
+
+func _flatten_inn_pad(result: PackedFloat32Array, frame: Dictionary) -> void:
+	if frame.is_empty():
+		return
 	var inverse := Basis(Vector3.UP, frame.yaw).inverse()
 	# Footprint plus 0.2 m, and the entry steps/canopy in front (+z).
 	var half_x: float = INN_RECORD.width * .5 + .2 + GRID
@@ -918,10 +1074,9 @@ func _flatten_inn(grid: PackedFloat32Array) -> PackedFloat32Array:
 				continue
 			var index := gz * world_width + gx
 			result[index] = lerpf(float(frame.level), result[index], smoothstep(0.0, 10.0, d))
-	return result
 
 func _build_inn(site: Dictionary) -> void:
-	var frame := _inn_frame()
+	var frame := _inn_frame(str(site.id))
 	var yaw: float = frame.yaw
 	var basis := Basis(Vector3.UP, yaw)
 	var center: Vector3 = frame.center
@@ -934,12 +1089,18 @@ func _build_inn(site: Dictionary) -> void:
 		var h := world_ground(at.x, at.z)
 		high = maxf(high, h)
 		low = minf(low, h)
-	inn = InnBuilding.new()
-	world_root.add_child(inn)
-	inn.build(INN_RECORD)
-	inn.name = "ForestInn"
-	inn.position = Vector3(center.x, high, center.z)
-	inn.rotation.y = yaw
+	var hall := InnBuilding.new()
+	world_root.add_child(hall)
+	var kind: Dictionary = INN_SITES[str(site.id)]
+	var record := INN_RECORD.duplicate()
+	record.title_key = str(site.key)
+	record.id = kind.id
+	record.scene_path = kind.scene_path
+	hall.build(record)
+	hall.name = kind.name
+	hall.position = Vector3(center.x, high, center.z)
+	hall.rotation.y = yaw
+	inns.append(hall)
 	var drop := high - low
 	if drop > 0.02:
 		var plinth := MeshInstance3D.new()
@@ -952,21 +1113,29 @@ func _build_inn(site: Dictionary) -> void:
 		stone.roughness = .95
 		plinth.material_override = stone
 		plinth.position = Vector3(0, -drop * 0.5 + 0.02, 0)
-		inn.add_child(plinth)
-	_add_inn_keeper()
+		hall.add_child(plinth)
+	if str(site.id) == INN_SITE:
+		inn = hall
+		_add_inn_keeper()
 	# TAVERN-03: props, rugs, lanterns and candles, the hearth fire with its light and crackle.
 	var dressing := preload("res://scripts/world/inn_dressing.gd").new()
 	dressing.name = "InnDressing"
-	inn.add_child(dressing)
+	hall.add_child(dressing)
 	dressing.build()
 
 
 ## The inn is not one of the village yards (the house picker and the yard tests stay three),
 ## but its door works with the same action button when no village door is nearer.
 func _offer_inn_door() -> void:
-	if inn == null or inn.door == null:
+	var door: Node3D = null
+	for hall in inns:
+		if hall.door == null:
+			continue
+		hall.door.set_highlight(false)
+		if door == null or hall.door.can_interact(player):
+			door = hall.door
+	if door == null:
 		return
-	var door: Node3D = inn.door
 	var usable: bool = is_input_available() and door.can_interact(player)
 	door.set_highlight(usable and current_door == null)
 	if not usable or current_door != null:

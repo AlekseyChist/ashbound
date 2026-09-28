@@ -3,12 +3,15 @@ extends RefCounted
 const Catalog=preload("res://scripts/world/village_house_material_catalog.gd")
 const ROLES=["shell","gable","roof","foundation","chimney","canopy","door","shutter"]
 const METRES={"plaster":1.5,"oak":.6,"roof":.6,"stone":2.0}
+## Which kinds each building gets, and under which finish. INN-STONE-01: the desert inn's stone walls
+## take the stone-wall photo texture in a warm sandstone tone.
+const STUDY={"H01":{"plaster":"plaster","oak":"oak","roof":"roof","stone":"stone"},"T03B":{"stone":"sandstone"}}
 var originals: Array[Dictionary]=[]
 
 func apply(model: Node3D, id: String) -> void:
-	if id!="H01" or not originals.is_empty():return
+	if not STUDY.has(id) or not originals.is_empty():return
 	var materials: Dictionary={}
-	for kind in METRES:materials[kind]=Catalog.create(kind)
+	for kind in STUDY[id]:materials[kind]=Catalog.create(STUDY[id][kind])
 	for item in model.find_children("*","MeshInstance3D",true,false):
 		var instance:=item as MeshInstance3D
 		var metadata: Dictionary=instance.get_meta("extras",{})

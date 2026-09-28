@@ -4,7 +4,7 @@ extends Node3D
 ## the hero spray (a pool of particle emitters moved between them), so it stays cheap on a phone.
 const REACH := 70.0
 const NEAREST := 6
-const STEEP := 0.55
+const STEEP := 0.6
 const SPACING := 10.0
 
 var world: Node3D
@@ -22,7 +22,9 @@ func configure(scene: Node3D) -> void:
 			var a: Array = points[i - 2]
 			var b: Array = points[i + 2]
 			var run := Vector2(float(b[0]) - float(a[0]), float(b[2]) - float(a[2])).length()
-			var steep := (absf(float(b[1]) - float(a[1])) / maxf(run, 0.1) - 0.03) / 0.12
+			# WATER-02: the same measure as the ribbon's rapids (from 12 %, full at 42 %); the natural
+			# rivers made nearly every mountain stretch spray under the old one (from 3 %, full at 15 %).
+			var steep := (absf(float(b[1]) - float(a[1])) / maxf(run, 0.1) - 0.12) / 0.3
 			if steep < STEEP:
 				continue
 			var p: Array = points[i]
@@ -50,8 +52,8 @@ func _emitter() -> CPUParticles3D:
 	spray.initial_velocity_min = 0.8
 	spray.initial_velocity_max = 2.2
 	spray.gravity = Vector3(0, -4.0, 0)
-	spray.scale_amount_min = 0.25
-	spray.scale_amount_max = 0.6
+	spray.scale_amount_min = 0.15
+	spray.scale_amount_max = 0.4
 	var fade := Gradient.new()
 	fade.set_color(0, Color(1, 1, 1, 0.55))
 	fade.set_color(1, Color(1, 1, 1, 0.0))
@@ -65,6 +67,10 @@ func _emitter() -> CPUParticles3D:
 	material.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
 	material.vertex_color_use_as_albedo = true
 	material.albedo_color = Color(0.92, 0.95, 0.97)
+	# WATER-02: right in front of the camera a drop filled the view as a big white blur; it fades out.
+	material.distance_fade_mode = BaseMaterial3D.DISTANCE_FADE_PIXEL_ALPHA
+	material.distance_fade_min_distance = 1.5
+	material.distance_fade_max_distance = 5.0
 	quad.material = material
 	spray.mesh = quad
 	return spray

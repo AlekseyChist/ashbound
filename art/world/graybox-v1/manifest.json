@@ -4,15 +4,15 @@
   "triangles": 320000,
   "height_range_m": [
     -13.499999999999998,
-    597.7007898233361
+    508.21190602911975
   ],
   "source": "docs/design/world-exploration-v1/world-exploration.json",
   "files": {
-    "assets/world/graybox-v1/colors.bin": "55b14f83e478679f0e14e9330e5edb2584651ea36ce09dd2a8b8bd4e614e8456",
-    "assets/world/graybox-v1/heights.bin": "a6ee4dcf0768f877362164d7e6ca6b1ff1e8bbdc9ab352aa835617263dcb54c9",
-    "assets/world/graybox-v1/layout.json": "367cdc30eb8dd63f91710fdea11dfdbfa60f3637b9776191e80719b1ee823f58",
-    "assets/world/graybox-v1/roads.png": "093109ffbb159359e2b029c4376df69f9de5bd107ad01d06361e762e78447e83",
+    "assets/world/graybox-v1/colors.bin": "357f4a2f95ed1599595e5acc76c42f691548f0a8875f46bcf6c8b6f5f4e19085",
+    "assets/world/graybox-v1/heights.bin": "609f331b794859d749459b799761ad3047d901b5600c7b93c87e5e9aa9397f53",
+    "assets/world/graybox-v1/layout.json": "ed16b6233f8917e1834c623a8f23f6fb262fee953ec5691191bd0cba44767a26",
+    "assets/world/graybox-v1/roads.png": "3d789b99ff0292e10700054716b4649498635bce645d0f4a1f75a001c7de1b69",
     "assets/characters/world-graybox-v1/walk.png": "2d4ca6894099fc7a2b7e3f8f38348aca487cf521ab2bf27b65c62dab8d1ed2cc",
-    "assets/characters/world-graybox-v1/traveler_frames.tres": "6488a7331dd2fb412e1a4f52bc7b93850e5edd7070f2ccd8cbcce0370d8c7e8d"
+    "assets/characters/world-graybox-v1/traveler_frames.tres": "d8fc8c16974423890674d720923d211ebb4951f6a2f738004dc8bcaa6401adba"
   }
 }

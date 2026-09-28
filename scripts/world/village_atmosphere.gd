@@ -14,7 +14,8 @@ var transition_elapsed:=12.0
 var wetness:=0.0
 var daylight:=1.0
 var profiles: Array[Dictionary]=Profiles.all()
-var sky_material: ProceduralSkyMaterial
+## CLOUDS-01: the sky with a cloud layer (assets/shaders/world_sky.gdshader), was ProceduralSkyMaterial.
+var sky_material: ShaderMaterial
 var rain: Node3D
 var foliage_materials: Array[ShaderMaterial]=[]
 var time_button: Button
@@ -32,8 +33,8 @@ func configure(scene: Node3D) -> void:
 	var sky:=Sky.new()
 	sky.radiance_size=Sky.RADIANCE_SIZE_64
 	sky.process_mode=Sky.PROCESS_MODE_INCREMENTAL
-	sky_material=ProceduralSkyMaterial.new()
-	sky_material.sky_curve=.2
+	sky_material=ShaderMaterial.new()
+	sky_material.shader=preload("res://assets/shaders/world_sky.gdshader")
 	sky.sky_material=sky_material
 	world.environment.sky=sky
 	world.environment.background_mode=Environment.BG_SKY
@@ -115,15 +116,26 @@ func apply_look() -> void:
 	world.environment.adjustment_contrast=lerpf(1.025,1.10,daylight)
 	var horizon:=Color("16242f").lerp(Color("859487"),daylight).lerp(Color("a36f4b"),dusk*.7).lerp(Color("c7b38a"),heat*daylight*.4)
 	horizon=horizon.lerp(Color("45545b").lerp(Color("101c29"),1.0-daylight),overcast*.75)
-	sky_material.sky_top_color=Color("050b16").lerp(Color("355966"),daylight).lerp(horizon,overcast*.65)
-	sky_material.sky_horizon_color=horizon
-	sky_material.ground_bottom_color=Color("080c09")
-	sky_material.ground_horizon_color=horizon
+	sky_material.set_shader_parameter("sky_top_color",Color("050b16").lerp(Color("355966"),daylight).lerp(horizon,overcast*.65))
+	sky_material.set_shader_parameter("sky_horizon_color",horizon)
+	sky_material.set_shader_parameter("ground_bottom_color",Color("080c09"))
+	sky_material.set_shader_parameter("ground_horizon_color",horizon)
+	# CLOUDS-01: clear - a few white clouds; wind - more, drawn out and fast; fog, rain - a grey low
+	# deck; storm - the whole sky dark. The desert heat burns them off.
+	var cloud:=float(current.cloud)
+	sky_material.set_shader_parameter("cover",clampf(lerpf(.22,1.0,cloud)+.25*float(current.wind)*(1.0-cloud),0.0,1.0)*(1.0-.85*heat))
+	sky_material.set_shader_parameter("heaviness",clampf(float(current.rain)*1.2+cloud*.3,0.0,1.0))
+	sky_material.set_shader_parameter("drift",.002+.012*float(current.wind))
+	sky_material.set_shader_parameter("streak",clampf((float(current.wind)-.4)/.6,0.0,1.0)*(1.0-cloud))
+	sky_material.set_shader_parameter("daylight",daylight)
 	world.environment.fog_light_color=horizon
 	world.environment.fog_light_energy=lerpf(.25,.75,daylight)
 	world.environment.fog_density=float(current.fog)*(1.0-.5*heat)
 	world.environment.fog_height=.5
 	world.environment.fog_height_density=float(current.fog)*.8*(1.0-.5*heat)
+	# CLOUDS-01: the haze covered the sky completely (sky affect 1: the sky is infinitely far), so the
+	# sky was one grey-green and no cloud showed; now a third of it, all of it only in a fog.
+	world.environment.fog_sky_affect=lerpf(.35,1.0,smoothstep(.006,.03,float(current.fog)))
 	world.terrain.material.set_shader_parameter("wetness",wetness*(1.0-heat))
 	for material in foliage_materials:
 		material.set_shader_parameter("effect_time",effect_time)

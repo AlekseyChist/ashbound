@@ -26,6 +26,11 @@ const COVE := Vector2(1690, 1848)
 var world: Node3D
 var counts := {}
 var ships := 0
+## SHIPS-SCALE-01 (owner 28 Sep: "the frigate is the size of a man"): the models are 34 m (large) and
+## 24 m (medium) long, 15 heights of the ~2.3 m painted hero; a frigate of the age is 45-55 m, about
+## 25 heights of a man. Scaled by 1.7 and sunk to the scaled waterline.
+const SHIP_SCALE := 1.7
+const SHIP_DRAFT := 2.6 * SHIP_SCALE
 
 
 func build(scene: Node3D) -> void:
@@ -177,11 +182,11 @@ func _harbour(near: Vector2, ship_models: Array) -> void:
 	add_child(deck)
 	var along := Vector2(-out.y, out.x)
 	for n in ship_models.size():
-		var spot := _nearest(shore + out * 45.0 + along * (float(n) - 0.5 * (ship_models.size() - 1)) * 45.0,
-			func(m: Vector2) -> bool: return _ground(m) < level - 4.0)
+		var spot := _nearest(shore + out * 70.0 + along * (float(n) - 0.5 * (ship_models.size() - 1)) * 70.0,
+			func(m: Vector2) -> bool: return _ground(m) < level - SHIP_DRAFT - 1.5)
 		if spot == Vector2.INF:
 			continue
-		_place_model(ship_models[n], spot, atan2(along.x, along.y) + 0.15 * n, level - 2.6)
+		_place_model(ship_models[n], spot, atan2(along.x, along.y) + 0.15 * n, level - SHIP_DRAFT, SHIP_SCALE)
 		ships += 1
 
 
@@ -194,12 +199,13 @@ func _nearest(from: Vector2, ok: Callable) -> Vector2:
 	return Vector2.INF
 
 
-func _place_model(asset: String, map: Vector2, yaw: float, base: float) -> Vector3:
+func _place_model(asset: String, map: Vector2, yaw: float, base: float, scale: float = 1.0) -> Vector3:
 	var model := (load(MODELS % asset) as PackedScene).instantiate() as Node3D
 	model.name = asset
 	var p := Vector3(map.x - world.HALF, base, map.y - world.HALF)
 	model.position = p
 	model.rotation.y = yaw
+	model.scale = Vector3.ONE * scale
 	for mesh in model.find_children("*", "GeometryInstance3D", true, false):
 		(mesh as GeometryInstance3D).visibility_range_end = 900.0
 	add_child(model)
