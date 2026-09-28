@@ -16,6 +16,8 @@ var surface_meta: String = ""
 ## an edge towards an unrefined cell keep the coarse surface, so the two meshes meet without a crack.
 var refine_cell: Callable
 var shore_height: Callable
+## SANDY-BANKS-01: optional shore_color(world_x, world_z, coarse_color) -> Color for the same points.
+var shore_color: Callable
 const REFINE := 4
 
 
@@ -140,6 +142,8 @@ func _add_refined(heights: PackedFloat32Array, colors: PackedColorArray, width: 
 	var n := REFINE + 1
 	var grid := PackedFloat32Array()
 	grid.resize(n * n)
+	var tint := PackedColorArray()
+	tint.resize(n * n)
 	for j in n:
 		for i in n:
 			var u := float(i) / REFINE
@@ -153,6 +157,8 @@ func _add_refined(heights: PackedFloat32Array, colors: PackedColorArray, width: 
 				var cz := z + (1 if j == REFINE else 0)
 				border = not (_refined(cx - 1, cz - 1, width) and _refined(cx, cz - 1, width) and _refined(cx - 1, cz, width) and _refined(cx, cz, width))
 			grid[j * n + i] = base if border else float(shore_height.call((x + u) * spacing - half, (z + v) * spacing - half, base))
+			var colour := ca.lerp(cb, u).lerp(cc.lerp(cd, u), v)
+			tint[j * n + i] = colour if border or not shore_color.is_valid() else shore_color.call((x + u) * spacing - half, (z + v) * spacing - half, colour)
 	var first := verts.size()
 	var step := spacing / REFINE
 	for j in n:
@@ -167,7 +173,7 @@ func _add_refined(heights: PackedFloat32Array, colors: PackedColorArray, width: 
 			var dhdx := (grid[j * n + ir] - grid[j * n + il]) / float((ir - il) * step)
 			var dhdz := (grid[jr * n + i] - grid[jl * n + i]) / float((jr - jl) * step)
 			normals.append(Vector3(-dhdx, 1.0, -dhdz).normalized())
-			cols.append(ca.lerp(cb, u).lerp(cc.lerp(cd, u), v))
+			cols.append(tint[j * n + i])
 	for j in REFINE:
 		for i in REFINE:
 			var a := first + j * n + i
