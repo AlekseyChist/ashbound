@@ -223,6 +223,7 @@ func _build_world() -> void:
 		var near := _shore_near((x + 0.5) * GRID - HALF, (z + 0.5) * GRID - HALF)
 		return not near.is_empty() and near[0] < near[2] + SHORE_REACH + GRID * 0.75
 	world_terrain.shore_height = _shore_height
+	world_terrain.shore_color = _shore_color
 	world_root.add_child(world_terrain)
 	world_colors = _world_colors()
 	world_terrain.build(world_heights, world_colors, world_width, GRID)
@@ -469,6 +470,8 @@ func _build_roads() -> void:
 ## water's edge the ground follows the channel as build.py cuts it - the bed under the water, a
 ## smooth rise to 0.5 m over it just past the edge, then 1:1 - and blends back to the 5 m ground.
 const SHORE_REACH := 5.0
+## The sea beach's sand (build.py 0.74, 0.68, 0.52 sRGB), linear and darkened like _world_colors().
+const RIVER_SAND := Color(0.176, 0.146, 0.082, 0.0)
 const SHORE_CELL := 12.0
 var _shore_cells := {}
 var _shore_rivers: Array = []
@@ -530,6 +533,20 @@ func shore_ground(wx: float, wz: float) -> float:
 		return base
 	return _shore_height(wx, wz, base)
 
+## SANDY-BANKS-01 (owner 28 Sep: "make all the river banks sandy, it fits the lore better"): the bed
+## and the bank up to SAND_REACH past the water's edge are river sand (the beach's, darkened as the
+## map colours are), fading into the ground over the next 1.5 m. No grass grows on it.
+const SAND_REACH := 2.5
+func _shore_color(wx: float, wz: float, base: Color) -> Color:
+	var near := _shore_near(wx, wz)
+	if near.is_empty():
+		return base
+	return base.lerp(RIVER_SAND, 1.0 - smoothstep(float(near[2]) + SAND_REACH, float(near[2]) + SAND_REACH + 1.5, float(near[0])))
+
+func on_river_sand(wx: float, wz: float) -> bool:
+	var near := _shore_near(wx, wz)
+	return not near.is_empty() and float(near[0]) < float(near[2]) + SAND_REACH + 0.75
+
 func _shore_height(wx: float, wz: float, base: float) -> float:
 	var near := _shore_near(wx, wz)
 	if near.is_empty():
@@ -538,7 +555,9 @@ func _shore_height(wx: float, wz: float, base: float) -> float:
 	var water: float = near[1]
 	var edge: float = near[2]
 	var profile := water - float(near[3]) + (float(near[3]) + 0.5) * smoothstep(edge - 1.5, edge + 0.5, d) + maxf(d - (edge + 0.5), 0.0)
-	return lerpf(profile, base, smoothstep(edge + 1.0, edge + SHORE_REACH, d))
+	# Never over the coarse ground, except to hold the water (0.5 m over it): the 1:1 bank rose over
+	# a road's deck and buried the bridge ramps in a mound (owner 28 Sep).
+	return minf(lerpf(profile, base, smoothstep(edge + 1.0, edge + SHORE_REACH, d)), maxf(base, water + 0.5))
 
 
 ## BRIDGES-02: a bridge only over a river. On a steep switchback the 5 m ground mesh can dip more than
@@ -638,6 +657,8 @@ func grass_grows(x: float, y: float, z: float, ground: Color) -> bool:
 		return true
 	var sea_level: float = float(world_layout.sea.level) if world_layout.get("sea") is Dictionary else -INF
 	if y - world_root.position.y < sea_level + 0.3:
+		return false
+	if on_river_sand(x - world_root.position.x, z - world_root.position.z):
 		return false
 	return ground.g > ground.r * 1.2 and ground.g < 0.12
 
