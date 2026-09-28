@@ -555,7 +555,9 @@ func _shore_height(wx: float, wz: float, base: float) -> float:
 	var water: float = near[1]
 	var edge: float = near[2]
 	var profile := water - float(near[3]) + (float(near[3]) + 0.5) * smoothstep(edge - 1.5, edge + 0.5, d) + maxf(d - (edge + 0.5), 0.0)
-	return lerpf(profile, base, smoothstep(edge + 1.0, edge + SHORE_REACH, d))
+	# Never over the coarse ground, except to hold the water (0.5 m over it): the 1:1 bank rose over
+	# a road's deck and buried the bridge ramps in a mound (owner 28 Sep).
+	return minf(lerpf(profile, base, smoothstep(edge + 1.0, edge + SHORE_REACH, d)), maxf(base, water + 0.5))
 
 
 ## BRIDGES-02: a bridge only over a river. On a steep switchback the 5 m ground mesh can dip more than
