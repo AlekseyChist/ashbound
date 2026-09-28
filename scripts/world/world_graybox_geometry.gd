@@ -145,9 +145,14 @@ func _add_refined(heights: PackedFloat32Array, colors: PackedColorArray, width: 
 			var u := float(i) / REFINE
 			var v := float(j) / REFINE
 			var base := ha + (hb - ha) * u + (hc - ha) * v if u + v <= 1.0 else hd + (hc - hd) * (1.0 - u) + (hb - hd) * (1.0 - v)
-			var corner := (i == 0 or i == REFINE) and (j == 0 or j == REFINE)
 			var border := (i == 0 and open_w) or (i == REFINE and open_e) or (j == 0 and open_n) or (j == REFINE and open_s)
-			grid[j * n + i] = base if corner or border else float(shore_height.call((x + u) * spacing - half, (z + v) * spacing - half, base))
+			# A grid point keeps the coarse height unless all four cells around it are refined (the old
+			# bed there lay 2 m under the water: a pit at every grid point under a river).
+			if not border and (i == 0 or i == REFINE) and (j == 0 or j == REFINE):
+				var cx := x + (1 if i == REFINE else 0)
+				var cz := z + (1 if j == REFINE else 0)
+				border = not (_refined(cx - 1, cz - 1, width) and _refined(cx, cz - 1, width) and _refined(cx - 1, cz, width) and _refined(cx, cz, width))
+			grid[j * n + i] = base if border else float(shore_height.call((x + u) * spacing - half, (z + v) * spacing - half, base))
 	var first := verts.size()
 	var step := spacing / REFINE
 	for j in n:

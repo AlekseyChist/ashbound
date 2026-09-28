@@ -835,14 +835,21 @@ func _river_mesh(points: PackedVector3Array, left: PackedVector3Array, right: Pa
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var along := 0.0
 	var rows := []
+	# WATER-02 (owner 28 Sep: "on the drops and joints the water looks untidy"): the steepness over
+	# +-10 m and only from 12 % (the natural rivers made nearly every mountain stretch a white
+	# rapid), UV.y the distance along the water itself, and the ribbon's own tilted normal.
 	for i in points.size():
 		if i > 0:
-			along += Vector2(points[i].x - points[i - 1].x, points[i].z - points[i - 1].z).length()
-		var a := points[maxi(i - 2, 0)]
-		var b := points[mini(i + 2, points.size() - 1)]
+			along += points[i].distance_to(points[i - 1])
+		var a := points[maxi(i - 5, 0)]
+		var b := points[mini(i + 5, points.size() - 1)]
 		var run := maxf(Vector2(b.x - a.x, b.z - a.z).length(), 0.1)
-		var steep := clampf((absf(b.y - a.y) / run - 0.03) / 0.12, 0.0, 1.0)
-		rows.append([left[i], right[i], along, left[i].distance_to(right[i]), steep])
+		var steep := clampf((absf(b.y - a.y) / run - 0.12) / 0.3, 0.0, 1.0)
+		var tangent := (b - a).normalized()
+		var normal := (right[i] - left[i]).cross(tangent).normalized()
+		if normal.y < 0.0:
+			normal = -normal
+		rows.append([left[i], right[i], along, left[i].distance_to(right[i]), steep, normal])
 	for i in rows.size() - 1:
 		var r0: Array = rows[i]
 		var r1: Array = rows[i + 1]
@@ -850,7 +857,7 @@ func _river_mesh(points: PackedVector3Array, left: PackedVector3Array, right: Pa
 		for k in [0, 1, 2, 0, 2, 3]:
 			var v: Array = quad[k]
 			var row: Array = v[2]
-			st.set_normal(Vector3.UP)
+			st.set_normal(row[5])
 			st.set_uv(Vector2(v[1], row[2]))
 			st.set_uv2(Vector2(row[3], row[4]))
 			st.add_vertex(v[0])

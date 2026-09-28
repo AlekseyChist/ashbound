@@ -639,6 +639,15 @@ heights=heights*(1-wall)+crest*wall
 for _ in range(2):
     settled={r['id']:settle_river(r) for r in D['rivers']}
     recut(settled)
+# WATER-02 (owner 28 Sep: "on the drops and joints the water looks untidy"): the settled water kept
+# small steps (0.5-1 m within 2 m) where a bank pulled it down; each is spread into a ramp: the
+# water sinks to the mean of +-10 m, twice, and is never raised (it stays inside its banks).
+for rid,(pts,widths) in settled.items():
+    for _ in range(2):
+        ys=[p[1] for p in pts]
+        for i in range(len(pts)):
+            lo,hi=max(0,i-5),min(len(pts),i+6)
+            pts[i][1]=min(ys[i],sum(ys[lo:hi])/(hi-lo))
 
 # Clay color masses only. Roads come from the road mask, water from its own strips.
 colors=np.zeros((WIDTH,WIDTH,4));colors[:,:,:]=[.43,.52,.43,1]

@@ -46,7 +46,8 @@ void fragment() {
 	float edge = 1.0;
 	if (river) {
 		rapids = clamp(UV2.y, 0.0, 1.0);
-		float speed = flow_speed * (1.0 + 2.5 * rapids);
+		// WATER-02: calmer rapids - they ran 3.5x as fast under a white sheet of streaks.
+		float speed = flow_speed * (1.0 + 1.5 * rapids);
 		p = vec2(UV.x * UV2.x, UV.y) / ripple_metres;
 		drift1 = vec2(0.0, -TIME * speed / ripple_metres);
 		drift2 = vec2(TIME * 0.05, -TIME * speed * 1.35 / ripple_metres);
@@ -57,7 +58,7 @@ void fragment() {
 		drift2 = vec2(-TIME * 0.045, TIME * 0.07);
 	}
 	vec2 g = slope(p + drift1) * 0.6 + slope(p * 2.3 + drift2) * 0.4;
-	float strength = mix(0.35, 0.9, rapids);
+	float strength = mix(0.35, 0.7, rapids);
 	NORMAL_MAP = normalize(vec3(-g * strength, 1.0)) * 0.5 + 0.5;
 	NORMAL_MAP_DEPTH = 1.0;
 	float fresnel = pow(1.0 - clamp(dot(NORMAL, VIEW), 0.0, 1.0), 4.0);
@@ -66,7 +67,7 @@ void fragment() {
 	vec3 colour = mix(deep_colour, shallow_colour, max(shore, 0.35 * fresnel));
 	// Foam: in a band along the banks and over the rapids, broken by the moving noise.
 	float churn = noise((p + drift1 * 1.6) * 3.1);
-	float foam = river ? max(smoothstep(3.6, 3.0, edge) * 0.55, rapids * 0.8) * smoothstep(0.45, 0.8, churn) : 0.0;
+	float foam = river ? max(smoothstep(3.6, 3.0, edge) * 0.3, rapids * 0.5) * smoothstep(0.5, 0.85, churn) : 0.0;
 	// Water in front of the ground behind it along the view ray (metres).
 	float raw = texture(depth_texture, SCREEN_UV).r;
 	vec4 behind = INV_PROJECTION_MATRIX * vec4(SCREEN_UV * 2.0 - 1.0, raw, 1.0);
