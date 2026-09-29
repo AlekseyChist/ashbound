@@ -184,12 +184,14 @@ def terem_t1(mats):
             (-1.75, PY - 0.12, FLOOR + 2.35), (1.75, PY - 0.12, FLOOR + 2.35), (0, PY - 0.12, top - 0.08)],
            [(0, 1, 2), (3, 5, 4), (0, 3, 4, 1), (1, 4, 5, 2), (2, 5, 3, 0)], "oak", "frame", "porch")
     # Stairs from the ground up to the landing, with a rail each side.
-    for i in range(4):
-        z = FLOOR * (4 - i) / 4
+    # Six 0.3 m treads: 1.0 m over 1.8 m, walkable on the entry wedge (four were 49 deg - too steep).
+    N = 6
+    for i in range(N):
+        z = FLOOR * (N - i) / N
         P.box((-1.1, PY - 0.3 * (i + 1), -0.4), (1.1, PY - 0.3 * i, z), "oak", "floor", "entry_step")
     for sx in (-1, 1):
-        P.beam((sx * 1.25, PY - 1.2, 0.9), (sx * 1.25, PY, FLOOR + 0.9), 0.08, 0.08, "oak", "frame", "railing")
-        P.box((sx * 1.25 - 0.06, PY - 1.26, -0.3), (sx * 1.25 + 0.06, PY - 1.14, 0.9), "oak", "frame", "railing")
+        P.beam((sx * 1.25, PY - 0.3 * N, 0.9), (sx * 1.25, PY, FLOOR + 0.9), 0.08, 0.08, "oak", "frame", "railing")
+        P.box((sx * 1.25 - 0.06, PY - 0.3 * N - 0.06, -0.3), (sx * 1.25 + 0.06, PY - 0.3 * N + 0.06, 0.9), "oak", "frame", "railing")
 
     # The roof: the front pitch reaches out over the gallery.
     roof_two_pitch(P, -HX, HX, GY - 0.4, Y1 + 0.7, YR, RIDGE, SLOPE)

@@ -2,6 +2,7 @@ extends SceneTree
 ## Regression: a solid closed-house staircase must actually be walkable by the normal hero.
 ## Run with an isolated APPDATA/user directory after importing the project. No save files are read.
 var world
+const TEREM_ENTRY := {"T1": Vector3(0, 1.0, 2.4)}
 var checks := 0
 var failures: Array[String] = []
 
@@ -57,14 +58,16 @@ func run() -> void:
 	var houses: Array[Node3D] = []
 	for house in world.forest_city.get_children():
 		if house is Node3D and house.has_meta("cleared_m"): houses.append(house)
-	check(houses.size() == 18, "all eighteen closed city houses are included")
+	# Eighteen kit houses and the terems built so far (forest_city_terems.py): T1.
+	check(houses.size() == 19, "all nineteen closed city houses are included")
 	var neighbours: Array = world.find_children("Neighbour*", "Node3D", true, false)
 	check(neighbours.size() == 6, "all six closed village neighbours are included")
 	for house in neighbours: houses.append(house)
 	for house in houses:
 		var id := str(house.name)
 		var kit := id.split("_")[-1] if id.begins_with("Neighbour") else id.split("_")[-2]
-		var entry: Vector3 = catalog[kit].entry
+		# A terem is its own model: the door at the body's front (Blender y -2.4 -> +z 2.4), floor 1.0.
+		var entry: Vector3 = TEREM_ENTRY[kit] if TEREM_ENTRY.has(kit) else catalog[kit].entry
 		var porch := entry + Vector3(0, 0, .7)
 		var start := entry + Vector3(0, 0, 4.5)
 		# Start beyond the actual visible model, including any apron on a slope. Starting inside
