@@ -27,6 +27,14 @@ const INTERACT_RADIUS := 2.2
 const WOLF_REWARD := 5
 const STRIKE_RANGE := 1.8
 const FACING_DOT_MIN := 0.2
+## ASK-WAY-01: information only, separate from quest lines with effects/rewards.
+const WAY_KEYS := {
+	&"meet_host": "ASK_WAY_HOST", &"fetch_wood": "ASK_WAY_WOOD",
+	&"return_wood": "ASK_WAY_RETURN", &"meet_guard": "ASK_WAY_GUARD",
+	&"practice": "ASK_WAY_DUMMY", &"report": "ASK_WAY_REPORT",
+	&"wolves": "ASK_WAY_WOLVES", &"wolves_report": "ASK_WAY_PAYMENT",
+	&"done": "ASK_WAY_INN",
+}
 
 var world: Node3D
 var quest := QuestTracker.new(LessonQuest)
@@ -41,6 +49,8 @@ var save_path := SAVE_PATH
 var _dummy_visual: Node3D
 var _dummy_scale := Vector3.ONE
 var _flash := 0.0
+var _conversation_point: Node3D
+var _conversation_choices: CanvasLayer
 
 func configure(scene: Node3D) -> void:
 	world = scene
@@ -62,6 +72,7 @@ func configure(scene: Node3D) -> void:
 			_dummy_scale = child.scale
 			break
 	world.player.strike_requested.connect(_on_strike)
+	Localization.language_changed.connect(_refresh_conversation)
 	load_progress()
 	_sync_woodpile_label()
 	# The hero's progress has no world save yet: a finished lesson restores its guard practice mark.
@@ -130,6 +141,8 @@ func nearest_point() -> Node3D:
 	var best: Node3D = null
 	var best_distance := INTERACT_RADIUS
 	for point in points:
+		if not is_instance_valid(point) or point.is_queued_for_deletion():
+			continue
 		var offset: Vector3 = point.global_position - world.player.global_position
 		var distance := Vector2(offset.x, offset.z).length()
 		if distance <= best_distance and quest.line_for(point.interaction_id) != null:
@@ -138,8 +151,68 @@ func nearest_point() -> Node3D:
 	return best
 
 func interact(point: Node3D) -> void:
+	if not is_instance_valid(point) or not world.is_input_available() or nearest_point() != point:
+		return
 	message_source = point
-	talk_to(point.interaction_id)
+	if point != hostess and point != watchman:
+		talk_to(point.interaction_id)
+		return
+	_conversation_point = point
+	_conversation_choices = world.choices
+	_conversation_choices.chosen.connect(_on_conversation_choice)
+	world.hud.clear_message()
+	_conversation_choices.open(point.display_name, "ASK_WAY_GREETING", [
+		[&"lesson_business", Localization.text("ASK_WAY_BUSINESS")],
+		[&"lesson_way", Localization.text("ASK_WAY_QUESTION")],
+		[&"lesson_leave", Localization.text("ASK_WAY_LEAVE")],
+	])
+
+func _refresh_conversation(_language: String) -> void:
+	if not is_instance_valid(_conversation_point) or not is_instance_valid(_conversation_choices):
+		return
+	_conversation_choices.speaker.text = Localization.text(_conversation_point.display_name)
+	_conversation_choices.line.text = Localization.text("ASK_WAY_GREETING")
+	var keys := ["ASK_WAY_BUSINESS", "ASK_WAY_QUESTION", "ASK_WAY_LEAVE"]
+	for i in keys.size():
+		_conversation_choices.list.get_child(i).text = "%d. %s" % [i + 1, Localization.text(keys[i])]
+
+func _conversation_in_reach() -> bool:
+	return is_instance_valid(_conversation_point) and not _conversation_point.is_queued_for_deletion() \
+		and _conversation_point.is_inside_tree() \
+		and _conversation_point.global_position.distance_to(world.player.global_position) <= INTERACT_RADIUS + .75
+
+func _on_conversation_choice(id: StringName) -> void:
+	var point := _conversation_point
+	var can_answer := _conversation_in_reach() and not get_tree().paused
+	_forget_conversation()
+	if not can_answer:
+		return
+	match id:
+		&"lesson_business":
+			talk_to(point.interaction_id)
+		&"lesson_way":
+			var key: String = WAY_KEYS.get(quest.current_stage().id, "ASK_WAY_INN")
+			# A speaker who is the destination answers in the first person.
+			if (point == hostess and quest.current_stage().id in [&"meet_host", &"return_wood"]) \
+					or (point == watchman and quest.current_stage().id in [&"meet_guard", &"report", &"wolves_report"]):
+				key = "ASK_WAY_HERE"
+			world.hud.show_message(point.display_name, key)
+
+func _forget_conversation() -> void:
+	if is_instance_valid(_conversation_choices) and _conversation_choices.chosen.is_connected(_on_conversation_choice):
+		_conversation_choices.chosen.disconnect(_on_conversation_choice)
+	_conversation_point = null
+	_conversation_choices = null
+
+func _cancel_conversation() -> void:
+	var choices := _conversation_choices
+	_forget_conversation()
+	if is_instance_valid(choices) and not choices.is_queued_for_deletion() \
+			and is_instance_valid(world) and world.is_inside_tree() and not world.is_queued_for_deletion():
+		choices.choose(&"lesson_leave")
+
+func _exit_tree() -> void:
+	_cancel_conversation()
 
 ## One exchange from the data: effects, the line, then the flag and stage.
 func talk_to(speaker: StringName) -> bool:
@@ -190,11 +263,13 @@ func _on_strike() -> void:
 	_changed()
 
 func _physics_process(delta: float) -> void:
+	if is_instance_valid(_conversation_choices) and not _conversation_in_reach():
+		_cancel_conversation()
 	if _flash > 0.0:
 		_flash -= delta
 		if _flash <= 0.0 and _dummy_visual != null:
 			_dummy_visual.scale = _dummy_scale
-	if message_source != null:
+	if is_instance_valid(message_source) and message_source.is_inside_tree():
 		var offset: Vector3 = message_source.global_position - world.player.global_position
 		if Vector2(offset.x, offset.z).length() > INTERACT_RADIUS + .75:
 			world.hud.clear_message()

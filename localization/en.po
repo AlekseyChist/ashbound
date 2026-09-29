@@ -899,3 +899,46 @@ msgstr "Ale costs {price} coin, friend. Come back with money."
 
 msgid "INN_KEEPER_BYE"
 msgstr "As you like. Holler if you need anything."
+
+# ASK-WAY-01: directions never apply quest effects.
+msgid "ASK_WAY_GREETING"
+msgstr "What did you want to ask?"
+
+msgid "ASK_WAY_BUSINESS"
+msgstr "About the job"
+
+msgid "ASK_WAY_QUESTION"
+msgstr "Ask the way"
+
+msgid "ASK_WAY_LEAVE"
+msgstr "See you"
+
+msgid "ASK_WAY_HOST"
+msgstr "Find the hostess by the first house. From the tower, follow the street past the workshop and the well."
+
+msgid "ASK_WAY_WOOD"
+msgstr "The woodpile is by the workshop. From the well, head along the street towards the tower. The workshop is on the left; the wood is beside it."
+
+msgid "ASK_WAY_RETURN"
+msgstr "Take the firewood back to the hostess by the first house, past the well. Talk to her about the job."
+
+msgid "ASK_WAY_GUARD"
+msgstr "The watchman is at the tower at the far end of the street, past the workshop. Talk to him about the job."
+
+msgid "ASK_WAY_DUMMY"
+msgstr "The straw dummy is beside the watchman, by the tower. Face it and practise three strikes."
+
+msgid "ASK_WAY_REPORT"
+msgstr "Finished practising? Return to the watchman by the tower and talk to him about the job."
+
+msgid "ASK_WAY_WOLVES"
+msgstr "The wolves are behind the barn at the south end of the village. Walk around the outside of the barn and drive them away from its back wall."
+
+msgid "ASK_WAY_PAYMENT"
+msgstr "The watchman by the tower handles the wolf trouble. Return and tell him what happened using the job option."
+
+msgid "ASK_WAY_INN"
+msgstr "The road past the watchtower leads to the forest inn. Follow the trail through the fir trees. The innkeeper is at the bar; the beds are upstairs."
+
+msgid "ASK_WAY_HERE"
+msgstr "You are in the right place. To continue the task, speak to me again and choose About the job."
