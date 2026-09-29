@@ -324,12 +324,87 @@ def terem_t2(mats):
     return {"id": bid, "slug": "t2", "floor": FLOOR}
 
 
+# ------------------------------------------------------------------------------------------- T3
+def terem_t3(mats):
+    """T3 (13 x 11): crossing gables of one two-storey log house - a long body with its ridge along
+    the street and a cross wing at its right end whose steeper, taller gable faces the street; the
+    covered porch sits in the inner corner between them, at the body's door."""
+    bid = "T3"
+    P = Parts(mats, bid)
+    R = 0.16
+    FLOOR, UPPER, EAVE = 1.0, 3.95, 6.6
+    # The body: x -6.5..1.5, y -1.5..5.5, ridge along x.
+    AX0, AX1, AY0, AY1 = -6.5, 1.5, -1.5, 5.5
+    AYR = (AY0 + AY1) * 0.5
+    ASLOPE = 0.8
+    ARIDGE = EAVE + (AY1 - AYR) * ASLOPE
+    # The cross wing: x 1.5..6.5, y -3.5..5.5, ridge along y, taller than the body's.
+    BX0, BX1, BY0, BY1 = 1.5, 6.5, -3.5, 5.5
+    BXR = (BX0 + BX1) * 0.5
+    BSLOPE = 1.25
+    BRIDGE = EAVE + (BX1 - BXR) * BSLOPE
+
+    plinth(P, AX0 - 0.2, AX1, AY0 - 0.2, AY1 + 0.2, FLOOR - 0.12)
+    plinth(P, BX0, BX1 + 0.2, BY0 - 0.2, BY1 + 0.2, FLOOR - 0.12)
+    P.box((AX0, AY0 + 0.2, FLOOR - 0.12), (AX1, AY1 - 0.2, FLOOR), "oak", "floor")
+    P.box((BX0, BY0 + 0.2, FLOOR - 0.12), (BX1, BY1 - 0.2, FLOOR), "oak", "floor")
+
+    # The body: long walls front and back, a gable at x -6.5 (the other end runs into the wing).
+    afront = shut_windows(P, "y", AY0, (-5.2, -3.4), FLOOR + 1.1, -1, R)
+    afront += shut_windows(P, "y", AY0, (-5.2, -3.4, -1.2), UPPER + 0.9, -1, R)
+    afront += [(-0.6, 0.6, FLOOR, FLOOR + 2.2)]
+    aback = shut_windows(P, "y", AY1, (-5.0, -2.5, 0.0), FLOOR + 1.1, 1, R)
+    aback += shut_windows(P, "y", AY1, (-5.0, -2.5, 0.0), UPPER + 0.9, 1, R)
+    aleft = shut_windows(P, "x", AX0, (0.4, 3.6), FLOOR + 1.1, -1, R)
+    aleft += shut_windows(P, "x", AX0, (0.4, 3.6), UPPER + 0.9, -1, R)
+    aleft += shut_windows(P, "x", AX0, (AYR,), EAVE + 0.8, -1, R, 0.7, 0.8)
+    log_wall(P, "x", AY0 + R, AX0 - 0.35, AX1, FLOOR - 0.05, EAVE, R, afront, 0.0)
+    log_wall(P, "x", AY1 - R, AX0 - 0.35, AX1, FLOOR - 0.05, EAVE, R, aback, 0.0)
+    gable_wall(P, AX0, AY0 - 0.35, AY1 + 0.35, FLOOR - 0.05, ARIDGE - 0.1, EAVE, AYR, R, aleft, 1)
+    gable_sill(P, AX0, AX0 + 2 * R, AY0, AY1, FLOOR, R)
+    band(P, AX0, AX1, AY0, AY1, UPPER)
+    # The body's roof runs on to the wing's ridge, under the wing's steeper pitches (the valley).
+    roof_two_pitch(P, AX0, BXR, AY0 - 0.6, AY1 + 0.6, AYR, ARIDGE, ASLOPE, 0.0, over_x0=0.6, carve=(True, False))
+    chimney(P, -2.8, 3.4, FLOOR + 0.5, ARIDGE + 0.5)
+
+    # The wing: gables front and back, long walls left and right.
+    gab = (BRIDGE - 0.1, EAVE, (BX1 - BX0) * 0.5 + 0.1)
+    bfront = shut_windows(P, "y", BY0, (2.9, 5.1), FLOOR + 1.1, -1, R)
+    bfront += shut_windows(P, "y", BY0, (2.9, 5.1), UPPER + 0.9, -1, R)
+    bfront += shut_windows(P, "y", BY0, (BXR,), EAVE + 0.9, -1, R, 0.7, 0.9)
+    bback = shut_windows(P, "y", BY1, (3.0, 5.0), FLOOR + 1.1, 1, R)
+    bback += shut_windows(P, "y", BY1, (BXR,), EAVE + 0.9, 1, R, 0.7, 0.9)
+    bright = shut_windows(P, "x", BX1, (-1.5, 1.2, 3.8), FLOOR + 1.1, 1, R)
+    bright += shut_windows(P, "x", BX1, (-1.5, 1.2, 3.8), UPPER + 0.9, 1, R)
+    bleft = shut_windows(P, "x", BX0, (-2.5,), UPPER + 0.9, -1, R)
+    log_wall(P, "x", BY0 + R, BX0 - 0.35, BX1 + 0.35, FLOOR - 0.05, BRIDGE, R, bfront, R * 0.93, "gable", gab)
+    log_wall(P, "x", BY1 - R, BX0 - 0.35, BX1 + 0.35, FLOOR - 0.05, BRIDGE, R, bback, R * 0.93, "gable", gab)
+    sill_along_x(P, BX0, BX1, BY0, BY0 + 2 * R, FLOOR, R)
+    sill_along_x(P, BX0, BX1, BY1, BY1 - 2 * R, FLOOR, R)
+    log_wall(P, "y", BX0 + R, BY0 - 0.35, BY1 + 0.35, FLOOR - 0.05, EAVE, R, bleft, 0.0)
+    log_wall(P, "y", BX1 - R, BY0 - 0.35, BY1 + 0.35, FLOOR - 0.05, EAVE, R, bright, 0.0)
+    band(P, BX0, BX1, BY0, BY1, UPPER)
+    roof_ridge_y(P, BX0 - 0.6, BX1 + 0.6, BY0, BY1, BXR, BRIDGE, BSLOPE, 0.6)
+    chimney(P, 4.9, 3.8, FLOOR + 0.5, BRIDGE - 0.4)
+
+    # The entry in the inner corner: a door frame, the gabled porch and its stairs.
+    for a in (-0.75, 0.6):
+        P.box((a, AY0 - 0.12, FLOOR), (a + 0.15, AY0 + 0.1, FLOOR + 2.2), "oak", "frame")
+    P.box((-0.8, AY0 - 0.14, FLOOR + 2.2), (0.8, AY0 + 0.1, FLOOR + 2.4), "oak", "frame")
+    gabled_porch(P, 0.0, AY0, FLOOR, FLOOR + 3.4, width=2.6)
+
+    P.emit(None, f"{bid}_")
+    bpy.data.objects[f"{bid}_entry_step"]["item_id"] = "entry_steps"
+    door(P, bid, -0.6, 0.6, AY0 + 0.08, FLOOR, FLOOR + 2.15, mats)
+    return {"id": bid, "slug": "t3", "floor": FLOOR}
+
+
 def main():
     argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     ap = argparse.ArgumentParser()
     ap.add_argument("--asset", default="all")
     args = ap.parse_args(argv)
-    for bid, build in {"T1": terem_t1, "T2": terem_t2}.items():
+    for bid, build in {"T1": terem_t1, "T2": terem_t2, "T3": terem_t3}.items():
         if args.asset not in ("all", bid):
             continue
         C.reset()
