@@ -61,6 +61,7 @@ const RUGS := [
 
 var fire_light: OmniLight3D
 var flames: CPUParticles3D
+var hearth_sound: AudioStreamPlayer3D
 var _time := 0.0
 
 func build() -> void:
@@ -281,6 +282,7 @@ func _hearth_fire() -> void:
 	add_child(fire_light)
 	var crackle := AudioStreamPlayer3D.new()
 	crackle.name = "HearthSound"
+	hearth_sound = crackle
 	var stream: AudioStream = load(FIRE_SOUND)
 	if stream is AudioStreamOggVorbis:
 		(stream as AudioStreamOggVorbis).loop = true
@@ -317,3 +319,7 @@ func _process(delta: float) -> void:
 		return
 	_time += delta
 	fire_light.light_energy = 1.8 + 0.35 * sin(_time * 9.1) + 0.2 * sin(_time * 23.7 + 1.3)
+
+func _exit_tree() -> void:
+	if is_instance_valid(hearth_sound):
+		hearth_sound.stop()
