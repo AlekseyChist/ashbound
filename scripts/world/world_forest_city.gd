@@ -130,6 +130,8 @@ const KIT := {
 	"H01": {"path": "res://assets/buildings/forest-village-v1/h01_closed.glb", "size": Vector3(6, 3.2, 8)},
 	"W01": {"path": "res://assets/buildings/forest-village-v1/w01_closed.glb", "size": Vector3(7, 3.2, 9)},
 	"B01": {"path": "res://assets/buildings/forest-village-v1/b01_closed.glb", "size": Vector3(8, 3.7, 10)},
+	# The terems (Codex sheet terems-t1-t6-v1, PR #147): own models, closed for now (forest_city_terems.py).
+	"T1": {"path": "res://assets/buildings/forest-city-v1/t1.glb", "size": Vector3(13, 6.6, 7.8), "skin": true},
 }
 const WORKSHOP_KIT := {"water_mill": "W01", "sawmill": "B01", "log_yard": "B01", "bakery": "W01", "granary": "H01",
 	"carpenter": "H01", "smithy": "H01", "charcoal_burner": "H01", "tar_kiln": "H01"}
@@ -146,6 +148,8 @@ func _outer_buildings() -> void:
 			continue
 		elif WORKSHOP_KIT.has(kind):
 			kit = WORKSHOP_KIT[kind]
+		elif kind.begins_with("terem_") and KIT.has("T" + kind.trim_prefix("terem_")):
+			kit = "T" + kind.trim_prefix("terem_")
 		else:
 			continue
 		_closed_house(b, kit)
@@ -163,6 +167,8 @@ func _closed_house(b: Dictionary, kit: String) -> void:
 	var size: Vector3 = KIT[kit].size
 	var basis := Basis(Vector3.UP, yaw)
 	var house: Node3D = (load(KIT[kit].path) as PackedScene).instantiate()
+	if KIT[kit].get("skin", false):
+		_workshop_skin(house)
 	# The whole model - porch, ramp, roof overhang - not the kit's nominal walls.
 	# The stone skirt reaches 0.1 m past the model; the clearance keeps it in the footprint too.
 	var rect := _extent(house).grow(0.15)
