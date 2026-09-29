@@ -92,6 +92,13 @@ func _civic_buildings() -> void:
 		hall.build(record)
 		var rect := _extent(hall.model)
 		var spot := _clear_spot(Vector2(at.x, at.z), basis, rect)
+		# Squeezed between the road and the palisade the pushes can see-saw and give up still
+		# inside a keep-out (K01, Codex 085): then the nearest clear spot on rings round the plan
+		# point, the entry still turned to the plaza.
+		if float(_intrusion(spot, basis, rect)[0]) > 0.0:
+			spot = _ring_spot(Vector2(at.x, at.z), basis, rect, spot)
+		if float(_intrusion(spot, basis, rect)[0]) > 0.0:
+			push_warning("FOREST_CITY %s still %.2f m into a road, the palisade or a neighbour" % [record.id, float(_intrusion(spot, basis, rect)[0])])
 		if spot.distance_to(Vector2(at.x, at.z)) > 0.05:
 			print("FOREST_CITY_CLEARED %s moved %.1f m" % [record.id, spot.distance_to(Vector2(at.x, at.z))])
 			at = Vector3(spot.x, 0, spot.y)
@@ -322,6 +329,18 @@ func _clear_spot(at: Vector2, basis: Basis, rect: Rect2) -> Vector2:
 		at += (hit[1] as Vector2) * minf(float(hit[0]) + 0.1, 0.5)
 	return at
 
+## The nearest spot on rings (1 m apart, up to 30 m) round `origin` where the footprint, turned by
+## `basis`, is clear of every keep-out; `fallback` when there is none.
+func _ring_spot(origin: Vector2, basis: Basis, rect: Rect2, fallback: Vector2) -> Vector2:
+	for ring in range(1, 31):
+		var count := ring * 6
+		for k in count:
+			var angle := TAU * k / count
+			var cand := origin + Vector2(cos(angle), sin(angle)) * ring
+			if float(_intrusion(cand, basis, rect)[0]) <= 0.0:
+				return cand
+	return fallback
+
 ## [worst intrusion in metres (<= 0 when clear), the direction to push]: the footprint sampled every
 ## 1.5 m (its edges and corners included) against the keep-out segments and the placed buildings.
 func _intrusion(at: Vector2, basis: Basis, rect: Rect2) -> Array:
@@ -341,48 +360,62 @@ func _intrusion(at: Vector2, basis: Basis, rect: Rect2) -> Array:
 	var ring_centre := Vector2(float(plan.palisade.center[0]) - float(world.HALF), float(plan.palisade.center[1]) - float(world.HALF))
 	var ring_radius := float(plan.palisade.radius)
 	var inside := at.distance_to(ring_centre) < ring_radius
+	# The inside every 1.5 m (a road or a neighbour crossing it), the outline every 0.25 m: a 1.5 m
+	# step let a corner between two samples reach 0.19 m into a road's shoulder (Codex 085).
 	var nx := maxi(3, ceili(rect.size.x / 1.5) + 1)
 	var nz := maxi(3, ceili(rect.size.y / 1.5) + 1)
-	var worst := -INF
-	var away := Vector2.ZERO
+	var samples: Array[Vector2] = []
 	for gx in nx:
 		for gz in nz:
-			var local := rect.position + rect.size * Vector2(float(gx) / (nx - 1), float(gz) / (nz - 1))
-			var q := at + ax * local.x + az * local.y
-			for seg in segments:
-				var near := Geometry2D.get_closest_point_to_segment(q, seg[0], seg[1])
-				var into: float = float(seg[2]) - q.distance_to(near)
+			samples.append(rect.position + rect.size * Vector2(float(gx) / (nx - 1), float(gz) / (nz - 1)))
+	var ex := maxi(2, ceili(rect.size.x / 0.25))
+	var ez := maxi(2, ceili(rect.size.y / 0.25))
+	for i in ex + 1:
+		var fx := float(i) / ex
+		samples.append(rect.position + rect.size * Vector2(fx, 0.0))
+		samples.append(rect.position + rect.size * Vector2(fx, 1.0))
+	for i in ez + 1:
+		var fz := float(i) / ez
+		samples.append(rect.position + rect.size * Vector2(0.0, fz))
+		samples.append(rect.position + rect.size * Vector2(1.0, fz))
+	var worst := -INF
+	var away := Vector2.ZERO
+	for local in samples:
+		var q := at + ax * local.x + az * local.y
+		for seg in segments:
+			var near := Geometry2D.get_closest_point_to_segment(q, seg[0], seg[1])
+			var into: float = float(seg[2]) - q.distance_to(near)
+			if into > worst:
+				worst = into
+				# Across the segment, to the side the house's centre is on (outwards if on it).
+				var dir: Vector2 = (seg[1] - seg[0]).normalized()
+				var normal := Vector2(-dir.y, dir.x)
+				var side := normal.dot(at - seg[0])
+				if absf(side) < 0.3:
+					side = normal.dot(at - _city_centre())
+				away = normal * signf(side if side != 0.0 else 1.0)
+		# The palisade ring (Codex 080: the barracks, pushed off the road, ran its back corner
+		# into it): the whole footprint, roof overhang included, keeps PALISADE_CLEAR off the
+		# stakes on its own side - a walkway round the back of every building.
+		var from_ring := q.distance_to(ring_centre)
+		var ring_into: float = (from_ring - (ring_radius - STAKE_RADIUS - PALISADE_CLEAR)) if inside \
+			else ((ring_radius + STAKE_RADIUS + PALISADE_CLEAR) - from_ring)
+		if ring_into > worst:
+			worst = ring_into
+			away = (ring_centre - q).normalized() if inside else (q - ring_centre).normalized()
+		# Other buildings: [origin, basis, footprint rect], kept HOUSE_GAP apart.
+		for other in neighbours:
+			var ob: Basis = other[1]
+			var orect: Rect2 = other[2]
+			var d: Vector2 = q - other[0]
+			var l := Vector2(d.dot(Vector2(ob.x.x, ob.x.z)), d.dot(Vector2(ob.z.x, ob.z.z)))
+			var grown := orect.grow(HOUSE_GAP)
+			if grown.has_point(l):
+				var into := minf(minf(l.x - grown.position.x, grown.end.x - l.x), minf(l.y - grown.position.y, grown.end.y - l.y))
 				if into > worst:
 					worst = into
-					# Across the segment, to the side the house's centre is on (outwards if on it).
-					var dir: Vector2 = (seg[1] - seg[0]).normalized()
-					var normal := Vector2(-dir.y, dir.x)
-					var side := normal.dot(at - seg[0])
-					if absf(side) < 0.3:
-						side = normal.dot(at - _city_centre())
-					away = normal * signf(side if side != 0.0 else 1.0)
-			# The palisade ring (Codex 080: the barracks, pushed off the road, ran its back corner
-			# into it): the whole footprint, roof overhang included, keeps PALISADE_CLEAR off the
-			# stakes on its own side - a walkway round the back of every building.
-			var from_ring := q.distance_to(ring_centre)
-			var ring_into: float = (from_ring - (ring_radius - STAKE_RADIUS - PALISADE_CLEAR)) if inside \
-				else ((ring_radius + STAKE_RADIUS + PALISADE_CLEAR) - from_ring)
-			if ring_into > worst:
-				worst = ring_into
-				away = (ring_centre - q).normalized() if inside else (q - ring_centre).normalized()
-			# Other buildings: [origin, basis, footprint rect], kept HOUSE_GAP apart.
-			for other in neighbours:
-				var ob: Basis = other[1]
-				var orect: Rect2 = other[2]
-				var d: Vector2 = q - other[0]
-				var l := Vector2(d.dot(Vector2(ob.x.x, ob.x.z)), d.dot(Vector2(ob.z.x, ob.z.z)))
-				var grown := orect.grow(HOUSE_GAP)
-				if grown.has_point(l):
-					var into := minf(minf(l.x - grown.position.x, grown.end.x - l.x), minf(l.y - grown.position.y, grown.end.y - l.y))
-					if into > worst:
-						worst = into
-						var c: Vector2 = orect.get_center()
-						away = (at - (other[0] + Vector2(ob.x.x, ob.x.z) * c.x + Vector2(ob.z.x, ob.z.z) * c.y)).normalized()
+					var c: Vector2 = orect.get_center()
+					away = (at - (other[0] + Vector2(ob.x.x, ob.x.z) * c.x + Vector2(ob.z.x, ob.z.z) * c.y)).normalized()
 	return [worst, away]
 
 
