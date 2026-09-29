@@ -43,7 +43,9 @@ func run() -> void:
 	# The halls' gables face +-x; the water mill's (owner 29 Sep: a slit at its back wall and by the
 	# door) face +-z, the doorway itself is open by design.
 	for spec in [["r01", "x", 12.0, 1.0, -5.2, 2.9, []], ["k01", "x", 10.0, 0.8, -4.3, 4.3, []],
-			["m01", "z", 5.5, 1.05, -4.0, 3.2, [-1.05, 1.05]]]:
+			["m01", "z", 5.5, 1.05, -4.0, 3.2, [-1.05, 1.05]],
+			# Terem T1: gables at x +-6.5, the body z -5.4 .. 2.4 (Godot), floor 1.0.
+			["t1", "x", 6.5, 1.0, -5.0, 2.0, []]]:
 		var id: String = spec[0]
 		var on_z: bool = spec[1] == "z"
 		var half_width: float = spec[2]
