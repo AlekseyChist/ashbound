@@ -15,7 +15,8 @@ const PELT := "res://assets/props/civic-v1/sheepskin-rug-v1.png"
 ## Sheepskins on the floor: [centre (y = floor), yaw°] - before the elder's dais, by the hearth.
 const PELTS := {"R01": [[Vector3(7.4, 0.012, -2.0), 0.0], [Vector3(-8.3, 0.012, -3.8), 90.0]]}
 ## Hand axes standing against the barracks wall by the spear rack: [foot position, lean°, turn°].
-const AXES := {"K01": [[Vector3(9.55, 0.0, 4.2), -12.0, 90.0], [Vector3(9.55, 0.0, 0.45), -10.0, 95.0],
+## (The first one moved from z 4.2 to 0.2 in CIVIC-FURNITURE-01: the new spear rack stands there.)
+const AXES := {"K01": [[Vector3(9.55, 0.0, 0.2), -12.0, 90.0], [Vector3(9.55, 0.0, 0.45), -10.0, 95.0],
 	[Vector3(9.55, 0.0, 0.7), -12.0, 85.0]]}
 
 ## Per building, in the hall's Godot frame (y = the floor, z = -y of the Blender model):

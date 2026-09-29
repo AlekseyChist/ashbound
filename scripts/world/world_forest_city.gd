@@ -627,6 +627,9 @@ func _workshop(spec: Dictionary, axis: Vector3, flow: Vector3, n: Vector3, water
 const SKIN_DIR := "res://assets/buildings/forest-city-v1/materials/"
 const STONE_MAPS := "res://assets/environment/village-house-materials-v1/stone_wall_02_%s_1k.jpg"
 const JOINERY := "res://assets/environment/village-house-materials-v1/fine_grained_wood_%s_1k.jpg"
+## Codex 090: a trial tint over the oak to take off its yellow (<= 1, no brightening).
+var FURNITURE_TINT := Color(0.82, 0.87, 0.96)
+const RUG_WEAVE := "res://assets/props/tavern-v1/rugs/fabric_pattern_05_nor_1k.jpg"
 var _skins := {}
 
 func _skin(kind: String) -> StandardMaterial3D:
@@ -642,15 +645,31 @@ func _skin(kind: String) -> StandardMaterial3D:
 		"shingles":
 			m.albedo_texture = load(SKIN_DIR + "wood_shingles_1k.jpg")
 			m.uv1_scale = Vector3(1.0 / 1.8, 1.0 / 1.8, 1)
-		"furniture", "chest":
-			# Planed fine-grained joinery wood (a dark walnut map): the furniture lifted to warm honey
-			# oak, well lighter than the grey-brown logs; the chests left dark and reddened.
+		"furniture":
+			# CIVIC-FURNITURE-01 V1 (owner-approved sheet): planed boards of Poly Haven Stained Pine
+			# (CC0, 0.9 m tile) as they are - no multiplier over the PBR map.
+			m.albedo_texture = load(SKIN_DIR + "oak_veneer_01_diff_1k.jpg")
+			m.normal_enabled = true
+			m.normal_texture = load(SKIN_DIR + "oak_veneer_01_nor_gl_1k.jpg")
+			m.roughness_texture = load(SKIN_DIR + "oak_veneer_01_rough_1k.jpg")
+			m.roughness = 1.0
+			m.uv1_scale = Vector3(1.0 / 1.83, 1.0 / 1.83, 1)
+			m.albedo_color = FURNITURE_TINT
+		"wool", "linen":
+			# The sheet's muted green wool (#515844) and unbleached linen (#AAA08A), a weave in the normal.
+			m.albedo_color = Color("515844") if kind == "wool" else Color("aaa08a")
+			m.normal_enabled = true
+			m.normal_texture = load(RUG_WEAVE)
+			m.roughness = 1.0
+			m.uv1_scale = Vector3(2.0, 2.0, 1)
+		"chest":
+			# Not yet chosen (sheet 3: a CC0 candidate to rework): the provisional dark wood.
 			m.albedo_texture = load(JOINERY % "col")
 			m.normal_enabled = true
 			m.normal_texture = load(JOINERY % "nor_gl")
 			m.roughness_texture = load(JOINERY % "rough")
 			m.roughness = 1.0
-			m.albedo_color = Color(1.8, 1.5, 1.15) if kind == "furniture" else Color(1.05, 0.72, 0.58)
+			m.albedo_color = Color(1.05, 0.72, 0.58)
 			m.uv1_scale = Vector3(1.0 / 1.2, 1.0 / 1.2, 1)
 		"planks":
 			m.albedo_texture = load(BOARDS % "diff")
@@ -683,6 +702,13 @@ func _workshop_skin(model: Node3D) -> void:
 					skin = "chest" if str(mesh.name).to_lower().contains("chest") else "furniture"
 				else:
 					skin = "timber"
+			elif kind == "cloth":
+				# The hall textiles by their part name; the barracks' painted shields keep their cloth.
+				var part := str(mesh.name).to_lower()
+				if part.contains("banner_trim"):
+					skin = "linen"
+				elif part.contains("banner") or part.contains("cushion") or part.contains("blanket"):
+					skin = "wool"
 			elif kind == "roof":
 				skin = "shingles"
 			elif kind == "stone":

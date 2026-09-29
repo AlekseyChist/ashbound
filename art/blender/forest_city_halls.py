@@ -209,10 +209,157 @@ def carved_frieze(P, x0, x1, y, z0, h=0.45):
         P.cyl((cx, y - 0.05, z0 + h * 0.5), (cx, y - 0.11, z0 + h * 0.5), h * 0.3, "oak", "frame", "carving", seg=6)
 
 
-def bench(P, x0, x1, y, h=0.45, d=0.35):
-    P.box((x0, y - d * 0.5, h - 0.06), (x1, y + d * 0.5, h), "oak", "furniture", "bench")
-    for x in (x0 + 0.15, x1 - 0.15):
-        P.box((x - 0.05, y - d * 0.4, 0), (x + 0.05, y + d * 0.4, h - 0.06), "oak", "furniture", "bench")
+# --- CIVIC-FURNITURE-01 V1 (Codex sheets elder-chair-v1 / hall-furniture-v1, owner-approved 29 Sep):
+# planed joinery of separate boards, built from the sheet's table of sizes, not from the picture.
+
+def bench(P, x0, x1, y, h=0.45, d=0.38, module=2.4):
+    """Modular benches: each module two seat boards along x on two splayed supports with a foot
+    block, joined by a long stretcher."""
+    n = max(1, round((x1 - x0) / module))
+    m = (x1 - x0) / n
+    for i in range(n):
+        a = x0 + i * m
+        for k in (0, 1):
+            y0 = y - d * 0.5 + k * d * 0.5
+            P.box((a + 0.005, y0 + 0.004, h - 0.05), (a + m - 0.005, y0 + d * 0.5 - 0.004, h), "oak", "furniture", "bench")
+        for x in (a + 0.28, a + m - 0.28):
+            P.box((x - 0.04, y - d * 0.42, h - 0.12), (x + 0.04, y + d * 0.42, h - 0.05), "oak", "furniture", "bench")
+            for s in (-1, 1):
+                P.beam((x, y + s * d * 0.28, h - 0.12), (x, y + s * d * 0.4, 0.06), 0.07, 0.06, "oak", "furniture", "bench")
+            P.box((x - 0.045, y - d * 0.46, 0), (x + 0.045, y + d * 0.46, 0.06), "oak", "furniture", "bench")
+        P.box((a + 0.24, y - 0.025, 0.16), (a + m - 0.24, y + 0.025, 0.22), "oak", "furniture", "bench")
+
+
+def trestle_table(P, x0, x1, y0, y1, h=0.78, module=2.4):
+    """Modular trestle tables: each module three boards along x (top 0.06), three A-trestles (a
+    cross bearer, two splayed legs, a foot) and a long rail between them."""
+    n = max(1, round((x1 - x0) / module))
+    m = (x1 - x0) / n
+    yc, w = (y0 + y1) * 0.5, y1 - y0
+    for i in range(n):
+        a = x0 + i * m
+        for k in range(3):
+            b0 = y0 + k * w / 3
+            P.box((a + 0.004, b0 + 0.004, h - 0.06), (a + m - 0.004, b0 + w / 3 - 0.004, h), "oak", "furniture", "table")
+        for x in (a + 0.3, a + m * 0.5, a + m - 0.3):
+            P.box((x - 0.045, y0 + 0.08, h - 0.14), (x + 0.045, y1 - 0.08, h - 0.06), "oak", "furniture", "table")
+            for s in (-1, 1):
+                P.beam((x, yc + s * 0.22, h - 0.14), (x, yc + s * 0.44, 0.07), 0.08, 0.07, "oak", "furniture", "table")
+            P.box((x - 0.05, y0 + 0.06, 0), (x + 0.05, y1 - 0.06, 0.07), "oak", "furniture", "table")
+        P.box((a + 0.26, yc - 0.035, 0.26), (a + m - 0.26, yc + 0.035, 0.34), "oak", "furniture", "table")
+
+
+def elder_chair(P, cx, cy, z, face=-1):
+    """The elder's chair (sheet elder-chair-v1): 0.86 wide, 0.85 deep, 1.60 high, seat 0.48; front
+    legs rise to the arms, back legs to the top as stiles, three back boards and a top rail, side
+    and front rails, a board seat, a thin wool cushion, iron shoes. `face`: the side it looks to in x."""
+    W, D, H, S = 0.86, 0.85, 1.60, 0.48
+    xf, xb = cx + face * D * 0.5, cx - face * D * 0.5    # front and back edges in x
+    def X(t):   # 0 at the front, 1 at the back
+        return xf + (xb - xf) * t
+    def box(t0, t1, ya, yb, z0, z1, mat="oak", name="chair"):
+        P.box((min(X(t0), X(t1)), cy + ya, z + z0), (max(X(t0), X(t1)), cy + yb, z + z1), mat, "furniture", name)
+    L = 0.09
+    for ys in (-W * 0.5, W * 0.5 - L):
+        box(0.0, L / D, ys, ys + L, 0.0, 0.72)                        # front legs up to the arms
+        box(1.0 - L / D, 1.0, ys, ys + L, 0.0, H)                     # back legs as stiles
+        box(0.0, 1.0, ys + 0.005, ys + L - 0.005, 0.12, 0.18)          # low side rail
+        box(0.0, 1.0, ys + 0.01, ys + L - 0.01, S - 0.1, S - 0.04)     # seat side rail
+        box(-0.04, 1.0 - L / D, ys - 0.02, ys + L + 0.02, 0.72, 0.77)  # arm
+        for t in (0.0, 1.0 - L / D):                                   # iron shoes
+            box(t - 0.005 / D, t + (L + 0.005) / D, ys - 0.005, ys + L + 0.005, 0.0, 0.07, "iron", "chair_iron")
+    for t0, t1 in ((0.0, L / D), (1.0 - L / D, 1.0)):
+        box(t0, t1, -W * 0.5 + L, W * 0.5 - L, S - 0.1, S - 0.04)      # front and back seat rails
+    for k in range(4):
+        y0 = -W * 0.5 + L + k * (W - 2 * L) / 4
+        box(0.02, 1.0 - L / D, y0 + 0.004, y0 + (W - 2 * L) / 4 - 0.004, S - 0.04, S)  # seat boards
+    box(0.06, 0.86, -W * 0.5 + L + 0.02, W * 0.5 - L - 0.02, S, S + 0.05, "cloth", "chair_cushion")
+    for k in range(3):
+        y0 = -W * 0.5 + L + k * (W - 2 * L) / 3
+        box(1.0 - (L - 0.02) / D, 1.0 - 0.03 / D, y0 + 0.006, y0 + (W - 2 * L) / 3 - 0.006, S + 0.05, H - 0.2)
+    box(1.0 - L / D, 1.0, -W * 0.5 + L, W * 0.5 - L, H - 0.2, H - 0.04)   # top rail
+    for k in range(5):                                                    # its shallow notched carving
+        y = -W * 0.5 + L + (k + 0.5) * (W - 2 * L) / 5
+        box(1.0 - (L + 0.015) / D, 1.0 - L / D, y - 0.04, y + 0.04, H - 0.16, H - 0.08)
+
+
+def dais(P, x0, x1, y0, y1, h, step=(1.2, 2.8), step_h=0.15, step_d=0.30):
+    """The boarded dais (sheet elder-chair-v1): bearers under a deck of 0.18 m boards along y, board
+    fascias on the front and ends, a half-height step cut into its front (x0) - nothing outside it."""
+    for yb in (y0 + 0.1, (y0 + y1) * 0.5, y1 - 0.1):
+        P.box((x0 + 0.05, yb - 0.06, 0), (x1, yb + 0.06, h - 0.04), "oak", "furniture", "dais")
+    n = max(1, round((x1 - x0) / 0.18))
+    for i in range(n):
+        a = x0 + i * (x1 - x0) / n
+        b = a + (x1 - x0) / n
+        lo = a < x0 + step_d - 0.01
+        for ya, yb in (((y0, step[0]), (step[1], y1)) if lo else ((y0, y1),)):
+            P.box((a + 0.004, ya, h - 0.04), (b - 0.004, yb, h), "oak", "furniture", "dais")
+    # Fascia: the front board broken by the step, the two ends.
+    P.box((x0, y0, 0), (x0 + 0.03, step[0], h - 0.04), "oak", "furniture", "dais")
+    P.box((x0, step[1], 0), (x0 + 0.03, y1, h - 0.04), "oak", "furniture", "dais")
+    for ye in (y0, y1 - 0.03):
+        P.box((x0, ye, 0), (x1, ye + 0.03, h - 0.04), "oak", "furniture", "dais")
+    # The step: its tread and riser inside the dais, a board face up to the deck behind it.
+    P.box((x0, step[0], 0), (x0 + step_d, step[1], step_h), "oak", "furniture", "dais")
+    P.box((x0 + step_d - 0.03, step[0], step_h), (x0 + step_d, step[1], h - 0.04), "oak", "furniture", "dais")
+
+
+def bunk(P, x0, y_wall, floor=0.0, L=2.0, W=0.95, H=2.05):
+    """A two-tier militia bunk (sheet hall-furniture-v1) against the rear wall at y_wall: four posts,
+    rails, board decks, straw mattresses to 0.48/1.58 m, a green blanket each, a guard rail on top and
+    a ladder on the front at the x1 end."""
+    y1 = y_wall
+    y0 = y_wall - W
+    x1 = x0 + L
+    P_ = 0.08
+    for x in (x0, x1 - P_):
+        for y in (y0, y1 - P_):
+            P.box((x, y, 0), (x + P_, y + P_, H), "oak", "furniture", "bunk")
+    for deck in (0.30, 1.40):
+        for y in (y0, y1 - 0.05):
+            P.box((x0 + P_, y, deck), (x1 - P_, y + 0.05, deck + 0.1), "oak", "furniture", "bunk")
+        for x in (x0 + P_, x1 - P_ - 0.05):
+            P.box((x, y0 + P_, deck), (x + 0.05, y1 - P_, deck + 0.1), "oak", "furniture", "bunk")
+        P.box((x0 + P_, y0 + 0.05, deck + 0.04), (x1 - P_, y1 - 0.05, deck + 0.06), "oak", "furniture", "bunk")
+        P.box((x0 + P_ + 0.02, y0 + 0.07, deck + 0.06), (x1 - P_ - 0.02, y1 - 0.07, deck + 0.18), "straw", "furniture", "bunk")
+        P.box((x0 + P_ + 0.5, y0 + 0.06, deck + 0.18), (x1 - P_ - 0.03, y1 - 0.06, deck + 0.2), "cloth", "furniture", "bunk_blanket")
+    for y in (y0, y1 - 0.05):                                            # top guard rails
+        P.box((x0 + P_, y, 1.85), (x1 - P_ - (0.45 if y == y0 else 0.0), y + 0.05, 1.92), "oak", "furniture", "bunk")
+    lx0, lx1 = x1 - 0.46, x1 - 0.1                                        # the ladder
+    for x in (lx0, lx1 - 0.05):
+        P.box((x, y0 - 0.06, 0), (x + 0.05, y0 - 0.01, 1.95), "oak", "furniture", "bunk")
+    for k in range(1, 6):
+        P.box((lx0, y0 - 0.055, k * 0.32), (lx1, y0 - 0.015, k * 0.32 + 0.04), "oak", "furniture", "bunk")
+
+
+def spear_rack(P, x0, y0, x1, y1, n=6, spear=2.6):
+    """A spear rack (sheet hall-furniture-v1) 1.80 long in y, 0.45 deep in x, 1.40 high: two A-ends
+    with feet, a floor tray, a top bar with the spears in it, spears standing butt-down on the tray."""
+    xc = (x0 + x1) * 0.5
+    for y in (y0, y1 - 0.08):
+        P.box((x0, y, 0), (x1, y + 0.08, 0.06), "oak", "furniture", "rack")
+        for s in (-1, 1):
+            P.beam((xc + s * 0.18, y + 0.04, 0.04), (xc + s * 0.04, y + 0.04, 1.4), 0.07, 0.07, "oak", "furniture", "rack")
+    P.box((x0 + 0.06, y0, 0.06), (x1 - 0.06, y1, 0.12), "oak", "furniture", "rack")
+    P.box((xc - 0.06, y0, 1.18), (xc + 0.06, y1, 1.28), "oak", "furniture", "rack")
+    for k in range(n):
+        y = y0 + 0.25 + k * (y1 - y0 - 0.5) / (n - 1)
+        P.cyl((xc, y, 0.12), (xc, y, spear - 0.28), 0.022, "oak", "furniture", "spear", seg=6)
+        P.cyl((xc, y, spear - 0.28), (xc, y, spear), 0.045, "iron", "furniture", "spear_iron", seg=4, r2=0.0)
+
+
+def hanging(P, xc, y_wall, z_top, w=0.9, h=1.4):
+    """A cloth hanging on the rear wall (sheet hall-furniture-v1): muted green cloth with an unbleached
+    border down both sides and along the foot, on a wooden rod with two iron hooks; no emblem."""
+    y = y_wall - 0.36
+    P.box((xc - w * 0.5, y - 0.01, z_top - h), (xc + w * 0.5, y + 0.01, z_top - 0.04), "cloth", "furniture", "banner")
+    for x in (xc - w * 0.5 + 0.05, xc + w * 0.5 - 0.13):
+        P.box((x, y - 0.015, z_top - h + 0.05), (x + 0.08, y - 0.011, z_top - 0.1), "cloth", "furniture", "banner_trim")
+    P.box((xc - w * 0.5 + 0.05, y - 0.015, z_top - h + 0.05), (xc + w * 0.5 - 0.05, y - 0.011, z_top - h + 0.13), "cloth", "furniture", "banner_trim")
+    P.cyl((xc - w * 0.5 - 0.1, y, z_top), (xc + w * 0.5 + 0.1, y, z_top), 0.025, "oak", "furniture", "banner_rod", seg=6)
+    for x in (xc - w * 0.5 + 0.05, xc + w * 0.5 - 0.05):
+        P.box((x - 0.015, y - 0.01, z_top - 0.02), (x + 0.015, y_wall - 0.3, z_top + 0.06), "iron", "furniture", "banner_hook")
 
 
 def chest(P, x0, y0, x1, y1, h):
@@ -225,12 +372,6 @@ def chest(P, x0, y0, x1, y1, h):
         P.box((x - 0.035, y0 - 0.04, 0.04), (x + 0.035, y1 + 0.04, h + 0.012), "iron", "furniture", "chest_iron")
     xm = (x0 + x1) * 0.5
     P.box((xm - 0.07, y0 - 0.045, h - 0.24), (xm + 0.07, y0 - 0.02, h - 0.06), "iron", "furniture", "chest_iron")
-
-
-def table(P, x0, x1, y0, y1, h=0.78):
-    P.box((x0, y0, h - 0.07), (x1, y1, h), "oak", "furniture", "table")
-    for x in (x0 + 0.2, x1 - 0.2):
-        P.box((x - 0.07, y0 + 0.1, 0), (x + 0.07, y1 - 0.1, h - 0.07), "oak", "furniture", "table")
 
 
 class Lifted:
@@ -337,18 +478,15 @@ def town_hall(mats):
 
     # Inside: the long council table and benches, the elder's seat on a dais, the hearth, chests.
     F = Lifted(P, FLOOR)
-    table(F, -6.0, 6.0, 1.5, 2.7)
+    trestle_table(F, -6.0, 6.0, 1.5, 2.7)
     bench(F, -6.0, 6.0, 1.0)
     bench(F, -6.0, 6.0, 3.2)
-    F.box((8.5, -0.5, 0), (HX - R, 4.5, 0.3), "oak", "furniture", "dais")
-    F.box((9.8, 1.4, 0.3), (10.8, 2.4, 0.8), "oak", "furniture", "seat")
-    F.box((10.6, 1.4, 0.8), (10.8, 2.4, 2.2), "oak", "furniture", "seat")
-    for dy in (1.4, 2.3):
-        F.box((9.8, dy, 0.8), (10.8, dy + 0.1, 1.2), "oak", "furniture", "seat")
+    dais(F, 8.5, HX - R, -0.5, 4.5, 0.3)
+    elder_chair(F, 10.2, 2.0, 0.3, face=-1)
     for x in (-8.5, 4.0, 7.2):
         chest(F, x, Y1 - 0.95, x + 1.1, Y1 - 0.35, 0.6)
     for x in (-8.0, -3.0, 3.0, 8.0):
-        F.box((x - 0.45, Y1 - 0.34, 1.6), (x + 0.45, Y1 - 0.3, 3.0), "cloth", "furniture", "banner")
+        hanging(F, x, Y1, 3.0)
 
     P.emit(None, f"{bid}_")
     door(P, bid, -1.1, 1.1, Y0 + 0.08, FLOOR, FLOOR + 2.6, mats)
@@ -420,20 +558,14 @@ def barracks(mats):
 
     # Inside: two-tier bunks along the rear, a table with benches, a spear rack, chests, the stove.
     F = Lifted(P, FLOOR)
+    # Bunks: the sheet's 2.00 x 0.95 frames against the rear wall, in the old 2.0 x 1.85 places.
     for bx in (-8.6, -5.4, -2.2, 1.0):
-        for lz in (0.35, 1.45):
-            F.box((bx, Y1 - 2.2, lz), (bx + 2.0, Y1 - 0.35, lz + 0.12), "oak", "furniture", "bunk")
-            F.box((bx + 0.05, Y1 - 2.15, lz + 0.12), (bx + 1.95, Y1 - 0.4, lz + 0.26), "straw", "furniture", "bunk")
-        for px in (bx, bx + 1.9):
-            F.box((px, Y1 - 2.2, 0), (px + 0.1, Y1 - 2.1, 2.0), "oak", "furniture", "bunk")
-    table(F, 3.0, 7.0, -1.2, 0.0)
-    bench(F, 3.0, 7.0, -1.65)
-    bench(F, 3.0, 7.0, 0.45)
-    F.box((HX - 0.6, -4.0, 0.9), (HX - 0.4, -1.0, 1.05), "oak", "furniture", "rack")
-    for i in range(7):
-        y = -3.8 + i * 0.42
-        F.cyl((HX - 0.5, y, 0.0), (HX - 0.5, y, 2.4), 0.03, "oak", "furniture", "spear", seg=5)
-        F.cyl((HX - 0.5, y, 2.4), (HX - 0.5, y, 2.65), 0.05, "iron", "furniture", "spear", seg=4, r2=0.0)
+        bunk(F, bx, Y1 - 0.35)
+    trestle_table(F, 3.0, 7.0, -1.2, 0.0, module=2.0)
+    bench(F, 3.0, 7.0, -1.65, module=2.0)
+    bench(F, 3.0, 7.0, 0.45, module=2.0)
+    # The spear rack on the right gable, clear of its window (y -2.35 .. -1.65).
+    spear_rack(F, HX - 2 * R - 0.5, -4.5, HX - 2 * R - 0.05, -2.7)
     for x in (4.5, 6.2, 7.9):
         chest(F, x, Y1 - 0.95, x + 1.0, Y1 - 0.35, 0.55)
 
