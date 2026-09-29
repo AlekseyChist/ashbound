@@ -495,12 +495,97 @@ def terem_t4(mats):
     return {"id": bid, "slug": "t4", "floor": FLOOR}
 
 
+# ------------------------------------------------------------------------------------------- T5
+def terem_t5(mats):
+    """T5 (12 x 10): a restrained long house with a low silhouette - two log storeys under a long
+    roof along the street, gables at the ends; a closed board veranda under its own small gable on
+    the right of the front, the entry off-centre in it, four low treads down to the street."""
+    bid = "T5"
+    P = Parts(mats, bid)
+    R = 0.16
+    X0, X1, Y0, Y1 = -6.0, 4.0, -1.5, 4.5
+    FLOOR, UPPER, EAVE = 0.6, 3.5, 6.0
+    YR = (Y0 + Y1) * 0.5
+    SLOPE = 0.75
+    RIDGE = EAVE + (Y1 - YR) * SLOPE
+    # The veranda: x 0.5..3.8, y -3.8..Y0.
+    VX0, VX1, VY0 = 0.5, 3.8, -3.8
+    VXM = (VX0 + VX1) * 0.5
+    VTOP = FLOOR + 2.4
+
+    plinth(P, X0 - 0.2, X1 + 0.2, Y0 - 0.2, Y1 + 0.2, FLOOR - 0.12, bottom=-1.0)
+    P.box((X0, Y0 + 0.2, FLOOR - 0.12), (X1, Y1 - 0.2, FLOOR), "oak", "floor")
+
+    front = shut_windows(P, "y", Y0, (-4.8, -3.0, -1.2), FLOOR + 1.1, -1, R)
+    front += shut_windows(P, "y", Y0, (-4.8, -3.0, -1.2), UPPER + 0.8, -1, R, 0.8, 0.8)
+    back = shut_windows(P, "y", Y1, (-4.5, -1.5, 1.5), FLOOR + 1.1, 1, R)
+    back += shut_windows(P, "y", Y1, (-4.5, -1.5, 1.5), UPPER + 0.8, 1, R, 0.8, 0.8)
+    left = shut_windows(P, "x", X0, (0.0, 3.0), FLOOR + 1.1, -1, R)
+    left += shut_windows(P, "x", X0, (YR,), EAVE + 0.6, -1, R, 0.6, 0.7)
+    right = shut_windows(P, "x", X1, (0.0, 3.0), FLOOR + 1.1, 1, R)
+    right += shut_windows(P, "x", X1, (0.2, 2.8), UPPER + 0.8, 1, R, 0.8, 0.8)
+    right += shut_windows(P, "x", X1, (YR,), EAVE + 0.6, 1, R, 0.6, 0.7)
+    log_wall(P, "x", Y0 + R, X0 - 0.35, X1 + 0.35, FLOOR - 0.05, EAVE, R, front, 0.0)
+    log_wall(P, "x", Y1 - R, X0 - 0.35, X1 + 0.35, FLOOR - 0.05, EAVE, R, back, 0.0)
+    gable_wall(P, X0, Y0 - 0.35, Y1 + 0.35, FLOOR - 0.05, RIDGE - 0.1, EAVE, YR, R, left, 1)
+    gable_wall(P, X1, Y0 - 0.35, Y1 + 0.35, FLOOR - 0.05, RIDGE - 0.1, EAVE, YR, R, right, -1)
+    gable_sill(P, X0, X0 + 2 * R, Y0, Y1, FLOOR, R)
+    gable_sill(P, X1, X1 - 2 * R, Y0, Y1, FLOOR, R)
+    band(P, X0, X1, Y0, Y1, UPPER)
+    roof_two_pitch(P, X0, X1, Y0 - 0.6, Y1 + 0.6, YR, RIDGE, SLOPE, 0.6)
+    chimney(P, -2.0, 2.6, FLOOR + 0.5, RIDGE + 0.6)
+
+    # The veranda: a stone footing, a board floor, corner posts, walls of upright boards with
+    # shut windows, the door off-centre in its front.
+    P.box((VX0 - 0.1, VY0 - 0.1, -1.0), (VX1 + 0.1, Y0, FLOOR - 0.12), "stone", "foundation")
+    P.box((VX0, VY0, FLOOR - 0.12), (VX1, Y0, FLOOR), "oak", "floor", "veranda")
+    for x in (VX0, VX1 - 0.14):
+        P.box((x, VY0, FLOOR), (x + 0.14, VY0 + 0.14, VTOP), "oak", "frame", "veranda")
+    D0, D1 = 2.5, 3.5                      # the door in the veranda's front
+    def boards(a0, a1, along_x, fixed):
+        n = max(1, round((a1 - a0) / 0.22))
+        for k in range(n):
+            b0 = a0 + k * (a1 - a0) / n
+            b1 = b0 + (a1 - a0) / n - 0.01
+            if along_x:
+                if b1 > D0 - 0.01 and b0 < D1 + 0.01:
+                    continue
+                P.box((b0, fixed - 0.03, FLOOR), (b1, fixed + 0.03, VTOP), "oak", "shell", "veranda_wall")
+            else:
+                P.box((fixed - 0.03, b0, FLOOR), (fixed + 0.03, b1, VTOP), "oak", "shell", "veranda_wall")
+    boards(VX0 + 0.14, VX1 - 0.14, True, VY0 + 0.07)
+    boards(VY0 + 0.14, Y0, False, VX0 + 0.07)
+    boards(VY0 + 0.14, Y0, False, VX1 - 0.07)
+    P.box((VX0, VY0, VTOP - 0.1), (VX1, VY0 + 0.14, VTOP), "oak", "frame", "veranda")
+    for x in (D0 - 0.12, D1):
+        P.box((x, VY0 - 0.04, FLOOR), (x + 0.12, VY0 + 0.14, FLOOR + 2.2), "oak", "frame")
+    P.box((D0 - 0.12, VY0 - 0.04, FLOOR + 2.2), (D1 + 0.12, VY0 + 0.14, FLOOR + 2.34), "oak", "frame")
+    stone_window(P, "y", 1.4, FLOOR + 1.0, VY0 + 0.1, -1, 0.7, 0.7)
+    stone_window(P, "x", -2.7, FLOOR + 1.0, VX0 + 0.04, -1, 0.7, 0.7)
+    stone_window(P, "x", -2.7, FLOOR + 1.0, VX1 - 0.04, 1, 0.7, 0.7)
+    vslope = 0.8
+    vridge = VTOP + (VX1 - VXM + 0.3) * vslope
+    roof_ridge_y(P, VX0 - 0.3, VX1 + 0.3, VY0, Y0 + 0.1, VXM, vridge, vslope, 0.4, t=0.14)
+    # A small landing outside the door, then four treads down: 0.6 m over 1.2 m.
+    LY = VY0 - 0.9
+    P.box((D0 - 0.3, LY, -0.4), (D1 + 0.3, VY0, FLOOR - 0.06), "stone", "foundation")
+    P.box((D0 - 0.3, LY, FLOOR - 0.06), (D1 + 0.3, VY0, FLOOR), "oak", "floor", "porch")
+    for i in range(4):
+        z = FLOOR * (4 - i) / 4
+        P.box((D0 - 0.3, LY - 0.3 * (i + 1), -0.4), (D1 + 0.3, LY - 0.3 * i, z), "oak", "floor", "entry_step")
+
+    P.emit(None, f"{bid}_")
+    bpy.data.objects[f"{bid}_entry_step"]["item_id"] = "entry_steps"
+    door(P, bid, D0, D1, VY0 + 0.07, FLOOR, FLOOR + 2.15, mats)
+    return {"id": bid, "slug": "t5", "floor": FLOOR}
+
+
 def main():
     argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     ap = argparse.ArgumentParser()
     ap.add_argument("--asset", default="all")
     args = ap.parse_args(argv)
-    for bid, build in {"T1": terem_t1, "T2": terem_t2, "T3": terem_t3, "T4": terem_t4}.items():
+    for bid, build in {"T1": terem_t1, "T2": terem_t2, "T3": terem_t3, "T4": terem_t4, "T5": terem_t5}.items():
         if args.asset not in ("all", bid):
             continue
         C.reset()
