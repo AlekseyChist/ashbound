@@ -451,7 +451,8 @@ def town_hall(mats):
     # Lanterns hang from two tie beams over the council table's axis (y 2.1), the right one on the
     # beam before the dais (Codex 098: the chair and the table's middle were dark at night); the
     # marker is the tie beam's underside.
-    for i, lx in enumerate((xs[2], xs[-2])):
+    # Codex 101: the left one on the next beam (xs[3]) - the table's middle fell between the lights.
+    for i, lx in enumerate((xs[3], xs[-2])):
         empty(f"{bid}_lamp{i}", (lx, 2.1, EAVE - 0.3), "lamp")
 
     # The gallery: posts with brackets, a railing, a lean-to roof from the wall.
