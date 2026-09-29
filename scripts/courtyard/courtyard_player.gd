@@ -104,9 +104,15 @@ func _step_up(delta: float) -> void:
 	# so the normal alone does not tell a ledge from a slope); an uphill slope touches at the feet.
 	if hit.get_position().y - global_position.y < 0.05 and hit.get_normal().y >= STEP_FLOOR_NORMAL:
 		return
-	var lift := Vector3.UP * STEP_MAX
-	if test_move(global_transform, lift):
+	# Lift only as far as the headroom allows (Codex 096: a full STEP_MAX test under a 1.95 m
+	# ceiling refused a 0.15 ledge that leaves room); the landing below must fit that lift.
+	var lift_by := STEP_MAX
+	var head := KinematicCollision3D.new()
+	if test_move(global_transform, Vector3.UP * STEP_MAX, head):
+		lift_by = head.get_travel().length() - 0.01
+	if lift_by < 0.02:
 		return
+	var lift := Vector3.UP * lift_by
 	# Land far enough past the edge that the capsule's round foot comes down on the top, not on
 	# the edge itself (radius 0.28 + a little).
 	var land := along.normalized() * maxf(along.length(), STEP_LAND)
@@ -118,9 +124,9 @@ func _step_up(delta: float) -> void:
 		return
 	if down.get_normal().y < STEP_FLOOR_NORMAL:
 		return
-	var rise := STEP_MAX - down.get_travel().length()
+	var rise := lift_by - down.get_travel().length()
 	if rise > 0.01:
-		global_position.y += rise + 0.005
+		global_position.y += rise + 0.001
 
 
 ## Keyboard Space or the touch Jump button; ignored in the air (no double jump).
