@@ -18,14 +18,21 @@ func _initialize() -> void:
 func _run() -> void:
 	inv = root.get_node("Inventory")
 	root.get_node("GameManager").player = null
-	inv.item_database["qa_trade_token"] = {
-		"id": "qa_trade_token", "name": "QA token", "type": 4,
-		"stackable": true, "max_stack": 5, "value": 4,
-	}
-	inv.item_database["qa_trade_sword"] = {
-		"id": "qa_trade_sword", "name": "QA sword", "type": 0,
-		"stackable": false, "slot": "weapon", "value": 7,
-	}
+	var token := ItemData.new()
+	token.id = "qa_trade_token"
+	token.name = "QA token"
+	token.type = ItemData.Type.MISC
+	token.stackable = true
+	token.max_stack = 5
+	token.value = 4
+	inv.item_database[token.id] = token
+	var sword := ItemData.new()
+	sword.id = "qa_trade_sword"
+	sword.name = "QA sword"
+	sword.type = ItemData.Type.WEAPON
+	sword.slot = "weapon"
+	sword.value = 7
+	inv.item_database[sword.id] = sword
 	inv.gold_changed.connect(_gold_event)
 	inv.item_added.connect(_added_event)
 	inv.item_removed.connect(_removed_event)
@@ -71,7 +78,7 @@ func _reset(amount: int = 100, capacity: int = 5) -> void:
 
 
 func _put(id: String, instance_id: String, quantity: int = 1) -> Dictionary:
-	var record: Dictionary = inv.item_database[id].duplicate(true)
+	var record: Dictionary = inv.item_database[id].to_dict()
 	record["instance_id"] = instance_id
 	record["quantity"] = quantity
 	inv.items.append(record)

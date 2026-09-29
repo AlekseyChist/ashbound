@@ -26,7 +26,7 @@ func _run() -> void:
 		var e: Array = expected[id]
 		check(d.category==e[0] and d.subtype==e[1] and d.equipment_slot==e[2] and d.quick_bindable==e[3] and d.droppable==e[4], "matrix " + id)
 		for slot in ["weapon","armor","backpack","pouch"]: # bags were removed (D-057): nothing equips there
-			check(Rules.can_equip(inv.item_database[id],slot)==(slot==e[2]), "reject incompatible " + id + " -> " + slot)
+			check(Rules.can_equip(inv.item_database[id].to_dict(),slot)==(slot==e[2]), "reject incompatible " + id + " -> " + slot)
 	var enchanted := {"id":"qa_sword","type":0,"slot":"weapon","category":"weapon","subtype":"sword","tags":["magic"],"quest_locked":true}
 	check(Rules.has_tag(enchanted,"magic") and not Rules.can_drop(enchanted) and Rules.can_equip(enchanted,"weapon"),"orthogonal quest/magic/weapon")
 	for subtype in ["scroll","rune"]:

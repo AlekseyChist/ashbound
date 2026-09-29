@@ -102,7 +102,7 @@ func _check(cond: bool, name: String) -> void:
 
 
 func _make(item_id: String, quantity: int) -> Dictionary:
-	var item: Dictionary = inv.item_database[item_id].duplicate(true)
+	var item: Dictionary = inv.item_database[item_id].to_dict()
 	item["quantity"] = quantity
 	item["instance_id"] = str(next_instance)
 	next_instance += 1

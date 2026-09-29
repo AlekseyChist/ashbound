@@ -36,7 +36,7 @@ func run() -> void:
 	check(old.size() == 10, "snapshot has the ten old items")
 	check(inv.item_database.size() == old.size(), "same number of items")
 	for id in old:
-		check(inv.item_database.has(id) and same(inv.item_database[id], old[id]), "item %s unchanged" % id)
+		check(inv.item_database.has(id) and same(inv.item_database[id].to_dict(), old[id]), "item %s unchanged" % id)
 	var catalog: ItemCatalog = load("res://data/items/catalog.tres")
 	var ids := {}
 	for item in catalog.items:
@@ -44,7 +44,8 @@ func run() -> void:
 		ids[item.id] = true
 		check(item.category in ["weapon", "clothing", "consumable", "object"], "%s has a known category" % item.id)
 		check(item.stackable == (item.max_stack > 0), "%s: stack limit only for stackable items" % item.id)
-		# Known since before ITEM-DATA-01: the rusty sword names an icon that was never drawn (STATUS).
+		# Legacy metadata names an absent standalone PNG. The drawing already exists in items-v1.png;
+		# validate_item_art checks the atlas used by the current UI and dropped-item consumers.
 		if not item.icon.is_empty() and not KNOWN_MISSING_ICONS.has(item.id):
 			check(ResourceLoader.exists(item.icon), "%s icon exists" % item.id)
 		check(item.resource_path == "res://data/items/%s.tres" % item.id, "%s lives in its own file" % item.id)
