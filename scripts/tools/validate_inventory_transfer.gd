@@ -83,8 +83,11 @@ func touch(button: Button, pressed: bool, position: Vector2, canceled: bool = fa
 func _run() -> void:
 	inv = root.get_node("Inventory")
 	loc = root.get_node("Localization")
-	settings_path = "res://.tools/transfer-qa-%d.cfg" % OS.get_process_id()
+	# res:// may be read-only and a fresh staging project has no .tools directory.
+	# Keep this run's language preference separate from the player's settings.
+	settings_path = "user://inventory-transfer-qa-%d-%d.cfg" % [OS.get_process_id(), Time.get_ticks_usec()]
 	loc.load_preferences(settings_path, "en_US")
+	check(loc.get_language() == "en", "isolated fixture starts in English")
 	panel = load("res://scenes/courtyard/courtyard_inventory_panel.tscn").instantiate()
 	root.add_child(panel)
 	await settle()
@@ -161,7 +164,9 @@ func _run() -> void:
 	reversed.items.reverse()
 	check(inv.load_save_data(reversed), "reorder rows through valid snapshot")
 	check(inv.configure_storage([profile[2], profile[0], profile[1]]), "reorder target definitions")
-	loc.set_language("ru")
+	var language_error: int = loc.set_language("ru")
+	check(language_error == OK, "Russian preference must be saved: " + error_string(language_error))
+	check(loc.get_language() == "ru", "Russian preference must be applied before checking labels")
 	await settle()
 	check(selected_id() == bread.instance_id, "identity survives row order and translation")
 	check(str(target.get_item_metadata(target.selected)) == "qa_bag", "target identity survives option reorder")
