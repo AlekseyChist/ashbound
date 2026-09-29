@@ -50,7 +50,9 @@ func run() -> void:
 			# Terem T2: the tall block's gables at z -5.5 / +2.5 (x -7..0), the wing's at x 7 (z -5.5..1).
 			["t2", "z", 4.0, 1.0, -6.6, -0.4, [], -1.5], ["t2", "x", 7.0, 1.0, -5.0, 0.6, [], 0.0, [1.0]],
 			# Terem T3: the body's gable at x -6.5 (z -5.5..1.5), the wing's gables at z 3.5 / -5.5 (x 1.5..6.5).
-			["t3", "x", 6.5, 1.0, -5.0, 1.0, [], 0.0, [-1.0]], ["t3", "z", 4.5, 1.0, 1.9, 6.1, [], -1.0]]:
+			["t3", "x", 6.5, 1.0, -5.0, 1.0, [], 0.0, [-1.0]], ["t3", "z", 4.5, 1.0, 1.9, 6.1, [], -1.0],
+			# Terem T4: log storeys on the stone one, their ends at x +-4 half a log higher (z -3.5..3.5).
+			["t4", "x", 4.0, 2.2, -3.5, 3.5, []]]:
 		var id: String = spec[0]
 		var on_z: bool = spec[1] == "z"
 		var half_width: float = spec[2]

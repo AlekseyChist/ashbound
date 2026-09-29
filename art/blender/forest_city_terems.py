@@ -399,12 +399,108 @@ def terem_t3(mats):
     return {"id": bid, "slug": "t3", "floor": FLOOR}
 
 
+def hip_roof(P, x0, x1, y0, y1, z_eave, z_ridge, xr0, xr1, t=0.2):
+    """A hipped roof over the eave rectangle x0..x1 / y0..y1 (overhang included): a short ridge
+    along x from xr0 to xr1 at the middle of y, two trapezoid pitches front and back, two triangle
+    hips at the ends, a ridge beam."""
+    ym = (y0 + y1) * 0.5
+    pitch(P, (x0, y0, z_eave), (x1, y0, z_eave), (xr0, ym, z_ridge), (xr1, ym, z_ridge), t)
+    pitch(P, (x1, y1, z_eave), (x0, y1, z_eave), (xr1, ym, z_ridge), (xr0, ym, z_ridge), t)
+    pitch(P, (x0, y1, z_eave), (x0, y0, z_eave), (xr0, ym, z_ridge), (xr0, ym, z_ridge), t)
+    pitch(P, (x1, y0, z_eave), (x1, y1, z_eave), (xr1, ym, z_ridge), (xr1, ym, z_ridge), t)
+    P.beam((xr0 - 0.1, ym, z_ridge + 0.2), (xr1 + 0.1, ym, z_ridge + 0.2), 0.22, 0.2, "oak", "frame")
+
+
+def stone_window(P, face, along, z0, fixed, out, w=0.5, h=0.55):
+    """A small window in a stone wall (outer face at `fixed`): a timber surround and a shut shutter
+    set just proud of the stone."""
+    def box(d0, d1, b0, b1, z_0, z_1, role="frame"):
+        p0, p1 = sorted((fixed + out * d0, fixed + out * d1))
+        if face == "y":
+            P.box((b0, p0, z_0), (b1, p1, z_1), "oak", role)
+        else:
+            P.box((p0, b0, z_0), (p1, b1, z_1), "oak", role)
+    a0, a1 = along - w * 0.5, along + w * 0.5
+    box(-0.02, 0.07, a0 - 0.1, a1 + 0.1, z0 - 0.1, z0)
+    box(-0.02, 0.07, a0 - 0.1, a1 + 0.1, z0 + h, z0 + h + 0.12)
+    for b0, b1 in ((a0 - 0.1, a0), (a1, a1 + 0.1)):
+        box(-0.02, 0.06, b0, b1, z0, z0 + h)
+    box(-0.02, 0.035, a0, a1, z0, z0 + h, "shutter")
+
+
+# ------------------------------------------------------------------------------------------- T4
+def terem_t4(mats):
+    """T4 (12 x 13): a compact three-tier house - a tall rough-stone ground storey with small
+    shuttered windows, two log storeys above it with a band between them, a hipped roof with a short
+    ridge and a chimney; a gabled entry porch on the right of the front, its landing at the first log
+    floor and a long stair straight down to the street."""
+    bid = "T4"
+    P = Parts(mats, bid)
+    R = 0.16
+    HX, Y0, Y1 = 4.0, -4.0, 4.0
+    FLOOR, UPPER, EAVE = 2.2, 4.95, 7.5
+    OVER, SLOPE = 0.8, 0.75
+
+    # The stone storey: solid (a closed house), a projecting course at its foot, small windows.
+    P.box((-HX - 0.1, Y0 - 0.1, -1.2), (HX + 0.1, Y1 + 0.1, FLOOR - 0.12), "stone", "foundation")
+    P.box((-HX - 0.22, Y0 - 0.22, -1.2), (HX + 0.22, Y1 + 0.22, 0.25), "stone", "foundation")
+    P.box((-HX - 0.18, Y0 - 0.18, FLOOR - 0.3), (HX + 0.18, Y1 + 0.18, FLOOR - 0.12), "stone", "foundation")
+    for a in (-2.6, -0.6):
+        stone_window(P, "y", a, 1.0, Y0 - 0.1, -1)
+    for a in (-2.6, 0.0, 2.6):
+        stone_window(P, "y", a, 1.0, Y1 + 0.1, 1)
+    for a in (-2.2, 2.2):
+        stone_window(P, "x", a, 1.0, -HX - 0.1, -1)
+        stone_window(P, "x", a, 1.0, HX + 0.1, 1)
+    P.box((-HX, Y0 + 0.2, FLOOR - 0.12), (HX, Y1 - 0.2, FLOOR), "oak", "floor")
+
+    # The log storeys: front/back along x; the ends along y start half a log higher, with sills.
+    front = shut_windows(P, "y", Y0, (-2.6, -0.6), FLOOR + 1.1, -1, R)
+    front += shut_windows(P, "y", Y0, (-2.6, -0.6, 2.0), UPPER + 0.9, -1, R)
+    front += [(1.4, 2.6, FLOOR, FLOOR + 2.2)]
+    back = shut_windows(P, "y", Y1, (-2.6, 0.0, 2.6), FLOOR + 1.1, 1, R)
+    back += shut_windows(P, "y", Y1, (-2.6, 0.0, 2.6), UPPER + 0.9, 1, R)
+    left = shut_windows(P, "x", -HX, (-1.8, 1.8), FLOOR + 1.1, -1, R)
+    left += shut_windows(P, "x", -HX, (-1.8, 1.8), UPPER + 0.9, -1, R)
+    right = shut_windows(P, "x", HX, (-1.8, 1.8), FLOOR + 1.1, 1, R)
+    right += shut_windows(P, "x", HX, (-1.8, 1.8), UPPER + 0.9, 1, R)
+    log_wall(P, "x", Y0 + R, -HX - 0.35, HX + 0.35, FLOOR - 0.05, EAVE, R, front, 0.0)
+    log_wall(P, "x", Y1 - R, -HX - 0.35, HX + 0.35, FLOOR - 0.05, EAVE, R, back, 0.0)
+    log_wall(P, "y", -HX + R, Y0 - 0.35, Y1 + 0.35, FLOOR - 0.05, EAVE, R, left, R * 0.93)
+    log_wall(P, "y", HX - R, Y0 - 0.35, Y1 + 0.35, FLOOR - 0.05, EAVE, R, right, R * 0.93)
+    gable_sill(P, -HX, -HX + 2 * R, Y0, Y1, FLOOR, R)
+    gable_sill(P, HX, HX - 2 * R, Y0, Y1, FLOOR, R)
+    band(P, -HX, HX, Y0, Y1, UPPER)
+    # Brackets under the eave all round: short beams out of the top logs.
+    for k in range(7):
+        x = -HX + 0.6 + k * (2 * HX - 1.2) / 6
+        for yy, dy in ((Y0, -1), (Y1, 1)):
+            P.beam((x, yy, EAVE - 0.35), (x, yy + dy * (OVER - 0.1), EAVE - 0.35 - 0.05), 0.12, 0.16, "oak", "frame")
+
+    ze = EAVE - OVER * SLOPE
+    zr = EAVE + (Y1 - Y0) * 0.5 * SLOPE
+    hip_roof(P, -HX - OVER, HX + OVER, Y0 - OVER, Y1 + OVER, ze, zr, -0.9, 0.9)
+    chimney(P, -1.6, 1.8, FLOOR + 0.5, zr + 0.2)
+
+    # The entry: a door on the right of the front, the gabled porch at the first log floor and a
+    # long straight stair down (eleven 0.3 m treads: 2.2 m over 3.3 m).
+    for a in (1.25, 2.6):
+        P.box((a, Y0 - 0.12, FLOOR), (a + 0.15, Y0 + 0.1, FLOOR + 2.2), "oak", "frame")
+    P.box((1.2, Y0 - 0.14, FLOOR + 2.2), (2.8, Y0 + 0.1, FLOOR + 2.4), "oak", "frame")
+    gabled_porch(P, 2.0, Y0, FLOOR, FLOOR + 3.3, width=2.6, depth=1.4, n_steps=11)
+
+    P.emit(None, f"{bid}_")
+    bpy.data.objects[f"{bid}_entry_step"]["item_id"] = "entry_steps"
+    door(P, bid, 1.4, 2.6, Y0 + 0.08, FLOOR, FLOOR + 2.15, mats)
+    return {"id": bid, "slug": "t4", "floor": FLOOR}
+
+
 def main():
     argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     ap = argparse.ArgumentParser()
     ap.add_argument("--asset", default="all")
     args = ap.parse_args(argv)
-    for bid, build in {"T1": terem_t1, "T2": terem_t2, "T3": terem_t3}.items():
+    for bid, build in {"T1": terem_t1, "T2": terem_t2, "T3": terem_t3, "T4": terem_t4}.items():
         if args.asset not in ("all", bid):
             continue
         C.reset()
