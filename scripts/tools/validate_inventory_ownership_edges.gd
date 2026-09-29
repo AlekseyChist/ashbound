@@ -89,7 +89,7 @@ func _reset() -> void:
 
 
 func _make(template: String, id: String, qty: int = 1) -> Dictionary:
-	var item: Dictionary = (_inv.item_database[template] as Dictionary).duplicate(true)
+	var item: Dictionary = _inv.item_database[template].to_dict()
 	item['instance_id'] = id
 	item['quantity'] = qty
 	return item

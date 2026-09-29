@@ -19,7 +19,14 @@ func _initialize() -> void:
 func _run() -> void:
 	inv = root.get_node("Inventory")
 	root.get_node("GameManager").player = null
-	inv.item_database["qa_trade"] = {"id": "qa_trade", "name": "QA", "type": 4, "stackable": true, "max_stack": 5, "value": 4}
+	var token := ItemData.new()
+	token.id = "qa_trade"
+	token.name = "QA"
+	token.type = ItemData.Type.MISC
+	token.stackable = true
+	token.max_stack = 5
+	token.value = 4
+	inv.item_database[token.id] = token
 	inv.gold_changed.connect(_on_gold)
 	inv.item_added.connect(func(item: Dictionary):
 		events.append(_snapshot())
@@ -63,7 +70,7 @@ func _reset(amount: int = 100) -> void:
 
 
 func _record() -> Dictionary:
-	var record: Dictionary = inv.item_database["qa_trade"].duplicate(true)
+	var record: Dictionary = inv.item_database["qa_trade"].to_dict()
 	record["instance_id"] = "selected"
 	record["quantity"] = 2
 	inv.items.append(record)

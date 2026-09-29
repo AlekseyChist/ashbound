@@ -128,7 +128,7 @@ func _carried(id: String) -> Dictionary:
 
 func _test1_unowned_equip_rejected(player: Node3D) -> void:
 	_reset(player)
-	var full: Dictionary = inv.item_database["iron_sword"].duplicate(true)
+	var full: Dictionary = inv.item_database["iron_sword"].to_dict()
 	full["instance_id"] = "ghost_1"
 	var ok: bool = inv.equip_item(full)
 	_check(ok == false, "T1: equip unowned should fail")
@@ -244,7 +244,7 @@ func _test5_unequip_full_bag_then_free(player: Node3D) -> void:
 
 func _test6_unowned_use_rejected(player: Node3D) -> void:
 	_reset(player)
-	var full: Dictionary = inv.item_database["health_potion"].duplicate(true)
+	var full: Dictionary = inv.item_database["health_potion"].to_dict()
 	full["instance_id"] = "ghost_p"
 	var ok: bool = inv.use_item(full)
 	_check(ok == false, "T6: use unowned should fail")
@@ -272,10 +272,10 @@ func _test7_potion_single_use(player: Node3D) -> void:
 
 func _test8_stack_order_consumption(player: Node3D) -> void:
 	_reset(player)
-	var a: Dictionary = inv.item_database["bread"].duplicate(true)
+	var a: Dictionary = inv.item_database["bread"].to_dict()
 	a["quantity"] = 2
 	a["instance_id"] = "t8_a"
-	var b: Dictionary = inv.item_database["bread"].duplicate(true)
+	var b: Dictionary = inv.item_database["bread"].to_dict()
 	b["quantity"] = 3
 	b["instance_id"] = "t8_b"
 	inv.items.append(a)
@@ -362,11 +362,11 @@ func _test11_type_mismatch_rejected(player: Node3D) -> void:
 
 func _test12_missing_instance_id_rejected(player: Node3D) -> void:
 	_reset(player)
-	var potion: Dictionary = inv.item_database["health_potion"].duplicate(true)
+	var potion: Dictionary = inv.item_database["health_potion"].to_dict()
 	potion.erase("instance_id")
 	var ok_use: bool = inv.use_item(potion)
 	_check(ok_use == false, "T12: use without instance_id should fail")
-	var sword: Dictionary = inv.item_database["iron_sword"].duplicate(true)
+	var sword: Dictionary = inv.item_database["iron_sword"].to_dict()
 	sword.erase("instance_id")
 	var ok_equip: bool = inv.equip_item(sword)
 	_check(ok_equip == false, "T12: equip without instance_id should fail")

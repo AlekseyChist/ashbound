@@ -38,7 +38,7 @@ func _check(ok: bool, message: String) -> void:
 
 
 func _data() -> Dictionary:
-	var item: Dictionary = inv.item_database["rusty_sword"].duplicate(true)
+	var item: Dictionary = inv.item_database["rusty_sword"].to_dict()
 	item["instance_id"] = "sword"
 	item["quantity"] = 1
 	return {"schema_version": 1, "items": [item], "equipped": {"weapon": null, "armor": null, "helmet": null, "ring": null, "amulet": null}, "gold": 50}
@@ -169,7 +169,7 @@ func _capacity_and_required_fields() -> void:
 		data["items"][0].erase(field)
 		_reject(data, "required item field " + field)
 	data = _data()
-	var food: Dictionary = inv.item_database["bread"].duplicate(true)
+	var food: Dictionary = inv.item_database["bread"].to_dict()
 	food.merge({"quantity": 1, "instance_id": "food", "slot": "weapon"}, true)
 	data["equipped"]["weapon"] = food
 	_reject(data, "food cannot become equipment by adding slot")
