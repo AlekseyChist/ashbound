@@ -36,6 +36,13 @@ const ATTACK_SPEED_SCALE := 0.25
 const JUMP_HEIGHT := 0.45
 var _jump_requested := false
 var _in_jump := false
+## STEP-01 (owner 29 Sep: "small obstacles like this - the hero climbs onto them and down by himself,
+## jumping looks unnatural; no animation needed"): a ledge up to STEP_MAX is stepped onto while
+## walking, and the floor snap keeps him on the ground stepping down the same height.
+const STEP_MAX := 0.4
+## Surfaces flatter than this (the normal's y) are floor to stand on; steeper ones are walls.
+const STEP_FLOOR_NORMAL := 0.7
+const STEP_LAND := 0.35
 
 
 ## Ввод игрока (клавиатура + сенсорный HUD). Выключение немедленно отменяет
@@ -74,6 +81,46 @@ func _unhandled_input(event: InputEvent) -> void:
 		if is_mouse and Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
 			return
 		request_attack()
+
+
+func _ready() -> void:
+	floor_snap_length = STEP_MAX
+
+
+## STEP-01: walking into a low ledge lifts the hero onto it - if the way ahead is blocked, the same
+## move from STEP_MAX higher is free, and straight below that there is floor no higher than STEP_MAX.
+func _step_up(delta: float) -> void:
+	if not is_on_floor() or velocity.y > 0.0:
+		return
+	var along := Vector3(velocity.x, 0.0, velocity.z) * delta
+	if along.length_squared() < 0.000001:
+		return
+	# A short look-ahead so the ledge is met before the capsule stops against it.
+	var probe := along.normalized() * maxf(along.length(), 0.08)
+	var hit := KinematicCollision3D.new()
+	if not test_move(global_transform, probe, hit):
+		return
+	# A ledge is met above the feet (the capsule's round foot meets its edge with an upward normal,
+	# so the normal alone does not tell a ledge from a slope); an uphill slope touches at the feet.
+	if hit.get_position().y - global_position.y < 0.05 and hit.get_normal().y >= STEP_FLOOR_NORMAL:
+		return
+	var lift := Vector3.UP * STEP_MAX
+	if test_move(global_transform, lift):
+		return
+	# Land far enough past the edge that the capsule's round foot comes down on the top, not on
+	# the edge itself (radius 0.28 + a little).
+	var land := along.normalized() * maxf(along.length(), STEP_LAND)
+	var raised := global_transform.translated(lift)
+	if test_move(raised, land):
+		return
+	var down := KinematicCollision3D.new()
+	if not test_move(raised.translated(land), -lift - Vector3.UP * 0.05, down):
+		return
+	if down.get_normal().y < STEP_FLOOR_NORMAL:
+		return
+	var rise := STEP_MAX - down.get_travel().length()
+	if rise > 0.01:
+		global_position.y += rise + 0.005
 
 
 ## Keyboard Space or the touch Jump button; ignored in the air (no double jump).
@@ -142,6 +189,7 @@ func _physics_process(delta: float) -> void:
 		velocity.x = move_toward(velocity.x, target_velocity.x, accel)
 		velocity.z = move_toward(velocity.z, target_velocity.z, accel)
 
+	_step_up(delta)
 	move_and_slide()
 
 	# Таймеры атаки/кулдауна (кулдаун тикает независимо от атаки).

@@ -285,24 +285,39 @@ def elder_chair(P, cx, cy, z, face=-1):
 
 def dais(P, x0, x1, y0, y1, h, step=(1.2, 2.8), step_h=0.15, step_d=0.30):
     """The boarded dais (sheet elder-chair-v1): bearers under a deck of 0.18 m boards along y, board
-    fascias on the front and ends, a half-height step cut into its front (x0) - nothing outside it."""
+    fascias on the front and ends, a half-height step cut into its front (x0) - nothing outside it.
+    The step and the deck just behind it (x0 .. x0 + 2 step_d across the step) are their own mesh,
+    `<bid>_dais_stairs` (item_id "stairs"): the game walks it on a smooth ramp (Codex 092: the hero
+    stuck on the 15 cm risers)."""
+    cut, ramp_end = x0 + step_d, x0 + 2 * step_d
     for yb in (y0 + 0.1, (y0 + y1) * 0.5, y1 - 0.1):
-        P.box((x0 + 0.05, yb - 0.06, 0), (x1, yb + 0.06, h - 0.04), "oak", "furniture", "dais")
+        # A bearer crossing the step starts behind it (Codex 092: it stood 0.26 m high in the cut).
+        start = ramp_end if step[0] < yb < step[1] else x0 + 0.05
+        P.box((start, yb - 0.06, 0), (x1, yb + 0.06, h - 0.04), "oak", "furniture", "dais")
     n = max(1, round((x1 - x0) / 0.18))
     for i in range(n):
         a = x0 + i * (x1 - x0) / n
         b = a + (x1 - x0) / n
-        lo = a < x0 + step_d - 0.01
-        for ya, yb in (((y0, step[0]), (step[1], y1)) if lo else ((y0, y1),)):
+        # Beside the step every board runs whole; across it the board is cut exactly at the step and
+        # the part up to ramp_end belongs to the stairs.
+        for ya, yb in ((y0, step[0]), (step[1], y1)):
             P.box((a + 0.004, ya, h - 0.04), (b - 0.004, yb, h), "oak", "furniture", "dais")
+        pieces = [(max(a, cut), min(b, ramp_end), "dais_stairs"), (max(a, ramp_end), b, "dais")]
+        for pa, pb, name in pieces:
+            if pb - pa > 0.01:
+                P.box((pa + (0.004 if pa == a else 0.0), step[0], h - 0.04), (pb - (0.004 if pb == b else 0.0), step[1], h),
+                      "oak", "furniture", name)
     # Fascia: the front board broken by the step, the two ends.
     P.box((x0, y0, 0), (x0 + 0.03, step[0], h - 0.04), "oak", "furniture", "dais")
     P.box((x0, step[1], 0), (x0 + 0.03, y1, h - 0.04), "oak", "furniture", "dais")
     for ye in (y0, y1 - 0.03):
         P.box((x0, ye, 0), (x1, ye + 0.03, h - 0.04), "oak", "furniture", "dais")
     # The step: its tread and riser inside the dais, a board face up to the deck behind it.
-    P.box((x0, step[0], 0), (x0 + step_d, step[1], step_h), "oak", "furniture", "dais")
-    P.box((x0 + step_d - 0.03, step[0], step_h), (x0 + step_d, step[1], h - 0.04), "oak", "furniture", "dais")
+    P.box((x0, step[0], 0), (cut, step[1], step_h), "oak", "furniture", "dais_stairs")
+    P.box((cut - 0.03, step[0], step_h), (cut, step[1], h - 0.04), "oak", "furniture", "dais_stairs")
+    # Under the stairs' deck boards: a bearer across the step, so they do not float.
+    P.box((cut, step[0], 0), (ramp_end, step[0] + 0.1, h - 0.04), "oak", "furniture", "dais_stairs")
+    P.box((cut, step[1] - 0.1, 0), (ramp_end, step[1], h - 0.04), "oak", "furniture", "dais_stairs")
 
 
 def bunk(P, x0, y_wall, floor=0.0, L=2.0, W=0.95, H=2.05):
@@ -489,6 +504,7 @@ def town_hall(mats):
         hanging(F, x, Y1, 3.0)
 
     P.emit(None, f"{bid}_")
+    bpy.data.objects[f"{bid}_dais_stairs"]["item_id"] = "stairs"
     door(P, bid, -1.1, 1.1, Y0 + 0.08, FLOOR, FLOOR + 2.6, mats)
     return {"id": bid, "slug": "r01", "floor": FLOOR}
 

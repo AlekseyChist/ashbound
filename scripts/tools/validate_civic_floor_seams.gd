@@ -39,23 +39,33 @@ func covered(parts: Array, from: Vector3, to: Vector3) -> bool:
 	return false
 
 func run() -> void:
-	for spec in [["r01", 12.0, 1.0, -5.2, 2.9], ["k01", 10.0, 0.8, -4.3, 4.3]]:
+	# [model, gable axis, half size to the gable, floor, along from, along to, door span to skip].
+	# The halls' gables face +-x; the water mill's (owner 29 Sep: a slit at its back wall and by the
+	# door) face +-z, the doorway itself is open by design.
+	for spec in [["r01", "x", 12.0, 1.0, -5.2, 2.9, []], ["k01", "x", 10.0, 0.8, -4.3, 4.3, []],
+			["m01", "z", 5.5, 1.05, -4.0, 3.2, [-1.05, 1.05]]]:
 		var id: String = spec[0]
-		var half_width: float = spec[1]
-		var floor_y: float = spec[2]
+		var on_z: bool = spec[1] == "z"
+		var half_width: float = spec[2]
+		var floor_y: float = spec[3]
+		var door: Array = spec[6]
 		var hall: Node3D = load("res://assets/buildings/forest-city-v1/%s.glb" % id).instantiate()
 		root.add_child(hall)
 		var parts := triangles_for(hall)
+		var at := func(across: float, along: float, y: float) -> Vector3:
+			return Vector3(along, y, across) if on_z else Vector3(across, y, along)
 		for side in [-1.0, 1.0]:
-			var inner_x: float = side * (half_width - 0.5)
-			var outer_x: float = side * (half_width + 0.5)
-			check(covered(parts, Vector3(inner_x, floor_y + 0.3, 0), Vector3(outer_x, floor_y + 0.3, 0)), "%s side %s control intersects actual lower log" % [id, side])
+			var inner: float = side * (half_width - 0.5)
+			var outer: float = side * (half_width + 0.5)
+			check(covered(parts, at.call(inner, float(spec[4]), floor_y + 0.3), at.call(outer, float(spec[4]), floor_y + 0.3)), "%s side %s control intersects actual lower log" % [id, side])
 			for sample in 8:
-				var z := lerpf(float(spec[3]), float(spec[4]), float(sample) / 7.0)
+				var along := lerpf(float(spec[4]), float(spec[5]), float(sample) / 7.0)
+				if not door.is_empty() and along > float(door[0]) and along < float(door[1]):
+					continue
 				for height in [0.03, 0.075]:
-					var from := Vector3(inner_x, floor_y + height, z)
-					var to := Vector3(outer_x, floor_y + height, z)
-					check(covered(parts, from, to), "%s side %s z %.3f height %.3f floor-to-wall seal" % [id, side, z, height])
+					var from: Vector3 = at.call(inner, along, floor_y + height)
+					var to: Vector3 = at.call(outer, along, floor_y + height)
+					check(covered(parts, from, to), "%s side %s along %.3f height %.3f floor-to-wall seal" % [id, side, along, height])
 		hall.free()
 	print("CIVIC_FLOOR_SEAMS checks=", checks, " failures=", failures.size())
 	quit(0 if failures.is_empty() else 1)

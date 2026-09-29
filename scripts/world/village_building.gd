@@ -125,14 +125,23 @@ func _stairs_ramp(mesh: MeshInstance3D) -> void:
 		points.append(p)
 		low = low.min(p)
 		high = high.max(p)
-	var along_z := (high.z - low.z) >= (high.x - low.x)
+	# The flight rises along the axis whose two ends stand at different heights (a wide, shallow
+	# step - the R01 dais - is wider than it is long); ties keep the longer axis.
+	var ends := {}
+	for axis in ["x", "z"]:
+		var at_max := 0.0
+		var at_min := 0.0
+		for p in points:
+			var t: float = (p.z - low.z) / maxf(high.z - low.z, .001) if axis == "z" else (p.x - low.x) / maxf(high.x - low.x, .001)
+			if t > .9: at_max = maxf(at_max, p.y - low.y)
+			if t < .1: at_min = maxf(at_min, p.y - low.y)
+		ends[axis] = [at_max + low.y, at_min + low.y]
+	var rise_x: float = absf(ends.x[0] - ends.x[1])
+	var rise_z: float = absf(ends.z[0] - ends.z[1])
+	var along_z := rise_z > rise_x + .01 or (absf(rise_z - rise_x) <= .01 and (high.z - low.z) >= (high.x - low.x))
 	# The high end is the one whose points reach the top.
-	var top_at_max := 0.0
-	var top_at_min := 0.0
-	for p in points:
-		var t: float = (p.z - low.z) / maxf(high.z - low.z, .001) if along_z else (p.x - low.x) / maxf(high.x - low.x, .001)
-		if t > .9: top_at_max = maxf(top_at_max, p.y)
-		if t < .1: top_at_min = maxf(top_at_min, p.y)
+	var top_at_max: float = ends.z[0] if along_z else ends.x[0]
+	var top_at_min: float = ends.z[1] if along_z else ends.x[1]
 	var top_y := maxf(top_at_max, top_at_min)
 	var bottom_end := 0.0 if top_at_max >= top_at_min else 1.0
 	var top_end := 1.0 - bottom_end

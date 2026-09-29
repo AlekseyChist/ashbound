@@ -320,6 +320,17 @@ def water_mill(mats):
     gab = (RIDGE - 0.15, EAVE, HX + 0.1)
     log_wall(P, "x", -HY + R, -HX - 0.35, HX + 0.35, FLOOR - 0.05, RIDGE, R, front_open, R * 0.93, "gable", gab)
     log_wall(P, "x", HY - R, -HX - 0.35, HX + 0.35, FLOOR - 0.05, RIDGE, R, rear_open, R * 0.93, "gable", gab)
+    # Owner 29 Sep: the gables start half a log higher (the corner joint) - a slit to the outside
+    # along the floor at the back wall and by the door. A sill beam under each gable's first log,
+    # broken at the door; the doorway gets a threshold board over the stone up to the steps.
+    sill_top = FLOOR - 0.05 + R + R * 0.93 - R * 0.3
+    for y_out, y_in, cuts in ((-HY, -HY + 2 * R, [(-0.95, 0.95)]), (HY, HY - 2 * R, [])):
+        s = -HX
+        for a, b in cuts + [(HX, HX)]:
+            if a > s:
+                P.box((s, min(y_out, y_in), FLOOR - 0.15), (a, max(y_out, y_in), sill_top), "oak", "shell")
+            s = b
+    P.box((-0.95, -HY - 0.2, FLOOR - 0.15), (0.95, -HY + 0.2, FLOOR), "oak", "floor")
 
     # Frames round the openings, window shutters (fixed open), the loft door.
     def frame(face_y, a0, a1, z0, z1, out):
