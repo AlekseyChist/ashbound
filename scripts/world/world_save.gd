@@ -1,10 +1,11 @@
 extends Node
 ## WORLD-SAVE-01: autosave of the world scene — carried things and wallet, where the hero
-## stands and faces, and the hero's progress. Same crash-safe two-slot store as the courtyard
+## stands and faces, the hero's progress and quick assignments. Same crash-safe store as the courtyard
 ## save (own format name and folder). The lesson keeps its own file (village_lesson.gd) and
 ## time/weather/settings keep theirs until the campaign save joins them.
 ## A missing save starts fresh; a damaged one is not applied (the store keeps the last good slot).
 const StoreScript = preload("res://scripts/courtyard/courtyard_save_store.gd")
+const QuickSchema = preload("res://scripts/courtyard/courtyard_save_schema.gd")
 const FORMAT := "ASHBOUND_WORLD"
 const DIRECTORY := "user://world-save-v1"
 const AUTOSAVE_INTERVAL := 2.0
@@ -19,6 +20,7 @@ var enabled := false
 var _last_snapshot := PackedByteArray()
 var _elapsed := 0.0
 var _busy := false
+var _quick_schema := QuickSchema.new()
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -44,6 +46,9 @@ func initialize(scene: Node3D, directory: String = DIRECTORY) -> String:
 	var progression: Node = world.player.get_node_or_null("Progression")
 	if progression != null and progression.has_signal("changed"):
 		progression.changed.connect(queue_save)
+	var panel: Node = _quick_panel()
+	if panel != null:
+		panel.quick_slots_changed.connect(queue_save)
 	if load_status == "empty":
 		flush_now()
 	else:
@@ -61,6 +66,7 @@ func capture() -> Dictionary:
 			"facing": [player.facing_direction.x, player.facing_direction.z],
 		},
 		"inventory": inventory.get_save_data(),
+		"quick": _capture_quick(),
 		"progression": progression.get_save_data() if progression != null else {},
 	}
 
@@ -75,7 +81,35 @@ func validate(data: Dictionary) -> bool:
 		if not (value is float or value is int) or not is_finite(float(value)): return false
 	if not data.get("inventory") is Dictionary or data.inventory.is_empty(): return false
 	if inventory._validate_save_data(data.inventory).is_empty(): return false
+	# Version1 saves written before WORLD-QUICK-SAVE-01 have no quick field.
+	var quick: Variant = data.get("quick", _empty_quick())
+	if not quick is Array or quick.size() != 10: return false
+	for id in quick:
+		if not id is String: return false
+		if not id.is_empty() and not _quick_schema._is_bindable_id(id, data.inventory, inventory):
+			return false
 	return data.get("progression") is Dictionary
+
+func _empty_quick() -> Array[String]:
+	var result: Array[String] = []
+	result.resize(10)
+	result.fill("")
+	return result
+
+func _quick_panel() -> Node:
+	if world != null and "pocket" in world and is_instance_valid(world.pocket):
+		return world.pocket.get_pocket_panel()
+	return null
+
+func _capture_quick() -> Array[String]:
+	var result := _empty_quick()
+	var panel := _quick_panel()
+	if panel != null:
+		for i in mini(10, panel._quick_bindings.size()):
+			var id: String = panel._quick_bindings[i]
+			if not id.is_empty() and inventory.can_assign_quick({"instance_id": id}):
+				result[i] = id
+	return result
 
 ## Put the saved state into the world. The hero goes back only onto real ground inside the map.
 func apply(data: Variant) -> bool:
@@ -96,6 +130,10 @@ func apply(data: Variant) -> bool:
 		if facing.length() > .01:
 			world.player.facing_direction = facing.normalized()
 		world.camera_rig.snap_to_target()
+	var panel := _quick_panel()
+	if panel != null:
+		panel._quick_bindings.assign(data.get("quick", _empty_quick()))
+		panel.refresh_contents()
 	return true
 
 func queue_save(_a: Variant = null, _b: Variant = null, _c: Variant = null) -> void:

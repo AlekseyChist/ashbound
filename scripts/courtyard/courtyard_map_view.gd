@@ -72,6 +72,9 @@ func refresh() -> void:
 func _find_pocket() -> Node:
 	var node: Node = _panel
 	while node != null:
+		# Follow the menu's configured player path in both the world and courtyard.
+		if "access_path" in node:
+			return node.get_node_or_null(node.access_path)
 		var actors: Node = node.get_node_or_null("Actors")
 		if actors != null:
 			var player: Node = actors.get_node_or_null("Player")
