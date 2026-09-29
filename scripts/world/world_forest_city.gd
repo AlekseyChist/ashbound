@@ -254,6 +254,10 @@ func _city_centre() -> Vector2:
 
 const ROAD_SHOULDER := 1.5
 const HOUSE_GAP := 2.0
+## Between the stakes and the widest part of a building (its roof): a walkway round its back.
+const PALISADE_CLEAR := 1.2
+## A tower's roof reaches (TOWER + 1) * 0.72 / sqrt(2) from its middle.
+const TOWER_REACH := 2.65
 ## Grass-free circles (x, z, radius) round the closed houses, read by world.gd's grass obstacles.
 var yards: Array[Vector3] = []
 var _placed: Array = []
@@ -334,6 +338,9 @@ func _intrusion(at: Vector2, basis: Basis, rect: Rect2) -> Array:
 	for other in _placed:
 		if centre.distance_to(other[0]) < reach + (other[2] as Rect2).size.length() + HOUSE_GAP:
 			neighbours.append(other)
+	var ring_centre := Vector2(float(plan.palisade.center[0]) - float(world.HALF), float(plan.palisade.center[1]) - float(world.HALF))
+	var ring_radius := float(plan.palisade.radius)
+	var inside := at.distance_to(ring_centre) < ring_radius
 	var nx := maxi(3, ceili(rect.size.x / 1.5) + 1)
 	var nz := maxi(3, ceili(rect.size.y / 1.5) + 1)
 	var worst := -INF
@@ -354,6 +361,15 @@ func _intrusion(at: Vector2, basis: Basis, rect: Rect2) -> Array:
 					if absf(side) < 0.3:
 						side = normal.dot(at - _city_centre())
 					away = normal * signf(side if side != 0.0 else 1.0)
+			# The palisade ring (Codex 080: the barracks, pushed off the road, ran its back corner
+			# into it): the whole footprint, roof overhang included, keeps PALISADE_CLEAR off the
+			# stakes on its own side - a walkway round the back of every building.
+			var from_ring := q.distance_to(ring_centre)
+			var ring_into: float = (from_ring - (ring_radius - STAKE_RADIUS - PALISADE_CLEAR)) if inside \
+				else ((ring_radius + STAKE_RADIUS + PALISADE_CLEAR) - from_ring)
+			if ring_into > worst:
+				worst = ring_into
+				away = (ring_centre - q).normalized() if inside else (q - ring_centre).normalized()
 			# Other buildings: [origin, basis, footprint rect], kept HOUSE_GAP apart.
 			for other in neighbours:
 				var ob: Basis = other[1]
@@ -833,6 +849,8 @@ func _tower(centre: Vector2, radius: float, angle: float, gate: bool) -> void:
 	shape.position = Vector3(0, (crib_top + 0.3) * 0.5 - 0.3, 0)
 	body.add_child(shape)
 	tower.add_child(body)
+	# The towers stand into the town: buildings keep clear of them like of a neighbour.
+	_placed.append([Vector2(base.x, base.z), Basis(Vector3.UP, tower.rotation.y), Rect2(-TOWER_REACH, -TOWER_REACH, TOWER_REACH * 2.0, TOWER_REACH * 2.0)])
 	tower_count += 1
 
 
