@@ -159,11 +159,21 @@ func _outer_buildings() -> void:
 		_closed_house(b, kit)
 
 
+## Where a house turns its entry (+z): inside the palisade to the plaza, like the town hall and the
+## barracks (owner 29 Sep: T3 stood with its back to the centre, facing the stakes - the nearest road
+## was the one outside); outside it to the nearest road within 40 m, or INF.
+func _entry_target(p: Vector2) -> Vector2:
+	var ring := Vector2(float(plan.palisade.center[0]) - float(world.HALF), float(plan.palisade.center[1]) - float(world.HALF))
+	if p.distance_to(ring) < float(plan.palisade.radius):
+		return Vector2(float(plan.plaza.center[0]) - float(world.HALF), float(plan.plaza.center[1]) - float(world.HALF))
+	return _nearest_road(p, 40.0)
+
+
 func _closed_house(b: Dictionary, kit: String) -> void:
 	var map := Vector2(float(b.map[0]), float(b.map[1]))
 	var at := ground_at(map)
 	var yaw := -deg_to_rad(float(b.yaw_deg))
-	var road := _nearest_road(Vector2(at.x, at.z), 40.0)
+	var road := _entry_target(Vector2(at.x, at.z))
 	if road != Vector2.INF:
 		# The kit's entry is on its +z side.
 		var to_road := road - Vector2(at.x, at.z)
@@ -181,7 +191,7 @@ func _closed_house(b: Dictionary, kit: String) -> void:
 	# Placement audit (Codex 023, owner 28 Sep): the turned footprint keeps off the road bed and its
 	# shoulder and off the river - pushed straight away from what it touches, never across it.
 	var pushed := _clear_spot(Vector2(at.x, at.z), basis, rect)
-	var road_after := _nearest_road(pushed, 40.0)
+	var road_after := _entry_target(pushed)
 	if road_after != Vector2.INF and pushed.distance_to(Vector2(at.x, at.z)) > 0.05:
 		yaw = atan2(road_after.x - pushed.x, road_after.y - pushed.y)
 		basis = Basis(Vector3.UP, yaw)
@@ -196,7 +206,7 @@ func _closed_house(b: Dictionary, kit: String) -> void:
 			for k in count:
 				var angle := TAU * k / count
 				var cand := Vector2(float(b.map[0]) - float(world.HALF), float(b.map[1]) - float(world.HALF)) + Vector2(cos(angle), sin(angle)) * ring
-				var cand_road := _nearest_road(cand, 40.0)
+				var cand_road := _entry_target(cand)
 				var cand_basis := basis if cand_road == Vector2.INF else Basis(Vector3.UP, atan2(cand_road.x - cand.x, cand_road.y - cand.y))
 				if float(_intrusion(cand, cand_basis, rect)[0]) <= 0.0:
 					pushed = cand

@@ -29,7 +29,7 @@ func build(scene: Node3D) -> void:
 	_build_massif()
 	_dress_ridge()
 	_build_walls()
-	print("WORLD_EDGES cliffs=%d boulders=%d" % [cliff_count, boulder_count])
+	print("WORLD_EDGES cliffs=%d boulders=%d seat=%d ms" % [cliff_count, boulder_count, seat_usec / 1000])
 
 
 ## Map metres of the nearest point on the north, west or east edge, and how far outside it is.
@@ -239,15 +239,37 @@ func _add(batches: Dictionary, mesh: Mesh, label: String, map: Vector2, scale: f
 			"centre": Vector3(c.x - world.HALF, world.world_ground(c.x - world.HALF, c.y - world.HALF), c.y - world.HALF)}
 	var entry: Dictionary = batches[key]
 	var p := Vector3(map.x - world.HALF, 0.0, map.y - world.HALF)
-	# On the lowest ground under its footprint, so no underside hangs over a slope.
-	var reach: float = mesh.get_aabb().size.length() * 0.35 * scale
-	var low: float = world.world_ground(p.x, p.z)
-	for k in 8:
-		var o := Vector2.from_angle(TAU * k / 8.0) * reach
-		low = minf(low, world.world_ground(p.x + o.x, p.z + o.y))
-	p.y = low + sink
+	# Owner 29 Sep (Forest hamlet): rocks hung in the air - the ground was sampled on a ring, but a
+	# rock's underside is ragged. Every vertex of its lower part now reaches the ground under it
+	# (turned and scaled as placed), then it goes a little deeper (0.15 m per unit of scale).
+	var basis := Basis(Vector3.UP, yaw).scaled(Vector3.ONE * scale)
+	var top := INF
+	var t0 := Time.get_ticks_usec()
+	for v in _underside(mesh):
+		var w: Vector3 = basis * v
+		top = minf(top, world.world_ground(p.x + w.x, p.z + w.z) - w.y)
+	p.y = top - 0.15 * scale
+	seat_usec += Time.get_ticks_usec() - t0
 	entry.transforms.append(Transform3D(Basis(Vector3.UP, yaw).scaled(Vector3.ONE * scale), p - entry.centre))
 	return p
+
+
+## The underside of a rock mesh: every distinct vertex of its lower quarter (each must reach the
+## ground - a sample left hanging edges on steep slopes), cached per mesh.
+var seat_usec := 0
+var _undersides := {}
+func _underside(mesh: Mesh) -> PackedVector3Array:
+	if _undersides.has(mesh):
+		return _undersides[mesh]
+	var box := mesh.get_aabb()
+	var cut := box.position.y + box.size.y * 0.25
+	var seen := {}
+	for v in mesh.get_faces():
+		if v.y < cut:
+			seen[v.snapped(Vector3.ONE * 0.001)] = true
+	var out := PackedVector3Array(seen.keys())
+	_undersides[mesh] = out
+	return out
 
 
 func _near_sea(map: Vector2) -> bool:
