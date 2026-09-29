@@ -8,6 +8,9 @@ const FIRE_SOUND := "res://assets/audio/village-v1/fire.ogg"
 const RUG_TEXTURE := "res://assets/props/tavern-v1/rugs/fabric_pattern_05_diff_1k.jpg"
 const RUG_NORMAL := "res://assets/props/tavern-v1/rugs/fabric_pattern_05_nor_1k.jpg"
 const AWAKE := 45.0
+## Night frames 29 Sep: without shadows the hearth and the lanterns lit the outside of the log walls
+## (the gable glowed orange). The hall that is awake - one at a time - casts shadows.
+const HALL_SHADOWS := true
 ## Codex's civic props (assets/props/civic-v1/README.md): a CC0 hand axe, a generated sheepskin.
 const AXE := "res://assets/props/civic-v1/wooden_axe_03.glb"
 const AXE_FOOT := 0.223756
@@ -83,6 +86,9 @@ func _place(model: String, at: Vector3, yaw: float, scale_factor: float) -> void
 func _lantern(top: Vector3) -> void:
 	var at := top - Vector3(0, 1.0, 0)
 	_place("wooden_lantern_01", at, 0.0, 1.0)
+	# The light sits inside the lantern: its frame, glass and rope must not shadow their own light.
+	for mesh in (get_child(get_child_count() - 1) as Node).find_children("*", "GeometryInstance3D", true, false):
+		(mesh as GeometryInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	var rope := MeshInstance3D.new()
 	rope.name = "LanternRope"
 	var box := BoxMesh.new()
@@ -91,6 +97,7 @@ func _lantern(top: Vector3) -> void:
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = Color(0.25, 0.18, 0.1)
 	rope.material_override = mat
+	rope.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	rope.position = top - Vector3(0, 0.325, 0)
 	add_child(rope)
 	var light := OmniLight3D.new()
@@ -99,6 +106,7 @@ func _lantern(top: Vector3) -> void:
 	light.omni_range = 6.5
 	light.light_energy = 0.75
 	light.light_color = Color(1.0, 0.76, 0.5)
+	light.shadow_enabled = HALL_SHADOWS
 	add_child(light)
 	lights.append(light)
 
@@ -149,6 +157,7 @@ func _fire(at: Vector3) -> void:
 	light.omni_range = 8.0
 	light.light_energy = 1.6
 	light.light_color = Color(1.0, 0.55, 0.25)
+	light.shadow_enabled = HALL_SHADOWS
 	add_child(light)
 	fire_lights.append(light)
 	var crackle := AudioStreamPlayer3D.new()
