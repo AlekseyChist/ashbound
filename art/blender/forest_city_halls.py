@@ -71,32 +71,59 @@ def steps(P, cx, width, y_top, floor, n, depth=0.34, mat="stone", role="foundati
         P.box((cx - width * 0.5 - 0.06 * i, y - depth, -0.4), (cx + width * 0.5 + 0.06 * i, y, top), mat, role)
 
 
-def window(P, face, along, z0, w=0.8, h=0.8, x=None, y=None, out=-1):
-    """Frame, sill, lit pane and a pair of open shutters on a wall facing -y/+y (face 'y') or -x/+x."""
+def window(P, face, along, z0, w=0.8, h=0.8, x=None, y=None, out=-1, r=0.16):
+    """A window in a log wall whose outer face is at x/y (outside towards `out`, the wall 2r thick):
+    a plank casing lining the whole cut through the wall - its head and sill blocks fill the courses
+    log_wall takes out above and below the opening (up to 1.6 r past it), its jambs cover the cut log
+    ends - an open light with a cross bar in the middle of the wall, a surround flush on the outer face
+    and a pair of open shutters flat against the logs beside it (owner 29 Sep: no frames hanging in
+    the air in ragged holes)."""
     a0, a1 = along - w * 0.5, along + w * 0.5
-    if face == "y":
-        yy = y + out * 0.18
-        P.box((a0 - 0.1, yy - 0.06, z0 - 0.12), (a1 + 0.1, yy + 0.06, z0), "oak", "frame")
-        P.box((a0 - 0.12, yy - 0.07, z0 + h), (a1 + 0.12, yy + 0.07, z0 + h + 0.16), "oak", "frame")
-        P.box((a0, y - 0.02, z0), (a1, y + 0.02, z0 + h), "cloth", "window")
-        for s0, s1 in ((a0 - w * 0.5 - 0.02, a0 - 0.02), (a1 + 0.02, a1 + w * 0.5 + 0.02)):
-            P.box((s0, yy - 0.03, z0), (s1, yy + 0.03, z0 + h), "oak", "shutter")
-    else:
-        xx = x + out * 0.18
-        P.box((xx - 0.06, a0 - 0.1, z0 - 0.12), (xx + 0.06, a1 + 0.1, z0), "oak", "frame")
-        P.box((xx - 0.07, a0 - 0.12, z0 + h), (xx + 0.07, a1 + 0.12, z0 + h + 0.16), "oak", "frame")
-        P.box((x - 0.02, a0, z0), (x + 0.02, a1, z0 + h), "cloth", "window")
-        for s0, s1 in ((a0 - w * 0.5 - 0.02, a0 - 0.02), (a1 + 0.02, a1 + w * 0.5 + 0.02)):
-            P.box((xx - 0.03, s0, z0), (xx + 0.03, s1, z0 + h), "oak", "shutter")
+    face_at = x if face == "x" else y
+    t = 2 * r
+    lo, hi = z0 - 1.6 * r - 0.02, z0 + h + 1.6 * r + 0.02
+
+    def box(d0, d1, b0, b1, z_0, z_1, mat, role):
+        """d: depth outwards from the outer face (negative = into the wall), b: along the wall."""
+        p0, p1 = sorted((face_at + out * d0, face_at + out * d1))
+        if face == "y":
+            P.box((b0, p0, z_0), (b1, p1, z_1), mat, role)
+        else:
+            P.box((p0, b0, z_0), (p1, b1, z_1), mat, role)
+
+    # The casing through the wall: head, sill, jambs.
+    box(-t - 0.01, 0.01, a0 - 0.05, a1 + 0.05, z0 + h, hi, "oak", "frame")
+    box(-t - 0.01, 0.01, a0 - 0.05, a1 + 0.05, lo, z0, "oak", "frame")
+    for b0, b1 in ((a0 - 0.05, a0), (a1, a1 + 0.05)):
+        box(-t - 0.01, 0.01, b0, b1, z0, z0 + h, "oak", "frame")
+    # Open, as the village houses' windows: no opaque pane (it read as a shut board), only a thin
+    # cross bar in the middle of the wall - the light and the street show through.
+    box(-r - 0.02, -r + 0.02, along - 0.025, along + 0.025, z0, z0 + h, "oak", "frame")
+    box(-r - 0.02, -r + 0.02, a0, a1, z0 + h * 0.5 - 0.025, z0 + h * 0.5 + 0.025, "oak", "frame")
+    # The surround on the outer face: a projecting sill, a head board, side boards.
+    box(0.0, 0.08, a0 - 0.14, a1 + 0.14, z0 - 0.1, z0 + 0.02, "oak", "frame")
+    box(0.0, 0.06, a0 - 0.16, a1 + 0.16, z0 + h - 0.02, z0 + h + 0.16, "oak", "frame")
+    for b0, b1 in ((a0 - 0.12, a0 + 0.02), (a1 - 0.02, a1 + 0.12)):
+        box(0.0, 0.04, b0, b1, z0, z0 + h, "oak", "frame")
+    # Open shutters against the logs, just clear of the side boards.
+    for s0, s1 in ((a0 - 0.13 - w * 0.5, a0 - 0.13), (a1 + 0.13, a1 + 0.13 + w * 0.5)):
+        box(0.01, 0.05, s0, s1, z0, z0 + h, "oak", "shutter")
 
 
 def lit_windows(P, face, fixed, alongs, z0, out, R, w=0.8, h=0.8):
     """Window dressings and the wall openings (for log_wall) at the given positions."""
     opens = []
     for a in alongs:
-        window(P, face, a, z0, w, h, x=fixed if face == "x" else None, y=fixed if face == "y" else None, out=out)
+        window(P, face, a, z0, w, h, x=fixed if face == "x" else None, y=fixed if face == "y" else None, out=out, r=R)
         opens.append((a - w * 0.5, a + w * 0.5, z0, z0 + h))
     return opens
+
+
+def gable_sill(P, x_out, x_in, y0, y1, floor, r):
+    """A gable wall starts half a log higher than the long walls (the corner joint): a sill beam
+    under its first log closes the slit that otherwise runs along the floor (owner 29 Sep)."""
+    first = floor - 0.05 + r + r * 0.93
+    P.box((min(x_out, x_in), y0, floor - 0.12), (max(x_out, x_in), y1, first - r * 0.3), "oak", "shell")
 
 
 def roof_frame(P, x0, x1, y0, y1, eave, ridge, step=2.4, clear_x0=0.5):
@@ -142,13 +169,14 @@ def hearth(P, bid, x_wall, yc, floor, ridge, facing=1):
     def box(d0, d1, ya, yb, z0, z1, mat="stone", name="hearth"):
         P.box((min(X(d0), X(d1)), ya, z0), (max(X(d0), X(d1)), yb, z1), mat, "furniture", name)
     f = floor
-    box(0.2, 1.9, yc - 1.05, yc + 1.05, f, f + 0.32)
-    box(0.2, 1.55, yc - 1.0, yc - 0.68, f + 0.32, f + 1.3)
-    box(0.2, 1.55, yc + 0.68, yc + 1.0, f + 0.32, f + 1.3)
-    box(0.2, 0.5, yc - 0.68, yc + 0.68, f + 0.32, f + 1.3)
-    box(0.2, 1.6, yc - 1.02, yc + 1.02, f + 1.3, f + 1.55)
+    # d = 0 is 2 cm inside the wall's logs: the hearth stands against them, no slit behind it.
+    box(0.0, 1.9, yc - 1.05, yc + 1.05, f, f + 0.32)
+    box(0.0, 1.55, yc - 1.0, yc - 0.68, f + 0.32, f + 1.3)
+    box(0.0, 1.55, yc + 0.68, yc + 1.0, f + 0.32, f + 1.3)
+    box(0.0, 0.5, yc - 0.68, yc + 0.68, f + 0.32, f + 1.3)
+    box(0.0, 1.6, yc - 1.02, yc + 1.02, f + 1.3, f + 1.55)
     box(1.45, 1.75, yc - 1.15, yc + 1.15, f + 1.55, f + 1.65, "oak", "mantel")
-    box(0.2, 1.35, yc - 0.85, yc + 0.85, f + 1.55, f + 2.4)
+    box(0.0, 1.35, yc - 0.85, yc + 0.85, f + 1.55, f + 2.4)
     box(0.25, 1.05, yc - 0.6, yc + 0.6, f + 2.4, ridge + 1.3, "stone", "flue")
     box(0.18, 1.12, yc - 0.67, yc + 0.67, ridge + 1.3, ridge + 1.45, "stone", "flue")
     for k, dy in enumerate((-0.25, 0.0, 0.25)):
@@ -239,6 +267,8 @@ def town_hall(mats):
     gab = (RIDGE - 0.1, EAVE, (Y1 - Y0) * 0.5 + 0.1)
     log_wall(P, "y", -HX + R, Y0 - 0.35, Y1 + 0.35, FLOOR - 0.05, RIDGE, R, left, R * 0.93, "gable", gab)
     log_wall(P, "y", HX - R, Y0 - 0.35, Y1 + 0.35, FLOOR - 0.05, RIDGE, R, right, R * 0.93, "gable", gab)
+    gable_sill(P, -HX, -HX + 2 * R, Y0, Y1, FLOOR, R)
+    gable_sill(P, HX, HX - 2 * R, Y0, Y1, FLOOR, R)
     # The door frame with a carved lintel board.
     for a in (-1.25, 1.1):
         P.box((a, Y0 - 0.12, FLOOR), (a + 0.15, Y0 + 0.1, FLOOR + 2.7), "oak", "frame")
@@ -298,7 +328,7 @@ def town_hall(mats):
     table(F, -6.0, 6.0, 1.5, 2.7)
     bench(F, -6.0, 6.0, 1.0)
     bench(F, -6.0, 6.0, 3.2)
-    F.box((8.5, -0.5, 0), (11.6, 4.5, 0.3), "oak", "furniture", "dais")
+    F.box((8.5, -0.5, 0), (HX - R, 4.5, 0.3), "oak", "furniture", "dais")
     F.box((9.8, 1.4, 0.3), (10.8, 2.4, 0.8), "oak", "furniture", "seat")
     F.box((10.6, 1.4, 0.8), (10.8, 2.4, 2.2), "oak", "furniture", "seat")
     for dy in (1.4, 2.3):
@@ -339,6 +369,8 @@ def barracks(mats):
     gab = (RIDGE - 0.1, EAVE, (Y1 - Y0) * 0.5 + 0.1)
     log_wall(P, "y", -HX + R, Y0 - 0.35, Y1 + 0.35, FLOOR - 0.05, RIDGE, R, left, R * 0.93, "gable", gab)
     log_wall(P, "y", HX - R, Y0 - 0.35, Y1 + 0.35, FLOOR - 0.05, RIDGE, R, right, R * 0.93, "gable", gab)
+    gable_sill(P, -HX, -HX + 2 * R, Y0, Y1, FLOOR, R)
+    gable_sill(P, HX, HX - 2 * R, Y0, Y1, FLOOR, R)
     for a in (DX - 0.95, DX + 0.8):
         P.box((a, Y0 - 0.12, FLOOR), (a + 0.15, Y0 + 0.1, FLOOR + 2.4), "oak", "frame")
     P.box((DX - 1.1, Y0 - 0.14, FLOOR + 2.4), (DX + 1.1, Y0 + 0.1, FLOOR + 2.6), "oak", "frame")
