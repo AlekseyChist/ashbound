@@ -448,10 +448,11 @@ def town_hall(mats):
         vent(P, vx, ym, RIDGE)
     xs = roof_frame(P, -HX + 0.35, HX - 0.35, Y0 + 0.3, Y1 - 0.3, EAVE, RIDGE, clear_x0=1.7)
     hearth(P, bid, -HX + 0.3, Y1 - 2.2, FLOOR, RIDGE)
-    # Lanterns hang from two tie beams, one over each half of the council table; the marker is the
-    # tie beam's underside.
-    for i, lx in enumerate((xs[2], xs[-3])):
-        empty(f"{bid}_lamp{i}", (lx, ym - 1.2, EAVE - 0.3), "lamp")
+    # Lanterns hang from two tie beams over the council table's axis (y 2.1), the right one on the
+    # beam before the dais (Codex 098: the chair and the table's middle were dark at night); the
+    # marker is the tie beam's underside.
+    for i, lx in enumerate((xs[2], xs[-2])):
+        empty(f"{bid}_lamp{i}", (lx, 2.1, EAVE - 0.3), "lamp")
 
     # The gallery: posts with brackets, a railing, a lean-to roof from the wall.
     # Every 2.34 m along the front, the middle one left out: the porch bay stays open over the steps.
