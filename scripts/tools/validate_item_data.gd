@@ -36,7 +36,7 @@ func run() -> void:
 	check(old.size() == 10, "snapshot has the ten old items")
 	check(inv.item_database.size() == old.size(), "same number of items")
 	for id in old:
-		check(inv.item_database.has(id) and same(inv.item_database[id], old[id]), "item %s unchanged" % id)
+		check(inv.item_database.has(id) and same(inv.item_database[id].to_dict(), old[id]), "item %s unchanged" % id)
 	var catalog: ItemCatalog = load("res://data/items/catalog.tres")
 	var ids := {}
 	for item in catalog.items:
