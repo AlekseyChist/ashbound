@@ -160,10 +160,12 @@ def terem_t1(mats):
     HX = 6.5
     Y0, Y1 = -2.4, 5.4            # the body, 7.8 deep
     GY = -3.8                     # the gallery's front edge
-    FLOOR, UPPER, EAVE = 1.0, 3.95, 6.6
+    # Codex 124: under the front pitch the gallery had 1.34 m of headroom. A higher eave and a
+    # flatter pitch give it ~2.2 m at its front edge (roof underside 6.22 over the floor at 4.0).
+    FLOOR, UPPER, EAVE = 1.0, 3.95, 7.2
     R = 0.16
     YR = (Y0 + Y1) * 0.5          # the ridge over the body's middle
-    SLOPE = 0.9
+    SLOPE = 0.7
     RIDGE = EAVE + (Y1 - YR) * SLOPE
 
     plinth(P, -HX - 0.2, HX + 0.2, Y0 - 0.2, Y1 + 0.2, FLOOR - 0.12)
@@ -560,9 +562,12 @@ def terem_t5(mats):
     for x in (D0 - 0.12, D1):
         P.box((x, VY0 - 0.04, FLOOR), (x + 0.12, VY0 + 0.14, FLOOR + 2.2), "oak", "frame")
     P.box((D0 - 0.12, VY0 - 0.04, FLOOR + 2.2), (D1 + 0.12, VY0 + 0.14, FLOOR + 2.34), "oak", "frame")
-    stone_window(P, "y", 1.4, FLOOR + 1.0, VY0 + 0.1, -1, 0.7, 0.7)
-    stone_window(P, "x", -2.7, FLOOR + 1.0, VX0 + 0.04, -1, 0.7, 0.7)
-    stone_window(P, "x", -2.7, FLOOR + 1.0, VX1 - 0.04, 1, 0.7, 0.7)
+    # The veranda boards' outer faces are at VY0 + 0.04, VX0 + 0.04, VX1 - 0.04 (Codex 125: set 6 cm
+    # further in, the shutters sat behind the boards and did not show): surround and shutter stand
+    # proud of those faces.
+    stone_window(P, "y", 1.4, FLOOR + 1.0, VY0, -1, 0.7, 0.7)
+    stone_window(P, "x", -2.7, FLOOR + 1.0, VX0, -1, 0.7, 0.7)
+    stone_window(P, "x", -2.7, FLOOR + 1.0, VX1, 1, 0.7, 0.7)
     vslope = 0.8
     vridge = VTOP + (VX1 - VXM + 0.3) * vslope
     roof_ridge_y(P, VX0 - 0.3, VX1 + 0.3, VY0, Y0 + 0.1, VXM, vridge, vslope, 0.4, t=0.14)
