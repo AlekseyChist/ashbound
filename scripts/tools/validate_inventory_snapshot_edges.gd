@@ -22,9 +22,11 @@ func _run() -> void:
 	_objects_and_cycles()
 	_empty_state()
 	_capacity_and_required_fields()
-	_check(completed == 6, "six groups completed")
+	_before_migration()
+	_metadata_depth_boundary()
+	_check(completed == 8, "eight groups completed")
 	if failures.is_empty():
-		print("ASHBOUND_INVENTORY_SNAPSHOT_EDGES_OK groups=6")
+		print("ASHBOUND_INVENTORY_SNAPSHOT_EDGES_OK groups=8")
 		quit(0)
 	else:
 		for failure in failures:
@@ -179,4 +181,80 @@ func _capacity_and_required_fields() -> void:
 	metadata[mutable_key] = "value"
 	data["items"][0]["metadata"] = metadata
 	_reject(data, "mutable metadata key cannot keep external alias")
+	completed += 1
+
+
+func _reject_populated(data: Dictionary, label: String) -> void:
+	_reset()
+	_check(inv.load_save_data(_data()), label + ": valid initial inventory loaded")
+	var before: Dictionary = inv.get_save_data()
+	event_count = 0
+	_check(not inv.load_save_data(data), label + ": rejected before migration")
+	_check(inv.get_save_data() == before, label + ": existing sword and gold retained")
+	_check(event_count == 0, label + ": no restore or gold events")
+
+
+func _before_migration() -> void:
+	# These cycles reach the migration before item-level validation can inspect them.
+	var data := _data()
+	data["extra"] = data
+	_reject_populated(data, "cycle at snapshot root")
+	_check(data.has("extra") and data["items"].size() == 1, "root input untouched")
+	data.erase("extra")
+	var cycle: Dictionary = {}
+	cycle["self"] = cycle
+	for location in ["item", "storage", "worn_storage"]:
+		data = _data()
+		if location == "item":
+			data["items"][0]["metadata"] = cycle
+		else:
+			data[location] = cycle
+		_reject_populated(data, "dictionary cycle in " + location)
+		_check(cycle.has("self"), location + ": source cycle retained")
+		if location != "item":
+			_check(data.has(location), location + ": migration did not erase source field")
+	cycle.clear()
+	var chain: Array = []
+	var link := {"back": chain}
+	chain.append(link)
+	data = _data()
+	data["items"][0]["metadata"] = chain
+	_reject_populated(data, "array-dictionary cycle")
+	_check(chain.size() == 1 and link.has("back"), "mixed cycle input untouched")
+	chain.clear()
+	link.clear()
+	completed += 1
+
+
+func _metadata_depth_boundary() -> void:
+	# Preserve the old item-relative bound despite copying the enclosing snapshot first.
+	for equipped_item in [false, true]:
+		for children in [31, 32]:
+			var deep: Array = []
+			var tail: Array = deep
+			for i in range(children):
+				var child: Array = []
+				tail.append(child)
+				tail = child
+			var data := _data()
+			var item: Dictionary = data["items"][0]
+			item["metadata"] = deep
+			if equipped_item:
+				data["equipped"]["weapon"] = item
+				data["items"] = []
+			var label := "depth %d equipped=%s" % [children, str(equipped_item)]
+			if children == 32:
+				_reject_populated(data, label)
+				continue
+			_reset()
+			var accepted: bool = inv.load_save_data(data)
+			_check(accepted, label + ": old boundary accepted")
+			if not accepted:
+				continue
+			var loaded: Dictionary = inv.equipped["weapon"] if equipped_item else inv.items[0]
+			var inner: Array = loaded["metadata"]
+			for i in range(children):
+				inner = inner[0]
+			tail.append("caller edit")
+			_check(inner.is_empty(), label + ": copied independently")
 	completed += 1

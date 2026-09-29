@@ -1137,7 +1137,11 @@ func _validate_save_data(source: Dictionary) -> Dictionary:
 ## Вещи из сумок получают место в основном инвентаре, затем в кошельке; излишек
 ## не выбрасывается молча — такое сохранение отклоняется целиком.
 func _migrate_legacy_bags(source: Dictionary) -> Dictionary:
-	var data: Dictionary = source.duplicate(true)
+	# Items are two containers below the snapshot root; preserve their depth-0 limit.
+	var copied: Variant = _deep_copy(source, -2)
+	if not (copied is Dictionary):
+		return {}
+	var data: Dictionary = copied
 	var legacy := data.has("worn_storage")
 	data.erase("worn_storage")
 	var removed := {}
