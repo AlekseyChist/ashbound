@@ -39,26 +39,31 @@ func covered(parts: Array, from: Vector3, to: Vector3) -> bool:
 	return false
 
 func run() -> void:
-	# [model, gable axis, half size to the gable, floor, along from, along to, door span to skip].
+	# [model, gable axis, half size to the gable, floor, along from, along to, door span to skip,
+	# centre across the gables (default 0), sides to test (default both)].
 	# The halls' gables face +-x; the water mill's (owner 29 Sep: a slit at its back wall and by the
 	# door) face +-z, the doorway itself is open by design.
 	for spec in [["r01", "x", 12.0, 1.0, -5.2, 2.9, []], ["k01", "x", 10.0, 0.8, -4.3, 4.3, []],
 			["m01", "z", 5.5, 1.05, -4.0, 3.2, [-1.05, 1.05]],
 			# Terem T1: gables at x +-6.5, the body z -5.4 .. 2.4 (Godot), floor 1.0.
-			["t1", "x", 6.5, 1.0, -5.0, 2.0, []]]:
+			["t1", "x", 6.5, 1.0, -5.0, 2.0, []],
+			# Terem T2: the tall block's gables at z -5.5 / +2.5 (x -7..0), the wing's at x 7 (z -5.5..1).
+			["t2", "z", 4.0, 1.0, -6.6, -0.4, [], -1.5], ["t2", "x", 7.0, 1.0, -5.0, 0.6, [], 0.0, [1.0]]]:
 		var id: String = spec[0]
 		var on_z: bool = spec[1] == "z"
 		var half_width: float = spec[2]
 		var floor_y: float = spec[3]
 		var door: Array = spec[6]
+		var centre: float = spec[7] if spec.size() > 7 else 0.0
+		var sides: Array = spec[8] if spec.size() > 8 else [-1.0, 1.0]
 		var hall: Node3D = load("res://assets/buildings/forest-city-v1/%s.glb" % id).instantiate()
 		root.add_child(hall)
 		var parts := triangles_for(hall)
 		var at := func(across: float, along: float, y: float) -> Vector3:
 			return Vector3(along, y, across) if on_z else Vector3(across, y, along)
-		for side in [-1.0, 1.0]:
-			var inner: float = side * (half_width - 0.5)
-			var outer: float = side * (half_width + 0.5)
+		for side in sides:
+			var inner: float = centre + side * (half_width - 0.5)
+			var outer: float = centre + side * (half_width + 0.5)
 			check(covered(parts, at.call(inner, float(spec[4]), floor_y + 0.3), at.call(outer, float(spec[4]), floor_y + 0.3)), "%s side %s control intersects actual lower log" % [id, side])
 			for sample in 8:
 				var along := lerpf(float(spec[4]), float(spec[5]), float(sample) / 7.0)

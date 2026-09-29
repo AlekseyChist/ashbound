@@ -132,6 +132,7 @@ const KIT := {
 	"B01": {"path": "res://assets/buildings/forest-village-v1/b01_closed.glb", "size": Vector3(8, 3.7, 10)},
 	# The terems (Codex sheet terems-t1-t6-v1, PR #147): own models, closed for now (forest_city_terems.py).
 	"T1": {"path": "res://assets/buildings/forest-city-v1/t1.glb", "size": Vector3(13, 6.6, 7.8), "skin": true},
+	"T2": {"path": "res://assets/buildings/forest-city-v1/t2.glb", "size": Vector3(14, 6.7, 8), "skin": true},
 }
 const WORKSHOP_KIT := {"water_mill": "W01", "sawmill": "B01", "log_yard": "B01", "bakery": "W01", "granary": "H01",
 	"carpenter": "H01", "smithy": "H01", "charcoal_burner": "H01", "tar_kiln": "H01"}

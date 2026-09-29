@@ -2,7 +2,7 @@ extends SceneTree
 ## Regression: a solid closed-house staircase must actually be walkable by the normal hero.
 ## Run with an isolated APPDATA/user directory after importing the project. No save files are read.
 var world
-const TEREM_ENTRY := {"T1": Vector3(0, 1.0, 2.4)}
+const TEREM_ENTRY := {"T1": Vector3(0, 1.0, 2.4), "T2": Vector3(1.6, 1.0, 1.0)}
 var checks := 0
 var failures: Array[String] = []
 
@@ -58,8 +58,8 @@ func run() -> void:
 	var houses: Array[Node3D] = []
 	for house in world.forest_city.get_children():
 		if house is Node3D and house.has_meta("cleared_m"): houses.append(house)
-	# Eighteen kit houses and the terems built so far (forest_city_terems.py): T1.
-	check(houses.size() == 19, "all nineteen closed city houses are included")
+	# Eighteen kit houses and the terems built so far (forest_city_terems.py): T1, T2.
+	check(houses.size() == 20, "all twenty closed city houses are included")
 	var neighbours: Array = world.find_children("Neighbour*", "Node3D", true, false)
 	check(neighbours.size() == 6, "all six closed village neighbours are included")
 	for house in neighbours: houses.append(house)

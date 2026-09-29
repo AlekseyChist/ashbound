@@ -65,18 +65,67 @@ def band(P, x0, x1, y0, y1, z, d=0.14, h=0.22):
         P.box((xx - d, y0 - d, z - h * 0.5), (xx + d, y1 + d, z + h * 0.5), "oak", "frame")
 
 
-def roof_two_pitch(P, x0, x1, y_front, y_back, y_ridge, z_ridge, slope, over_x=0.6, t=0.2):
+def roof_two_pitch(P, x0, x1, y_front, y_back, y_ridge, z_ridge, slope, over_x=0.6, t=0.2, over_x0=None, carve=(True, True)):
     """A gable roof whose ridge runs along x at y_ridge, each pitch reaching its own eave edge (the
-    front one further out, over a gallery), carved barge boards and crossed finials on the gables."""
+    front one further out, over a gallery), carved barge boards and crossed finials on the gables.
+    over_x0: the overhang at the x0 end when it differs (0 where the roof runs into a taller wall);
+    carve: barge boards and finials at the (x0, x1) gables."""
+    ox0 = over_x if over_x0 is None else over_x0
+    ends = [e for e, c in ((x0 - ox0 - 0.05, carve[0]), (x1 + over_x + 0.05, carve[1])) if c]
     for ye in (y_front, y_back):
         ze = z_ridge - abs(y_ridge - ye) * slope
-        pitch(P, (x0 - over_x, ye, ze), (x1 + over_x, ye, ze), (x0 - over_x, y_ridge, z_ridge), (x1 + over_x, y_ridge, z_ridge), t)
-        for xe in (x0 - over_x - 0.05, x1 + over_x + 0.05):
+        pitch(P, (x0 - ox0, ye, ze), (x1 + over_x, ye, ze), (x0 - ox0, y_ridge, z_ridge), (x1 + over_x, y_ridge, z_ridge), t)
+        for xe in ends:
             P.beam((xe, ye, ze + 0.1), (xe, y_ridge, z_ridge + 0.12), 0.08, 0.4, "oak", "frame", up=(1, 0, 0))
-    P.beam((x0 - over_x - 0.1, y_ridge, z_ridge + 0.25), (x1 + over_x + 0.1, y_ridge, z_ridge + 0.25), 0.22, 0.2, "oak", "frame")
-    for xe in (x0 - over_x - 0.05, x1 + over_x + 0.05):
+    P.beam((x0 - ox0 - 0.1, y_ridge, z_ridge + 0.25), (x1 + over_x + 0.1, y_ridge, z_ridge + 0.25), 0.22, 0.2, "oak", "frame")
+    for xe in ends:
         for s in (-1, 1):
             P.beam((xe, y_ridge, z_ridge + 0.1), (xe, y_ridge + s * 0.55, z_ridge + 0.85), 0.08, 0.16, "oak", "frame")
+
+
+def roof_ridge_y(P, x0, x1, y0, y1, x_ridge, z_ridge, slope, over_y=0.6, t=0.2):
+    """A gable roof whose ridge runs along y at x_ridge (the gables face -y and +y), carved barge
+    boards and crossed finials on both gables. x0/x1 are the eave lines (overhang included)."""
+    for xe in (x0, x1):
+        ze = z_ridge - abs(x_ridge - xe) * slope
+        pitch(P, (xe, y0 - over_y, ze), (xe, y1 + over_y, ze), (x_ridge, y0 - over_y, z_ridge), (x_ridge, y1 + over_y, z_ridge), t)
+        for ye in (y0 - over_y - 0.05, y1 + over_y + 0.05):
+            P.beam((xe, ye, ze + 0.1), (x_ridge, ye, z_ridge + 0.12), 0.08, 0.4, "oak", "frame", up=(0, 1, 0))
+    P.beam((x_ridge, y0 - over_y - 0.1, z_ridge + 0.25), (x_ridge, y1 + over_y + 0.1, z_ridge + 0.25), 0.22, 0.2, "oak", "frame")
+    for ye in (y0 - over_y - 0.05, y1 + over_y + 0.05):
+        for sx in (-1, 1):
+            P.beam((x_ridge, ye, z_ridge + 0.1), (x_ridge + sx * 0.55, ye, z_ridge + 0.85), 0.08, 0.16, "oak", "frame")
+
+
+def sill_along_x(P, x0, x1, y_out, y_in, floor, r):
+    """Under the first log of a gable wall that runs along x (it starts half a log higher)."""
+    first = floor - 0.05 + r + r * 0.93
+    P.box((x0, min(y_out, y_in), floor - 0.12), (x1, max(y_out, y_in), first - r * 0.3), "oak", "shell")
+
+
+def gabled_porch(P, xc, y_wall, floor, z_top, width=3.2, depth=1.6, n_steps=6):
+    """A landing at the floor in front of a door on a front wall (y_wall, outside -y), two posts, a
+    small gable with a board face, and stairs down to the ground with a rail each side. The stairs
+    mesh is `entry_step` (walked on the closed-house wedge)."""
+    PY = y_wall - depth
+    hw = width * 0.5
+    P.box((xc - hw, PY, -0.4), (xc + hw, y_wall - 0.05, floor), "stone", "foundation")
+    P.box((xc - hw + 0.05, PY + 0.02, floor - 0.06), (xc + hw - 0.05, y_wall, floor), "oak", "floor", "porch")
+    for px in (xc - hw + 0.2, xc + hw - 0.2):
+        P.box((px - 0.12, PY + 0.05, floor), (px + 0.12, PY + 0.29, floor + 2.3), "oak", "frame", "porch")
+        P.beam((px, PY + 0.17, floor + 2.3), (px, y_wall, floor + 2.3), 0.14, 0.18, "oak", "frame", "porch")
+    for sx in (-1, 1):
+        pitch(P, (xc + sx * (hw + 0.2), PY - 0.3, floor + 2.3), (xc + sx * (hw + 0.2), y_wall, floor + 2.3), (xc, PY - 0.3, z_top), (xc, y_wall, z_top), 0.12)
+        P.beam((xc + sx * (hw + 0.25), PY - 0.33, floor + 2.32), (xc, PY - 0.33, z_top + 0.1), 0.07, 0.3, "oak", "frame", "porch", up=(0, 1, 0))
+    P.poly([(xc - hw - 0.15, PY - 0.2, floor + 2.35), (xc + hw + 0.15, PY - 0.2, floor + 2.35), (xc, PY - 0.2, z_top - 0.08),
+            (xc - hw - 0.15, PY - 0.12, floor + 2.35), (xc + hw + 0.15, PY - 0.12, floor + 2.35), (xc, PY - 0.12, z_top - 0.08)],
+           [(0, 1, 2), (3, 5, 4), (0, 3, 4, 1), (1, 4, 5, 2), (2, 5, 3, 0)], "oak", "frame", "porch")
+    for i in range(n_steps):
+        z = floor * (n_steps - i) / n_steps
+        P.box((xc - 1.0, PY - 0.3 * (i + 1), -0.4), (xc + 1.0, PY - 0.3 * i, z), "oak", "floor", "entry_step")
+    for sx in (-1, 1):
+        P.beam((xc + sx * 1.15, PY - 0.3 * n_steps, 0.9), (xc + sx * 1.15, PY, floor + 0.9), 0.08, 0.08, "oak", "frame", "railing")
+        P.box((xc + sx * 1.15 - 0.06, PY - 0.3 * n_steps - 0.06, -0.3), (xc + sx * 1.15 + 0.06, PY - 0.3 * n_steps + 0.06, 0.9), "oak", "frame", "railing")
 
 
 def gable_wall(P, x_face, y0, y1, z0, z_ridge, z_eave, y_ridge, r, openings, inward):
@@ -204,12 +253,83 @@ def terem_t1(mats):
     return {"id": bid, "slug": "t1", "floor": FLOOR}
 
 
+# ------------------------------------------------------------------------------------------- T2
+def terem_t2(mats):
+    """T2 (14 x 11): an asymmetric tall house - a two-storey block with a lived-in attic under a steep
+    roof whose gable faces the street, and a low one-storey wing along its right side under its own
+    roof; the entry porch in front of the wing, by the corner. Two chimneys."""
+    bid = "T2"
+    P = Parts(mats, bid)
+    R = 0.16
+    FLOOR = 1.0
+    # The tall block: x -7..0, y -2.5..5.5; gables on the front (-y) and the back.
+    MX0, MX1, MY0, MY1 = -7.0, 0.0, -2.5, 5.5
+    UPPER, EAVE, SLOPE = 3.95, 6.7, 1.15
+    MXR = (MX0 + MX1) * 0.5
+    RIDGE = EAVE + (MX1 - MXR) * SLOPE
+    # The wing: x 0..7, y -1..5.5, one storey, its ridge along x.
+    WX1, WY0, WY1 = 7.0, -1.0, 5.5
+    WEAVE, WSLOPE = 3.9, 0.8
+    WYR = (WY0 + WY1) * 0.5
+    WRIDGE = WEAVE + (WY1 - WYR) * WSLOPE
+
+    plinth(P, MX0 - 0.2, MX1, MY0 - 0.2, MY1 + 0.2, FLOOR - 0.12)
+    plinth(P, MX1, WX1 + 0.2, WY0 - 0.2, WY1 + 0.2, FLOOR - 0.12)
+    P.box((MX0, MY0 + 0.2, FLOOR - 0.12), (MX1, MY1 - 0.2, FLOOR), "oak", "floor")
+    P.box((MX1, WY0 + 0.2, FLOOR - 0.12), (WX1, WY1 - 0.2, FLOOR), "oak", "floor")
+
+    # The tall block: gable walls front and back (half a log higher, with sills), full side walls.
+    gab = (RIDGE - 0.1, EAVE, (MX1 - MX0) * 0.5 + 0.1)
+    front = shut_windows(P, "y", MY0, (-5.3, -1.7), FLOOR + 1.1, -1, R)
+    front += shut_windows(P, "y", MY0, (-5.3, -1.7), UPPER + 0.9, -1, R)
+    front += shut_windows(P, "y", MY0, (MXR,), EAVE + 0.9, -1, R, 0.7, 0.9)
+    back = shut_windows(P, "y", MY1, (-5.0, -2.0), FLOOR + 1.1, 1, R)
+    back += shut_windows(P, "y", MY1, (-5.0, -2.0), UPPER + 0.9, 1, R)
+    back += shut_windows(P, "y", MY1, (MXR,), EAVE + 0.9, 1, R, 0.7, 0.9)
+    left = shut_windows(P, "x", MX0, (-0.5, 2.5), FLOOR + 1.1, -1, R)
+    left += shut_windows(P, "x", MX0, (-0.5, 2.5), UPPER + 0.9, -1, R)
+    right = shut_windows(P, "x", MX1, (-1.8,), UPPER + 0.9, 1, R)
+    log_wall(P, "x", MY0 + R, MX0 - 0.35, MX1 + 0.35, FLOOR - 0.05, RIDGE, R, front, R * 0.93, "gable", gab)
+    log_wall(P, "x", MY1 - R, MX0 - 0.35, MX1 + 0.35, FLOOR - 0.05, RIDGE, R, back, R * 0.93, "gable", gab)
+    sill_along_x(P, MX0, MX1, MY0, MY0 + 2 * R, FLOOR, R)
+    sill_along_x(P, MX0, MX1, MY1, MY1 - 2 * R, FLOOR, R)
+    log_wall(P, "y", MX0 + R, MY0 - 0.35, MY1 + 0.35, FLOOR - 0.05, EAVE, R, left, 0.0)
+    log_wall(P, "y", MX1 - R, MY0 - 0.35, MY1 + 0.35, FLOOR - 0.05, EAVE, R, right, 0.0)
+    band(P, MX0, MX1, MY0, MY1, UPPER)
+    roof_ridge_y(P, MX0 - 0.6, MX1 + 0.6, MY0, MY1, MXR, RIDGE, SLOPE, 0.6)
+    chimney(P, -2.2, 3.4, FLOOR + 0.5, RIDGE + 0.2)
+
+    # The wing: front and back walls along x from the block's wall, a gable at x = 7.
+    wfront = shut_windows(P, "y", WY0, (4.2, 6.0), FLOOR + 1.1, -1, R)
+    wfront += [(1.0, 2.2, FLOOR, FLOOR + 2.2)]
+    wback = shut_windows(P, "y", WY1, (2.2, 5.2), FLOOR + 1.1, 1, R)
+    wright = shut_windows(P, "x", WX1, (0.8, 3.7), FLOOR + 1.1, 1, R)
+    wright += shut_windows(P, "x", WX1, (WYR,), WEAVE + 0.7, 1, R, 0.6, 0.7)
+    log_wall(P, "x", WY0 + R, MX1, WX1 + 0.35, FLOOR - 0.05, WEAVE, R, wfront, 0.0)
+    log_wall(P, "x", WY1 - R, MX1, WX1 + 0.35, FLOOR - 0.05, WEAVE, R, wback, 0.0)
+    gable_wall(P, WX1, WY0 - 0.35, WY1 + 0.35, FLOOR - 0.05, WRIDGE - 0.1, WEAVE, WYR, R, wright, -1)
+    gable_sill(P, WX1, WX1 - 2 * R, WY0, WY1, FLOOR, R)
+    roof_two_pitch(P, MX1, WX1, WY0 - 0.6, WY1 + 0.6, WYR, WRIDGE, WSLOPE, 0.6, over_x0=0.0, carve=(False, True))
+    chimney(P, 4.8, 3.6, FLOOR + 0.5, WRIDGE + 0.8)
+
+    # The entry: a door in the wing's front by the corner, its frame, a gabled porch and stairs.
+    for a in (0.85, 2.2):
+        P.box((a, WY0 - 0.12, FLOOR), (a + 0.15, WY0 + 0.1, FLOOR + 2.2), "oak", "frame")
+    P.box((0.8, WY0 - 0.14, FLOOR + 2.2), (2.4, WY0 + 0.1, FLOOR + 2.4), "oak", "frame")
+    gabled_porch(P, 1.6, WY0, FLOOR, FLOOR + 3.4, width=2.8)
+
+    P.emit(None, f"{bid}_")
+    bpy.data.objects[f"{bid}_entry_step"]["item_id"] = "entry_steps"
+    door(P, bid, 1.0, 2.2, WY0 + 0.08, FLOOR, FLOOR + 2.15, mats)
+    return {"id": bid, "slug": "t2", "floor": FLOOR}
+
+
 def main():
     argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     ap = argparse.ArgumentParser()
     ap.add_argument("--asset", default="all")
     args = ap.parse_args(argv)
-    for bid, build in {"T1": terem_t1}.items():
+    for bid, build in {"T1": terem_t1, "T2": terem_t2}.items():
         if args.asset not in ("all", bid):
             continue
         C.reset()
