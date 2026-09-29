@@ -577,6 +577,7 @@ func _workshop(spec: Dictionary, axis: Vector3, flow: Vector3, n: Vector3, water
 ## planks for floors and doors.
 const SKIN_DIR := "res://assets/buildings/forest-city-v1/materials/"
 const STONE_MAPS := "res://assets/environment/village-house-materials-v1/stone_wall_02_%s_1k.jpg"
+const JOINERY := "res://assets/environment/village-house-materials-v1/fine_grained_wood_%s_1k.jpg"
 var _skins := {}
 
 func _skin(kind: String) -> StandardMaterial3D:
@@ -592,6 +593,16 @@ func _skin(kind: String) -> StandardMaterial3D:
 		"shingles":
 			m.albedo_texture = load(SKIN_DIR + "wood_shingles_1k.jpg")
 			m.uv1_scale = Vector3(1.0 / 1.8, 1.0 / 1.8, 1)
+		"furniture", "chest":
+			# Planed fine-grained joinery wood (a dark walnut map): the furniture lifted to warm honey
+			# oak, well lighter than the grey-brown logs; the chests left dark and reddened.
+			m.albedo_texture = load(JOINERY % "col")
+			m.normal_enabled = true
+			m.normal_texture = load(JOINERY % "nor_gl")
+			m.roughness_texture = load(JOINERY % "rough")
+			m.roughness = 1.0
+			m.albedo_color = Color(1.8, 1.5, 1.15) if kind == "furniture" else Color(1.05, 0.72, 0.58)
+			m.uv1_scale = Vector3(1.0 / 1.2, 1.0 / 1.2, 1)
 		"planks":
 			m.albedo_texture = load(BOARDS % "diff")
 			m.normal_enabled = true
@@ -616,7 +627,13 @@ func _workshop_skin(model: Node3D) -> void:
 			var kind := source.resource_name.trim_prefix("Forest_") if source else ""
 			var skin := ""
 			if kind == "oak":
-				skin = "planks" if role in ["floor", "loft", "door"] else "timber"
+				# Owner 29 Sep: walls, furniture and chests each their own wood, or it all runs together.
+				if role in ["floor", "loft", "door"]:
+					skin = "planks"
+				elif role == "furniture":
+					skin = "chest" if str(mesh.name).to_lower().contains("chest") else "furniture"
+				else:
+					skin = "timber"
 			elif kind == "roof":
 				skin = "shingles"
 			elif kind == "stone":

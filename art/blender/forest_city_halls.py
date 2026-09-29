@@ -215,6 +215,18 @@ def bench(P, x0, x1, y, h=0.45, d=0.35):
         P.box((x - 0.05, y - d * 0.4, 0), (x + 0.05, y + d * 0.4, h - 0.06), "oak", "furniture", "bench")
 
 
+def chest(P, x0, y0, x1, y1, h):
+    """A chest against a wall, its front at y0: body, an overhanging lid, two iron straps over the lid
+    and down front and back, a lock plate (owner 29 Sep: chests must not read as the wall's logs)."""
+    P.box((x0, y0, 0), (x1, y1, h - 0.1), "oak", "furniture", "chest")
+    P.box((x0 - 0.025, y0 - 0.025, h - 0.1), (x1 + 0.025, y1 + 0.025, h), "oak", "furniture", "chest")
+    for fx in (0.2, 0.8):
+        x = x0 + (x1 - x0) * fx
+        P.box((x - 0.035, y0 - 0.04, 0.04), (x + 0.035, y1 + 0.04, h + 0.012), "iron", "furniture", "chest_iron")
+    xm = (x0 + x1) * 0.5
+    P.box((xm - 0.07, y0 - 0.045, h - 0.24), (xm + 0.07, y0 - 0.02, h - 0.06), "iron", "furniture", "chest_iron")
+
+
 def table(P, x0, x1, y0, y1, h=0.78):
     P.box((x0, y0, h - 0.07), (x1, y1, h), "oak", "furniture", "table")
     for x in (x0 + 0.2, x1 - 0.2):
@@ -334,7 +346,7 @@ def town_hall(mats):
     for dy in (1.4, 2.3):
         F.box((9.8, dy, 0.8), (10.8, dy + 0.1, 1.2), "oak", "furniture", "seat")
     for x in (-8.5, 4.0, 7.2):
-        F.box((x, Y1 - 0.95, 0), (x + 1.1, Y1 - 0.35, 0.6), "oak", "furniture", "chest")
+        chest(F, x, Y1 - 0.95, x + 1.1, Y1 - 0.35, 0.6)
     for x in (-8.0, -3.0, 3.0, 8.0):
         F.box((x - 0.45, Y1 - 0.34, 1.6), (x + 0.45, Y1 - 0.3, 3.0), "cloth", "furniture", "banner")
 
@@ -423,7 +435,7 @@ def barracks(mats):
         F.cyl((HX - 0.5, y, 0.0), (HX - 0.5, y, 2.4), 0.03, "oak", "furniture", "spear", seg=5)
         F.cyl((HX - 0.5, y, 2.4), (HX - 0.5, y, 2.65), 0.05, "iron", "furniture", "spear", seg=4, r2=0.0)
     for x in (4.5, 6.2, 7.9):
-        F.box((x, Y1 - 0.95, 0), (x + 1.0, Y1 - 0.35, 0.55), "oak", "furniture", "chest")
+        chest(F, x, Y1 - 0.95, x + 1.0, Y1 - 0.35, 0.55)
 
     P.emit(None, f"{bid}_")
     door(P, bid, DX - 0.8, DX + 0.8, Y0 + 0.08, FLOOR, FLOOR + 2.3, mats)
