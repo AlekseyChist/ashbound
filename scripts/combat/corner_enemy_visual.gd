@@ -46,6 +46,19 @@ func setup(kind: String) -> void:
 	super._ready()
 	_build_cue()
 
+## Another drawn set with the same clips (INN-BRAWL-01: the daughter and the moneylender's men).
+func use_frames(path: String) -> void:
+	var frames := load(path) as SpriteFrames
+	if frames == null:
+		push_error("corner_enemy_visual: missing SpriteFrames at %s" % path)
+		return
+	for name in ["Body", "PocketPose"]:
+		var sprite := get_node_or_null(name) as AnimatedSprite3D
+		if sprite != null:
+			sprite.sprite_frames = frames
+			sprite.animation = &"idle_front"
+	_process(0.0)
+
 func _build_cue() -> void:
 	_cue_root = Node3D.new()
 	_cue_root.name = "AttackCue"
@@ -84,9 +97,11 @@ func _process(delta: float) -> void:
 	var body := get_node_or_null("Body") as AnimatedSprite3D
 	if body != null:
 		body.pause()
+		# Every drawn phase of the clip by its normalised progress (Codex 135: not frame 0 / two walk frames).
+		var count := body.sprite_frames.get_frame_count(body.animation) if body.sprite_frames != null else 1
 		var frame := 0
-		if _stored_action == &"walk":
-			frame = int(clampf(_stored_progress, 0.0, 0.999) * 2.0)
+		if _stored_action != &"idle" and count > 1:
+			frame = mini(int(clampf(_stored_progress, 0.0, 0.999) * count), count - 1)
 		body.set_frame_and_progress(frame, 0)
 		body.modulate = Color.WHITE if external_feedback else (Color(1.0, 0.35, 0.4) if _hit_flash else Color.WHITE)
 	if _cue_root != null:

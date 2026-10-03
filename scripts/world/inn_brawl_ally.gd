@@ -3,8 +3,8 @@ extends CharacterBody3D
 ## enemy (the brute): closes in, winds up, strikes; every third blow at her she blocks. She swings slower
 ## than the brute, so alone with him she is out first; with the hero's help he gives up first. After
 ## OUT_HITS landed blows she is out until the end - she walks to the bar and stays there; the fight
-## is not lost because of it. Until her own frames are drawn (D-111) she wears the guard's look with
-## her name above the head. Stepped by the world's physics frame while the combat session runs.
+## is not lost because of it. She wears the approved look (D-111), cut from the motion proof sheet
+## until Codex's full set. Stepped by the world's physics frame while the combat session runs.
 const MAX_STEP := 1.0 / 60.0
 const SPEED := 2.4
 const REACH := 1.25
@@ -49,6 +49,7 @@ func setup(p_session: Node, ground: Callable, at: Vector3, facing: Vector3) -> v
 	_visual.set_script(load("res://scripts/combat/corner_enemy_visual.gd"))
 	add_child(_visual)
 	_visual.setup("guard")
+	_visual.use_frames("res://assets/characters/inn-temp/daughter_frames.tres")
 	var label := Label3D.new()
 	label.name = "NameLabel"
 	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
