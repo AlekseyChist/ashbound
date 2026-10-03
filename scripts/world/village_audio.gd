@@ -160,31 +160,37 @@ func _physics_process(_delta: float) -> void:
 	var stride:=1.7 if running else 1.35
 	if travel<stride: return
 	travel=fmod(travel,stride)
-	var surface:=surface_at(at)
-	if surface.is_empty(): return
+	var contact:=_step_surface_at(at)
+	if contact.is_empty(): return
+	var surface: String=contact.sound
 	var choices: Array=samples[surface]
 	var variant:=rng.randi_range(0,choices.size()-2)
 	if variant>=last_variant: variant+=1
 	last_variant=variant;last_surface=surface;step_count+=1
-	stepped.emit(at,world.ground_kind(at.x,at.z) if world.has_method("ground_kind") else surface)
+	stepped.emit(at,String(contact.kind))
 	step.stream=choices[variant]
 	step.pitch_scale=rng.randf_range(.95,1.05)
 	step.volume_db=-9 if running else -13
 	step.play()
 
 func surface_at(at: Vector3) -> String:
+	return String(_step_surface_at(at).get("sound",""))
+
+## Sound and deformation share the same floor hit; terrain below a deck is not its surface.
+func _step_surface_at(at: Vector3) -> Dictionary:
 	var query:=PhysicsRayQueryParameters3D.create(at+Vector3.UP*.45,at-Vector3.UP*.65,1,[world.player.get_rid()])
 	var hit:=world.get_world_3d().direct_space_state.intersect_ray(query)
-	if hit.is_empty() or hit.normal.y<.5: return ""
+	if hit.is_empty() or hit.normal.y<.5: return {}
 	var surface: String=hit.collider.get_meta("footstep_surface","stone")
 	if surface=="ground":
 		var road: float=world.road_at(hit.position.x,hit.position.z) if world.has_method("road_at") else world.terrain.color_at(hit.position.x,hit.position.z).a
 		if world.has_method("ground_kind") and road<=.5:
 			var kind: String=world.ground_kind(hit.position.x,hit.position.z)
-			if kind=="snow": return "snow"
-			if kind=="sand": return "dirt"
-		return "dirt" if road>.5 else "grass"
-	return surface if samples.has(surface) else "stone"
+			if kind=="snow": return {"sound":"snow","kind":"snow"}
+			if kind=="sand": return {"sound":"dirt","kind":"sand"}
+		surface="dirt" if road>.5 else "grass"
+	var sound:=surface if samples.has(surface) else "stone"
+	return {"sound":sound,"kind":sound}
 
 func _notification(what: int) -> void:
 	if world==null or music==null: return
