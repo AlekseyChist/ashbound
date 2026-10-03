@@ -65,7 +65,7 @@ func _shift_hud() -> void:
 					legend.position.y -= BAR_RESERVE
 		_hud_shifted = true
 
-## Undo _shift_hud() when a scene removes the bar (the world has no quick bar yet).
+## Undo the reservation before a host scene rebuilds its HUD layout.
 func release_hud() -> void:
 	if not _hud_shifted or not is_instance_valid(_hud):
 		return
