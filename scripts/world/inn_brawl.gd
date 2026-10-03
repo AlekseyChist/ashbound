@@ -335,19 +335,20 @@ func _gone(man: CharacterBody3D) -> void:
 	man.collision_layer = 0
 	man.collision_mask = 0
 
-## One bed for good, once: the state is written before the closing lines.
+## One bed for good, once: the state is written before the closing lines; the men leave the combat
+## session at once, so nothing of them can come back during the lines.
 func _finish_state() -> void:
+	for role in men:
+		var man: Node = men[role]
+		session.enemies.erase(man)
+		man.queue_free()
+	men.clear()
 	lodging.owned = true
 	lodging.rented = false
 	lodging.brawl = "done"
 	lodging._changed()
 
 func _close() -> void:
-	for role in men:
-		var man: Node = men[role]
-		session.enemies.erase(man)
-		man.queue_free()
-	men.clear()
 	_daughter_after()
 	phase = "done"
 	finished.emit(outcome)

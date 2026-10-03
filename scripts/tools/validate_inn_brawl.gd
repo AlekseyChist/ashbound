@@ -219,6 +219,13 @@ func check_win() -> void:
 		young.receive_hit()
 	await settle(.1)
 	check(world.hud._message_key == "INN_BRAWL_ENOUGH", "the first one to give up: \"Enough. Let's go.\"")
+	# Owner 3 Oct: the air attacked after the fight. A pause/dialogue cancels the session's attacks;
+	# a man who ran off must stay gone, not come back invisible.
+	check(await wait_for(func(): return young.state == "gone", 5.0), "the youngster is gone after running off")
+	brawl.session.cancel_trial()
+	young.cancel_attack()
+	await settle(.3)
+	check(young.state == "gone" and not young.visible, "a cancelled session does not bring a gone man back (%s)" % young.state)
 	var brute: CharacterBody3D = brawl.men["brute"]
 	check(brute.flee_after_hits == brute.hits_received + 1 or brute.state in ["flee", "gone"], "the others go after one more blow")
 	leader.receive_hit()
@@ -229,9 +236,12 @@ func check_win() -> void:
 	check(world.hud.get_node("RootControl/MessagePanel").mouse_filter == Control.MOUSE_FILTER_IGNORE, "a shout in the fight takes no taps")
 	check(await wait_for(func(): return brawl.phase == "after", 6.0), "all three gone: the fight is won")
 	check(lodging.owned and lodging.brawl == "done" and brawl.outcome == "won", "the bed is the hero's for good")
+	var contacts: int = brawl.session._contacts
+	check(brawl.men.is_empty() and not brawl.session.enemies.any(func(e): return is_instance_valid(e) and str(e.name).begins_with("Moneylender")), "the men leave the combat session as soon as the fight is won")
 	var saved := ConfigFile.new()
 	check(saved.load(PATH) == OK and saved.get_value("inn", "owned") == true and saved.get_value("inn", "brawl") == "done", "the owned bed is saved before the closing lines")
 	check(await wait_for(func(): return brawl.phase == "done", 4.0), "the closing lines end the scene")
+	check(brawl.session._contacts == contacts, "nobody strikes the hero during the closing lines (%d -> %d)" % [contacts, brawl.session._contacts])
 	check(brawl.men.is_empty() and not brawl.session.enemies.any(func(e): return not is_instance_valid(e) or str(e.name).begins_with("Moneylender")), "the men are gone from the world and the combat session")
 	check(inn.to_local(brawl.daughter.global_position).distance_to(brawl.DAUGHTER_AFTER) < .6, "the daughter works by the bar afterwards")
 

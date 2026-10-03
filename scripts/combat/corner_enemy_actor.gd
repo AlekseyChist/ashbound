@@ -257,7 +257,13 @@ func step(delta: float) -> void:
 
 func cancel_attack() -> void:
 	# Cancels ALL pending activity (chase/stagger included); never resets
-	# counters or teleports.
+	# counters or teleports. A beaten enemy keeps running off or stays gone: the session cancels on
+	# every pause/dialogue, and turning "gone" back to "idle" brought invisible enemies back to fight
+	# (INN-BRAWL-01, owner 3 Oct: "the air attacked me after the fight").
+	if state == "flee" or state == "gone":
+		_contact_done = false
+		velocity = Vector3.ZERO
+		return
 	state = "idle"
 	state_time = 0.0
 	_contact_done = false
