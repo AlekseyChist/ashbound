@@ -1,8 +1,7 @@
 class_name ItemData
 extends Resource
-## ITEM-DATA-01 (review 2.4): one item of the catalog as data. The inventory still works with
-## Dictionaries; `to_dict()` gives exactly the dictionary the old hard-coded catalog had
-## (a key is present only when it is set, as before).
+## Typed definition, copied for each inventory. to_dict() creates an independent
+## instance record / rules input with the original optional-key convention.
 
 enum Type { WEAPON, ARMOR, CONSUMABLE, QUEST, MISC, MAGIC }
 

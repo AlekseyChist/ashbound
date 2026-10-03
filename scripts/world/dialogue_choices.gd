@@ -45,6 +45,7 @@ func configure(host: Node) -> void:
 ## Opens with the NPC's line and the answers: [[id, text], ...] (text already translated).
 func open(speaker_key: String, line_key: String, answers: Array) -> void:
 	for child in list.get_children():
+		list.remove_child(child)
 		child.queue_free()
 	_ids.clear()
 	speaker.text = Localization.text(speaker_key)

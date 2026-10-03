@@ -58,6 +58,10 @@ func talk(label: String, point: Node3D, route: Array, stage_after: int) -> void:
 	check(not world.interact_button.disabled and world.interact_button.text == Localization.text(point.prompt), "%s: the action button offers %s" % [label, point.prompt])
 	world.interact()
 	await settle(.1)
+	if point == lesson.hostess or point == lesson.watchman:
+		check(world.choices.is_open, "%s: conversation choices open" % label)
+		world.choices.list.get_node("Answer_lesson_business").pressed.emit()
+		await settle(.1)
 	check(lesson.quest.stage_index == stage_after, "%s: stage %d (got %d)" % [label, stage_after, lesson.quest.stage_index])
 	check(world.hud._message_visible, "%s: the line is shown" % label)
 

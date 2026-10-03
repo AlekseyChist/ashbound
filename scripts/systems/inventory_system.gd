@@ -56,8 +56,8 @@ var _commit_guard := false
 const LEGACY_BAG_IDS: Array[String] = ["traveler_backpack", "belt_pouch"]
 const LEGACY_WORN_PREFIX := "worn_storage:"
 
-# База предметов
-var item_database: Dictionary = {}
+# Definitions are separate from the mutable Dictionary instances in items/equipped.
+var item_database: Dictionary[String, ItemData] = {}
 
 
 ## Снять оружие/броню прямо в выбранный контейнер хранилища (жест перетаскивания).
@@ -109,15 +109,15 @@ func _ready() -> void:
 	print("[ASHBOUND] InventorySystem инициализирован")
 
 
-## ITEM-DATA-01 (review 2.4): items are data — data/items/*.tres listed in data/items/catalog.tres.
-## The rest of the inventory keeps working with the same dictionaries as before.
+## ITEM-DATA-02A: keep typed definitions in memory, with no shared mutable resource
+## between inventories. Only instance creation and the legacy rules boundary use to_dict().
 const ItemCatalogPath := "res://data/items/catalog.tres"
 
 func _init_item_database() -> void:
 	item_database.clear()
 	var catalog: ItemCatalog = load(ItemCatalogPath)
 	for item: ItemData in catalog.items:
-		item_database[item.id] = item.to_dict()
+		item_database[item.id] = item.duplicate(true)
 
 
 # === ИНВЕНТАРЬ ===
@@ -132,11 +132,13 @@ func add_item(item_id: String, quantity: int = 1) -> bool:
 		push_error("[ASHBOUND] Предмет не найден: %s" % item_id)
 		return false
 
-	var template = item_database[item_id]
-	var stackable: bool = template.get("stackable", false)
+	var template: ItemData = item_database[item_id]
+	if template == null:
+		return false
+	var stackable: bool = template.stackable
 	var max_stack: int = 0
 	if stackable:
-		max_stack = int(template.get("max_stack", 0))
+		max_stack = template.max_stack
 		if max_stack <= 0:
 			push_error("[ASHBOUND] Некорректный max_stack для предмета: %s" % item_id)
 			return false
@@ -183,7 +185,7 @@ func add_item(item_id: String, quantity: int = 1) -> bool:
 
 		# 2) Остаток — новые записи по max_stack шт.
 		while remaining > 0:
-			var new_item = template.duplicate(true)
+			var new_item := template.to_dict()
 			new_item["quantity"] = mini(max_stack, remaining)
 			new_item["instance_id"] = _generate_instance_id()
 			items.append(new_item)
@@ -192,7 +194,7 @@ func add_item(item_id: String, quantity: int = 1) -> bool:
 	else:
 		# Нестакуемые: каждый экземпляр — отдельная запись с quantity 1
 		for i in range(quantity):
-			var new_item = template.duplicate(true)
+			var new_item := template.to_dict()
 			new_item["quantity"] = 1
 			new_item["instance_id"] = _generate_instance_id()
 			items.append(new_item)
@@ -206,7 +208,7 @@ func add_item(item_id: String, quantity: int = 1) -> bool:
 	for item in changed_items:
 		item_added.emit(item)
 
-	print("[ASHBOUND] Получен предмет: %s x%d" % [template.get("name", item_id), quantity])
+	print("[ASHBOUND] Получен предмет: %s x%d" % [template.name, quantity])
 	return true
 
 
@@ -538,10 +540,8 @@ func resolve_owned_item(handle: Dictionary) -> Dictionary:
 
 func describe_item_id(id: String) -> Dictionary:
 	var rules_script: GDScript = preload("res://scripts/systems/item_rules.gd")
-	var template: Dictionary = item_database.get(id, {})
-	if not (template is Dictionary):
-		template = {}
-	var result = rules_script.call("describe", template)
+	var template: ItemData = item_database.get(id)
+	var result = rules_script.call("describe", template.to_dict() if template != null else {})
 	return result if result is Dictionary else {}
 
 func get_item_rules(handle: Dictionary) -> Dictionary:
@@ -566,11 +566,11 @@ func can_equip_in_slot(handle: Dictionary, slot: String) -> bool:
 	var id = resolved.get("id", "")
 	if not (id is String) or id == "":
 		return false
-	var template: Variant = item_database.get(id, {})
-	if not (template is Dictionary):
+	var template: ItemData = item_database.get(id)
+	if template == null:
 		return false
 	var rules_script: GDScript = preload("res://scripts/systems/item_rules.gd")
-	var result = rules_script.call("can_equip", template, slot)
+	var result = rules_script.call("can_equip", template.to_dict(), slot)
 	return bool(result)
 
 func has_carried_tag(tag: String) -> bool:
@@ -787,13 +787,13 @@ func buy_item(item_id: String, price: int) -> bool:
 		# Неизвестный id — тихий отказ без push_error и без изменений
 		return false
 
-	var template = item_database[item_id]
-	if not (template is Dictionary):
+	var template: ItemData = item_database[item_id]
+	if template == null:
 		return false
-	var stackable: bool = template.get("stackable", false)
+	var stackable: bool = template.stackable
 	var max_stack: int = 0
 	if stackable:
-		max_stack = int(template.get("max_stack", 0))
+		max_stack = template.max_stack
 		if max_stack <= 0:
 			return false
 
@@ -829,13 +829,13 @@ func buy_item(item_id: String, price: int) -> bool:
 					changed_entry = item
 					break
 		if changed_entry.is_empty():
-			var new_item = template.duplicate(true)
+			var new_item := template.to_dict()
 			new_item["quantity"] = 1
 			new_item["instance_id"] = _generate_instance_id()
 			items.append(new_item)
 			changed_entry = new_item
 	else:
-		var new_item = template.duplicate(true)
+		var new_item := template.to_dict()
 		new_item["quantity"] = 1
 		new_item["instance_id"] = _generate_instance_id()
 		items.append(new_item)
@@ -853,7 +853,7 @@ func buy_item(item_id: String, price: int) -> bool:
 
 	_trade_guard = false
 
-	print("[ASHBOUND] Куплено: %s (потрачено: %d)" % [template.get("name", item_id), price])
+	print("[ASHBOUND] Куплено: %s (потрачено: %d)" % [template.name, price])
 	return true
 
 
@@ -1137,7 +1137,11 @@ func _validate_save_data(source: Dictionary) -> Dictionary:
 ## Вещи из сумок получают место в основном инвентаре, затем в кошельке; излишек
 ## не выбрасывается молча — такое сохранение отклоняется целиком.
 func _migrate_legacy_bags(source: Dictionary) -> Dictionary:
-	var data: Dictionary = source.duplicate(true)
+	# Items are two containers below the snapshot root; preserve their depth-0 limit.
+	var copied: Variant = _deep_copy(source, -2)
+	if not (copied is Dictionary):
+		return {}
+	var data: Dictionary = copied
 	var legacy := data.has("worn_storage")
 	data.erase("worn_storage")
 	var removed := {}
@@ -1211,8 +1215,8 @@ func _validate_save_item(entry: Variant, seen_ids: Dictionary) -> Dictionary:
 	if not (item_id is String) or item_id == "" or not item_database.has(item_id):
 		return {}
 
-	var template = item_database[item_id]
-	if not (template is Dictionary):
+	var template: ItemData = item_database[item_id]
+	if template == null:
 		return {}
 
 	var instance_id = entry.get("instance_id", "")
@@ -1236,13 +1240,13 @@ func _validate_save_item(entry: Variant, seen_ids: Dictionary) -> Dictionary:
 	var type = entry["type"]
 	if not (type is int) or type < 0 or type >= ItemType.size():
 		return {}
-	if type != template.get("type", -1):
+	if type != int(template.type):
 		return {}
 
 	var stackable = entry["stackable"]
 	if not (stackable is bool):
 		return {}
-	if stackable != template.get("stackable", false):
+	if stackable != template.stackable:
 		return {}
 
 	if stackable:
@@ -1252,7 +1256,7 @@ func _validate_save_item(entry: Variant, seen_ids: Dictionary) -> Dictionary:
 		var max_stack = entry["max_stack"]
 		if not (max_stack is int) or max_stack <= 0:
 			return {}
-		if max_stack != template.get("max_stack", -1):
+		if max_stack != template.max_stack:
 			return {}
 		if quantity > max_stack:
 			return {}
@@ -1266,7 +1270,7 @@ func _validate_save_item(entry: Variant, seen_ids: Dictionary) -> Dictionary:
 			return {}
 		if not (slot is String) or not equipped.has(slot):
 			return {}
-		if slot != template.get("slot", ""):
+		if slot != template.slot:
 			return {}
 
 	# stats/effect: при явно присутствующем ключе с null — отклоняем;

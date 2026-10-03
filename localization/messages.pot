@@ -854,3 +854,46 @@ msgstr ""
 
 msgid "INN_KEEPER_BYE"
 msgstr ""
+
+# ASK-WAY-01: directions never apply quest effects.
+msgid "ASK_WAY_GREETING"
+msgstr ""
+
+msgid "ASK_WAY_BUSINESS"
+msgstr ""
+
+msgid "ASK_WAY_QUESTION"
+msgstr ""
+
+msgid "ASK_WAY_LEAVE"
+msgstr ""
+
+msgid "ASK_WAY_HOST"
+msgstr ""
+
+msgid "ASK_WAY_WOOD"
+msgstr ""
+
+msgid "ASK_WAY_RETURN"
+msgstr ""
+
+msgid "ASK_WAY_GUARD"
+msgstr ""
+
+msgid "ASK_WAY_DUMMY"
+msgstr ""
+
+msgid "ASK_WAY_REPORT"
+msgstr ""
+
+msgid "ASK_WAY_WOLVES"
+msgstr ""
+
+msgid "ASK_WAY_PAYMENT"
+msgstr ""
+
+msgid "ASK_WAY_INN"
+msgstr ""
+
+msgid "ASK_WAY_HERE"
+msgstr ""

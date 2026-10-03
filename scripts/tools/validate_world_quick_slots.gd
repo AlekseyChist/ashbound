@@ -183,7 +183,7 @@ func _run() -> void:
 	panel.refresh_contents()
 	# An unfinished effect must not consume anything or mutate the world.
 	var before: Dictionary = inv.get_save_data()
-	var old_food_template: Dictionary = inv.item_database.bread.duplicate(true)
+	var old_food_template: ItemData = inv.item_database.bread.duplicate(true)
 	inv.item_database.bread["category"] = "magic"
 	inv.item_database.bread["subtype"] = "scroll"
 	check(not menu.request_quick(2), "magic assignment cannot grant casting")

@@ -74,7 +74,7 @@ func _reset() -> void:
 
 
 func _item(id: String, instance: String, quantity: int = 1) -> Dictionary:
-	var result: Dictionary = inv.item_database[id].duplicate(true)
+	var result: Dictionary = inv.item_database[id].to_dict()
 	result["instance_id"] = instance
 	result["quantity"] = quantity
 	return result
