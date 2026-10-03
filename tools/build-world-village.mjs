@@ -45,6 +45,8 @@ const resources=[scene,'scenes/world/world.tscn','scenes/world/village_settlemen
 resources.push(...files.filter(f=>f.startsWith('assets/environment/medieval_kit/Textures/')&&f.endsWith('.png')));
 resources.push(...files.filter(f=>f.startsWith('assets/environment/village-props-v1/')&&/\.(gltf|bin|png)$/.test(f)));
 resources.push(...files.filter(f=>(f.startsWith('assets/audio/village-v1/')||f.startsWith('assets/audio/soundtrack-v1/'))&&f.endsWith('.ogg')));
+// D-115: spoken lines are loaded by key (world_voice.gd), not seen by the exporter.
+resources.push(...files.filter(f=>f.startsWith('assets/voice/en/')&&f.endsWith('.ogg')));
 // COMBAT-WORLD-01B: combat components load scripts/effects by path (not seen by the exporter).
 resources.push(...files.filter(f=>f.startsWith('scripts/combat/')&&f.endsWith('.gd')));
 resources.push(...['hit','block','perfect_block','windup','swing'].map(id=>'assets/vfx/painted-combat-v1/'+id+'.png'),'assets/characters/courtyard/enemy-preview/wolf_frames.tres','assets/characters/courtyard/enemy-preview/guard_frames.tres');

@@ -83,6 +83,8 @@ func run() -> void:
 	brawl = world.brawl
 	check(inn != null and brawl != null, "the inn and the morning scene exist")
 	brawl.line_time = 0.15
+	# The scene's own checks keep short timings; the voice is checked on its own at the end.
+	world.voice.enabled = false
 	var quest: QuestTracker = world.lesson.quest
 	var stage_before: int = quest.stage_index
 	quest.stage_index = world.lesson.LessonQuest.stage_index(&"done")
@@ -96,6 +98,7 @@ func run() -> void:
 	await check_owned_bed(purse)
 	await check_leave_and_first_strike()
 	await check_daughter_out_and_knockout()
+	await check_voice_and_subtitles()
 	quest.stage_index = stage_before
 	purse.remove_gold(purse.gold)
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(PATH))
@@ -296,3 +299,82 @@ func check_daughter_out_and_knockout() -> void:
 	check(Vector2(world.player.global_position.x - bed.x, world.player.global_position.z - bed.z).length() < 1.5 and world.player.global_position.y > bed.y - .5, "the hero comes to on the bed upstairs")
 	check(lodging._veil.color.a < .01, "the screen is clear again")
 	check(brawl.men.is_empty(), "the three have left")
+
+
+## D-115/D-116: every line of the scene has its English voice; one voice at a time; subtitles can be
+## off (a voiced line is only heard) or in another language than the game's; the choice is kept.
+func check_voice_and_subtitles() -> void:
+	var voice: Node = world.voice
+	var hud: Node = world.hud
+	voice.enabled = true
+	hud.clear_message()
+	var lines := ["INN_BRAWL_LEADER_ASK", "INN_BRAWL_LEADER_SIT", "INN_BRAWL_DAUGHTER_PAY", "INN_BRAWL_KEEPER_OUT",
+		"INN_BRAWL_BRUTE_THREE", "INN_BRAWL_DAUGHTER_HINT", "INN_BRAWL_DAUGHTER_AGAIN", "INN_BRAWL_ANSWER_STEP_IN",
+		"INN_BRAWL_ANSWER_PAY_UP", "INN_BRAWL_ANSWER_JUST_CAME", "INN_BRAWL_LEADER_LANDLORD", "INN_BRAWL_LEADER_EVERYONE",
+		"INN_BRAWL_DAUGHTER_STAIRS", "INN_BRAWL_LEADER_THREAT", "INN_BRAWL_DAUGHTER_DOOR", "INN_BRAWL_HERO_MORNING",
+		"INN_BRAWL_DAUGHTER_BREAKFAST", "INN_BRAWL_KEEPER_BED", "INN_BRAWL_HERO_ONE_FIGHT", "INN_BRAWL_KEEPER_COULD_LEAVE",
+		"INN_BRAWL_DAUGHTER_BOOTS", "INN_BRAWL_DAUGHTER_UP", "INN_BRAWL_KEEPER_KO_BED", "INN_KEEPER_GREETING",
+		"INN_KEEPER_REPEAT", "INN_KEEPER_ASK", "INN_KEEPER_BED_RENTED", "INN_KEEPER_BED_YOURS", "INN_KEEPER_BED_NO_MONEY",
+		"INN_KEEPER_DRINK", "INN_KEEPER_DRINK_NO_MONEY", "INN_KEEPER_BYE"]
+	var missing: Array[String] = []
+	for key in lines:
+		if voice.length_of(key) <= 0.3:
+			missing.append(key)
+	for speaker in ["INN_THUG_LEADER_NAME", "INN_THUG_BRUTE_NAME", "INN_THUG_YOUNG_NAME"]:
+		if not voice.path_for("INN_BRAWL_ENOUGH", speaker).ends_with("@%s.ogg" % speaker):
+			missing.append("INN_BRAWL_ENOUGH@" + speaker)
+	check(missing.is_empty(), "every line of the scene has its English voice (missing %s)" % str(missing))
+	hud.show_message("INN_THUG_LEADER_NAME", "INN_BRAWL_LEADER_SIT")
+	await get_tree().process_frame
+	check(voice.is_speaking() and voice.current.ends_with("INN_BRAWL_LEADER_SIT.ogg"), "a voiced line is spoken (%s)" % voice.current)
+	hud.show_message("INN_THUG_BRUTE_NAME", "INN_BRAWL_ENOUGH", {}, 3.0)
+	await get_tree().process_frame
+	check(voice.current.ends_with("INN_BRAWL_ENOUGH@INN_THUG_BRUTE_NAME.ogg"), "a new line replaces the voice; shared lines in the speaker's voice")
+	hud.clear_message()
+	check(not voice.is_speaking(), "a cleared line stops its voice")
+	var long_key := "INN_BRAWL_LEADER_THREAT"
+	var spoken: float = voice.length_of(long_key, "INN_THUG_LEADER_NAME")
+	hud.show_message("INN_THUG_LEADER_NAME", long_key, {}, 0.5)
+	check(hud._message_transient >= spoken, "a voiced shout stays while it is heard (%.2f >= %.2f)" % [hud._message_transient, spoken])
+	hud.clear_message()
+	# Subtitles off: a voiced line is only heard; a line without voice is still shown.
+	var panel: Control = hud.get_node("RootControl/MessagePanel")
+	hud.set_subtitles(false, "")
+	hud.show_message("INN_DAUGHTER_NAME", "INN_BRAWL_DAUGHTER_PAY")
+	await get_tree().process_frame
+	check(not panel.visible and voice.is_speaking(), "subtitles off: the voiced line is heard, not shown")
+	check(hud._message_transient > 0.0, "subtitles off: the unseen line leaves after its voice")
+	hud.show_message("", "INN_SLEEP_DONE")
+	check(panel.visible, "subtitles off: a line without voice is still shown")
+	hud.clear_message()
+	# Subtitles in the other language than the game's.
+	var game: String = Localization.get_language()
+	var other := "ru" if game == "en" else "en"
+	hud.set_subtitles(true, other)
+	hud.show_message("INN_DAUGHTER_NAME", "INN_BRAWL_DAUGHTER_PAY")
+	await get_tree().process_frame
+	check(hud.message_text() == Localization.text_in(other, "INN_BRAWL_DAUGHTER_PAY") and hud.message_text() != Localization.text("INN_BRAWL_DAUGHTER_PAY"), "subtitles in %s while the game is in %s (%s)" % [other, game, hud.message_text()])
+	check(hud.get_node("RootControl/MessagePanel/VBox/SpeakerLabel").text == Localization.text_in(other, "INN_DAUGHTER_NAME") + ":", "the speaker in the subtitle language too")
+	hud.clear_message()
+	# The Settings buttons change and keep the choice.
+	var menu: Node = world.settings_menu
+	var settings: RefCounted = world.settings
+	settings.path = "user://inn-brawl-settings-qa.cfg"
+	settings.subtitles = true
+	settings.subtitle_language = ""
+	menu.subtitles_button.pressed.emit()
+	check(not settings.subtitles and not hud.subtitles_enabled, "the Subtitles button turns them off")
+	menu.subtitles_button.pressed.emit()
+	menu.subtitle_language_button.pressed.emit()
+	check(settings.subtitle_language == "en" and hud.subtitle_language == "en", "the language button: as game -> English")
+	menu.subtitle_language_button.pressed.emit()
+	check(settings.subtitle_language == "ru", "then Russian")
+	settings.subtitles = true
+	settings.subtitle_language = ""
+	settings.load_settings(settings.path)
+	check(settings.subtitles and settings.subtitle_language == "ru", "the choice is kept in the settings file")
+	menu.subtitle_language_button.pressed.emit()
+	check(settings.subtitle_language == "" and hud.subtitle_language == "", "and back to the game's language")
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(settings.path))
+	hud.set_subtitles(true, "")
+	voice.enabled = false

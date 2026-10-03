@@ -52,6 +52,7 @@ var _first_gone := ""
 var _leader_threat := false
 var _offer_armed := true
 var _logged_phase := ""
+var _silent: Node
 
 func configure(scene: Node3D) -> void:
 	world = scene
@@ -183,6 +184,16 @@ func _struck_first() -> bool:
 			return true
 	return false
 
+## The world's voice (world_voice.gd); a silent stand-in where a scene has none.
+func _voice() -> Node:
+	if world.get("voice") != null:
+		return world.voice
+	if _silent == null:
+		_silent = preload("res://scripts/world/world_voice.gd").new()
+		_silent.enabled = false
+		add_child(_silent)
+	return _silent
+
 func _planar(a: Vector3, b: Vector3) -> float:
 	return Vector2(a.x - b.x, a.z - b.z).length()
 
@@ -210,10 +221,21 @@ func _offer(first: bool) -> void:
 		[&"pay_up", Localization.text("INN_BRAWL_ANSWER_PAY_UP")],
 		[&"just_came", Localization.text("INN_BRAWL_ANSWER_JUST_CAME")],
 	]
-	world.choices.open("INN_DAUGHTER_NAME", "INN_BRAWL_DAUGHTER_HINT" if first else "INN_BRAWL_DAUGHTER_AGAIN", answers)
+	var hint := "INN_BRAWL_DAUGHTER_HINT" if first else "INN_BRAWL_DAUGHTER_AGAIN"
+	world.choices.open("INN_DAUGHTER_NAME", hint, answers)
+	# D-116: the daughter says her quiet word aloud while the answers wait.
+	_voice().play(hint, "INN_DAUGHTER_NAME")
 	var id: StringName = await world.choices.chosen
 	if phase != "offer":
 		return
+	# The hero says the chosen answer aloud, then the other side answers.
+	var answer: String = {&"step_in": "INN_BRAWL_ANSWER_STEP_IN", &"pay_up": "INN_BRAWL_ANSWER_PAY_UP"}.get(id, "INN_BRAWL_ANSWER_JUST_CAME")
+	var said: float = _voice().length_of(answer, "INN_HERO_NAME")
+	if said > 0.0:
+		world.hud.show_message("INN_HERO_NAME", answer, {}, said + 0.2)
+		await get_tree().create_timer(said + 0.2, false).timeout
+		if phase != "offer":
+			return
 	match id:
 		&"step_in":
 			world.hud.show_message("INN_THUG_LEADER_NAME", "INN_BRAWL_LEADER_LANDLORD", {}, SHOUT_TIME)
@@ -348,6 +370,8 @@ func _lines(lines: Array) -> void:
 		if phase != started:
 			return
 		world.hud.show_message(entry[0], entry[1])
-		await get_tree().create_timer(line_time, false).timeout
+		# A voiced line lasts as long as it is spoken (D-115), a silent one line_time.
+		var spoken: float = _voice().length_of(entry[1], entry[0])
+		await get_tree().create_timer(maxf(line_time, spoken + 0.35 if spoken > 0.0 else 0.0), false).timeout
 	if phase == started:
 		world.hud.clear_message()

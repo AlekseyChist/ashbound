@@ -71,6 +71,12 @@ var _message_parts: PackedStringArray = []
 var _message_part := 0
 var _message_generation := 0
 var _message_transient := 0.0
+## D-115: the line's voice (world_voice.gd: play(key, speaker) -> seconds, stop()); null = text only.
+var voice: Node
+## D-115: subtitles can be turned off (a voiced line is then only heard) and shown in another language
+## than the game's ("" = the game's language).
+var subtitles_enabled := true
+var subtitle_language := ""
 var _message_key := ""
 var _message_params: Dictionary = {}
 
@@ -193,9 +199,13 @@ func show_message(speaker_key: String, key: String, parameters: Dictionary = {},
 	_speaker_key = speaker_key
 	_message_key = key
 	_message_params = _deep_copy_dict(parameters)
+	var spoken: float = voice.play(key, speaker_key) if voice != null else 0.0
+	# A voiced shout stays while it is heard; a voiced line without subtitles leaves after its voice.
+	if spoken > 0.0 and (transient > 0.0 or not subtitles_enabled):
+		transient = maxf(transient, spoken + 0.4)
 	_message_transient = transient
 	_message_visible = true
-	_message_panel.visible = true
+	_message_panel.visible = subtitles_enabled or spoken <= 0.0
 	_message_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE if transient > 0.0 else Control.MOUSE_FILTER_STOP
 	_render_message()
 
@@ -203,6 +213,8 @@ func show_message(speaker_key: String, key: String, parameters: Dictionary = {},
 func clear_message() -> void:
 	_message_visible = false
 	_message_generation += 1
+	if voice != null:
+		voice.stop()
 	if _message_panel:
 		_message_panel.visible = false
 	if _prompt_label:
@@ -212,10 +224,10 @@ func clear_message() -> void:
 ## Speaker and text in the current language, split into parts that fit two lines, laid out.
 func _render_message() -> void:
 	_message_generation += 1
-	_speaker_label.text = Localization.text(_speaker_key) + ":" if not _speaker_key.is_empty() else ""
+	_speaker_label.text = Localization.text_in(subtitle_language, _speaker_key) + ":" if not _speaker_key.is_empty() else ""
 	_speaker_label.visible = not _speaker_key.is_empty()
 	var text_width := _layout_width() - _speaker_width()
-	_message_parts = _split_message(Localization.text(_message_key, _message_params), text_width)
+	_message_parts = _split_message(Localization.text_in(subtitle_language, _message_key, _message_params), text_width)
 	_message_part = 0
 	_show_part()
 
@@ -240,8 +252,16 @@ func _show_part() -> void:
 		_message_part += 1
 		_message_generation += 1
 		_show_part()
-	else:
+	elif _message_visible:
 		clear_message()
+
+
+## Applies the subtitle settings; an open line is shown again in the new way.
+func set_subtitles(enabled: bool, language: String) -> void:
+	subtitles_enabled = enabled
+	subtitle_language = language
+	if _message_visible and _message_panel != null:
+		_render_message()
 
 
 ## The widest the line may be: 1000, 60% of the safe width, and the room between the D-pad and the buttons.

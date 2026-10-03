@@ -12,6 +12,8 @@ var atmosphere: Node
 var settings: RefCounted
 var settings_menu: Control
 var audio: Node
+## D-115/D-116: spoken lines (English) under the HUD subtitles.
+var voice: Node
 var pocket: CanvasLayer
 var grass: Node3D
 
@@ -45,6 +47,12 @@ func _ready() -> void:
 	settings_menu.name = "VillageSettings"
 	pocket.get_pocket_panel().use_settings_page(settings_menu)
 	settings_menu.configure(self, settings)
+	voice = preload("res://scripts/world/world_voice.gd").new()
+	voice.name = "Voice"
+	add_child(voice)
+	voice.configure(self)
+	hud.voice = voice
+	hud.set_subtitles(settings.subtitles, settings.subtitle_language)
 	# UI-CLEAN-01: the game screen keeps only play controls; checking tools are in Settings -> Debug,
 	# the language choice is already in Settings.
 	hud.get_node("RootControl/HousePicker").hide()

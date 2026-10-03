@@ -1033,3 +1033,16 @@ msgstr "You're up. That's something."
 
 msgid "INN_BRAWL_KEEPER_KO_BED"
 msgstr "The bed upstairs is yours. You could have walked away, and you didn't."
+
+# D-115: subtitles on/off and their language in Settings; the voice is English.
+msgid "SETTINGS_SUBTITLES"
+msgstr "Subtitles (voice in English)"
+
+msgid "SETTINGS_ON"
+msgstr "On"
+
+msgid "SETTINGS_OFF"
+msgstr "Off"
+
+msgid "SETTINGS_SUBTITLES_AS_GAME"
+msgstr "Same as game"

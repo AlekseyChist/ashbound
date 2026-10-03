@@ -11,6 +11,10 @@ const TERRAIN_FAR := 3000.0
 var grass_percent := 100.0
 ## GRASS-02 / D-088: how far grass is drawn, metres.
 var grass_distance := 30.0
+## D-115: subtitles on/off and their language ("" = the game's language); the voice is always English.
+var subtitles := true
+var subtitle_language := ""
+const SUBTITLE_LANGUAGES := ["", "en", "ru"]
 var path := PATH
 
 func load_settings(file: String = PATH) -> void:
@@ -22,6 +26,10 @@ func load_settings(file: String = PATH) -> void:
 	draw_distance = _number(config.get_value("graphics", "distance", draw_distance), draw_distance, 80, MAX_DRAW_DISTANCE)
 	grass_percent = _number(config.get_value("graphics", "grass", grass_percent), grass_percent, 0, 100)
 	grass_distance = _number(config.get_value("graphics", "grass_distance", grass_distance), grass_distance, 15, 45)
+	var shown: Variant = config.get_value("subtitles", "enabled", subtitles)
+	subtitles = shown if shown is bool else true
+	var language: Variant = config.get_value("subtitles", "language", subtitle_language)
+	subtitle_language = language if language is String and SUBTITLE_LANGUAGES.has(language) else ""
 
 func save_settings() -> Error:
 	var config := ConfigFile.new()
@@ -32,6 +40,8 @@ func save_settings() -> Error:
 	config.set_value("graphics", "distance", draw_distance)
 	config.set_value("graphics", "grass", grass_percent)
 	config.set_value("graphics", "grass_distance", grass_distance)
+	config.set_value("subtitles", "enabled", subtitles)
+	config.set_value("subtitles", "language", subtitle_language)
 	return config.save(path)
 
 func apply_distance(world: Node3D) -> void:

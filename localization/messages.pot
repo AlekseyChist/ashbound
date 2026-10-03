@@ -976,3 +976,16 @@ msgstr ""
 
 msgid "INN_BRAWL_KEEPER_KO_BED"
 msgstr ""
+
+# D-115: subtitles on/off and their language in Settings; the voice is English.
+msgid "SETTINGS_SUBTITLES"
+msgstr ""
+
+msgid "SETTINGS_ON"
+msgstr ""
+
+msgid "SETTINGS_OFF"
+msgstr ""
+
+msgid "SETTINGS_SUBTITLES_AS_GAME"
+msgstr ""

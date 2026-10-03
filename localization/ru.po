@@ -1034,3 +1034,16 @@ msgstr "Встал — уже хорошо."
 
 msgid "INN_BRAWL_KEEPER_KO_BED"
 msgstr "Койка наверху твоя. Ты мог уйти — и не ушёл."
+
+# D-115: subtitles on/off and their language in Settings; the voice is English.
+msgid "SETTINGS_SUBTITLES"
+msgstr "Субтитры (голос — английский)"
+
+msgid "SETTINGS_ON"
+msgstr "Вкл"
+
+msgid "SETTINGS_OFF"
+msgstr "Выкл"
+
+msgid "SETTINGS_SUBTITLES_AS_GAME"
+msgstr "Как в игре"

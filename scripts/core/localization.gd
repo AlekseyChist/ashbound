@@ -110,6 +110,17 @@ func text(key: StringName, parameters: Dictionary = {}) -> String:
 	var translated := TranslationServer.translate(key)
 	return _substitute(translated, parameters)
 
+## D-115: a key in a given language ("en"/"ru"), whatever the game's language is (subtitle language).
+## An empty or unknown language means the game's own.
+func text_in(language: String, key: StringName, parameters: Dictionary = {}) -> String:
+	if language.is_empty() or language == _effective:
+		return text(key, parameters)
+	var catalog := TranslationServer.get_translation_object(language)
+	if catalog == null or not catalog.get_locale().begins_with(language):
+		return text(key, parameters)
+	var translated := String(catalog.get_message(key))
+	return _substitute(translated if not translated.is_empty() else String(key), parameters)
+
 ## Translate a plural form (native gettext forms) and substitute parameters.
 ## The count argument always wins over any "count" in parameters.
 func text_plural(singular: StringName, plural: StringName, count: int, parameters: Dictionary = {}) -> String:
