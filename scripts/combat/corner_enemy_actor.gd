@@ -29,6 +29,18 @@ const FLEE_SPEED_SCALE: float = 1.7
 signal fled()
 ## Hits after which the enemy runs away; 0 keeps the sandbox behaviour (never).
 var flee_after_hits: int = 0
+## INN-BRAWL-01: optional scene overrides; the defaults keep the wolf/guard behaviour.
+## false: the enemy stays at home and never starts a fight on its own.
+var engaged: bool = true
+var detect_radius: float = DETECT_RADIUS
+var leash_radius: float = RETURN_HOME_RADIUS
+## Another opponent than the hero (an ally with receive_enemy_hit(attacker) and is_down());
+## null or down = the hero.
+var opponent: Node3D = null
+## Where a beaten enemy runs to (a door); null = straight away from the hero.
+var flee_point: Variant = null
+## Label above the head; empty = the kind's own name.
+var label_key: String = ""
 
 var kind: String = ""
 var home: Vector3 = Vector3.ZERO
@@ -180,7 +192,7 @@ func _on_language_changed(_language: String) -> void:
 func _update_label_text() -> void:
 	if _label == null:
 		return
-	var key := "ENEMY_WOLF" if kind == "wolf" else "ENEMY_GUARD"
+	var key := label_key if not label_key.is_empty() else ("ENEMY_WOLF" if kind == "wolf" else "ENEMY_GUARD")
 	var loc := get_node_or_null("/root/Localization")
 	if loc != null and loc.has_method("text"):
 		_label.text = loc.text(key)
@@ -296,15 +308,21 @@ func is_block_window_open() -> bool:
 
 
 func has_line_to_player() -> bool:
-	if _player == null:
+	var foe := _foe()
+	if foe == null:
 		return false
-	var from := global_position + Vector3(0, 0.5, 0)
-	var to := _player.global_position + Vector3(0, 0.5, 0)
+	# A man looks over tables and benches (INN-BRAWL-01); the wolf keeps its low line.
+	var eye := Vector3(0, 0.5 if kind == "wolf" else 1.35, 0)
+	var from := global_position + eye
+	var to := foe.global_position + eye
 	var dir := to - from
 	if dir.length() < 0.001:
 		return true
 	var space_state := get_world_3d().direct_space_state
-	var query := PhysicsRayQueryParameters3D.create(from, to, 5, [get_rid(), _player.get_rid()])
+	var exclude: Array[RID] = [get_rid(), foe.get_rid()]
+	if _player != null and foe != _player:
+		exclude.append(_player.get_rid())
+	var query := PhysicsRayQueryParameters3D.create(from, to, 5, exclude)
 	var result := space_state.intersect_ray(query)
 	# Empty means clear line of sight; a world or other NPC body blocks it.
 	return result.is_empty()
@@ -318,10 +336,11 @@ func _step_idle(delta: float) -> void:
 	if _reacquire_timer > 0.0:
 		_reacquire_timer = maxf(0.0, _reacquire_timer - delta)
 		return
-	if _player != null:
-		var planar_dist := Vector2(global_position.x - _player.global_position.x, global_position.z - _player.global_position.z).length()
-		var home_dist := Vector2(_player.global_position.x - home.x, _player.global_position.z - home.z).length()
-		if planar_dist <= DETECT_RADIUS and home_dist <= RETURN_HOME_RADIUS and _vertical_ok() and has_line_to_player():
+	var foe := _foe()
+	if foe != null and engaged:
+		var planar_dist := Vector2(global_position.x - foe.global_position.x, global_position.z - foe.global_position.z).length()
+		var home_dist := Vector2(foe.global_position.x - home.x, foe.global_position.z - home.z).length()
+		if planar_dist <= detect_radius and home_dist <= leash_radius and _vertical_ok() and has_line_to_player():
 			state = "chase"
 			state_time = 0.0
 			_los_lost_time = 0.0
@@ -340,13 +359,17 @@ func _step_chase(delta: float) -> void:
 	else:
 		_los_lost_time = 0.0
 
+	var foe := _foe()
+	if foe == null or not engaged:
+		_begin_return()
+		return
 	var to_home := Vector2(global_position.x - home.x, global_position.z - home.z).length()
-	var player_to_home := Vector2(_player.global_position.x - home.x, _player.global_position.z - home.z).length()
-	if to_home > RETURN_HOME_RADIUS or player_to_home > RETURN_HOME_RADIUS:
+	var player_to_home := Vector2(foe.global_position.x - home.x, foe.global_position.z - home.z).length()
+	if to_home > leash_radius or player_to_home > leash_radius:
 		_begin_return()
 		return
 
-	var dir := (_player.global_position - global_position)
+	var dir := (foe.global_position - global_position)
 	dir.y = 0.0
 	if dir.length_squared() < 0.0001:
 		dir = facing_direction
@@ -354,7 +377,7 @@ func _step_chase(delta: float) -> void:
 		dir = dir.normalized()
 	facing_direction = dir
 
-	var planar_dist := Vector2(global_position.x - _player.global_position.x, global_position.z - _player.global_position.z).length()
+	var planar_dist := Vector2(global_position.x - foe.global_position.x, global_position.z - foe.global_position.z).length()
 	if not _vertical_ok():
 		_begin_return()
 		return
@@ -381,7 +404,16 @@ func _step_windup(delta: float) -> void:
 	if state_time >= _windup_time - 1e-8 and not _contact_done:
 		_contact_done = true
 		var result := ""
-		if session != null and session.has_method("resolve_enemy_contact"):
+		var foe := _foe()
+		if foe != null and foe != _player:
+			# An ally: in reach and in front, it takes (or blocks) the blow itself.
+			var to_foe := foe.global_position - global_position
+			to_foe.y = 0.0
+			if to_foe.length() <= _stop_distance + 0.4 and to_foe.normalized().dot(_aim_direction) > 0.5:
+				result = str(foe.call("receive_enemy_hit", self))
+			else:
+				result = "miss"
+		elif session != null and session.has_method("resolve_enemy_contact"):
 			result = session.resolve_enemy_contact(self)
 		contacts += 1
 		if result == "perfect_block":
@@ -406,9 +438,11 @@ func _step_stagger(delta: float) -> void:
 		_reacquire_timer = REACQUIRE_DELAY
 
 
-## Run straight away from the hero; after FLEE_TIME the enemy is gone (hidden, no collision).
+## Run straight away from the hero (or to flee_point); after FLEE_TIME the enemy is gone (hidden, no collision).
 func _step_flee(delta: float) -> void:
 	var away := global_position - (_player.global_position if _player != null else home)
+	if flee_point != null:
+		away = (flee_point as Vector3) - global_position
 	away.y = 0.0
 	var dir := away.normalized() if away.length() > 0.01 else -facing_direction
 	facing_direction = dir
@@ -461,9 +495,26 @@ func _session_enabled() -> bool:
 
 
 func _vertical_ok() -> bool:
-	if _player == null:
+	var foe := _foe()
+	if foe == null:
 		return false
-	return absf(global_position.y - _player.global_position.y) <= VERTICAL_TOLERANCE
+	return absf(global_position.y - foe.global_position.y) <= VERTICAL_TOLERANCE
+
+
+## The current opponent: the ally while it is still standing, otherwise the hero.
+func _foe() -> Node3D:
+	if opponent != null and is_instance_valid(opponent) and not bool(opponent.call("is_down")):
+		return opponent
+	return _player
+
+
+## Run off now, as after the last hit (the first one beaten leads the others out).
+func flee_now() -> void:
+	if state == "flee" or state == "gone":
+		return
+	state = "flee"
+	state_time = 0.0
+	_contact_done = false
 
 
 func _begin_return() -> void:

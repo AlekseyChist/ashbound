@@ -3,6 +3,8 @@ extends Node
 ## until the morning. Trial price (owner, 25 Sep): 3 coins a night; the hostess pays 10 for the firewood.
 ## The rent is kept in user://world_inn.cfg until the campaign save (SAVE-01) takes over.
 signal changed()
+## The hero has slept a night and is awake again (INN-BRAWL-01 waits downstairs after that).
+signal woke()
 
 const SAVE_PATH := "user://world_inn.cfg"
 const PRICE := 3
@@ -17,6 +19,10 @@ var rented := false
 ## Nights slept in the inn; the corner objective moves on after the first one (UI-CLEAN-01).
 var nights := 0
 var sleeping := false
+## INN-BRAWL-01 (D-092): after the morning fight the bed is the hero's for good - no rent, sleep keeps it.
+var owned := false
+## The morning scene: "none" until the first night, "pending" while it waits downstairs, "done".
+var brawl := "none"
 var save_path := SAVE_PATH
 var _veil: ColorRect
 
@@ -35,13 +41,13 @@ func configure(scene: Node3D) -> void:
 
 ## The prompt the innkeeper offers once he has greeted the hero: rent a bed, or talk while it is rented.
 func keeper_prompt() -> String:
-	if rented:
+	if rented or owned:
 		return Localization.text("COURTYARD_ACTION_TALK")
 	return Localization.text("INN_ACTION_RENT", {"price": str(PRICE)})
 
 ## Rent the bed when the purse allows; the innkeeper answers either way. Returns true when paid.
 func rent() -> bool:
-	if rented:
+	if rented or owned:
 		world.hud.show_message("INN_KEEPER_NAME", "INN_KEEPER_BED_YOURS")
 		return false
 	var inventory: Node = world.get_node("/root/Inventory")
@@ -57,7 +63,7 @@ func bed_position() -> Vector3:
 	return world.inn.to_global(BED)
 
 func bed_in_reach() -> bool:
-	if not rented or sleeping or world.inn == null or world.player == null:
+	if not (rented or owned) or sleeping or world.inn == null or world.player == null:
 		return false
 	var offset: Vector3 = bed_position() - world.player.global_position
 	return Vector2(offset.x, offset.z).length() <= BED_REACH and absf(offset.y) < 1.2
@@ -78,6 +84,8 @@ func sleep() -> bool:
 	atmosphere.save_state()
 	rented = false
 	nights += 1
+	if brawl == "none":
+		brawl = "pending"
 	_changed()
 	await get_tree().create_timer(.4, false).timeout
 	tween = create_tween()
@@ -85,6 +93,7 @@ func sleep() -> bool:
 	await tween.finished
 	sleeping = false
 	world.hud.show_message("", "INN_SLEEP_DONE")
+	woke.emit()
 	return true
 
 func _changed() -> void:
@@ -100,12 +109,16 @@ func save_state() -> Error:
 	var config := ConfigFile.new()
 	config.set_value("inn", "rented", rented)
 	config.set_value("inn", "nights", nights)
+	config.set_value("inn", "owned", owned)
+	config.set_value("inn", "brawl", brawl)
 	return config.save(save_path)
 
 ## A missing or damaged file means no bed is rented.
 func load_state() -> void:
 	rented = false
 	nights = 0
+	owned = false
+	brawl = "none"
 	var config := ConfigFile.new()
 	if config.load(save_path) != OK:
 		return
@@ -113,3 +126,13 @@ func load_state() -> void:
 	rented = value is bool and value
 	var slept: Variant = config.get_value("inn", "nights", 0)
 	nights = maxi(int(slept), 0) if slept is int else 0
+	var own: Variant = config.get_value("inn", "owned", false)
+	owned = own is bool and own
+	var scene: Variant = config.get_value("inn", "brawl", "")
+	if scene is String and scene in ["none", "pending", "done"]:
+		brawl = scene
+	else:
+		# Files from before INN-BRAWL-01: a night already slept means the morning still waits.
+		brawl = "pending" if nights > 0 else "none"
+	if owned:
+		brawl = "done"
