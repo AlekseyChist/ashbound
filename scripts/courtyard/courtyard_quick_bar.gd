@@ -47,9 +47,9 @@ func setup(menu: Node, panel: Node, hud: Node, player: Node) -> void:
 func _shift_hud() -> void:
 	var force_touch := OS.has_feature("android") or bool(_hud.force_touch_controls) if is_instance_valid(_hud) else false
 	if not _hud_shifted and is_instance_valid(_hud):
-		var message_panel: Node = _hud.get_node_or_null("RootControl/MessagePanel")
-		if message_panel is Control:
-			message_panel.position.y -= BAR_RESERVE
+		# DIALOG-LINE-01: the HUD lays the line out above this bar's real top itself.
+		if "message_avoid" in _hud:
+			_hud.message_avoid = self
 		if force_touch:
 			var bottom_left: Node = _hud.get_node_or_null("RootControl/BottomLeft")
 			var bottom_right: Node = _hud.get_node_or_null("RootControl/BottomRight")
@@ -70,9 +70,8 @@ func release_hud() -> void:
 	if not _hud_shifted or not is_instance_valid(_hud):
 		return
 	var force_touch := OS.has_feature("android") or bool(_hud.force_touch_controls)
-	var message_panel: Node = _hud.get_node_or_null("RootControl/MessagePanel")
-	if message_panel is Control:
-		message_panel.position.y += BAR_RESERVE
+	if "message_avoid" in _hud and _hud.message_avoid == self:
+		_hud.message_avoid = null
 	var bottom_left: Node = _hud.get_node_or_null("RootControl/BottomLeft")
 	if force_touch:
 		var bottom_right: Node = _hud.get_node_or_null("RootControl/BottomRight")

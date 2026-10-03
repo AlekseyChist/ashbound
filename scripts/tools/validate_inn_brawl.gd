@@ -36,6 +36,15 @@ func wait_for(condition: Callable, seconds: float) -> bool:
 		await get_tree().physics_frame
 	return condition.call()
 
+## Turns the camera towards the men's table, as a player looking at them would.
+func look_at_men() -> void:
+	var rig: Node = world.camera_rig
+	var to: Vector3 = brawl.men["leader"].global_position - world.player.global_position
+	rig._yaw = atan2(-to.x, -to.z)
+	rig._apply_rotation()
+	rig.snap_to_target()
+	await get_tree().process_frame
+
 func put_hero(local: Vector3) -> void:
 	world.player.global_position = inn.to_global(local)
 	world.player.velocity = Vector3.ZERO
@@ -139,9 +148,25 @@ func check_staging() -> void:
 	check(brawl.phase == "staged" and brawl.hero_hits == 0 and brawl.men["leader"].state in ["idle", "return"], "upstairs the scene keeps waiting")
 
 func check_answers() -> void:
-	put_hero(Vector3(-1.5, .5, 0.5))
-	check(await wait_for(func(): return brawl.phase == "intro", 2.0), "coming down into the hall starts the lines")
+	# In the hall with the men behind the hero: nothing starts yet.
+	put_hero(Vector3(0.5, .5, 1.5))
+	var rig: Node = world.camera_rig
+	var to: Vector3 = brawl.men["leader"].global_position - world.player.global_position
+	rig._yaw = atan2(to.x, to.z)
+	rig._apply_rotation()
+	rig.snap_to_target()
+	await settle(.5)
+	check(brawl.phase == "staged", "with the men behind the hero the lines wait")
+	await look_at_men()
+	check(await wait_for(func(): return brawl.phase == "intro", 2.0), "with the men in view the lines start")
 	check(world.hud._message_key == "INN_BRAWL_LEADER_ASK", "the ringleader asks about the lodgers first (%s)" % world.hud._message_key)
+	# DIALOG-LINE-01: a compact subtitle at the bottom, not a box across the middle of the scene.
+	await get_tree().process_frame
+	var line_rect: Rect2 = world.hud.get_node("RootControl/MessagePanel").get_global_rect()
+	var screen: Rect2 = world.hud.get_node("RootControl").get_global_rect()
+	check(line_rect.size.y < 130.0 and line_rect.position.y > screen.position.y + screen.size.y * 0.6, "the line is a low subtitle (%s in %s)" % [line_rect, screen])
+	check(line_rect.size.x <= 1000.5 and absf(line_rect.get_center().x - screen.get_center().x) < 2.0, "centred, at most 1000 wide (%s)" % line_rect)
+	check(world.hud.get_node("RootControl/MessagePanel/VBox/SpeakerLabel").text == Localization.text("INN_THUG_LEADER_NAME") + ":", "\"Name:\" in the same line")
 	var menu: CanvasLayer = world.choices
 	check(await wait_for(func(): return menu.is_open, 3.0), "after the lines the answers open")
 	check(menu._ids == [&"step_in", &"pay_up", &"just_came"], "three answers (%s)" % str(menu._ids))
@@ -198,6 +223,7 @@ func check_win() -> void:
 	check(leader.state == "flee" and world.hud._message_key == "INN_BRAWL_LEADER_THREAT", "the ringleader leaves with the threat")
 	if brute.state != "flee" and brute.state != "gone":
 		brute.receive_hit()
+	check(world.hud.get_node("RootControl/MessagePanel").mouse_filter == Control.MOUSE_FILTER_IGNORE, "a shout in the fight takes no taps")
 	check(await wait_for(func(): return brawl.phase == "after", 6.0), "all three gone: the fight is won")
 	check(lodging.owned and lodging.brawl == "done" and brawl.outcome == "won", "the bed is the hero's for good")
 	var saved := ConfigFile.new()
@@ -231,7 +257,8 @@ func check_owned_bed(purse: Node) -> void:
 func check_leave_and_first_strike() -> void:
 	await fresh()
 	await sleep_night()
-	put_hero(Vector3(-1.5, .5, 0.5))
+	put_hero(Vector3(0.5, .5, 1.5))
+	await look_at_men()
 	check(await wait_for(func(): return world.choices.is_open, 4.0), "a new morning: the answers open")
 	world.choices.choose(&"step_in")
 	await settle(.2)

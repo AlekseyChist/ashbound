@@ -25,8 +25,14 @@ const DOOR_OUT := Vector3(0.0, FLOOR, 13.0)
 const GIVE_UP := {"leader": 3, "brute": 5, "young": 2}
 const HERO_KO_HITS := 6
 const LINE_TIME := 3.2
+## Shouts in the fight leave the screen by themselves, never take taps (Codex 135).
+const SHOUT_TIME := 3.0
 ## The answers are offered again when the hero comes this close to the ringleader.
 const OFFER_RADIUS := 2.2
+## The lines start when the hero is this near the ringleader and has him in view (Codex 135: stage the
+## start, do not turn the camera) - not as soon as the hero steps into the hall with them behind him.
+const START_RADIUS := 7.0
+const START_VIEW_COS := 0.64
 const NAMES := {"leader": "INN_THUG_LEADER_NAME", "brute": "INN_THUG_BRUTE_NAME", "young": "INN_THUG_YOUNG_NAME"}
 
 var world: Node3D
@@ -132,12 +138,12 @@ func _process(_delta: float) -> void:
 	var inside: bool = inn.contains(world.player.global_position)
 	if phase in ["staged", "waiting"] and _struck_first():
 		# The hero hit one of them before any word: that is the answer.
-		world.hud.show_message("INN_THUG_LEADER_NAME", "INN_BRAWL_LEADER_LANDLORD")
+		world.hud.show_message("INN_THUG_LEADER_NAME", "INN_BRAWL_LEADER_LANDLORD", {}, SHOUT_TIME)
 		_start_fight()
 		return
 	match phase:
 		"staged":
-			if inside:
+			if inside and _sees_men():
 				_intro()
 		"waiting":
 			var leader: Node3D = men["leader"]
@@ -156,6 +162,20 @@ func _process(_delta: float) -> void:
 				world.hud.clear_message()
 				return
 			_watch_fight()
+
+## The ringleader is near and inside the camera's view.
+func _sees_men() -> bool:
+	var leader: Node3D = men.get("leader")
+	if leader == null or _planar(leader.global_position, world.player.global_position) > START_RADIUS:
+		return false
+	var camera: Camera3D = world.get_viewport().get_camera_3d()
+	if camera == null:
+		return true
+	var to: Vector3 = leader.global_position - camera.global_position
+	to.y = 0.0
+	var ahead: Vector3 = -camera.global_basis.z
+	ahead.y = 0.0
+	return to.normalized().dot(ahead.normalized()) >= START_VIEW_COS
 
 func _struck_first() -> bool:
 	for role in men:
@@ -196,13 +216,13 @@ func _offer(first: bool) -> void:
 		return
 	match id:
 		&"step_in":
-			world.hud.show_message("INN_THUG_LEADER_NAME", "INN_BRAWL_LEADER_LANDLORD")
+			world.hud.show_message("INN_THUG_LEADER_NAME", "INN_BRAWL_LEADER_LANDLORD", {}, SHOUT_TIME)
 			_start_fight()
 		&"pay_up":
-			world.hud.show_message("INN_THUG_LEADER_NAME", "INN_BRAWL_LEADER_EVERYONE")
+			world.hud.show_message("INN_THUG_LEADER_NAME", "INN_BRAWL_LEADER_EVERYONE", {}, SHOUT_TIME)
 			_start_fight()
 		_:
-			world.hud.show_message("INN_DAUGHTER_NAME", "INN_BRAWL_DAUGHTER_STAIRS")
+			world.hud.show_message("INN_DAUGHTER_NAME", "INN_BRAWL_DAUGHTER_STAIRS", {}, LINE_TIME + 1.0)
 			phase = "waiting"
 			_offer_armed = false
 
@@ -237,10 +257,10 @@ func _watch_fight() -> void:
 					if o.state != "flee" and o.state != "gone":
 						o.flee_after_hits = o.hits_received + 1
 				if role != "leader":
-					world.hud.show_message(NAMES[role], "INN_BRAWL_ENOUGH")
+					world.hud.show_message(NAMES[role], "INN_BRAWL_ENOUGH", {}, SHOUT_TIME)
 			if role == "leader" and not _leader_threat:
 				_leader_threat = true
-				world.hud.show_message("INN_THUG_LEADER_NAME", "INN_BRAWL_LEADER_THREAT")
+				world.hud.show_message("INN_THUG_LEADER_NAME", "INN_BRAWL_LEADER_THREAT", {}, SHOUT_TIME)
 		if man.state != "gone":
 			left += 1
 	if left == 0:

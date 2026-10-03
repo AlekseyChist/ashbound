@@ -66,16 +66,18 @@ offset_bottom = -60.0
 grow_horizontal = 2
 grow_vertical = 0
 
-[node name="VBox" type="VBoxContainer" parent="RootControl/MessagePanel"]
+[node name="VBox" type="HBoxContainer" parent="RootControl/MessagePanel"]
 layout_mode = 2
+theme_override_constants/separation = 10
 
 [node name="SpeakerLabel" type="Label" parent="RootControl/MessagePanel/VBox"]
 layout_mode = 2
+size_flags_vertical = 0
 text = ""
 
 [node name="MessageText" type="Label" parent="RootControl/MessagePanel/VBox"]
-custom_minimum_size = Vector2(840, 160)
 layout_mode = 2
+size_flags_horizontal = 3
 text = ""
 autowrap_mode = 3
 
