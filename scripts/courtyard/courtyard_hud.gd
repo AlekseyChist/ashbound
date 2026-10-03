@@ -57,6 +57,20 @@ var _tracked_touches: Array[int] = []
 var _objective_key := ""
 var _objective_params: Dictionary = {}
 var _speaker_key := ""
+## DIALOG-LINE-01 (owner 3 Oct, Codex 135, UI book 1.0): a line is a compact subtitle at the bottom -
+## "Name: text", 1-2 lines, as tall as its text, inside the safe area, clear of the quick-slot bar and
+## the touch controls. Longer lines go in parts one after another; short shouts leave by themselves.
+const MESSAGE_MAX_WIDTH := 1000.0
+const MESSAGE_WIDTH_SHARE := 0.6
+const MESSAGE_GAP := 24.0
+const MESSAGE_MAX_LINES := 2
+const MESSAGE_PART_TIME := 4.0
+## A control the line keeps above (the world's quick-slot bar sets itself here).
+var message_avoid: Control
+var _message_parts: PackedStringArray = []
+var _message_part := 0
+var _message_generation := 0
+var _message_transient := 0.0
 var _message_key := ""
 var _message_params: Dictionary = {}
 
@@ -168,25 +182,136 @@ func set_objective(key: String, parameters: Dictionary = {}) -> void:
 func set_prompt(text: String) -> void:
 	if _prompt_label:
 		_prompt_label.text = text
-		_prompt_label.visible = not text.is_empty()
+		# A line on screen is the one text at the bottom; the prompt waits under it.
+		_prompt_label.visible = not text.is_empty() and not _message_visible
 
 
-func show_message(speaker_key: String, key: String, parameters: Dictionary = {}) -> void:
+## `transient` > 0: a shout that leaves by itself after that many seconds and never takes taps.
+func show_message(speaker_key: String, key: String, parameters: Dictionary = {}, transient := 0.0) -> void:
 	if not _message_panel:
 		return
 	_speaker_key = speaker_key
 	_message_key = key
 	_message_params = _deep_copy_dict(parameters)
-	_speaker_label.text = Localization.text(speaker_key) if not speaker_key.is_empty() else ""
-	_message_text.text = Localization.text(key, _message_params)
+	_message_transient = transient
 	_message_visible = true
 	_message_panel.visible = true
+	_message_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE if transient > 0.0 else Control.MOUSE_FILTER_STOP
+	_render_message()
 
 
 func clear_message() -> void:
 	_message_visible = false
+	_message_generation += 1
 	if _message_panel:
 		_message_panel.visible = false
+	if _prompt_label:
+		_prompt_label.visible = not _prompt_label.text.is_empty()
+
+
+## Speaker and text in the current language, split into parts that fit two lines, laid out.
+func _render_message() -> void:
+	_message_generation += 1
+	_speaker_label.text = Localization.text(_speaker_key) + ":" if not _speaker_key.is_empty() else ""
+	_speaker_label.visible = not _speaker_key.is_empty()
+	var text_width := _layout_width() - _speaker_width()
+	_message_parts = _split_message(Localization.text(_message_key, _message_params), text_width)
+	_message_part = 0
+	_show_part()
+
+
+## The whole current line (all its parts), for checks and readers.
+func message_text() -> String:
+	return " ".join(_message_parts) if _message_visible else ""
+
+
+func _show_part() -> void:
+	_message_text.text = _message_parts[_message_part] if not _message_parts.is_empty() else ""
+	_prompt_label.visible = false
+	_layout_message()
+	var generation := _message_generation
+	var wait := MESSAGE_PART_TIME if _message_part < _message_parts.size() - 1 else _message_transient
+	if wait <= 0.0 or not is_inside_tree():
+		return
+	await get_tree().create_timer(wait, false).timeout
+	if generation != _message_generation or not _message_visible:
+		return
+	if _message_part < _message_parts.size() - 1:
+		_message_part += 1
+		_message_generation += 1
+		_show_part()
+	else:
+		clear_message()
+
+
+## The widest the line may be: 1000, 60% of the safe width, and the room between the D-pad and the buttons.
+func _layout_width() -> float:
+	var area: Rect2 = _root.get_global_rect()
+	var width := minf(MESSAGE_MAX_WIDTH, area.size.x * MESSAGE_WIDTH_SHARE)
+	var dpad: Control = $RootControl/BottomLeft/DpadGrid
+	var column: Control = $RootControl/BottomRight
+	if dpad.is_visible_in_tree() and column.is_visible_in_tree():
+		var room := column.get_global_rect().position.x - dpad.get_global_rect().end.x - MESSAGE_GAP * 2.0
+		if room > 360.0:
+			width = minf(width, room)
+	return width
+
+
+func _speaker_width() -> float:
+	var box: BoxContainer = $RootControl/MessagePanel/VBox
+	var style: StyleBox = _message_panel.get_theme_stylebox("panel")
+	var padding := style.get_minimum_size().x if style != null else 28.0
+	if not _speaker_label.visible:
+		return padding
+	return padding + _speaker_label.get_combined_minimum_size().x + box.get_theme_constant("separation")
+
+
+## Whole words per part, each part at most MESSAGE_MAX_LINES lines at this width.
+func _split_message(text: String, width: float) -> PackedStringArray:
+	var font: Font = _message_text.get_theme_font("font")
+	var size: int = _message_text.get_theme_font_size("font_size")
+	if font == null or width <= 0.0:
+		return PackedStringArray([text])
+	var limit := font.get_height(size) * MESSAGE_MAX_LINES + 2.0
+	var fits := func(part: String) -> bool:
+		return font.get_multiline_string_size(part, HORIZONTAL_ALIGNMENT_LEFT, width, size).y <= limit
+	if fits.call(text):
+		return PackedStringArray([text])
+	var parts := PackedStringArray()
+	var current := ""
+	for word in text.split(" ", false):
+		var candidate: String = word if current.is_empty() else current + " " + word
+		if fits.call(candidate):
+			current = candidate
+			continue
+		if not current.is_empty():
+			parts.append(current)
+		current = word
+	if not current.is_empty():
+		parts.append(current)
+	return parts
+
+
+## Bottom centre of the safe area, 24 above its edge, above the quick-slot bar and the bottom
+## button row when they are shown; as tall as the text.
+func _layout_message() -> void:
+	var area: Rect2 = _root.get_global_rect()
+	var width := _layout_width()
+	_message_text.custom_minimum_size = Vector2(maxf(width - _speaker_width(), 120.0), 0.0)
+	_message_panel.reset_size()
+	var bottom := area.end.y - MESSAGE_GAP
+	if is_instance_valid(message_avoid) and message_avoid.is_visible_in_tree():
+		var top := INF
+		for child in message_avoid.get_children():
+			if child is Control and child.visible:
+				top = minf(top, (child as Control).get_global_rect().position.y)
+		if top < INF:
+			bottom = minf(bottom, top - MESSAGE_GAP)
+	if _btn_attack.is_visible_in_tree():
+		bottom = minf(bottom, _btn_attack.get_global_rect().position.y - MESSAGE_GAP)
+	var size := _message_panel.get_combined_minimum_size()
+	_message_panel.size = size
+	_message_panel.global_position = Vector2(area.position.x + (area.size.x - size.x) * 0.5, bottom - size.y)
 
 
 func reset_controls() -> void:
@@ -233,11 +358,9 @@ func _refresh_localized_texts() -> void:
 		_btn_run.text = Localization.text("UI_ACTION_RUN")
 	if _btn_jump:
 		_btn_jump.text = Localization.text("UI_ACTION_JUMP")
-	if _speaker_label:
-		_speaker_label.text = Localization.text(_speaker_key) if not _speaker_key.is_empty() else ""
 	# Обновляем текст открытого сообщения; закрытое не открываем.
-	if _message_visible and _message_text:
-		_message_text.text = Localization.text(_message_key, _message_params)
+	if _message_visible and _message_text and _speaker_label:
+		_render_message()
 
 
 func _deep_copy_dict(d: Dictionary) -> Dictionary:

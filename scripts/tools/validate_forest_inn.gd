@@ -279,7 +279,7 @@ func check_lodging() -> void:
 	check(world.hud._message_key == "INN_SLEEP_DONE", "a morning message")
 	check(saved.load(path) == OK and saved.get_value("inn", "rented") == false, "the ended rent is saved")
 	world._update_prompt()
-	check(lodging.nights == 1 and saved.get_value("inn", "nights") == 1 and world.hud._objective_key == "INN_OBJECTIVE_MORNING", "after the first night the objective moves on")
+	check(lodging.nights == 1 and saved.get_value("inn", "nights") == 1 and world.hud._objective_key == "INN_OBJECTIVE_BRAWL", "after the first night the objective sends the hero down to the hall (INN-BRAWL-01)")
 	lodging.nights = 0
 	lodging.load_state()
 	check(lodging.nights == 1, "the nights are restored from the file")

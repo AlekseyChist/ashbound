@@ -121,10 +121,7 @@ func _layout_play_controls() -> void:
 	column.offset_bottom = -COLUMN_RIGHT+8.0
 	column.offset_top = column.offset_bottom-412.0
 	(column.get_node("VBox") as BoxContainer).alignment = BoxContainer.ALIGNMENT_END
-	# The dialogue box stays above the Block/Attack line (where the quick bar used to keep it).
-	var message: Control = hud.get_node("RootControl/MessagePanel")
-	message.offset_top = -430.0
-	message.offset_bottom = -230.0
+	# DIALOG-LINE-01: the HUD lays the line out itself above the Block/Attack line and the quick bar.
 	# The "E · action" prompt at the bottom centre stays clear of Block on a 16:9 screen.
 	var prompt: Control = hud.get_node("RootControl/PromptLabel")
 	prompt.offset_left = -300.0

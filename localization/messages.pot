@@ -885,3 +885,94 @@ msgstr ""
 
 msgid "ASK_WAY_HERE"
 msgstr ""
+
+# INN-BRAWL-01: the morning fight in the forest inn (chapter #141, D-113).
+msgid "INN_OBJECTIVE_BRAWL"
+msgstr ""
+
+msgid "INN_DAUGHTER_NAME"
+msgstr ""
+
+msgid "INN_THUG_LEADER_NAME"
+msgstr ""
+
+msgid "INN_THUG_BRUTE_NAME"
+msgstr ""
+
+msgid "INN_THUG_YOUNG_NAME"
+msgstr ""
+
+msgid "INN_HERO_NAME"
+msgstr ""
+
+msgid "INN_BRAWL_LEADER_ASK"
+msgstr ""
+
+msgid "INN_BRAWL_LEADER_SIT"
+msgstr ""
+
+msgid "INN_BRAWL_DAUGHTER_PAY"
+msgstr ""
+
+msgid "INN_BRAWL_KEEPER_OUT"
+msgstr ""
+
+msgid "INN_BRAWL_BRUTE_THREE"
+msgstr ""
+
+msgid "INN_BRAWL_DAUGHTER_HINT"
+msgstr ""
+
+msgid "INN_BRAWL_DAUGHTER_AGAIN"
+msgstr ""
+
+msgid "INN_BRAWL_ANSWER_STEP_IN"
+msgstr ""
+
+msgid "INN_BRAWL_ANSWER_PAY_UP"
+msgstr ""
+
+msgid "INN_BRAWL_ANSWER_JUST_CAME"
+msgstr ""
+
+msgid "INN_BRAWL_LEADER_LANDLORD"
+msgstr ""
+
+msgid "INN_BRAWL_LEADER_EVERYONE"
+msgstr ""
+
+msgid "INN_BRAWL_DAUGHTER_STAIRS"
+msgstr ""
+
+msgid "INN_BRAWL_ENOUGH"
+msgstr ""
+
+msgid "INN_BRAWL_LEADER_THREAT"
+msgstr ""
+
+msgid "INN_BRAWL_DAUGHTER_DOOR"
+msgstr ""
+
+msgid "INN_BRAWL_HERO_MORNING"
+msgstr ""
+
+msgid "INN_BRAWL_DAUGHTER_BREAKFAST"
+msgstr ""
+
+msgid "INN_BRAWL_KEEPER_BED"
+msgstr ""
+
+msgid "INN_BRAWL_HERO_ONE_FIGHT"
+msgstr ""
+
+msgid "INN_BRAWL_KEEPER_COULD_LEAVE"
+msgstr ""
+
+msgid "INN_BRAWL_DAUGHTER_BOOTS"
+msgstr ""
+
+msgid "INN_BRAWL_DAUGHTER_UP"
+msgstr ""
+
+msgid "INN_BRAWL_KEEPER_KO_BED"
+msgstr ""

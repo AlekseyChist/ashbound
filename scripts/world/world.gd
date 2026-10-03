@@ -94,6 +94,8 @@ var inn_keeper: Node3D
 var inn_talk: QuestTracker
 ## INN-REST-01: the rented bed in the inn loft and sleeping until the morning.
 var lodging: Node
+## INN-BRAWL-01: the morning after the first night - the moneylender's men and the first fight.
+var brawl: Node
 ## TRAIL-01: the pine forest along the trail from the village to the forest inn.
 var trail_dressing: Node3D
 ## WORLD-DRESS-01A: low-poly forest over the rest of the map (baked positions).
@@ -154,6 +156,13 @@ func _ready() -> void:
 	choices.name = "DialogueChoices"
 	add_child(choices)
 	choices.configure(self)
+	brawl = preload("res://scripts/world/inn_brawl.gd").new()
+	brawl.name = "InnBrawl"
+	add_child(brawl)
+	brawl.configure(self)
+	brawl.finished.connect(func(_outcome: String):
+		_update_prompt()
+		journal_changed.emit())
 	footprints = preload("res://scripts/world/world_footprints.gd").new()
 	footprints.name = "Footprints"
 	add_child(footprints)
@@ -986,7 +995,9 @@ func get_journal_entry() -> Dictionary:
 	var entry: Dictionary = lesson.journal_entry()
 	# UI-CLEAN-01: after the watchman pays, the objective leads to the inn bed and past the first night.
 	if entry.completed and lodging != null:
-		if lodging.rented:
+		if lodging.brawl == "pending":
+			entry.objective_key = "INN_OBJECTIVE_BRAWL"
+		elif lodging.rented:
 			entry.objective_key = "INN_OBJECTIVE_SLEEP"
 		elif lodging.nights == 0:
 			entry.objective_key = "INN_OBJECTIVE_RENT"
@@ -1004,7 +1015,7 @@ func interact() -> void:
 			lesson.interact(point)
 			_update_prompt()
 			return
-		if inn_keeper_in_reach():
+		if inn_keeper_in_reach() and not brawl.busy():
 			if inn_talk.flags.get(&"greeted", false):
 				await keeper_menu()
 			else:
@@ -1028,7 +1039,7 @@ func _update_prompt() -> void:
 	hud.set_objective(entry.objective_key, entry.params)
 	var point: Node3D = lesson.nearest_point() if is_input_available() else null
 	var action := ""
-	if point == null and is_input_available() and inn_keeper_in_reach():
+	if point == null and is_input_available() and inn_keeper_in_reach() and not brawl.busy():
 		point = inn_keeper
 		if inn_talk.flags.get(&"greeted", false):
 			action = Localization.text("COURTYARD_ACTION_TALK")
@@ -1196,7 +1207,7 @@ func inn_keeper_in_reach() -> bool:
 ## ale, or nothing. The answer is carried out and the innkeeper replies.
 func keeper_menu() -> void:
 	var answers := []
-	if not lodging.rented:
+	if not lodging.rented and not lodging.owned:
 		answers.append([&"rent", Localization.text("INN_ANSWER_RENT", {"price": str(lodging.PRICE)})])
 	answers.append([&"drink", Localization.text("INN_ANSWER_DRINK", {"price": str(DRINK_PRICE)})])
 	answers.append([&"leave", Localization.text("INN_ANSWER_LEAVE")])

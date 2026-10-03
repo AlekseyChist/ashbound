@@ -58,6 +58,11 @@ func _frames(count: int) -> void:
 	for i in count:
 		await physics_frame
 
+## DIALOG-LINE-01: a long line is shown in parts; the whole current line in the HUD's language.
+func _message() -> String:
+	return hud.message_text()
+
+
 func _label(path: String) -> String:
 	return str(hud.get_node("RootControl/" + path).text)
 
@@ -103,8 +108,8 @@ func _open_dialogue() -> void:
 	for language in ["en", "ru", "en"]:
 		await _switch(language)
 		_assert_labels()
-		_check(_label("MessagePanel/VBox/SpeakerLabel") == _expected("COURTYARD_NAME_INNKEEPER"), "open speaker translated")
-		_check(_label("MessagePanel/VBox/MessageText") == _expected("COURTYARD_DIALOGUE_HOST_JOB"), "same open line retranslated")
+		_check(_label("MessagePanel/VBox/SpeakerLabel") == _expected("COURTYARD_NAME_INNKEEPER") + ":", "open speaker translated (\"Name:\" subtitle, DIALOG-LINE-01)")
+		_check(_message() == _expected("COURTYARD_DIALOGUE_HOST_JOB"), "same open line retranslated")
 		_check(_label("TopLeftPanel/VBox/ObjectiveLabel") == _expected("COURTYARD_OBJECTIVE_FETCH_WOOD"), "ongoing objective translated")
 	completed += 1
 
@@ -113,11 +118,11 @@ func _wood_and_reward() -> void:
 	_check(level.state == 2 and not level.get_node("Interactions/Woodpile/Label3D").visible, "wood collected")
 	await _switch("ru")
 	_check(_label("MessagePanel/VBox/SpeakerLabel").is_empty(), "narration has no invented speaker")
-	_check(_label("MessagePanel/VBox/MessageText") == _expected("COURTYARD_DIALOGUE_WOOD_TAKEN"), "collection text translated")
+	_check(_message() == _expected("COURTYARD_DIALOGUE_WOOD_TAKEN"), "collection text translated")
 	_talk_near("Actors/Innkeeper")
 	_check(level.state == 3 and level.reward_claimed, "reward stage reached")
 	await _switch("en")
-	_check(_label("MessagePanel/VBox/MessageText") == _expected("COURTYARD_DIALOGUE_HOST_REWARD"), "reward dialogue retained")
+	_check(_message() == _expected("COURTYARD_DIALOGUE_HOST_REWARD"), "reward dialogue retained")
 	hud.clear_message()
 	await _switch("ru")
 	_check(not hud.get_node("RootControl/MessagePanel").visible, "closed message stays closed")
@@ -137,7 +142,7 @@ func _practice_and_controls() -> void:
 		var wanted := _expected("COURTYARD_OBJECTIVE_PRACTICE").replace("{hits}", "1").replace("{total}", "3")
 		_check(_label("TopLeftPanel/VBox/ObjectiveLabel") == wanted, "partial hit count survives language refresh")
 		_check(_label("BottomRight/VBox/RunButton") == ("Run" if language == "en" else "Бег"), "active run mode text")
-		_check(_label("MessagePanel/VBox/MessageText") == _expected("COURTYARD_DIALOGUE_GUARD_LESSON"), "watchman line translated")
+		_check(_message() == _expected("COURTYARD_DIALOGUE_GUARD_LESSON"), "watchman line translated")
 	hud.reset_controls()
 	await _switch("en")
 	_check(_label("BottomRight/VBox/RunButton") == "Walk", "idle walk mode text")
@@ -164,7 +169,7 @@ func _retained_parameters() -> void:
 	hud.show_message("", "COURTYARD_OBJECTIVE_PRACTICE", parameters)
 	parameters["hits"] = 99
 	await _switch("en")
-	_check(_label("MessagePanel/VBox/MessageText").ends_with("(2/3)"), "HUD owns message parameter snapshot")
+	_check(_message().ends_with("(2/3)"), "HUD owns message parameter snapshot")
 	hud.clear_message()
 	await _switch("ru")
 	_check(not hud._message_visible, "parameter refresh cannot reopen message")
@@ -224,7 +229,7 @@ func _all_dialogue_branches() -> void:
 		_talk_near(test_case[0])
 		for language in ["en", "ru"]:
 			await _switch(language)
-			_check(_label("MessagePanel/VBox/MessageText") == _expected(test_case[3]), "dialogue branch " + test_case[3] + " " + language)
+			_check(_message() == _expected(test_case[3]), "dialogue branch " + test_case[3] + " " + language)
 	completed += 1
 
 func _all_objectives() -> void:
