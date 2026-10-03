@@ -623,6 +623,18 @@ msgstr "Лесная таверна"
 msgid "WORLD_SITE_CROSSROADS_INN"
 msgstr "Таверна у развилки"
 
+msgid "WORLD_FOREST_CITY_TOWN_HALL"
+msgstr "Ратуша"
+
+msgid "WORLD_FOREST_CITY_BARRACKS"
+msgstr "Казарма ополчения"
+
+msgid "WORLD_FOREST_CITY_WATER_MILL"
+msgstr "Водяная мельница"
+
+msgid "WORLD_FOREST_CITY_SAWMILL"
+msgstr "Лесопилка"
+
 #. World exploration graybox; working place label.
 msgid "WORLD_SITE_FOREST_CAVE"
 msgstr "Лесная пещера"

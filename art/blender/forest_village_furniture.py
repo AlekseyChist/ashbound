@@ -491,6 +491,46 @@ def build_furniture(spec, mats):
         for i, (bx, by) in enumerate([(-2.5, -5.0), (-2.5, -2.2), (-2.5, 0.6), (1.6, -5.0), (1.6, -2.2)]):
             _bed(spec, mats, bx, by, 1.0, 2.0, "loft_bed%d" % i, loft)
         _chest(spec, mats, -2.5, 3.0, 1.0, 0.6, 0.6, "loft_chest")
+    elif fid == "R01":
+        # FOREST-CITY-01 town hall, 12 x 24 m before the turn: x -6..6 (door at +x), y -12..12.
+        floor = spec["floor"]
+        _hearth(spec, mats, 0.0, 10.9, "hall_hearth", 1.6)
+        # The long council table down the middle, benches either side; the elder's seat at its head.
+        for i, ty in enumerate([-4.2, 2.2]):
+            _table(spec, mats, 0.0, ty, 1.3, 5.8, 0.8, "council_table%d" % i)
+            _bench(spec, mats, -1.05, ty, 0.4, 5.6, 0.46, "council_bench_l%d" % i)
+            _bench(spec, mats, 1.05, ty, 0.4, 5.6, 0.46, "council_bench_r%d" % i)
+        _chest(spec, mats, 0.0, -9.2, 1.4, 0.9, 1.2, "elder_seat")
+        _table(spec, mats, 0.0, -10.6, 3.0, 1.2, 0.35, "dais")
+        # Benches along the long walls, clear of the door (x +6, y -1.5..1.5).
+        for i, by in enumerate([-8.5, -4.5, 4.5, 8.5]):
+            _bench(spec, mats, -5.4, by, 0.45, 2.6, 0.46, "wall_bench_l%d" % i)
+        for i, by in enumerate([-8.5, -4.5, 4.5]):
+            _bench(spec, mats, 5.4, by, 0.45, 2.6, 0.46, "wall_bench_r%d" % i)
+        for i, (bx, by) in enumerate([(-5.2, 10.8), (4.9, 10.8), (5.3, 10.1)]):
+            _barrel(spec, mats, bx, by, 0.36, 0.95, "hall_barrel%d" % i)
+        for i, (vx, vy) in enumerate([(0.2, -5.0), (-0.3, -3.1), (0.1, 1.6), (-0.2, 3.4)]):
+            _vessel(spec, mats, "hall_cup%d" % i, vx, vy, floor + 0.83, 0.06, 0.13)
+        _crate(spec, mats, -5.1, -11.0, 0.6, "hall_chest_crate")
+    elif fid == "K01":
+        # FOREST-CITY-01 barracks, 10 x 20 m before the turn: x -5..5 (door at +x, y 2.5), y -10..10.
+        floor = spec["floor"]
+        _hearth(spec, mats, 0.0, 9.0, "barracks_hearth", 1.2)
+        # Bunks along the far wall and the near wall away from the door.
+        for i, by in enumerate([-8.3, -5.8, -3.3, -0.8, 1.7, 4.2]):
+            _bed(spec, mats, -3.9, by, 1.0, 2.0, "bunk_l%d" % i)
+        for i, by in enumerate([-8.3, -5.8, -3.3]):
+            _bed(spec, mats, 3.9, by, 1.0, 2.0, "bunk_r%d" % i)
+            _chest(spec, mats, 3.9, by + 1.25, 0.8, 0.4, 0.45, "bunk_chest%d" % i)
+        _table(spec, mats, 0.0, -2.0, 1.1, 3.0, 0.78, "mess_table")
+        _bench(spec, mats, -0.85, -2.0, 0.35, 2.9, 0.45, "mess_bench_l")
+        _bench(spec, mats, 0.85, -2.0, 0.35, 2.9, 0.45, "mess_bench_r")
+        # Weapon racks by the hearth end, barrels of water and ale.
+        _shelf(spec, mats, -4.4, 7.0, 0.45, 2.6, 3, "weapon_rack")
+        for i, (bx, by) in enumerate([(3.9, 8.8), (4.3, 7.9), (3.5, 9.3)]):
+            _barrel(spec, mats, bx, by, 0.34, 0.9, "barracks_barrel%d" % i)
+        for i, (cx_, cy_) in enumerate([(2.2, 9.2), (1.6, 9.4)]):
+            _crate(spec, mats, cx_, cy_, 0.55, "barracks_crate%d" % i)
     elif fid in ("T03A", "T03B"):  # T03B: the same inn in stone (INN-STONE-01)
         # Forest inn v3, 13 x 21 m: x -6.5..6.5, y -10.5 (front door) .. 10.5 (rear).
         floor = spec["floor"]

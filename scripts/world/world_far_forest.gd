@@ -15,6 +15,8 @@ const CHUNK := 40.0
 const VISIBLE_END := 230.0
 ## On a phone the detailed trees reach 80 m (S23 in the forest: 42 FPS at 110 m and draw distance 300).
 var NEAR_END := 80.0 if OS.has_feature("mobile") else 110.0
+## LOD-CAP-01: however far the Draw distance, the detailed trees end by here (the cones take over).
+var NEAR_CAP := 110.0 if OS.has_feature("mobile") else 300.0
 const NEAR_KINDS := ["pine_tall", "spruce", "pine_young"]
 ## Height of a cone tree at scale 1 (the detailed kinds are scaled to match it).
 const CONE_HEIGHT := 10.6
@@ -90,6 +92,7 @@ func _build_chunk(key: Vector2i, records: Array, data: PackedFloat32Array) -> vo
 	batch.visibility_range_end = VISIBLE_END
 	batch.visibility_range_end_margin = 10.0
 	batch.set_meta("base_visibility_begin", NEAR_END)
+	batch.set_meta("begin_cap", NEAR_CAP)
 	batch.set_meta("base_visibility_end", VISIBLE_END)
 	batch.add_to_group(&"draw_distance_scaled")
 	batch.add_child(body)
@@ -130,6 +133,7 @@ func _add_near(batch: MultiMeshInstance3D, records: Array, data: PackedFloat32Ar
 			near.visibility_range_end = NEAR_END
 			near.visibility_range_end_margin = 5.0
 			near.set_meta("base_visibility_end", NEAR_END)
+			near.set_meta("end_cap", NEAR_CAP)
 			near.add_to_group(&"draw_distance_scaled")
 			var source: MultiMeshInstance3D = wind.get(part[0])
 			if part[2] and source != null:

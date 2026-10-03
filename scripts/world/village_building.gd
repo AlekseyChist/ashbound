@@ -20,6 +20,8 @@ func build(data: Dictionary) -> void:
 		var metadata: Dictionary = mesh.get_meta("extras", {})
 		var role := str(metadata.get("part_role", ""))
 		if role == "foundation" and record.id != "B01": continue
+		# WATER-WORKSHOPS-02: a turning wheel gets no static trimesh; its pier and posts stop the hero.
+		if role == "wheel": continue
 		# A straight flight of stairs is walked on a hidden ramp: the hero does not step up 19 cm risers.
 		if "stairs" in str(metadata.get("item_id", "")):
 			_stairs_ramp(mesh)
@@ -40,9 +42,12 @@ func build(data: Dictionary) -> void:
 	door.name = "Door"
 	add_child(door)
 	door.configure(model, record.id, record.entry)
+	# FOREST-CITY-01: the civic halls light themselves (civic_dressing: hearth, lanterns on the ties).
+	if record.get("own_lights", false):
+		return
 	var light := OmniLight3D.new()
 	light.name = "InteriorFill"
-	light.position = Vector3(0, 2.35, 0)
+	light.position = Vector3(0, float(record.get("lantern_y", 2.35)), 0)
 	light.omni_range = 6.5
 	light.light_energy = 0.9
 	light.light_color = Color(1.0, 0.83, 0.64)
@@ -91,10 +96,15 @@ func _stair_proxy() -> void:
 	_add_shape("FoundationCollision", platform, Vector3(0, record.floor_height * 0.5, 0))
 	var points := PackedVector3Array()
 	var width := 1.8 if record.id == "H01" else 3.0
-	var front: float = record.entry.z
+	var front: float = record.get("stair_front", record.entry.z)
 	var top: float = record.floor_height
+	# WATER-WORKSHOPS-02: a high floor (the mill's 1.05 m) climbs one even slope over its whole flight.
+	var profile := [Vector2(0, front + 1.75), Vector2(top * 0.5, front + 1.4), Vector2(top, front + 0.8), Vector2(top, front + 0.2), Vector2(0, front + 0.2)]
+	if record.has("stair_run"):
+		var run: float = record.stair_run
+		profile = [Vector2(0, front + run), Vector2(top, front + 0.3), Vector2(top, front + 0.2), Vector2(0, front + 0.2)]
 	for x in [-width * 0.5, width * 0.5]:
-		for yz in [Vector2(0, front + 1.75), Vector2(top * 0.5, front + 1.4), Vector2(top, front + 0.8), Vector2(top, front + 0.2), Vector2(0, front + 0.2)]:
+		for yz in profile:
 			points.append(Vector3(record.entry.x + x, yz.x, yz.y))
 	var ramp := ConvexPolygonShape3D.new()
 	ramp.points = points
@@ -115,14 +125,23 @@ func _stairs_ramp(mesh: MeshInstance3D) -> void:
 		points.append(p)
 		low = low.min(p)
 		high = high.max(p)
-	var along_z := (high.z - low.z) >= (high.x - low.x)
+	# The flight rises along the axis whose two ends stand at different heights (a wide, shallow
+	# step - the R01 dais - is wider than it is long); ties keep the longer axis.
+	var ends := {}
+	for axis in ["x", "z"]:
+		var at_max := 0.0
+		var at_min := 0.0
+		for p in points:
+			var t: float = (p.z - low.z) / maxf(high.z - low.z, .001) if axis == "z" else (p.x - low.x) / maxf(high.x - low.x, .001)
+			if t > .9: at_max = maxf(at_max, p.y - low.y)
+			if t < .1: at_min = maxf(at_min, p.y - low.y)
+		ends[axis] = [at_max + low.y, at_min + low.y]
+	var rise_x: float = absf(ends.x[0] - ends.x[1])
+	var rise_z: float = absf(ends.z[0] - ends.z[1])
+	var along_z := rise_z > rise_x + .01 or (absf(rise_z - rise_x) <= .01 and (high.z - low.z) >= (high.x - low.x))
 	# The high end is the one whose points reach the top.
-	var top_at_max := 0.0
-	var top_at_min := 0.0
-	for p in points:
-		var t: float = (p.z - low.z) / maxf(high.z - low.z, .001) if along_z else (p.x - low.x) / maxf(high.x - low.x, .001)
-		if t > .9: top_at_max = maxf(top_at_max, p.y)
-		if t < .1: top_at_min = maxf(top_at_min, p.y)
+	var top_at_max: float = ends.z[0] if along_z else ends.x[0]
+	var top_at_min: float = ends.z[1] if along_z else ends.x[1]
 	var top_y := maxf(top_at_max, top_at_min)
 	var bottom_end := 0.0 if top_at_max >= top_at_min else 1.0
 	var top_end := 1.0 - bottom_end

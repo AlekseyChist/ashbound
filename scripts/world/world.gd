@@ -38,7 +38,7 @@ const INN_KEEPER_TALK: QuestData = preload("res://data/quests/forest_inn_keeper.
 const INN_TALK_RADIUS := 2.8
 const Pad = preload("res://scripts/world/world_settlement_pad.gd")
 
-const VERSION := "0.36.4"
+const VERSION := "0.36.28"
 const WORLD_LAYOUT := "res://assets/world/graybox-v1/layout.json"
 const WORLD_HEIGHTS := "res://assets/world/graybox-v1/heights.bin"
 const WORLD_COLORS := "res://assets/world/graybox-v1/colors.bin"
@@ -104,6 +104,8 @@ var sea: Node3D
 var edges: Node3D
 ## BRIDGES-01: timber bridges over the river crossings.
 var bridges: Node3D
+## FOREST-CITY-01: the forest city of the Exiles.
+var forest_city: Node3D
 ## WORLD-PROPS-01: desert rocks and plants, ships and piers in the harbours.
 var props: Node3D
 ## SNOW-01 / SAND-01: prints in the snow and the sand.
@@ -717,6 +719,17 @@ func _index_grass_obstacles() -> void:
 		var inn_frame := _inn_frame(site_id)
 		if not inn_frame.is_empty():
 			_grass_blocks.append(Vector3(inn_frame.center.x + offset.x, inn_frame.center.z + offset.y, 14.0))
+	# WATER-WORKSHOPS-02: the forest city's enterable halls (the mill stands outside the palisade).
+	if forest_city != null:
+		for hall in forest_city.halls + forest_city.sheds:
+			var at: Vector3 = hall.global_position
+			_grass_blocks.append(Vector3(at.x, at.z, maxf(float(hall.record.width), float(hall.record.depth)) * 0.55))
+			# A trodden patch before the door and its steps.
+			var door: Vector3 = hall.global_transform * (hall.record.entry + Vector3(0, 0, 1.8))
+			_grass_blocks.append(Vector3(door.x, door.z, 3.2))
+		# The yards are in the world_root frame, the grass blocks in the scene's.
+		for yard in forest_city.yards:
+			_grass_blocks.append(Vector3(yard.x + offset.x, yard.y + offset.y, yard.z))
 	# LAKE-SHORE-01: a lake is an ellipse; one circle over its long radius kept the whole shore bare.
 	# Circles of the short radius along the long axis cover the water and leave the shore to the grass.
 	for lake in world_layout.lakes:
@@ -911,6 +924,16 @@ func _build_water_and_sites() -> void:
 		var direction: Array = spring.facing
 		water.add_spring_cave(Vector3(p[0] - HALF, p[2] - 1, p[1] - HALF), Vector3(direction[0], 0, direction[2]))
 	for city in world_layout.cities:
+		# FOREST-CITY-01 (D-111): the forest city is built by its plan, not grey blocks.
+		if str(city.id) == "forest":
+			forest_city = preload("res://scripts/world/world_forest_city.gd").new()
+			forest_city.name = "ForestCity"
+			world_root.add_child(forest_city)
+			forest_city.build(self)
+			# Its halls open like the inns' doors (the action button when no village door is nearer).
+			for hall in forest_city.halls:
+				inns.append(hall)
+			continue
 		var p: Array = city.spawn
 		for offset in [Vector3(-28, 0, 15), Vector3(26, 0, 18), Vector3(-20, 0, -25)]:
 			var size := Vector3(12, 12 + float(city.number) * 3, 16)

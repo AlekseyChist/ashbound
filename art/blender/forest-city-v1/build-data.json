@@ -1,0 +1,276 @@
+{
+  "revision": "forest-city-v1",
+  "units": "metres, Blender z up; x across, y along the ridge before the turn",
+  "buildings": [
+    {
+      "id": "R01",
+      "slug": "r01",
+      "width": 12,
+      "depth": 24,
+      "floor": 0.6,
+      "wall_top": 4.4,
+      "ridge": 10.4,
+      "thickness": 0.3,
+      "overhang_side": 0.7,
+      "overhang_gable": 0.5,
+      "wall_material": "oak",
+      "wall_style": "log",
+      "log_diameter": 0.3,
+      "log_overhang": 0.4,
+      "entrance_face": "right",
+      "entrance_style": "steps",
+      "approach_width": 3.0,
+      "turn_z_deg": -90,
+      "roof_vents": [
+        -6.5,
+        6.5
+      ],
+      "chimney": {
+        "centre_xy": [
+          0.0,
+          11.3
+        ],
+        "footprint_xy": [
+          1.5,
+          1.4
+        ],
+        "top_z": 11.4
+      },
+      "canopy": {
+        "x_start": 6.0,
+        "x_end": 8.4,
+        "y_start": -11.6,
+        "y_end": 11.6,
+        "z_inner": 3.9,
+        "z_outer": 3.0,
+        "post_step": 2.9
+      },
+      "openings": [
+        {
+          "id": "entry",
+          "face": "right",
+          "center": 0.0,
+          "bottom": 0.6,
+          "width": 2.4,
+          "height": 2.8,
+          "kind": "double_door"
+        },
+        {
+          "id": "r0",
+          "face": "right",
+          "center": -9.0,
+          "bottom": 1.5,
+          "width": 1.1,
+          "height": 1.2,
+          "kind": "window"
+        },
+        {
+          "id": "r1",
+          "face": "right",
+          "center": -5.5,
+          "bottom": 1.5,
+          "width": 1.1,
+          "height": 1.2,
+          "kind": "window"
+        },
+        {
+          "id": "r2",
+          "face": "right",
+          "center": 5.5,
+          "bottom": 1.5,
+          "width": 1.1,
+          "height": 1.2,
+          "kind": "window"
+        },
+        {
+          "id": "r3",
+          "face": "right",
+          "center": 9.0,
+          "bottom": 1.5,
+          "width": 1.1,
+          "height": 1.2,
+          "kind": "window"
+        },
+        {
+          "id": "l0",
+          "face": "left",
+          "center": -9.0,
+          "bottom": 1.5,
+          "width": 1.1,
+          "height": 1.2,
+          "kind": "window"
+        },
+        {
+          "id": "l1",
+          "face": "left",
+          "center": -5.5,
+          "bottom": 1.5,
+          "width": 1.1,
+          "height": 1.2,
+          "kind": "window"
+        },
+        {
+          "id": "l2",
+          "face": "left",
+          "center": 5.5,
+          "bottom": 1.5,
+          "width": 1.1,
+          "height": 1.2,
+          "kind": "window"
+        },
+        {
+          "id": "l3",
+          "face": "left",
+          "center": 9.0,
+          "bottom": 1.5,
+          "width": 1.1,
+          "height": 1.2,
+          "kind": "window"
+        },
+        {
+          "id": "gf",
+          "face": "front",
+          "center": 0.0,
+          "bottom": 5.6,
+          "width": 1.2,
+          "height": 1.2,
+          "kind": "window"
+        }
+      ],
+      "note": "Town hall (Codex civic-concept-v1, owner-approved 28 Sep): a long hall 24 x 12 m, entered in the middle of the long side from a gallery on posts, two smoke vents on the ridge, the hearth on the far long wall. Built with the entry on the right and turned -90 deg."
+    },
+    {
+      "id": "K01",
+      "slug": "k01",
+      "width": 10,
+      "depth": 20,
+      "floor": 0.5,
+      "wall_top": 3.7,
+      "ridge": 8.0,
+      "thickness": 0.3,
+      "overhang_side": 0.6,
+      "overhang_gable": 0.45,
+      "wall_material": "oak",
+      "wall_style": "log",
+      "log_diameter": 0.3,
+      "log_overhang": 0.35,
+      "entrance_face": "right",
+      "entrance_style": "steps",
+      "approach_width": 1.8,
+      "turn_z_deg": -90,
+      "chimney": {
+        "centre_xy": [
+          0.0,
+          9.4
+        ],
+        "footprint_xy": [
+          1.2,
+          1.2
+        ],
+        "top_z": 8.6
+      },
+      "canopy": {
+        "x_start": 5.0,
+        "x_end": 7.0,
+        "y_start": -9.0,
+        "y_end": -1.2,
+        "z_inner": 3.2,
+        "z_outer": 2.5,
+        "post_step": 2.6
+      },
+      "openings": [
+        {
+          "id": "entry",
+          "face": "right",
+          "center": 2.5,
+          "bottom": 0.5,
+          "width": 1.4,
+          "height": 2.3,
+          "kind": "door"
+        },
+        {
+          "id": "r0",
+          "face": "right",
+          "center": -7.5,
+          "bottom": 1.4,
+          "width": 1.0,
+          "height": 1.0,
+          "kind": "window"
+        },
+        {
+          "id": "r1",
+          "face": "right",
+          "center": -4.5,
+          "bottom": 1.4,
+          "width": 1.0,
+          "height": 1.0,
+          "kind": "window"
+        },
+        {
+          "id": "r2",
+          "face": "right",
+          "center": -1.8,
+          "bottom": 1.4,
+          "width": 1.0,
+          "height": 1.0,
+          "kind": "window"
+        },
+        {
+          "id": "r3",
+          "face": "right",
+          "center": 6.0,
+          "bottom": 1.4,
+          "width": 1.0,
+          "height": 1.0,
+          "kind": "window"
+        },
+        {
+          "id": "r4",
+          "face": "right",
+          "center": 8.2,
+          "bottom": 1.4,
+          "width": 1.0,
+          "height": 1.0,
+          "kind": "window"
+        },
+        {
+          "id": "l0",
+          "face": "left",
+          "center": -7.5,
+          "bottom": 1.4,
+          "width": 1.0,
+          "height": 1.0,
+          "kind": "window"
+        },
+        {
+          "id": "l1",
+          "face": "left",
+          "center": -3.5,
+          "bottom": 1.4,
+          "width": 1.0,
+          "height": 1.0,
+          "kind": "window"
+        },
+        {
+          "id": "l2",
+          "face": "left",
+          "center": 0.5,
+          "bottom": 1.4,
+          "width": 1.0,
+          "height": 1.0,
+          "kind": "window"
+        },
+        {
+          "id": "l3",
+          "face": "left",
+          "center": 4.5,
+          "bottom": 1.4,
+          "width": 1.0,
+          "height": 1.0,
+          "kind": "window"
+        }
+      ],
+      "note": "Barracks of the militia (Codex civic-concept-v1): 20 x 10 m, low and plain, a door off-centre on the long side, a lean-to with shields under it, bunks inside. Built with the entry on the right and turned -90 deg."
+    }
+  ]
+}
