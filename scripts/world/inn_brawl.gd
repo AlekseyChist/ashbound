@@ -41,6 +41,14 @@ const DAUGHTER_FRAMES := "daughter_frames.tres"
 
 static func frames_path(file: String) -> String:
 	return FINAL_FRAMES_DIR + file
+
+## Codex return 9 Oct: world-sized names filled the screen near the camera and shrank to dots far away;
+## the scene's names keep one size on screen (about the HUD's small text).
+static func _screen_label(label: Label3D) -> void:
+	if label == null:
+		return
+	label.fixed_size = true
+	label.pixel_size = 0.0007
 const NAMES := {"leader": "INN_THUG_LEADER_NAME", "brute": "INN_THUG_BRUTE_NAME", "young": "INN_THUG_YOUNG_NAME"}
 
 var world: Node3D
@@ -92,6 +100,7 @@ func stage() -> void:
 			man.ground_height = floor_at
 			man.get_node("Visual").use_frames(frames_path(FRAMES[role]))
 			man.pose_fps = 15.0
+			_screen_label(man.get_node("EnemyLabel"))
 			men[role] = man
 		_settle(men[role], role)
 	if daughter == null:
@@ -99,6 +108,7 @@ func stage() -> void:
 		daughter.name = "InnDaughter"
 		world.add_child(daughter)
 		daughter.setup(session, floor_at, inn.to_global(DAUGHTER_AT), _dir(DAUGHTER_AT, LEADER_AT))
+		_screen_label(daughter.get_node("NameLabel"))
 	daughter.restore()
 	daughter.place(inn.to_global(DAUGHTER_AT), _dir(DAUGHTER_AT, LEADER_AT))
 	hero_hits = 0
