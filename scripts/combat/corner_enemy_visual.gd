@@ -131,8 +131,23 @@ func _process(delta: float) -> void:
 	_breathe(delta)
 	_camera_fade(body)
 
+## The set has a drawn idle cycle (several poses) in some view.
+func _drawn_idle() -> bool:
+	var body := get_node_or_null("Body") as AnimatedSprite3D
+	if body == null or body.sprite_frames == null:
+		return false
+	for view in ["front", "back", "side"]:
+		if body.sprite_frames.has_animation("idle_" + view) and body.sprite_frames.get_frame_count("idle_" + view) > 1:
+			return true
+	return false
+
 func _breathe(delta: float) -> void:
 	if not breathing or not (_stored_action in [&"idle", &"talk", &"guard"]):
+		scale = Vector3.ONE
+		return
+	# A drawn idle cycle moves by itself - no breathing on top of it (Codex, keeper idle 729dd2d).
+	if _drawn_idle():
+		scale = Vector3.ONE
 		return
 	if _breath_phase == 0.0:
 		# Own rhythm per character (stable by name), not all breathing in step.
