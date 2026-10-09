@@ -1,5 +1,6 @@
 extends Node
 const Scene = preload("res://scenes/world/village_settlement.tscn")
+const QUICK_BAR = preload("res://scripts/courtyard/courtyard_quick_bar.gd")
 var world: Node3D
 var failures: Array[String] = []
 var checks := 0
@@ -93,8 +94,9 @@ func run_checks() -> void:
 		var aligned:=column.size()>=2
 		for r in column: aligned=aligned and is_equal_approx(r.position.x,things.position.x) and is_equal_approx(r.end.x,things.end.x)
 		check(aligned,"one right column as wide as Things "+language+" things="+str(things)+" column="+str(column))
+		# WORLD-QUICK-SAVE-01: the column sits above the reserved quick bar.
 		var screen_rect: Rect2=world.hud.get_node("RootControl").get_global_rect()
-		check(is_equal_approx(screen_rect.end.x-things.end.x,32.0) and is_equal_approx(screen_rect.end.y-column[-1].end.y,32.0),"column 32 px from the edges "+language+" screen="+str(screen_rect))
+		check(is_equal_approx(screen_rect.end.x-things.end.x,32.0) and is_equal_approx(screen_rect.end.y-column[-1].end.y,32.0+QUICK_BAR.BAR_RESERVE),"column 32 px from the edges "+language+" screen="+str(screen_rect)+" things="+str(things)+" column="+str(column))
 		var even:=true
 		for i in range(1,column.size()): even=even and column[i].position.y-column[i-1].end.y<13
 		check(even,"column buttons stacked evenly "+language)
