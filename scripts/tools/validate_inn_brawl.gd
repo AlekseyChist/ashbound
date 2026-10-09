@@ -436,13 +436,23 @@ func check_men_walk_out(door_open: bool) -> void:
 			# Codex 159: gone only on the outer way and out of sight, never in the doorway.
 			if man._route_index < 3 or not brawl.out_of_sight(man):
 				seen_gone.append("%s@%s" % [role, inn.to_local(man.global_position)]), CONNECT_ONE_SHOT)
+	# Codex 161: on the way out nobody is lifted onto the porch roof - feet never above the floor.
+	var crew: Array = brawl.men.values()
+	var highest := [-INF]
+	var watch := func() -> bool:
+		for man in crew:
+			if is_instance_valid(man) and man.state == "flee":
+				highest[0] = maxf(highest[0], inn.to_local(man.global_position).y)
+		return fled_count[0] == 3
 	var until := Time.get_ticks_msec() + 16000
 	while brawl.phase == "fight" and Time.get_ticks_msec() < until:
+		watch.call()
 		await get_tree().physics_frame
-	await wait_for(func(): return fled_count[0] == 3, 25.0)
+	await wait_for(watch, 25.0)
 	var case := "open door" if door_open else "closed door"
 	check(gone_inside.is_empty(), "%s: nobody vanishes inside the hall (%s)" % [case, gone_inside])
 	check(seen_gone.is_empty(), "%s: nobody vanishes in sight or in the doorway (%s)" % [case, seen_gone])
+	check(highest[0] < brawl.FLOOR + 0.3, "%s: on the way out their feet stay on the floor, steps and ground (highest %.2f)" % [case, highest[0]])
 	check(was_out.values().all(func(v): return v), "%s: all three walk out of the hall (%s)" % [case, was_out])
 	check(brawl.outcome == "won" and brawl.phase in ["after", "done"], "%s: the fight is won once they are out (%s/%s)" % [case, brawl.phase, brawl.outcome])
 	if not door_open:

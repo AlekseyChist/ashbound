@@ -152,9 +152,14 @@ func floor_at(x: float, z: float) -> float:
 	var base: float = inn.global_position.y + FLOOR
 	var space := world.get_world_3d().direct_space_state
 	var inside: bool = inn.contains(Vector3(x, base, z))
-	# Outside (the beaten men's way round the corner) the ground may lie well below the floor.
-	var query := PhysicsRayQueryParameters3D.create(Vector3(x, base + (0.5 if inside else 3.0), z), Vector3(x, base - (1.0 if inside else 6.0), z), 1)
+	# Outside (the beaten men's way round the corner) the ground may lie well below the floor. The ray
+	# starts just above floor level - from higher it caught the porch roof (Codex 161: men jumped 3 m);
+	# only if nothing is below it is tried from above (ground rising round the corner).
+	var query := PhysicsRayQueryParameters3D.create(Vector3(x, base + 0.5, z), Vector3(x, base - (1.0 if inside else 6.0), z), 1)
 	var hit := space.intersect_ray(query)
+	if hit.is_empty() and not inside:
+		query = PhysicsRayQueryParameters3D.create(Vector3(x, base + 2.0, z), Vector3(x, base + 0.5, z), 1)
+		hit = space.intersect_ray(query)
 	# Owner 9 Oct: staged right after loading, the inn's floor is not in the physics space yet and the ray
 	# hits the ground under it (0.36 m lower) - the daughter stood sunk into the floor. Inside, never below it.
 	if hit.is_empty() or (hit.position.y < base - 0.1 and inside):
