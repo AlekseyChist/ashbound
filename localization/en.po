@@ -947,6 +947,12 @@ msgstr "You are in the right place. To continue the task, speak to me again and 
 msgid "INN_OBJECTIVE_BRAWL"
 msgstr "There is trouble down in the hall. Go down and see."
 
+msgid "INN_OBJECTIVE_BRAWL_TABLE"
+msgstr "The moneylender's men sit at the table by the door. Decide how to deal with them."
+
+msgid "INN_OBJECTIVE_BRAWL_FIGHT"
+msgstr "Fight off the moneylender's men."
+
 msgid "INN_DAUGHTER_NAME"
 msgstr "Innkeeper's daughter"
 

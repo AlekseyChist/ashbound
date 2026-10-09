@@ -146,4 +146,4 @@ func _camera_fade(body: AnimatedSprite3D) -> void:
 	for name in ["EnemyLabel", "NameLabel"]:
 		var label := get_parent().get_node_or_null(name) as Label3D if get_parent() != null else null
 		if label != null:
-			label.visible = label_on
+			label.visible = label_on and not bool(label.get_meta("scene_hidden", false))

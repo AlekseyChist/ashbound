@@ -152,6 +152,30 @@ func floor_at(x: float, z: float) -> float:
 func busy() -> bool:
 	return phase in ["intro", "offer", "fight", "after"]
 
+## Codex return 9 Oct: four names at once ran together. In the fight none (the speaker is named in the
+## line panel); before it only the nearest of the four within NAME_RADIUS of the hero.
+const NAME_RADIUS := 6.0
+func _show_one_name(inside: bool) -> void:
+	var people: Array[Node3D] = []
+	for role in men:
+		people.append(men[role])
+	if daughter != null:
+		people.append(daughter)
+	var nearest: Node3D = null
+	if inside and not phase in ["fight", "after"]:
+		var best := NAME_RADIUS
+		for person in people:
+			var d := _planar(person.global_position, world.player.global_position)
+			if d < best:
+				best = d
+				nearest = person
+	for person in people:
+		var label: Node = person.get_node_or_null("EnemyLabel")
+		if label == null:
+			label = person.get_node_or_null("NameLabel")
+		if label != null:
+			label.set_meta("scene_hidden", person != nearest)
+
 func _process(_delta: float) -> void:
 	if inn == null or world.player == null:
 		return
@@ -164,6 +188,7 @@ func _process(_delta: float) -> void:
 		world.hud.show_message("INN_THUG_LEADER_NAME", "INN_BRAWL_LEADER_LANDLORD", {}, SHOUT_TIME)
 		_start_fight()
 		return
+	_show_one_name(inside)
 	match phase:
 		"staged":
 			if inside and _sees_men():

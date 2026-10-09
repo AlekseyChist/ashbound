@@ -890,6 +890,12 @@ msgstr ""
 msgid "INN_OBJECTIVE_BRAWL"
 msgstr ""
 
+msgid "INN_OBJECTIVE_BRAWL_TABLE"
+msgstr ""
+
+msgid "INN_OBJECTIVE_BRAWL_FIGHT"
+msgstr ""
+
 msgid "INN_DAUGHTER_NAME"
 msgstr ""
 

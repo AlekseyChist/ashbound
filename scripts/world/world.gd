@@ -996,7 +996,12 @@ func get_journal_entry() -> Dictionary:
 	# UI-CLEAN-01: after the watchman pays, the objective leads to the inn bed and past the first night.
 	if entry.completed and lodging != null:
 		if lodging.brawl == "pending":
+			# Codex return 9 Oct: the corner follows the scene - "go down" only until the hero sees the men.
 			entry.objective_key = "INN_OBJECTIVE_BRAWL"
+			if brawl != null and brawl.phase == "fight":
+				entry.objective_key = "INN_OBJECTIVE_BRAWL_FIGHT"
+			elif brawl != null and brawl.phase in ["intro", "offer", "waiting"]:
+				entry.objective_key = "INN_OBJECTIVE_BRAWL_TABLE"
 		elif lodging.rented:
 			entry.objective_key = "INN_OBJECTIVE_SLEEP"
 		elif lodging.nights == 0:

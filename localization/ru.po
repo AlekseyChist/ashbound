@@ -948,6 +948,12 @@ msgstr "Ты уже на месте. Если хочешь продолжить 
 msgid "INN_OBJECTIVE_BRAWL"
 msgstr "Внизу в зале шумно. Спустись и посмотри."
 
+msgid "INN_OBJECTIVE_BRAWL_TABLE"
+msgstr "Люди ростовщика сидят у стола возле двери. Реши, как с ними быть."
+
+msgid "INN_OBJECTIVE_BRAWL_FIGHT"
+msgstr "Отбейся от людей ростовщика."
+
 msgid "INN_DAUGHTER_NAME"
 msgstr "Дочь трактирщика"
 

@@ -45,6 +45,16 @@ func look_at_men() -> void:
 	rig.snap_to_target()
 	await get_tree().process_frame
 
+func shown_names() -> int:
+	var count := 0
+	for person in brawl.men.values() + [brawl.daughter]:
+		var label: Label3D = person.get_node_or_null("EnemyLabel")
+		if label == null:
+			label = person.get_node_or_null("NameLabel")
+		if label != null and label.visible:
+			count += 1
+	return count
+
 func put_hero(local: Vector3) -> void:
 	world.player.global_position = inn.to_global(local)
 	world.player.velocity = Vector3.ZERO
@@ -199,6 +209,11 @@ func check_answers() -> void:
 	await look_at_men()
 	check(await wait_for(func(): return brawl.phase == "intro", 2.0), "with the men in view the lines start")
 	check(world.hud._message_key == "INN_BRAWL_LEADER_ASK", "the ringleader asks about the lodgers first (%s)" % world.hud._message_key)
+	# Codex return 9 Oct: the corner follows the scene; one name at a time, the nearest within 6 m.
+	world._update_prompt()
+	check(world.hud._objective_key == "INN_OBJECTIVE_BRAWL_TABLE", "seen the men, the corner no longer says go down (%s)" % world.hud._objective_key)
+	await get_tree().process_frame
+	check(shown_names() <= 1, "at most one name over the four (%d)" % shown_names())
 	# DIALOG-LINE-01: a compact subtitle at the bottom, not a box across the middle of the scene.
 	await get_tree().process_frame
 	var line_rect: Rect2 = world.hud.get_node("RootControl/MessagePanel").get_global_rect()
@@ -235,6 +250,10 @@ func check_answers() -> void:
 ## Codex return 9 Oct: during the fight the door prompt does not cover it, a man between the camera and
 ## the hero is dithered so the hero shows, and name labels hide near the camera instead of filling it.
 func check_fight_view() -> void:
+	world._update_prompt()
+	check(world.hud._objective_key == "INN_OBJECTIVE_BRAWL_FIGHT", "in the fight the corner says fight them off (%s)" % world.hud._objective_key)
+	await get_tree().process_frame
+	check(shown_names() == 0, "no names over the fight (%d)" % shown_names())
 	var keep: Vector3 = world.player.global_position
 	var door: Node3D = inn.door
 	var entry: Vector3 = door.to_global(door.entry)
