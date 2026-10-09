@@ -3,8 +3,8 @@ extends CharacterBody3D
 ## enemy (the brute): closes in, winds up, strikes; every third blow at her she blocks. She swings slower
 ## than the brute, so alone with him she is out first; with the hero's help he gives up first. After
 ## OUT_HITS landed blows she is out until the end - she walks to the bar and stays there; the fight
-## is not lost because of it. She wears the approved look (D-111), cut from the motion proof sheet
-## until Codex's full set. Stepped by the world's physics frame while the combat session runs.
+## is not lost because of it. She wears the approved look (D-111): Codex's full set (inn-v1) when it is
+## there, else the frames cut from the motion proof sheet. Stepped by the world's physics frame while the combat session runs.
 const MAX_STEP := 1.0 / 60.0
 const SPEED := 2.4
 const REACH := 1.25
@@ -14,6 +14,10 @@ const HIT_TIME := 0.45
 ## Trial numbers: blows she can take before she is out.
 const OUT_HITS := 3
 const GROUND_CLEARANCE := 0.12
+## Drawn walk phases change at the reference 15 per second (Codex 142).
+const POSE_FPS := 15.0
+## A blocked blow shows her guard this long.
+const BLOCK_SHOW := 0.4
 
 var session: Node
 var ground_height: Callable
@@ -31,6 +35,7 @@ var _blows := 0
 var _out_spot := Vector3.ZERO
 var _visual: Node3D
 var _walk_time := 0.0
+var _block_time := 0.0
 
 func setup(p_session: Node, ground: Callable, at: Vector3, facing: Vector3) -> void:
 	session = p_session
@@ -49,7 +54,8 @@ func setup(p_session: Node, ground: Callable, at: Vector3, facing: Vector3) -> v
 	_visual.set_script(load("res://scripts/combat/corner_enemy_visual.gd"))
 	add_child(_visual)
 	_visual.setup("guard")
-	_visual.use_frames("res://assets/characters/inn-temp/daughter_frames.tres")
+	var brawl: GDScript = load("res://scripts/world/inn_brawl.gd")  # not preload: inn_brawl preloads this script
+	_visual.use_frames(brawl.frames_path(brawl.DAUGHTER_FRAMES))
 	var label := Label3D.new()
 	label.name = "NameLabel"
 	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
@@ -79,6 +85,7 @@ func restore() -> void:
 	down = false
 	strikes = 0
 	_blows = 0
+	_block_time = 0.0
 	place(spot, facing_direction)
 
 func fight(enemy: Node3D, out_spot: Vector3) -> void:
@@ -96,6 +103,7 @@ func receive_enemy_hit(_attacker: Node) -> String:
 		return "miss"
 	_blows += 1
 	if _blows % 3 == 0:
+		_block_time = BLOCK_SHOW
 		return "block"
 	landed += 1
 	if landed >= OUT_HITS:
@@ -119,6 +127,7 @@ func _physics_process(delta: float) -> void:
 
 func _step(delta: float) -> void:
 	state_time += delta
+	_block_time = maxf(_block_time - delta, 0.0)
 	match state:
 		"close":
 			if not _target_standing():
@@ -178,17 +187,42 @@ func _present() -> void:
 		return
 	var action := "idle"
 	var progress := 0.0
+	var walking := velocity.length() > 0.01 or state == "close" 			or (state == "out" and (_out_spot - global_position).length() > 0.15)
 	match state:
 		"close", "out":
-			if velocity.length() > 0.01 or state == "close" or (state == "out" and (_out_spot - global_position).length() > 0.2):
+			if walking:
 				action = "walk"
-				progress = fmod(_walk_time * 4.0, 1.0)
+				progress = _cycle_progress("walk")
+			elif state == "out":
+				# Out of the fight she holds her arm (Codex 142: the "out" pose).
+				action = _clip_or("out", "idle")
 		"windup":
 			action = "windup" if state_time < WINDUP - 0.18 else "attack"
 			progress = clampf(state_time / WINDUP, 0.0, 1.0)
 		"recover":
-			action = "attack" if state_time < 0.12 else "idle"
+			action = "attack" if state_time < 0.12 else _clip_or("guard", "idle")
 		"hit":
 			action = "hit"
 			progress = clampf(state_time / HIT_TIME, 0.0, 1.0)
+	if _block_time > 0.0 and state in ["close", "recover"]:
+		action = _clip_or("guard", action)
 	_visual.present(action, facing_direction, progress, false, state == "hit")
+
+## Phase of a looping drawn cycle: one frame per 1/POSE_FPS, whatever the number of phases.
+func _cycle_progress(action: String) -> float:
+	var frames := _frames()
+	var count := 1
+	if frames != null:
+		for view in ["side", "front", "back"]:
+			if frames.has_animation(action + "_" + view):
+				count = maxi(count, frames.get_frame_count(action + "_" + view))
+	return fmod(_walk_time * POSE_FPS / float(count), 1.0)
+
+## The temporary frames have no guard/out clips; fall back instead of asking for a missing one.
+func _clip_or(action: String, fallback: String) -> String:
+	var frames := _frames()
+	return action if frames != null and frames.has_animation(action + "_side") else fallback
+
+func _frames() -> SpriteFrames:
+	var body := _visual.get_node_or_null("Body") as AnimatedSprite3D
+	return body.sprite_frames if body != null else null

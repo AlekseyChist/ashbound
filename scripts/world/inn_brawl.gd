@@ -35,10 +35,15 @@ const START_RADIUS := 7.0
 const START_VIEW_COS := 0.64
 ## Owner 3 Oct: the approved looks in the scene now - temporary frames cut from the approved sheets
 ## (D-111/D-114) until Codex's full animation sets (inn-v1) replace them.
-const FRAMES := {"leader": "res://assets/characters/inn-temp/thug_leader_frames.tres",
-	"brute": "res://assets/characters/inn-temp/thug_brute_frames.tres",
-	"young": "res://assets/characters/inn-temp/thug_young_frames.tres"}
-const DAUGHTER_FRAMES := "res://assets/characters/inn-temp/daughter_frames.tres"
+## Codex's full drawn sets (inn-v1, bridge 142) replace the temporary frames as soon as they are there.
+const FINAL_FRAMES_DIR := "res://assets/characters/inn-v1/"
+const TEMP_FRAMES_DIR := "res://assets/characters/inn-temp/"
+const FRAMES := {"leader": "thug_leader_frames.tres", "brute": "thug_brute_frames.tres",
+	"young": "thug_young_frames.tres"}
+const DAUGHTER_FRAMES := "daughter_frames.tres"
+
+static func frames_path(file: String) -> String:
+	return FINAL_FRAMES_DIR + file if ResourceLoader.exists(FINAL_FRAMES_DIR + file) else TEMP_FRAMES_DIR + file
 const NAMES := {"leader": "INN_THUG_LEADER_NAME", "brute": "INN_THUG_BRUTE_NAME", "young": "INN_THUG_YOUNG_NAME"}
 
 var world: Node3D
@@ -88,7 +93,7 @@ func stage() -> void:
 			man.label_key = NAMES[role]
 			man._update_label_text()
 			man.ground_height = floor_at
-			man.get_node("Visual").use_frames(FRAMES[role])
+			man.get_node("Visual").use_frames(frames_path(FRAMES[role]))
 			men[role] = man
 		_settle(men[role], role)
 	if daughter == null:

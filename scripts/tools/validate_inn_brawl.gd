@@ -140,6 +140,20 @@ func check_staging() -> void:
 		homes_ok = homes_ok and inn.contains(man.global_position) and not man.engaged
 	check(homes_ok, "the men stand in the hall, not engaged")
 	check(inn.contains(brawl.daughter.global_position), "the daughter stands in the hall")
+	# Codex's inn-v1 set replaces the temporary frames by itself when it is in the project.
+	var body: AnimatedSprite3D = brawl.daughter.get_node("Visual/Body")
+	var wanted: String = brawl.frames_path(brawl.DAUGHTER_FRAMES)
+	check(body.sprite_frames.resource_path == wanted, "the daughter wears " + wanted)
+	check(brawl.men["leader"].get_node("Visual/Body").sprite_frames.resource_path == brawl.frames_path(brawl.FRAMES["leader"]), "the ringleader wears his set")
+	# Drawn walk phases change at 15 a second whatever the number of phases (Codex 142).
+	var count := 1
+	for view in ["side", "front", "back"]:
+		if body.sprite_frames.has_animation("walk_" + view):
+			count = maxi(count, body.sprite_frames.get_frame_count("walk_" + view))
+	var keep_time: float = brawl.daughter._walk_time
+	brawl.daughter._walk_time = 1.5 / 15.0
+	check(int(brawl.daughter._cycle_progress("walk") * count) == mini(1, count - 1), "one walk phase per 1/15 s (%d phases)" % count)
+	brawl.daughter._walk_time = keep_time
 	var floor_y: float = inn.global_position.y + brawl.FLOOR
 	check(absf(brawl.men["leader"].global_position.y - floor_y) < .2, "the men stand on the floor, not on the roof (%.2f)" % (brawl.men["leader"].global_position.y - floor_y))
 	world._update_prompt()
@@ -298,6 +312,10 @@ func check_daughter_out_and_knockout() -> void:
 	check(await wait_for(func(): return daughter.down, 25.0), "left alone with the brute the daughter is out (%d blows)" % daughter.landed)
 	check(daughter.state == "out" and brawl.men["brute"]._foe() == world.player, "she leaves the fight; the brute turns on the hero")
 	check(await wait_for(func(): return inn.to_local(daughter.global_position).distance_to(brawl.DAUGHTER_OUT) < .8, 10.0), "she goes to the bar and stays there")
+	await settle(.6)
+	var shown: String = daughter.get_node("Visual/Body").animation
+	var out_clip := "out" if daughter._frames().has_animation("out_side") else "idle"
+	check(shown.begins_with(out_clip + "_"), "out of the fight she shows " + out_clip + " (" + shown + ")")
 	check(brawl.phase == "fight", "the fight is not lost because she is out")
 	# Knocked out: the hero stands in the open hall, the three leave, he comes to on the bed.
 	put_hero(Vector3(1.8, .5, 1.8))
