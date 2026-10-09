@@ -9,6 +9,24 @@ var _hit_flash: bool = false
 var external_feedback: bool = false
 var _configured := false
 var _cue_root: Node3D
+## Codex return 9 Oct: a character between the camera and the hero (or right at the camera) is
+## dithered to FADE so the hero stays visible; its name label hides near the camera, where it grew
+## over the whole screen.
+const FADE := 0.25
+const FADE_NEAR := 1.2
+const FADE_LINE_WIDTH := 0.6
+const LABEL_HIDE_NEAR := 3.0
+## Current dither (1 = solid), for the checks.
+var fade := 1.0
+## Owner 9 Oct: standing NPCs looked like posters. While idle/talking/on guard the figure breathes - a
+## slight rise of the whole drawing from the feet (feet stay planted), each with its own rhythm. A drawn
+## idle cycle (several whole poses) plays its poses at IDLE_POSES_PER_SECOND when the set has one.
+var breathing := true
+const BREATH_DEPTH := 0.02
+const IDLE_POSES_PER_SECOND := 3.0
+var _breath_period := 3.4
+var _breath_phase := 0.0
+var _idle_time := 0.0
 
 func _ready() -> void:
 	pass
@@ -45,6 +63,19 @@ func setup(kind: String) -> void:
 	_configured = true
 	super._ready()
 	_build_cue()
+
+## Another drawn set with the same clips (INN-BRAWL-01: the daughter and the moneylender's men).
+func use_frames(path: String) -> void:
+	var frames := load(path) as SpriteFrames
+	if frames == null:
+		push_error("corner_enemy_visual: missing SpriteFrames at %s" % path)
+		return
+	for name in ["Body", "PocketPose"]:
+		var sprite := get_node_or_null(name) as AnimatedSprite3D
+		if sprite != null:
+			sprite.sprite_frames = frames
+			sprite.animation = &"idle_front"
+	_process(0.0)
 
 func _build_cue() -> void:
 	_cue_root = Node3D.new()
@@ -84,11 +115,75 @@ func _process(delta: float) -> void:
 	var body := get_node_or_null("Body") as AnimatedSprite3D
 	if body != null:
 		body.pause()
+		# Every drawn phase of the clip by its normalised progress (Codex 135: not frame 0 / two walk frames).
+		var count := body.sprite_frames.get_frame_count(body.animation) if body.sprite_frames != null else 1
 		var frame := 0
-		if _stored_action == &"walk":
-			frame = int(clampf(_stored_progress, 0.0, 0.999) * 2.0)
+		if _stored_action != &"idle" and count > 1:
+			frame = mini(int(clampf(_stored_progress, 0.0, 0.999) * count), count - 1)
+		elif _stored_action == &"idle" and count > 1:
+			_idle_time += delta
+			frame = int(_idle_time * IDLE_POSES_PER_SECOND) % count
 		body.set_frame_and_progress(frame, 0)
 		body.modulate = Color.WHITE if external_feedback else (Color(1.0, 0.35, 0.4) if _hit_flash else Color.WHITE)
 	if _cue_root != null:
 		_cue_root.visible = _stored_cue and not external_feedback
 	super._process(delta)
+	_breathe(delta)
+	_camera_fade(body)
+
+## The set has a drawn idle cycle (several poses) in some view.
+func _drawn_idle() -> bool:
+	var body := get_node_or_null("Body") as AnimatedSprite3D
+	if body == null or body.sprite_frames == null:
+		return false
+	for view in ["front", "back", "side"]:
+		if body.sprite_frames.has_animation("idle_" + view) and body.sprite_frames.get_frame_count("idle_" + view) > 1:
+			return true
+	return false
+
+func _breathe(delta: float) -> void:
+	if not breathing or not (_stored_action in [&"idle", &"talk", &"guard"]):
+		scale = Vector3.ONE
+		return
+	# A drawn idle cycle moves by itself - no breathing on top of it (Codex, keeper idle 729dd2d).
+	if _drawn_idle():
+		scale = Vector3.ONE
+		return
+	if _breath_phase == 0.0:
+		# Own rhythm per character (stable by name), not all breathing in step.
+		var seed := float(hash(get_parent().name if get_parent() != null else name) % 1000) / 1000.0
+		_breath_phase = 0.001 + seed * TAU
+		_breath_period = 3.0 + seed * 1.0
+	_breath_phase += delta * TAU / _breath_period
+	# Global basis was just turned to the camera; scale only up from the feet (Visual's origin).
+	scale = Vector3(1.0, 1.0 + BREATH_DEPTH * 0.5 * (1.0 - cos(_breath_phase)), 1.0)
+
+func _camera_fade(body: AnimatedSprite3D) -> void:
+	var camera := get_viewport().get_camera_3d() if is_inside_tree() else null
+	fade = 1.0
+	var label_on := true
+	if camera != null:
+		var eye := camera.global_position
+		var torso := global_position + Vector3(0.0, 0.9, 0.0)
+		var near := eye.distance_to(torso)
+		label_on = near > LABEL_HIDE_NEAR
+		var rig := camera.get_parent().get_parent() if camera.get_parent() != null else null
+		if near < FADE_NEAR:
+			fade = FADE
+		elif rig is CourtyardThirdPersonCamera and rig.target != null and rig.target != get_parent():
+			var to_focus: Vector3 = rig.global_position - eye
+			var length := to_focus.length()
+			if length > 0.01:
+				var axis := to_focus / length
+				# Legs, chest and head: any of them across the line to the hero hides him.
+				for height in [0.5, 1.1, 1.7]:
+					var point := global_position + Vector3(0.0, height, 0.0) - eye
+					var along := point.dot(axis)
+					if along > 0.0 and along < length - 0.3 and (point - axis * along).length() < FADE_LINE_WIDTH:
+						fade = FADE
+	if body != null and body.material_override is ShaderMaterial:
+		(body.material_override as ShaderMaterial).set_shader_parameter("fade", fade)
+	for name in ["EnemyLabel", "NameLabel"]:
+		var label := get_parent().get_node_or_null(name) as Label3D if get_parent() != null else null
+		if label != null:
+			label.visible = label_on and not bool(label.get_meta("scene_hidden", false))

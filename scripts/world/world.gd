@@ -28,12 +28,16 @@ const INN_RECORD := {
 	"width": 13.0,
 	"depth": 21.0,
 	"floor_height": 0.36,
+	# Codex 171: the room lantern hung at camera height in the middle of the hall and covered the
+	# hero and the innkeeper at the bar; here it hangs under the ceiling like the hall's other lanterns.
+	"lantern_height": 3.05,
 	"entry_width": 2.4,
 }
 ## Door 3 m in front of the site spawn, like the landmark it replaces.
 const INN_BACK_FROM_SPAWN := 13.5
-## Behind the bar (Blender x 4.6, y 1.5 -> Godot x 4.6, z -1.5), guard look for now.
+## Behind the bar (Blender x 4.6, y 1.5 -> Godot x 4.6, z -1.5), in his own look (D-117).
 const INN_KEEPER_AT := Vector3(4.6, 0.36, -1.5)
+const INN_KEEPER_FRAMES := "res://assets/characters/inn-v1/innkeeper_frames.tres"
 const INN_KEEPER_TALK: QuestData = preload("res://data/quests/forest_inn_keeper.tres")
 const INN_TALK_RADIUS := 2.8
 const Pad = preload("res://scripts/world/world_settlement_pad.gd")
@@ -94,6 +98,8 @@ var inn_keeper: Node3D
 var inn_talk: QuestTracker
 ## INN-REST-01: the rented bed in the inn loft and sleeping until the morning.
 var lodging: Node
+## INN-BRAWL-01: the morning after the first night - the moneylender's men and the first fight.
+var brawl: Node
 ## TRAIL-01: the pine forest along the trail from the village to the forest inn.
 var trail_dressing: Node3D
 ## WORLD-DRESS-01A: low-poly forest over the rest of the map (baked positions).
@@ -154,6 +160,13 @@ func _ready() -> void:
 	choices.name = "DialogueChoices"
 	add_child(choices)
 	choices.configure(self)
+	brawl = preload("res://scripts/world/inn_brawl.gd").new()
+	brawl.name = "InnBrawl"
+	add_child(brawl)
+	brawl.configure(self)
+	brawl.finished.connect(func(_outcome: String):
+		_update_prompt()
+		journal_changed.emit())
 	footprints = preload("res://scripts/world/world_footprints.gd").new()
 	footprints.name = "Footprints"
 	add_child(footprints)
@@ -986,7 +999,14 @@ func get_journal_entry() -> Dictionary:
 	var entry: Dictionary = lesson.journal_entry()
 	# UI-CLEAN-01: after the watchman pays, the objective leads to the inn bed and past the first night.
 	if entry.completed and lodging != null:
-		if lodging.rented:
+		if lodging.brawl == "pending":
+			# Codex return 9 Oct: the corner follows the scene - "go down" only until the hero sees the men.
+			entry.objective_key = "INN_OBJECTIVE_BRAWL"
+			if brawl != null and brawl.phase == "fight":
+				entry.objective_key = "INN_OBJECTIVE_BRAWL_FIGHT"
+			elif brawl != null and brawl.phase in ["intro", "offer", "waiting"]:
+				entry.objective_key = "INN_OBJECTIVE_BRAWL_TABLE"
+		elif lodging.rented:
 			entry.objective_key = "INN_OBJECTIVE_SLEEP"
 		elif lodging.nights == 0:
 			entry.objective_key = "INN_OBJECTIVE_RENT"
@@ -1004,7 +1024,7 @@ func interact() -> void:
 			lesson.interact(point)
 			_update_prompt()
 			return
-		if inn_keeper_in_reach():
+		if inn_keeper_in_reach() and not brawl.busy():
 			if inn_talk.flags.get(&"greeted", false):
 				await keeper_menu()
 			else:
@@ -1028,7 +1048,7 @@ func _update_prompt() -> void:
 	hud.set_objective(entry.objective_key, entry.params)
 	var point: Node3D = lesson.nearest_point() if is_input_available() else null
 	var action := ""
-	if point == null and is_input_available() and inn_keeper_in_reach():
+	if point == null and is_input_available() and inn_keeper_in_reach() and not brawl.busy():
 		point = inn_keeper
 		if inn_talk.flags.get(&"greeted", false):
 			action = Localization.text("COURTYARD_ACTION_TALK")
@@ -1168,7 +1188,10 @@ func _offer_inn_door() -> void:
 		key = "VILLAGE_CLOSE"
 	interact_button.disabled = false
 	interact_button.text = Localization.text(key)
-	if door.moving:
+	if brawl != null and brawl.phase == "fight":
+		# The fight comes first (Codex return 9 Oct): the door still opens with E, without a prompt over the fight.
+		hud.set_prompt("")
+	elif door.moving:
 		hud.set_prompt(Localization.text("VILLAGE_DOOR_MOVING"))
 	else:
 		hud.set_prompt(Localization.text(key) if OS.get_name() == "Android" else "E · " + Localization.text(key))
@@ -1185,6 +1208,12 @@ func _add_inn_keeper() -> void:
 	inn_keeper.appearance = preload("res://assets/characters/courtyard/watchman_frames.tres")
 	inn_keeper.position = INN_KEEPER_AT
 	inn.add_child(inn_keeper)
+	# D-117: his own drawn look (Codex, variant A) instead of the watchman's.
+	if ResourceLoader.exists(INN_KEEPER_FRAMES):
+		var presence: Node = preload("res://scripts/world/inn_keeper_presence.gd").new()
+		presence.name = "Presence"
+		inn_keeper.add_child(presence)
+		presence.setup(self, INN_KEEPER_FRAMES, inn.global_basis * Vector3.LEFT)
 
 func inn_keeper_in_reach() -> bool:
 	if inn_keeper == null or player == null:
@@ -1196,7 +1225,7 @@ func inn_keeper_in_reach() -> bool:
 ## ale, or nothing. The answer is carried out and the innkeeper replies.
 func keeper_menu() -> void:
 	var answers := []
-	if not lodging.rented:
+	if not lodging.rented and not lodging.owned:
 		answers.append([&"rent", Localization.text("INN_ANSWER_RENT", {"price": str(lodging.PRICE)})])
 	answers.append([&"drink", Localization.text("INN_ANSWER_DRINK", {"price": str(DRINK_PRICE)})])
 	answers.append([&"leave", Localization.text("INN_ANSWER_LEAVE")])

@@ -942,3 +942,113 @@ msgstr "The road past the watchtower leads to the forest inn. Follow the trail t
 
 msgid "ASK_WAY_HERE"
 msgstr "You are in the right place. To continue the task, speak to me again and choose About the job."
+
+# INN-BRAWL-01: the morning fight in the forest inn (chapter #141, D-113).
+msgid "INN_OBJECTIVE_BRAWL"
+msgstr "There is trouble down in the hall. Go down and see."
+
+msgid "INN_OBJECTIVE_BRAWL_TABLE"
+msgstr "The moneylender's men sit at the table by the door. Decide how to deal with them."
+
+msgid "INN_OBJECTIVE_BRAWL_FIGHT"
+msgstr "Fight off the moneylender's men."
+
+msgid "INN_DAUGHTER_NAME"
+msgstr "Innkeeper's daughter"
+
+msgid "INN_THUG_LEADER_NAME"
+msgstr "Ringleader"
+
+msgid "INN_THUG_BRUTE_NAME"
+msgstr "Brute"
+
+msgid "INN_THUG_YOUNG_NAME"
+msgstr "Youngster"
+
+msgid "INN_HERO_NAME"
+msgstr "Traveller"
+
+msgid "INN_BRAWL_LEADER_ASK"
+msgstr "Are all your lodgers down yet? Tell me when they are."
+
+msgid "INN_BRAWL_LEADER_SIT"
+msgstr "We called you. Sit down. Work can wait."
+
+msgid "INN_BRAWL_DAUGHTER_PAY"
+msgstr "Work can't. And you've eaten. Pay up."
+
+msgid "INN_BRAWL_KEEPER_OUT"
+msgstr "Bench out of the way. And out you go."
+
+msgid "INN_BRAWL_BRUTE_THREE"
+msgstr "Throwing out three of us, are you?"
+
+msgid "INN_BRAWL_DAUGHTER_HINT"
+msgstr "(quietly) The one by the door is quick. Don't let him get behind you."
+
+msgid "INN_BRAWL_DAUGHTER_AGAIN"
+msgstr "(quietly) They're still here. Will you stand with me?"
+
+msgid "INN_BRAWL_ANSWER_STEP_IN"
+msgstr "Step away from her."
+
+msgid "INN_BRAWL_ANSWER_PAY_UP"
+msgstr "Pay and leave."
+
+msgid "INN_BRAWL_ANSWER_JUST_CAME"
+msgstr "I've only just come down."
+
+msgid "INN_BRAWL_LEADER_LANDLORD"
+msgstr "The lodger's awake. Now he's the landlord too?"
+
+msgid "INN_BRAWL_LEADER_EVERYONE"
+msgstr "So now anyone gets to make us pay?"
+
+msgid "INN_BRAWL_DAUGHTER_STAIRS"
+msgstr "Then get away from the stairs. It's about to get crowded in here."
+
+msgid "INN_BRAWL_ENOUGH"
+msgstr "Enough. Let's go."
+
+msgid "INN_BRAWL_LEADER_THREAT"
+msgstr "The master will hear who played the protector here."
+
+msgid "INN_BRAWL_DAUGHTER_DOOR"
+msgstr "Close the door behind you. With your hands, this time."
+
+msgid "INN_BRAWL_HERO_MORNING"
+msgstr "Are your mornings often like this?"
+
+msgid "INN_BRAWL_DAUGHTER_BREAKFAST"
+msgstr "Usually they let you have breakfast first."
+
+msgid "INN_BRAWL_KEEPER_BED"
+msgstr "Your bed's upstairs. It stays yours. Come back in a month - still yours."
+
+msgid "INN_BRAWL_HERO_ONE_FIGHT"
+msgstr "Because of one fight?"
+
+msgid "INN_BRAWL_KEEPER_COULD_LEAVE"
+msgstr "Because you could have walked away."
+
+msgid "INN_BRAWL_DAUGHTER_BOOTS"
+msgstr "Just knock your boots off by the stairs. I'm not scrubbing that gratitude off the floor."
+
+msgid "INN_BRAWL_DAUGHTER_UP"
+msgstr "You're up. That's something."
+
+msgid "INN_BRAWL_KEEPER_KO_BED"
+msgstr "The bed upstairs is yours. You could have walked away, and you didn't."
+
+# D-115: subtitles on/off and their language in Settings; the voice is English.
+msgid "SETTINGS_SUBTITLES"
+msgstr "Subtitles (voice in English)"
+
+msgid "SETTINGS_ON"
+msgstr "On"
+
+msgid "SETTINGS_OFF"
+msgstr "Off"
+
+msgid "SETTINGS_SUBTITLES_AS_GAME"
+msgstr "Same as game"

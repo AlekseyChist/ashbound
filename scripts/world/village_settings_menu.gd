@@ -6,6 +6,9 @@ var panel: Control
 var open_button: Button
 var close_button: Button
 var language_button: Button
+## D-115: subtitles on/off and their language (the voice stays English).
+var subtitles_button: Button
+var subtitle_language_button: Button
 var hint: Label
 var error_label: Label
 var sliders: Dictionary={}
@@ -48,6 +51,19 @@ func configure(owner_world: Node3D, preferences: RefCounted) -> void:
 	language_button=world._button(row,Vector2(240,120))
 	language_button.pressed.connect(func():
 		Localization.set_language("en" if Localization.get_language()=="ru" else "ru"))
+	var subtitle_row:=HBoxContainer.new();add_child(subtitle_row)
+	var subtitle_label:=Label.new();subtitle_label.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	subtitle_row.add_child(subtitle_label);labels.subtitles=subtitle_label
+	subtitles_button=world._button(subtitle_row,Vector2(240,120))
+	subtitles_button.name="SubtitlesButton"
+	subtitles_button.pressed.connect(func():
+		settings.subtitles=not settings.subtitles;_apply_subtitles())
+	subtitle_language_button=world._button(subtitle_row,Vector2(300,120))
+	subtitle_language_button.name="SubtitleLanguageButton"
+	subtitle_language_button.pressed.connect(func():
+		var order: Array=settings.SUBTITLE_LANGUAGES
+		settings.subtitle_language=order[(order.find(settings.subtitle_language)+1)%order.size()]
+		_apply_subtitles())
 	debug_button=world._button(row,Vector2(300,120))
 	debug_button.name="DebugButton"
 	debug_button.pressed.connect(func(): show_debug(not debug_page.visible))
@@ -107,6 +123,11 @@ func _change(key: String, value: float) -> void:
 	else: settings.sound_percent=value
 	world.audio.apply_volume();_refresh_text()
 
+## Shows the subtitle choice on the HUD at once and keeps it.
+func _apply_subtitles() -> void:
+	world.hud.set_subtitles(settings.subtitles, settings.subtitle_language)
+	save_settings();_refresh_text()
+
 func save_settings() -> void:
 	if error_label==null:return
 	error_label.visible=settings.save_settings()!=OK
@@ -120,6 +141,10 @@ func _refresh_text(_language: String="") -> void:
 	labels.distance.text=Localization.text("VILLAGE_DRAW_DISTANCE")+" · %d " % settings.draw_distance+Localization.text("VILLAGE_METRES")
 	labels.language.text=Localization.text("SETTINGS_LANGUAGE_TITLE")
 	language_button.text="English" if Localization.get_language()=="ru" else "Русский"
+	labels.subtitles.text=Localization.text("SETTINGS_SUBTITLES")
+	subtitles_button.text=Localization.text("SETTINGS_ON" if settings.subtitles else "SETTINGS_OFF")
+	subtitle_language_button.text={"": Localization.text("SETTINGS_SUBTITLES_AS_GAME"), "en": "English", "ru": "Русский"}[settings.subtitle_language]
+	subtitle_language_button.disabled=not settings.subtitles
 	debug_button.text=Localization.text("MENU_SECTION_SETTINGS" if debug_page.visible else "SETTINGS_DEBUG")
 	restart_button.text=Localization.text("FOREST_RETURN_START")
 	if map_button!=null: map_button.text=Localization.text("SETTINGS_DEBUG_MAP")

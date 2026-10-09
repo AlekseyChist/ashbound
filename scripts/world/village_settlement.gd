@@ -12,6 +12,8 @@ var atmosphere: Node
 var settings: RefCounted
 var settings_menu: Control
 var audio: Node
+## D-115/D-116: spoken lines (English) under the HUD subtitles.
+var voice: Node
 var pocket: CanvasLayer
 var grass: Node3D
 
@@ -45,6 +47,12 @@ func _ready() -> void:
 	settings_menu.name = "VillageSettings"
 	pocket.get_pocket_panel().use_settings_page(settings_menu)
 	settings_menu.configure(self, settings)
+	voice = preload("res://scripts/world/world_voice.gd").new()
+	voice.name = "Voice"
+	add_child(voice)
+	voice.configure(self)
+	hud.voice = voice
+	hud.set_subtitles(settings.subtitles, settings.subtitle_language)
 	# UI-CLEAN-01: the game screen keeps only play controls; checking tools are in Settings -> Debug,
 	# the language choice is already in Settings.
 	hud.get_node("RootControl/HousePicker").hide()
@@ -121,10 +129,7 @@ func _layout_play_controls() -> void:
 	column.offset_bottom = -COLUMN_RIGHT+8.0
 	column.offset_top = column.offset_bottom-412.0
 	(column.get_node("VBox") as BoxContainer).alignment = BoxContainer.ALIGNMENT_END
-	# The dialogue box stays above the Block/Attack line (where the quick bar used to keep it).
-	var message: Control = hud.get_node("RootControl/MessagePanel")
-	message.offset_top = -430.0
-	message.offset_bottom = -230.0
+	# DIALOG-LINE-01: the HUD lays the line out itself above the Block/Attack line and the quick bar.
 	# The "E · action" prompt at the bottom centre stays clear of Block on a 16:9 screen.
 	var prompt: Control = hud.get_node("RootControl/PromptLabel")
 	prompt.offset_left = -300.0
