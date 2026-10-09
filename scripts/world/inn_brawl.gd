@@ -135,7 +135,11 @@ func floor_at(x: float, z: float) -> float:
 	var space := world.get_world_3d().direct_space_state
 	var query := PhysicsRayQueryParameters3D.create(Vector3(x, base + 0.5, z), Vector3(x, base - 1.0, z), 1)
 	var hit := space.intersect_ray(query)
-	return hit.position.y if not hit.is_empty() else base
+	# Owner 9 Oct: staged right after loading, the inn's floor is not in the physics space yet and the ray
+	# hits the ground under it (0.36 m lower) - the daughter stood sunk into the floor. Inside, never below it.
+	if hit.is_empty() or (hit.position.y < base - 0.1 and inn.contains(Vector3(x, base, z))):
+		return base
+	return hit.position.y
 
 ## The scene is running: the innkeeper's menu waits.
 func busy() -> bool:

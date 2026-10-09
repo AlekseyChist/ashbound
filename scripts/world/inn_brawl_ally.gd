@@ -116,6 +116,8 @@ func receive_enemy_hit(_attacker: Node) -> String:
 	return "hit"
 
 func _physics_process(delta: float) -> void:
+	# She stands on the floor also while the scene waits (the men re-floor every step too).
+	global_position.y = _floor(global_position.x, global_position.z)
 	if session == null or not session.enabled():
 		return
 	var remaining := minf(delta, 0.25)

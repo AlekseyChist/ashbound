@@ -165,6 +165,19 @@ func check_staging() -> void:
 	leader._walk_sim_time = keep_sim
 	var floor_y: float = inn.global_position.y + brawl.FLOOR
 	check(absf(brawl.men["leader"].global_position.y - floor_y) < .2, "the men stand on the floor, not on the roof (%.2f)" % (brawl.men["leader"].global_position.y - floor_y))
+	# Owner 9 Oct: the daughter stood sunk into the floor - her drawn feet must be on the floor like the men's.
+	var feet := func(actor: Node3D) -> float:
+		var sprite: AnimatedSprite3D = actor.get_node("Visual/Body")
+		var frames := sprite.sprite_frames
+		return sprite.global_position.y - (float(frames.get_meta("baseline_offset_pixels", 0.0))) * sprite.pixel_size
+	check(absf(feet.call(brawl.daughter) - feet.call(brawl.men["leader"])) < .05, "the daughter's feet are on the floor like the men's")
+	# Placed 0.36 m too low (as when staged before the inn's floor is in the physics space), she steps up.
+	brawl.daughter.global_position.y -= .34
+	for i in 3:
+		await get_tree().physics_frame
+	check(absf(feet.call(brawl.daughter) - feet.call(brawl.men["leader"])) < .05, "the waiting daughter stands up onto the floor by herself")
+	var spot: Vector3 = inn.to_global(brawl.DAUGHTER_AT)
+	check(brawl.floor_at(spot.x, spot.z) >= floor_y - .1, "the floor under her is the inn's floor, not the ground below")
 	world._update_prompt()
 	check(world.hud._objective_key == "INN_OBJECTIVE_BRAWL", "the objective sends the hero down")
 	var saved := ConfigFile.new()
