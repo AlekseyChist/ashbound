@@ -94,6 +94,7 @@ func stage() -> void:
 			man._update_label_text()
 			man.ground_height = floor_at
 			man.get_node("Visual").use_frames(frames_path(FRAMES[role]))
+			man.pose_fps = 15.0
 			men[role] = man
 		_settle(men[role], role)
 	if daughter == null:

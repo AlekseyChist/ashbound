@@ -65,6 +65,9 @@ var _los_lost_time: float = 0.0
 var _reacquire_timer: float = 0.0
 var _hit_flash_time: float = 0.0
 var _walk_sim_time: float = 0.0
+## Drawn walk phases per second; 0 keeps the old cycle rate (wolf, guard). The inn's men use 15
+## (Codex, bridge 2026-10-09); fleeing they step 1.5 times faster, as they move.
+var pose_fps: float = 0.0
 var _steer_side: int = 1
 var _steer_attempts: int = 0
 var _stagger_duration: float = STAGGER_TIME
@@ -551,6 +554,18 @@ func _floor_y(x: float, z: float) -> float:
 	return float(ground_height.call(x, z)) + 0.02 if ground_height.is_valid() else 0.02
 
 
+## Phase of the walk cycle: old fixed cycles per second, or pose_fps × rate drawn phases per second.
+func _walk_progress(cycles_per_second: float, rate: float) -> float:
+	if pose_fps <= 0.0:
+		return fmod(_walk_sim_time * cycles_per_second, 1.0)
+	var count := 1
+	var body := _visual.get_node_or_null("Body") as AnimatedSprite3D
+	if body != null and body.sprite_frames != null:
+		for view in ["side", "front", "back"]:
+			if body.sprite_frames.has_animation("walk_" + view):
+				count = maxi(count, body.sprite_frames.get_frame_count("walk_" + view))
+	return fmod(_walk_sim_time * pose_fps * rate / float(count), 1.0)
+
 func _present_visual() -> void:
 	if _visual == null or not _visual.has_method("present"):
 		return
@@ -562,10 +577,10 @@ func _present_visual() -> void:
 			action = "idle"
 		"chase", "return":
 			action = "walk"
-			progress = fmod(_walk_sim_time * 4.0, 1.0)
+			progress = _walk_progress(4.0, 1.0)
 		"flee":
 			action = "walk"
-			progress = fmod(_walk_sim_time * 6.0, 1.0)
+			progress = _walk_progress(6.0, 1.5)
 		"windup":
 			if state_time >= _windup_time - CUE_WINDOW:
 				action = "attack"

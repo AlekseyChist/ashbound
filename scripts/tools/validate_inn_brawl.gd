@@ -154,6 +154,15 @@ func check_staging() -> void:
 	brawl.daughter._walk_time = 1.5 / 15.0
 	check(int(brawl.daughter._cycle_progress("walk") * count) == mini(1, count - 1), "one walk phase per 1/15 s (%d phases)" % count)
 	brawl.daughter._walk_time = keep_time
+	var leader: Node = brawl.men["leader"]
+	var keep_sim: float = leader._walk_sim_time
+	leader._walk_sim_time = 1.5 / 15.0
+	var men_count := 1
+	for view in ["side", "front", "back"]:
+		if leader.get_node("Visual/Body").sprite_frames.has_animation("walk_" + view):
+			men_count = maxi(men_count, leader.get_node("Visual/Body").sprite_frames.get_frame_count("walk_" + view))
+	check(leader.pose_fps == 15.0 and int(leader._walk_progress(4.0, 1.0) * men_count) == mini(1, men_count - 1), "the men step at 15 phases a second too (%d phases)" % men_count)
+	leader._walk_sim_time = keep_sim
 	var floor_y: float = inn.global_position.y + brawl.FLOOR
 	check(absf(brawl.men["leader"].global_position.y - floor_y) < .2, "the men stand on the floor, not on the roof (%.2f)" % (brawl.men["leader"].global_position.y - floor_y))
 	world._update_prompt()
