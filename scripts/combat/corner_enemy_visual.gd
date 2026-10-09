@@ -21,7 +21,7 @@ var fade := 1.0
 ## Owner 9 Oct: standing NPCs looked like posters. While idle/talking/on guard the figure breathes - a
 ## slight rise of the whole drawing from the feet (feet stay planted), each with its own rhythm. A drawn
 ## idle cycle (several whole poses) plays its poses at IDLE_POSES_PER_SECOND when the set has one.
-var breathing := false
+var breathing := true
 const BREATH_DEPTH := 0.02
 const IDLE_POSES_PER_SECOND := 3.0
 var _breath_period := 3.4

@@ -176,6 +176,24 @@ func check_staging() -> void:
 	check(tallest - lowest > 0.005 and tallest < 1.03 and lowest > 0.999, "the daughter breathes while she stands (%.3f..%.3f)" % [lowest, tallest])
 	check(feet_moved < 0.01, "her feet stay planted while she breathes (%.3f)" % feet_moved)
 	check(apart > 0.001, "she and the ringleader do not breathe in step")
+	# Owner 9 Oct, "do this with all NPCs": a village resident breathes too, feet planted.
+	var resident: Node3D = preload("res://scenes/courtyard/resident.tscn").instantiate()
+	resident.appearance = preload("res://assets/characters/courtyard/watchman_frames.tres")
+	inn.add_child(resident)
+	var rb: AnimatedSprite3D = resident.get_node("Body")
+	var half: float = rb.position.y
+	var r_low := 9.0
+	var r_high := 0.0
+	var r_feet := 0.0
+	for i in 120:
+		await get_tree().process_frame
+		r_low = minf(r_low, rb.scale.y)
+		r_high = maxf(r_high, rb.scale.y)
+		r_feet = maxf(r_feet, absf((rb.position.y - half * rb.scale.y)))
+	check(r_high - r_low > 0.005 and r_high < 1.03, "a village resident breathes too (%.3f..%.3f)" % [r_low, r_high])
+	check(r_feet < 0.001, "the resident's feet stay put")
+	resident.queue_free()
+	check(brawl.men["leader"].get_node("Visual").breathing, "fighters breathe when they stand (all NPCs, wolves and guards too)")
 	# D-117: the innkeeper in his own drawn set (variant A): idle, talks while his line is on screen,
 	# turns to the hero near him; the watchman's sprite is hidden.
 	var keeper: Node3D = world.inn_keeper
