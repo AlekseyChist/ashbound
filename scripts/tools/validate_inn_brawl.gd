@@ -158,6 +158,24 @@ func check_staging() -> void:
 	var wanted: String = brawl.frames_path(brawl.DAUGHTER_FRAMES)
 	check(body.sprite_frames.resource_path == wanted, "the daughter wears " + wanted)
 	check(brawl.men["leader"].get_node("Visual/Body").sprite_frames.resource_path == brawl.frames_path(brawl.FRAMES["leader"]), "the ringleader wears his set")
+	# Owner 9 Oct: standing NPCs breathe (not posters) - the drawing rises a little from planted feet,
+	# each with his own rhythm.
+	var dv: Node3D = brawl.daughter.get_node("Visual")
+	var lv: Node3D = brawl.men["leader"].get_node("Visual")
+	var lowest := 9.0
+	var tallest := 0.0
+	var feet_moved := 0.0
+	var feet_at: Vector3 = dv.global_position
+	var apart := 0.0
+	for i in 120:
+		await get_tree().process_frame
+		lowest = minf(lowest, dv.scale.y)
+		tallest = maxf(tallest, dv.scale.y)
+		feet_moved = maxf(feet_moved, dv.global_position.distance_to(feet_at))
+		apart = maxf(apart, absf(dv.scale.y - lv.scale.y))
+	check(tallest - lowest > 0.005 and tallest < 1.03 and lowest > 0.999, "the daughter breathes while she stands (%.3f..%.3f)" % [lowest, tallest])
+	check(feet_moved < 0.01, "her feet stay planted while she breathes (%.3f)" % feet_moved)
+	check(apart > 0.001, "she and the ringleader do not breathe in step")
 	# D-117: the innkeeper in his own drawn set (variant A): idle, talks while his line is on screen,
 	# turns to the hero near him; the watchman's sprite is hidden.
 	var keeper: Node3D = world.inn_keeper

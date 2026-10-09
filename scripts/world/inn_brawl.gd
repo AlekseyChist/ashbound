@@ -104,6 +104,7 @@ func stage() -> void:
 			man.ground_height = floor_at
 			man.get_node("Visual").use_frames(frames_path(FRAMES[role]))
 			man.pose_fps = 15.0
+			man.get_node("Visual").breathing = true
 			man.detour_obstacles = true
 			_screen_label(man.get_node("EnemyLabel"))
 			men[role] = man

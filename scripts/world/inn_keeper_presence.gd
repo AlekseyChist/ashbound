@@ -23,6 +23,7 @@ func setup(p_world: Node, frames_path: String, facing: Vector3) -> void:
 	visual.setup("guard")
 	visual.use_frames(frames_path)
 	visual.external_feedback = true
+	visual.breathing = true
 	_present(0.0)
 
 func talking() -> bool:

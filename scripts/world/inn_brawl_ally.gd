@@ -55,6 +55,7 @@ func setup(p_session: Node, ground: Callable, at: Vector3, facing: Vector3) -> v
 	_visual.setup("guard")
 	var brawl: GDScript = load("res://scripts/world/inn_brawl.gd")  # not preload: inn_brawl preloads this script
 	_visual.use_frames(brawl.frames_path(brawl.DAUGHTER_FRAMES))
+	_visual.breathing = true
 	var label := Label3D.new()
 	label.name = "NameLabel"
 	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED

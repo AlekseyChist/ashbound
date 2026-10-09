@@ -18,6 +18,15 @@ const FADE_LINE_WIDTH := 0.6
 const LABEL_HIDE_NEAR := 3.0
 ## Current dither (1 = solid), for the checks.
 var fade := 1.0
+## Owner 9 Oct: standing NPCs looked like posters. While idle/talking/on guard the figure breathes - a
+## slight rise of the whole drawing from the feet (feet stay planted), each with its own rhythm. A drawn
+## idle cycle (several whole poses) plays its poses at IDLE_POSES_PER_SECOND when the set has one.
+var breathing := false
+const BREATH_DEPTH := 0.02
+const IDLE_POSES_PER_SECOND := 3.0
+var _breath_period := 3.4
+var _breath_phase := 0.0
+var _idle_time := 0.0
 
 func _ready() -> void:
 	pass
@@ -111,12 +120,28 @@ func _process(delta: float) -> void:
 		var frame := 0
 		if _stored_action != &"idle" and count > 1:
 			frame = mini(int(clampf(_stored_progress, 0.0, 0.999) * count), count - 1)
+		elif _stored_action == &"idle" and count > 1:
+			_idle_time += delta
+			frame = int(_idle_time * IDLE_POSES_PER_SECOND) % count
 		body.set_frame_and_progress(frame, 0)
 		body.modulate = Color.WHITE if external_feedback else (Color(1.0, 0.35, 0.4) if _hit_flash else Color.WHITE)
 	if _cue_root != null:
 		_cue_root.visible = _stored_cue and not external_feedback
 	super._process(delta)
+	_breathe(delta)
 	_camera_fade(body)
+
+func _breathe(delta: float) -> void:
+	if not breathing or not (_stored_action in [&"idle", &"talk", &"guard"]):
+		return
+	if _breath_phase == 0.0:
+		# Own rhythm per character (stable by name), not all breathing in step.
+		var seed := float(hash(get_parent().name if get_parent() != null else name) % 1000) / 1000.0
+		_breath_phase = 0.001 + seed * TAU
+		_breath_period = 3.0 + seed * 1.0
+	_breath_phase += delta * TAU / _breath_period
+	# Global basis was just turned to the camera; scale only up from the feet (Visual's origin).
+	scale = Vector3(1.0, 1.0 + BREATH_DEPTH * 0.5 * (1.0 - cos(_breath_phase)), 1.0)
 
 func _camera_fade(body: AnimatedSprite3D) -> void:
 	var camera := get_viewport().get_camera_3d() if is_inside_tree() else null
