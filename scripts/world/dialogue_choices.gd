@@ -13,6 +13,8 @@ var line: Label
 var list: VBoxContainer
 var _ids: Array[StringName] = []
 var is_open := false
+## Codex 171: the question over the answers is spoken (D-116) - who asks it, while it is heard.
+var _asker := ""
 
 
 func configure(host: Node) -> void:
@@ -63,8 +65,17 @@ func open(speaker_key: String, line_key: String, answers: Array) -> void:
 		_ids.append(StringName(answer[0]))
 	visible = true
 	is_open = true
+	_asker = speaker_key
+	var voice: Node = world.get("voice")
+	if voice != null:
+		voice.play(line_key, speaker_key)
 	if world.has_method("sync_input_state"):
 		world.sync_input_state()
+
+## The speaker whose question is being heard now ("" when none).
+func speaking() -> String:
+	var voice: Node = world.get("voice")
+	return _asker if is_open and voice != null and voice.is_speaking() else ""
 
 
 func choose(id: StringName) -> void:
@@ -72,6 +83,11 @@ func choose(id: StringName) -> void:
 		return
 	visible = false
 	is_open = false
+	# The question stops with the answer; the answer's own line (if any) is spoken next.
+	var voice: Node = world.get("voice")
+	if voice != null:
+		voice.stop()
+	_asker = ""
 	if world.has_method("sync_input_state"):
 		world.sync_input_state()
 	chosen.emit(id)

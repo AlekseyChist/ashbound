@@ -27,7 +27,12 @@ func setup(p_world: Node, frames_path: String, facing: Vector3) -> void:
 	_present(0.0)
 
 func talking() -> bool:
-	return world != null and world.hud != null and world.hud.current_speaker() == "INN_KEEPER_NAME"
+	if world == null:
+		return false
+	if world.hud != null and world.hud.current_speaker() == "INN_KEEPER_NAME":
+		return true
+	# His question over the answers (Codex 171), while it is heard.
+	return world.get("choices") != null and world.choices.speaking() == "INN_KEEPER_NAME"
 
 func _process(delta: float) -> void:
 	_present(delta)

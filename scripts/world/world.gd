@@ -28,11 +28,14 @@ const INN_RECORD := {
 	"width": 13.0,
 	"depth": 21.0,
 	"floor_height": 0.36,
+	# Codex 171: the room lantern hung at camera height in the middle of the hall and covered the
+	# hero and the innkeeper at the bar; here it hangs under the ceiling like the hall's other lanterns.
+	"lantern_height": 3.05,
 	"entry_width": 2.4,
 }
 ## Door 3 m in front of the site spawn, like the landmark it replaces.
 const INN_BACK_FROM_SPAWN := 13.5
-## Behind the bar (Blender x 4.6, y 1.5 -> Godot x 4.6, z -1.5), guard look for now.
+## Behind the bar (Blender x 4.6, y 1.5 -> Godot x 4.6, z -1.5), in his own look (D-117).
 const INN_KEEPER_AT := Vector3(4.6, 0.36, -1.5)
 const INN_KEEPER_FRAMES := "res://assets/characters/inn-v1/innkeeper_frames.tres"
 const INN_KEEPER_TALK: QuestData = preload("res://data/quests/forest_inn_keeper.tres")

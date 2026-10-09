@@ -42,7 +42,7 @@ func build(data: Dictionary) -> void:
 	door.configure(model, record.id, record.entry)
 	var light := OmniLight3D.new()
 	light.name = "InteriorFill"
-	light.position = Vector3(0, 2.35, 0)
+	light.position = Vector3(0, float(record.get("lantern_height", 2.15)) + 0.2, 0)
 	light.omni_range = 6.5
 	light.light_energy = 0.9
 	light.light_color = Color(1.0, 0.83, 0.64)

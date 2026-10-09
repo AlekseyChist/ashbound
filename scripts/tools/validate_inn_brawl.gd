@@ -624,6 +624,25 @@ func check_voice_and_subtitles() -> void:
 	check(voice.current.ends_with("INN_BRAWL_ENOUGH@INN_THUG_BRUTE_NAME.ogg"), "a new line replaces the voice; shared lines in the speaker's voice")
 	hud.clear_message()
 	check(not voice.is_speaking(), "a cleared line stops its voice")
+	# Codex 171: the question over the answers is spoken; the innkeeper talks while it is heard;
+	# the answer stops it and his reply is spoken instead.
+	world.keeper_menu()
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var keeper_body: AnimatedSprite3D = world.inn_keeper.get_node("Visual/Body")
+	check(world.choices.is_open and voice.is_speaking() and voice.current.ends_with("INN_KEEPER_ASK.ogg"), "the innkeeper's question is spoken over the answers (%s)" % voice.current)
+	check(String(keeper_body.animation).begins_with("talk_"), "he talks while asking (%s)" % keeper_body.animation)
+	world.choices.choose(&"leave")
+	await get_tree().process_frame
+	await get_tree().process_frame
+	check(voice.current.ends_with("INN_KEEPER_BYE.ogg"), "the answer stops the question and his goodbye is spoken (%s)" % voice.current)
+	hud.clear_message()
+	await get_tree().process_frame
+	await get_tree().process_frame
+	check(String(keeper_body.animation).begins_with("idle_"), "done talking, he is idle (%s)" % keeper_body.animation)
+	# Codex 171: the hall's room lantern hangs under the ceiling, out of the camera at the bar.
+	var lantern: Node3D = inn.get_node("Lantern")
+	check(absf(lantern.position.y - 3.05) < 0.01 and (inn.get_node("InteriorFill") as Node3D).position.y > 3.2, "the hall lantern hangs under the ceiling with its light (%.2f)" % lantern.position.y)
 	var long_key := "INN_BRAWL_LEADER_THREAT"
 	var spoken: float = voice.length_of(long_key, "INN_THUG_LEADER_NAME")
 	hud.show_message("INN_THUG_LEADER_NAME", long_key, {}, 0.5)
