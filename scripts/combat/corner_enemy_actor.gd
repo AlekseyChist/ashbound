@@ -88,6 +88,12 @@ var _route_index := 0
 ## A route still not done after this long is reported once (Codex 159: never hidden in sight for it).
 const FLEE_GIVE_UP := 20.0
 var _give_up_told := false
+## Codex 163: near the end of his way but kept off it (others standing there) he stops where he is
+## instead of circling: within END_NEAR of the last point and END_SETTLE seconds there.
+const END_NEAR := 1.6
+const END_SETTLE := 1.2
+var _end_clock := 0.0
+var _route_settled := false
 var _steer_side: int = 1
 var _steer_attempts: int = 0
 var _stagger_duration: float = STAGGER_TIME
@@ -324,6 +330,8 @@ func receive_hit() -> void:
 		_contact_done = false
 		_route_index = 0
 		_give_up_told = false
+		_end_clock = 0.0
+		_route_settled = false
 		_gain_from = INF
 		_detour_left = 0.0
 		return
@@ -544,6 +552,10 @@ func _flee_along_route(delta: float) -> void:
 		_gain_clock = 0.0
 		_detour_left = 0.0
 		return
+	if _route_index == flee_route.size() - 1 and to.length() < END_NEAR:
+		_end_clock += delta
+		if _end_clock >= END_SETTLE:
+			_route_settled = true
 	if not route_finished():
 		var dir := to.normalized() if to.length() > 0.01 else facing_direction
 		facing_direction = dir
@@ -567,6 +579,8 @@ func _flee_along_route(delta: float) -> void:
 func route_finished() -> bool:
 	if flee_route.is_empty() or _route_index < flee_route.size() - 1:
 		return false
+	if _route_settled:
+		return true
 	var last: Vector3 = flee_route[flee_route.size() - 1]
 	return Vector2(last.x - global_position.x, last.z - global_position.z).length() < 0.45
 
@@ -629,6 +643,8 @@ func flee_now() -> void:
 	_contact_done = false
 	_route_index = 0
 	_give_up_told = false
+	_end_clock = 0.0
+	_route_settled = false
 	_gain_from = INF
 	_detour_left = 0.0
 

@@ -438,6 +438,11 @@ func check_men_walk_out(door_open: bool) -> void:
 				seen_gone.append("%s@%s" % [role, inn.to_local(man.global_position)]), CONNECT_ONE_SHOT)
 	# Codex 161: on the way out nobody is lifted onto the porch roof - feet never above the floor.
 	var crew: Array = brawl.men.values()
+	# Codex 163 (open door case): held in sight - as if the hero watched them - to see where they end.
+	var released: Array = crew.map(func(m): return m.flee_done)
+	if door_open:
+		for man in crew:
+			man.flee_done = func() -> bool: return false
 	var highest := [-INF]
 	var watch := func() -> bool:
 		for man in crew:
@@ -448,6 +453,46 @@ func check_men_walk_out(door_open: bool) -> void:
 	while brawl.phase == "fight" and Time.get_ticks_msec() < until:
 		watch.call()
 		await get_tree().physics_frame
+	if door_open:
+		# Codex 163: watched from outside the three reach their own places by the wall and stand -
+		# nobody circles the others; turned away from, they are gone.
+		put_hero(Vector3(-10.0, .5, 15.0))
+		var corner: Vector3 = inn.to_global(Vector3(-4.0, .36, 11.5))
+		var aim := func() -> void:
+			var rig: Node = world.camera_rig
+			var to: Vector3 = corner - world.player.global_position
+			rig._yaw = atan2(-to.x, -to.z)
+			rig._apply_rotation()
+			rig.snap_to_target()
+		var ends_until := Time.get_ticks_msec() + 14000
+		while Time.get_ticks_msec() < ends_until and not crew.all(func(m): return is_instance_valid(m) and m.state == "flee" and m.route_finished()):
+			aim.call()
+			watch.call()
+			await get_tree().physics_frame
+		var standing: bool = crew.all(func(m): return is_instance_valid(m) and m.state == "flee" and m.route_finished())
+		check(standing, "open door, seen from outside: all three reach the end of their way and stand (%s)" % str(crew.map(func(m): return [m.state, m.route_finished(), inn.to_local(m.global_position)] if is_instance_valid(m) else "freed")))
+		if standing:
+			var before: Array = crew.map(func(m): return m.global_position)
+			for i in 60:
+				aim.call()
+				await get_tree().physics_frame
+			var still := true
+			for i in crew.size():
+				still = still and crew[i].global_position.distance_to(before[i]) < 0.05 and crew[i].get_node("Visual/Body").animation.begins_with("idle")
+			check(still, "they stand still (idle), nobody circles the others")
+			var apart := true
+			for i in crew.size():
+				for j in range(i + 1, crew.size()):
+					apart = apart and Vector2(crew[i].global_position.x - crew[j].global_position.x, crew[i].global_position.z - crew[j].global_position.z).length() > 0.6
+			check(apart, "each stands at his own place")
+		for i in crew.size():
+			if is_instance_valid(crew[i]):
+				crew[i].flee_done = released[i]
+		# Turned away from them: out of sight, they are gone.
+		var rig2: Node = world.camera_rig
+		rig2._yaw += PI
+		rig2._apply_rotation()
+		rig2.snap_to_target()
 	await wait_for(watch, 25.0)
 	var case := "open door" if door_open else "closed door"
 	check(gone_inside.is_empty(), "%s: nobody vanishes inside the hall (%s)" % [case, gone_inside])

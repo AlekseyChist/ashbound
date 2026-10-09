@@ -21,8 +21,10 @@ const DAUGHTER_OUT := Vector3(1.6, FLOOR, -5.0)
 const DAUGHTER_AFTER := Vector3(1.5, FLOOR, -0.6)
 ## Beaten men run here, out through the double door.
 const DOOR_OUT := Vector3(0.0, FLOOR, 13.0)
-## Codex 159: from the door round the near left corner, along the side wall (ground height there).
-const OUTSIDE_WAY: Array[Vector3] = [Vector3(-7.5, FLOOR, 13.0), Vector3(-7.5, FLOOR, 8.0)]
+## Codex 159: from the door round the near left corner, along the side wall (ground height there);
+## Codex 163: each of the three ends at his own place along the wall, not all on one point.
+const OUTSIDE_CORNER := Vector3(-7.5, FLOOR, 13.0)
+const OUTSIDE_END := {"leader": Vector3(-7.5, FLOOR, 8.0), "brute": Vector3(-7.6, FLOOR, 6.4), "young": Vector3(-7.4, FLOOR, 4.8)}
 ## Trial numbers (D-113): blows each man takes before he gives up; the brute counts the daughter's too.
 const GIVE_UP := {"leader": 3, "brute": 5, "young": 2}
 const HERO_KO_HITS := 6
@@ -133,7 +135,7 @@ func _settle(man: CharacterBody3D, role: String) -> void:
 	# (round tables and benches); he is gone only once he is outside, on the outer part of the way and
 	# out of sight (his whole figure behind walls or out of the frame).
 	var route: Array[Vector3] = []
-	for local in [Vector3(0.0, FLOOR, 8.1), Vector3(0.0, FLOOR, 11.0), DOOR_OUT] + OUTSIDE_WAY:
+	for local in [Vector3(0.0, FLOOR, 8.1), Vector3(0.0, FLOOR, 11.0), DOOR_OUT, OUTSIDE_CORNER, OUTSIDE_END[role]]:
 		route.append(inn.to_global(local))
 	man.flee_route = route
 	man.flee_done = func() -> bool: return _left_hall(man) and man._route_index >= 3 and out_of_sight(man)
