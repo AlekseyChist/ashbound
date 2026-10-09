@@ -210,6 +210,17 @@ func check_staging() -> void:
 		keeper_scale = maxf(keeper_scale, keeper.get_node("Visual").scale.y)
 	check(keeper_frames.size() >= 3, "his drawn idle cycle plays (%d poses seen)" % keeper_frames.size())
 	check(is_equal_approx(keeper_scale, 1.0), "no breathing on top of the drawn idle (%.3f)" % keeper_scale)
+	# Codex 92ee61f: the ringleader's drawn idle cycle plays too, no breathing on top.
+	var leader_body: AnimatedSprite3D = brawl.men["leader"].get_node("Visual/Body")
+	var leader_frames := {}
+	var leader_scale := 1.0
+	for i in 100:
+		await get_tree().process_frame
+		if String(leader_body.animation).begins_with("idle_"):
+			leader_frames[leader_body.frame] = true
+		leader_scale = maxf(leader_scale, brawl.men["leader"].get_node("Visual").scale.y)
+	check(leader_frames.size() >= 3, "the ringleader's drawn idle cycle plays (%d poses seen)" % leader_frames.size())
+	check(is_equal_approx(leader_scale, 1.0), "no breathing on top of his drawn idle (%.3f)" % leader_scale)
 	world.hud.show_message("INN_KEEPER_NAME", "INN_KEEPER_GREETING")
 	await get_tree().process_frame
 	await get_tree().process_frame
