@@ -85,8 +85,9 @@ var _detour_fails := 0
 var flee_route: Array[Vector3] = []
 var flee_done: Callable
 var _route_index := 0
-## Safety only (a route that can never be walked must not hang a scene); checks require the real exit.
+## A route still not done after this long is reported once (Codex 159: never hidden in sight for it).
 const FLEE_GIVE_UP := 20.0
+var _give_up_told := false
 var _steer_side: int = 1
 var _steer_attempts: int = 0
 var _stagger_duration: float = STAGGER_TIME
@@ -322,6 +323,7 @@ func receive_hit() -> void:
 		state_time = 0.0
 		_contact_done = false
 		_route_index = 0
+		_give_up_told = false
 		_gain_from = INF
 		_detour_left = 0.0
 		return
@@ -542,18 +544,31 @@ func _flee_along_route(delta: float) -> void:
 		_gain_clock = 0.0
 		_detour_left = 0.0
 		return
-	var dir := to.normalized() if to.length() > 0.01 else facing_direction
-	facing_direction = dir
-	_chase_around(dir, to.length(), delta, _chase_speed * FLEE_SPEED_SCALE)
-	_walk_sim_time += delta
+	if not route_finished():
+		var dir := to.normalized() if to.length() > 0.01 else facing_direction
+		facing_direction = dir
+		_chase_around(dir, to.length(), delta, _chase_speed * FLEE_SPEED_SCALE)
+		_walk_sim_time += delta
+	if state_time >= FLEE_GIVE_UP and not _give_up_told:
+		_give_up_told = true
+		print("ENEMY_FLEE_ROUTE_UNFINISHED ", name, " at ", global_position, " point ", _route_index)
+	# Gone only when flee_done says so (out and out of sight) - never by time in front of the eyes.
 	var out := bool(flee_done.call()) if flee_done.is_valid() else state_time >= FLEE_TIME
-	if out or state_time >= FLEE_GIVE_UP:
+	if out:
 		state = "gone"
 		state_time = 0.0
 		visible = false
 		collision_layer = 0
 		collision_mask = 0
 		fled.emit()
+
+
+## At the last point of his route: he stands there (still seen) until he is out of sight.
+func route_finished() -> bool:
+	if flee_route.is_empty() or _route_index < flee_route.size() - 1:
+		return false
+	var last: Vector3 = flee_route[flee_route.size() - 1]
+	return Vector2(last.x - global_position.x, last.z - global_position.z).length() < 0.45
 
 
 func _step_return(delta: float) -> void:
@@ -613,6 +628,7 @@ func flee_now() -> void:
 	state_time = 0.0
 	_contact_done = false
 	_route_index = 0
+	_give_up_told = false
 	_gain_from = INF
 	_detour_left = 0.0
 
@@ -670,7 +686,7 @@ func _present_visual() -> void:
 			action = "walk"
 			progress = _walk_progress(4.0, 1.0)
 		"flee":
-			action = "walk"
+			action = "idle" if route_finished() else "walk"
 			progress = _walk_progress(6.0, 1.5)
 		"windup":
 			if state_time >= _windup_time - CUE_WINDOW:

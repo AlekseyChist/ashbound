@@ -21,6 +21,8 @@ const DAUGHTER_OUT := Vector3(1.6, FLOOR, -5.0)
 const DAUGHTER_AFTER := Vector3(1.5, FLOOR, -0.6)
 ## Beaten men run here, out through the double door.
 const DOOR_OUT := Vector3(0.0, FLOOR, 13.0)
+## Codex 159: from the door round the near left corner, along the side wall (ground height there).
+const OUTSIDE_WAY: Array[Vector3] = [Vector3(-7.5, FLOOR, 13.0), Vector3(-7.5, FLOOR, 8.0)]
 ## Trial numbers (D-113): blows each man takes before he gives up; the brute counts the daughter's too.
 const GIVE_UP := {"leader": 3, "brute": 5, "young": 2}
 const HERO_KO_HITS := 6
@@ -127,11 +129,14 @@ func _settle(man: CharacterBody3D, role: String) -> void:
 	man.opponent = null
 	man.flee_after_hits = GIVE_UP[role]
 	man.flee_point = inn.to_global(DOOR_OUT)
-	# Codex return 155: beaten, he walks the aisle to the door and out (round tables and benches);
-	# he is gone only once he is out of the hall.
-	var route: Array[Vector3] = [inn.to_global(Vector3(0.0, FLOOR, 8.1)), inn.to_global(Vector3(0.0, FLOOR, 11.0)), inn.to_global(DOOR_OUT)]
+	# Codex returns 155/159: beaten, he walks the aisle to the door, out, and round the near left corner
+	# (round tables and benches); he is gone only once he is outside, on the outer part of the way and
+	# out of sight (his whole figure behind walls or out of the frame).
+	var route: Array[Vector3] = []
+	for local in [Vector3(0.0, FLOOR, 8.1), Vector3(0.0, FLOOR, 11.0), DOOR_OUT] + OUTSIDE_WAY:
+		route.append(inn.to_global(local))
 	man.flee_route = route
-	man.flee_done = func() -> bool: return not inn.contains(man.global_position)
+	man.flee_done = func() -> bool: return _left_hall(man) and man._route_index >= 3 and out_of_sight(man)
 	man.visible = true
 	man.collision_layer = 4
 	man.collision_mask = 7
@@ -146,11 +151,13 @@ func _dir(from: Vector3, to: Vector3) -> Vector3:
 func floor_at(x: float, z: float) -> float:
 	var base: float = inn.global_position.y + FLOOR
 	var space := world.get_world_3d().direct_space_state
-	var query := PhysicsRayQueryParameters3D.create(Vector3(x, base + 0.5, z), Vector3(x, base - 1.0, z), 1)
+	var inside: bool = inn.contains(Vector3(x, base, z))
+	# Outside (the beaten men's way round the corner) the ground may lie well below the floor.
+	var query := PhysicsRayQueryParameters3D.create(Vector3(x, base + (0.5 if inside else 3.0), z), Vector3(x, base - (1.0 if inside else 6.0), z), 1)
 	var hit := space.intersect_ray(query)
 	# Owner 9 Oct: staged right after loading, the inn's floor is not in the physics space yet and the ray
 	# hits the ground under it (0.36 m lower) - the daughter stood sunk into the floor. Inside, never below it.
-	if hit.is_empty() or (hit.position.y < base - 0.1 and inn.contains(Vector3(x, base, z))):
+	if hit.is_empty() or (hit.position.y < base - 0.1 and inside):
 		return base
 	return hit.position.y
 
@@ -330,6 +337,30 @@ func _open_door_for_the_beaten() -> void:
 			door.try_toggle(man)
 			return
 
+## Out of the hall on his way (the fight is won by that, whether or not he is still seen).
+func _left_hall(man: Node3D) -> bool:
+	return man.state == "gone" or (man.state == "flee" and not inn.contains(man.global_position))
+
+## His whole figure (feet, body, head; both edges) is behind world geometry or out of the frame.
+func out_of_sight(man: Node3D) -> bool:
+	var camera := get_viewport().get_camera_3d()
+	if camera == null:
+		return true
+	var space := world.get_world_3d().direct_space_state
+	var right := camera.global_basis.x
+	right.y = 0.0
+	right = right.normalized() if right.length_squared() > 1e-6 else Vector3.RIGHT
+	for height in [0.15, 0.9, 1.75]:
+		for side in [-0.3, 0.0, 0.3]:
+			var point: Vector3 = man.global_position + Vector3(0.0, float(height), 0.0) + right * float(side)
+			if not camera.is_position_in_frustum(point):
+				continue
+			var query := PhysicsRayQueryParameters3D.create(camera.global_position, point, 1)
+			query.exclude = [(man as CollisionObject3D).get_rid()]
+			if space.intersect_ray(query).is_empty():
+				return false
+	return true
+
 func _watch_fight() -> void:
 	_open_door_for_the_beaten()
 	var left := 0
@@ -348,7 +379,7 @@ func _watch_fight() -> void:
 			if role == "leader" and not _leader_threat:
 				_leader_threat = true
 				world.hud.show_message("INN_THUG_LEADER_NAME", "INN_BRAWL_LEADER_THREAT", {}, SHOUT_TIME)
-		if man.state != "gone":
+		if not _left_hall(man):
 			left += 1
 	if left == 0:
 		_win()
@@ -404,7 +435,13 @@ func _gone(man: CharacterBody3D) -> void:
 ## session at once, so nothing of them can come back during the lines.
 func _finish_state() -> void:
 	for role in men:
-		var man: Node = men[role]
+		var man: CharacterBody3D = men[role]
+		if man.state == "flee" and man.visible:
+			# Codex 159: still walking away in sight - he keeps going and is let go once out of sight.
+			man.fled.connect(func() -> void:
+				session.enemies.erase(man)
+				man.queue_free(), CONNECT_ONE_SHOT)
+			continue
 		session.enemies.erase(man)
 		man.queue_free()
 	men.clear()

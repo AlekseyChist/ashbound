@@ -343,12 +343,14 @@ func check_win() -> void:
 	check(await wait_for(func(): return brawl.phase == "after", 6.0), "all three gone: the fight is won")
 	check(lodging.owned and lodging.brawl == "done" and brawl.outcome == "won", "the bed is the hero's for good")
 	var contacts: int = brawl.session._contacts
-	check(brawl.men.is_empty() and not brawl.session.enemies.any(func(e): return is_instance_valid(e) and str(e.name).begins_with("Moneylender")), "the men leave the combat session as soon as the fight is won")
+	# Codex 159: the fight is won once they are out of the hall; those still walking away in sight stay
+	# (fleeing, never striking) until they are out of sight - nobody is removed before the eyes.
+	check(brawl.men.is_empty() and brawl.session.enemies.all(func(e): return not is_instance_valid(e) or not str(e.name).begins_with("Moneylender") or e.state in ["flee", "gone"]), "once the fight is won the men only walk away")
 	var saved := ConfigFile.new()
 	check(saved.load(PATH) == OK and saved.get_value("inn", "owned") == true and saved.get_value("inn", "brawl") == "done", "the owned bed is saved before the closing lines")
 	check(await wait_for(func(): return brawl.phase == "done", 4.0), "the closing lines end the scene")
 	check(brawl.session._contacts == contacts, "nobody strikes the hero during the closing lines (%d -> %d)" % [contacts, brawl.session._contacts])
-	check(brawl.men.is_empty() and not brawl.session.enemies.any(func(e): return not is_instance_valid(e) or str(e.name).begins_with("Moneylender")), "the men are gone from the world and the combat session")
+	check(await wait_for(func(): return not brawl.session.enemies.any(func(e): return not is_instance_valid(e) or str(e.name).begins_with("Moneylender")), 25.0), "out of sight round the corner the men are gone from the world and the combat session")
 	check(inn.to_local(brawl.daughter.global_position).distance_to(brawl.DAUGHTER_AFTER) < .6, "the daughter works by the bar afterwards")
 
 func check_owned_bed(purse: Node) -> void:
@@ -421,18 +423,26 @@ func check_men_walk_out(door_open: bool) -> void:
 	var was_out := {"leader": false, "brute": false, "young": false}
 	var gone_inside: Array[String] = []
 	# The moment each one is gone (fled is emitted before the scene lets him go) tells where he stood.
+	var seen_gone: Array[String] = []
+	var fled_count := [0]
 	for role in brawl.men:
 		var man: CharacterBody3D = brawl.men[role]
 		man.fled.connect(func() -> void:
+			fled_count[0] += 1
 			if inn.contains(man.global_position):
 				gone_inside.append(role)
 			else:
-				was_out[role] = true, CONNECT_ONE_SHOT)
+				was_out[role] = true
+			# Codex 159: gone only on the outer way and out of sight, never in the doorway.
+			if man._route_index < 3 or not brawl.out_of_sight(man):
+				seen_gone.append("%s@%s" % [role, inn.to_local(man.global_position)]), CONNECT_ONE_SHOT)
 	var until := Time.get_ticks_msec() + 16000
 	while brawl.phase == "fight" and Time.get_ticks_msec() < until:
 		await get_tree().physics_frame
+	await wait_for(func(): return fled_count[0] == 3, 25.0)
 	var case := "open door" if door_open else "closed door"
 	check(gone_inside.is_empty(), "%s: nobody vanishes inside the hall (%s)" % [case, gone_inside])
+	check(seen_gone.is_empty(), "%s: nobody vanishes in sight or in the doorway (%s)" % [case, seen_gone])
 	check(was_out.values().all(func(v): return v), "%s: all three walk out of the hall (%s)" % [case, was_out])
 	check(brawl.outcome == "won" and brawl.phase in ["after", "done"], "%s: the fight is won once they are out (%s/%s)" % [case, brawl.phase, brawl.outcome])
 	if not door_open:
