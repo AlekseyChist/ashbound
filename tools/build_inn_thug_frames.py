@@ -91,20 +91,49 @@ def pack(source_root, recipe):
         result.alpha_composite(tile, ((index%4)*CELL,(index//4)*CELL))
     return result
 
-def resource(kind, recipe):
+def pack_idle(source):
+    image = Image.open(source).convert('RGBA')
+    if image.size != (1086,1448):
+        raise ValueError('Unexpected leader idle dimensions')
+    atlas = Image.new('RGBA',(3*CELL,4*CELL))
+    # One clip-wide factor matches the old leader's whole painted body;
+    # fixed roots and ground per row, never fit individual pose bounds.
+    scale, roots, floors = .69, (210,181,151), (348,705,1062,1421)
+    for row in range(4):
+        for col in range(3):
+            whole = image.crop((col*362,row*362,(col+1)*362,(row+1)*362))
+            bounds_ok(whole,f'idle source {row}/{col}')
+            scaled = whole.convert('RGBa').resize(tuple(round(v*scale) for v in whole.size),Image.Resampling.LANCZOS).convert('RGBA')
+            tile = Image.new('RGBA',(CELL,CELL))
+            tile.alpha_composite(scaled,(round(CELL/2-roots[col]*scale),round(GROUND-(floors[row]-row*362)*scale)))
+            bounds_ok(tile,f'idle packed {row}/{col}')
+            atlas.alpha_composite(tile,(col*CELL,row*CELL))
+    return atlas
+
+def resource(kind, recipe, painted_idle=False):
     poses = pose_list()
-    lines = ['[gd_resource type="SpriteFrames" load_steps=41 format=3]', '',
+    lines = [f'[gd_resource type="SpriteFrames" load_steps={54 if painted_idle else 41} format=3]', '',
              f'[ext_resource type="Texture2D" path="res://assets/characters/inn-v1/thug_{kind}-atlas.png" id="1"]', '']
+    if painted_idle:
+        lines += [f'[ext_resource type="Texture2D" path="res://assets/characters/inn-v1/thug_{kind}-idle-atlas.png" id="2"]','']
     for i in range(len(poses)):
         lines += [f'[sub_resource type="AtlasTexture" id="pose_{i}"]', 'atlas = ExtResource("1")',
                   f'region = Rect2({i%4*CELL}, {i//4*CELL}, {CELL}, {CELL})', 'filter_clip = true', '']
+    if painted_idle:
+        for row in range(4):
+            for col in range(3):
+                lines += [f'[sub_resource type="AtlasTexture" id="idle_{row*3+col}"]','atlas = ExtResource("2")',
+                          f'region = Rect2({col*CELL}, {row*CELL}, {CELL}, {CELL})','filter_clip = true','']
     lines += ['[resource]', 'animations = [']
     clips = [(a,v) for a in (*ACTIONS,'walk') for v in VIEWS]
     for n,(a,v) in enumerate(clips):
         ids = [i for i,p in enumerate(poses) if p[:2] == (a,v)]
-        entries = ', '.join(f'{{"duration": 1.0, "texture": SubResource("pose_{i}")}}' for i in ids)
+        if a == 'idle' and painted_idle:
+            ids = [row*3+VIEWS.index(v) for row in range(4)]
+        prefix = 'idle' if a == 'idle' and painted_idle else 'pose'
+        entries = ', '.join(f'{{"duration": 1.0, "texture": SubResource("{prefix}_{i}")}}' for i in ids)
         lines += ['{', f'"frames": [{entries}],', f'"loop": {str(a in ("idle","walk")).lower()},',
-                  f'"name": &"{a}_{v}",', f'"speed": {15.0 if a == "walk" else 1.0}', '}' + (',' if n<len(clips)-1 else '')]
+                  f'"name": &"{a}_{v}",', f'"speed": {15.0 if a == "walk" else 3.0 if a == "idle" and painted_idle else 1.0}', '}' + (',' if n<len(clips)-1 else '')]
     lines += [']', f'metadata/baseline_offset_pixels = {GROUND-CELL/2}']
     state_px, side_px, fb_px = recipe['pixels'][:3]
     back_px = recipe['pixels'][3] if len(recipe['pixels']) == 4 else fb_px
@@ -117,6 +146,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--source-root', type=Path)
     parser.add_argument('--kind', choices=RECIPES, default='leader')
+    parser.add_argument('--idle-source', type=Path)
     args = parser.parse_args()
     recipe = RECIPES[args.kind]
     atlas = pack(args.source_root, recipe) if args.source_root else Image.open(DEST/f'thug_{args.kind}-atlas.png').convert('RGBA')
@@ -124,12 +154,24 @@ def main():
     for i in range(39):
         x,y = i%4*CELL,i//4*CELL
         bounds_ok(atlas.crop((x,y,x+CELL,y+CELL)), f'atlas pose {i}')
+    idle_path = DEST/f'thug_{args.kind}-idle-atlas.png'
+    if args.idle_source and args.kind != 'leader':
+        raise ValueError('Only leader idle recipe is currently selected')
+    idle = pack_idle(args.idle_source) if args.idle_source else Image.open(idle_path).convert('RGBA') if idle_path.exists() else None
+    if idle is not None:
+        if idle.size != (1152,1536):
+            raise ValueError('Unexpected idle atlas dimensions')
+        for row in range(4):
+            for col in range(3):
+                bounds_ok(idle.crop((col*CELL,row*CELL,(col+1)*CELL,(row+1)*CELL)),f'idle atlas {row}/{col}')
     # Validate all inputs before replacing output.
     DEST.mkdir(parents=True, exist_ok=True)
     if args.source_root:
         atlas.save(DEST/f'thug_{args.kind}-atlas.png')
-    (DEST/f'thug_{args.kind}_frames.tres').write_text(resource(args.kind,recipe),encoding='utf-8',newline='\n')
-    print(f'INN_PACK_OK {args.kind}: 39 whole poses, 18 clips, fixed clip scale, no clipping')
+    if args.idle_source:
+        idle.save(idle_path)
+    (DEST/f'thug_{args.kind}_frames.tres').write_text(resource(args.kind,recipe,idle is not None),encoding='utf-8',newline='\n')
+    print(f'INN_PACK_OK {args.kind}: painted_idle={idle is not None}, 18 clips, fixed clip scale, no clipping')
 
 if __name__ == '__main__':
     main()
