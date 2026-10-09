@@ -389,6 +389,13 @@ func _deep_copy_dict(d: Dictionary) -> Dictionary:
 
 # ---------------------------------------------------------------- Ввод
 
+## Codex return 9 Oct: a shout in the fight was laid out once and ended under the quick-slot bar.
+## While a line is on screen its place follows the bar, the window and the text size every frame.
+func _process(_delta: float) -> void:
+	if _message_visible and _message_panel != null and _message_panel.visible:
+		_layout_message()
+
+
 func _notification(what: int) -> void:
 	if not is_node_ready() or not is_inside_tree() or is_queued_for_deletion():
 		return

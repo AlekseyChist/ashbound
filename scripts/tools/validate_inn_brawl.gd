@@ -106,6 +106,7 @@ func run() -> void:
 	await check_answers()
 	await check_win()
 	await check_owned_bed(purse)
+	await check_leader_round_table()
 	await check_leave_and_first_strike()
 	await check_daughter_out_and_knockout()
 	await check_voice_and_subtitles()
@@ -254,6 +255,22 @@ func check_fight_view() -> void:
 	check(world.hud._objective_key == "INN_OBJECTIVE_BRAWL_FIGHT", "in the fight the corner says fight them off (%s)" % world.hud._objective_key)
 	await get_tree().process_frame
 	check(shown_names() == 0, "no names over the fight (%d)" % shown_names())
+	# Codex return 9 Oct: a shout in the fight ended under the quick-slot bar. It stays above the bar's
+	# real top, also when the bar moves after the line is shown.
+	var bar: Control = world.hud.message_avoid
+	world.hud.show_message("INN_THUG_LEADER_NAME", "INN_BRAWL_LEADER_LANDLORD", {}, 3.0)
+	await get_tree().process_frame
+	bar.position.y -= 40.0
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var bar_top := INF
+	for child in bar.get_children():
+		if child is Control and child.visible:
+			bar_top = minf(bar_top, (child as Control).get_global_rect().position.y)
+	var line: Rect2 = world.hud.get_node("RootControl/MessagePanel").get_global_rect()
+	check(bar != null and line.end.y <= bar_top - 23.5, "the shout stays above the quick-slot bar (%s, bar top %.0f)" % [line, bar_top])
+	bar.position.y += 40.0
+	world.hud.clear_message()
 	var keep: Vector3 = world.player.global_position
 	var door: Node3D = inn.door
 	var entry: Vector3 = door.to_global(door.entry)
@@ -353,6 +370,22 @@ func check_owned_bed(purse: Node) -> void:
 	await sleep_night()
 	check(lodging.owned and not lodging.rented and lodging.brawl == "done" and brawl.phase == "done", "sleeping keeps the owned bed, no second fight")
 	check(purse.gold == gold and brawl.men.is_empty(), "no charge and nobody waits downstairs")
+
+## Codex return 9 Oct: with the hero standing still behind the table left of the men, the ringleader
+## walked on the spot against its edge for 6 s. He goes round it and comes to blows, from either side.
+func check_leader_round_table() -> void:
+	await fresh()
+	await sleep_night()
+	for spot in [Vector3(-2.0, .5, 6.5), Vector3(-2.0, .5, 3.6)]:
+		put_hero(spot)
+		await settle(.2)
+		brawl.ko_hits = 999
+		brawl._start_fight()
+		var leader: CharacterBody3D = brawl.men["leader"]
+		check(await wait_for(func(): return leader.state in ["windup", "recovery"], 8.0), "the ringleader goes round the table to the hero at %s (%s at %s)" % [spot, leader.state, inn.to_local(leader.global_position)])
+		put_hero(Vector3(0.0, .5, 14.0))
+		check(await wait_for(func(): return brawl.phase == "waiting", 3.0), "out of the hall the scene waits again")
+		world.hud.clear_message()
 
 func check_leave_and_first_strike() -> void:
 	await fresh()

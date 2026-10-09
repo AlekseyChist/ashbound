@@ -68,6 +68,18 @@ var _walk_sim_time: float = 0.0
 ## Drawn walk phases per second; 0 keeps the old cycle rate (wolf, guard). The inn's men use 15
 ## (Codex, bridge 2026-10-09); fleeing they step 1.5 times faster, as they move.
 var pose_fps: float = 0.0
+## Codex return 9 Oct (inn hall): chasing straight into a table edge he walked on the spot. With this on,
+## a chaser that gains no ground for DETOUR_AFTER seconds walks along the obstacle to a free side
+## (no teleport, furniture stays solid). Off for the wolf and the guard elsewhere.
+var detour_obstacles := false
+const DETOUR_AFTER := 0.5
+const DETOUR_TIME := 0.8
+const DETOUR_GAIN := 0.05
+var _detour_left := 0.0
+var _detour_dir := Vector3.ZERO
+var _gain_clock := 0.0
+var _gain_from := INF
+var _detour_fails := 0
 var _steer_side: int = 1
 var _steer_attempts: int = 0
 var _stagger_duration: float = STAGGER_TIME
@@ -393,12 +405,49 @@ func _step_chase(delta: float) -> void:
 	if planar_dist <= _stop_distance:
 		state = "windup"
 		state_time = 0.0
+		_gain_from = INF
+		_gain_clock = 0.0
+		_detour_left = 0.0
 		_aim_direction = dir
 		_contact_done = false
 		return
 
-	_move_horizontal(dir * _chase_speed, delta)
+	if detour_obstacles:
+		_chase_around(dir, planar_dist, delta)
+	else:
+		_move_horizontal(dir * _chase_speed, delta)
 	_walk_sim_time += delta
+
+
+func _chase_around(dir: Vector3, planar_dist: float, delta: float) -> void:
+	if _detour_left > 0.0:
+		_detour_left -= delta
+		var along := (_detour_dir + dir * 0.25).normalized()
+		facing_direction = along
+		if not _move_horizontal(along * _chase_speed, delta) or _detour_left <= 0.0:
+			_detour_left = 0.0
+			_gain_from = planar_dist
+			_gain_clock = 0.0
+		return
+	_move_horizontal(dir * _chase_speed, delta)
+	_gain_clock += delta
+	if planar_dist < _gain_from - DETOUR_GAIN:
+		_gain_from = planar_dist
+		_gain_clock = 0.0
+		_detour_fails = 0
+	elif _gain_clock >= DETOUR_AFTER:
+		# No ground gained: go along the obstacle to the side that is free, the other one next time.
+		var side := Vector3(-dir.z, 0.0, dir.x) * _steer_side
+		if test_move(global_transform, side * 0.4):
+			side = -side
+			_steer_side = -_steer_side
+		_detour_fails += 1
+		if _detour_fails > 3:
+			_detour_fails = 0
+			_steer_side = -_steer_side
+		_detour_dir = side
+		_detour_left = DETOUR_TIME
+		_gain_clock = 0.0
 
 
 func _step_windup(delta: float) -> void:

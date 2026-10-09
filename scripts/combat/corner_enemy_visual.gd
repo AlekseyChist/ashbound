@@ -12,7 +12,7 @@ var _cue_root: Node3D
 ## Codex return 9 Oct: a character between the camera and the hero (or right at the camera) is
 ## dithered to FADE so the hero stays visible; its name label hides near the camera, where it grew
 ## over the whole screen.
-const FADE := 0.35
+const FADE := 0.25
 const FADE_NEAR := 1.2
 const FADE_LINE_WIDTH := 0.6
 const LABEL_HIDE_NEAR := 3.0
