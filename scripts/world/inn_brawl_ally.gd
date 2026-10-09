@@ -3,8 +3,7 @@ extends CharacterBody3D
 ## enemy (the brute): closes in, winds up, strikes; every third blow at her she blocks. She swings slower
 ## than the brute, so alone with him she is out first; with the hero's help he gives up first. After
 ## OUT_HITS landed blows she is out until the end - she walks to the bar and stays there; the fight
-## is not lost because of it. She wears the approved look (D-111): Codex's full set (inn-v1) when it is
-## there, else the frames cut from the motion proof sheet. Stepped by the world's physics frame while the combat session runs.
+## is not lost because of it. She wears the approved look (D-111) in Codex's full drawn set (inn-v1). Stepped by the world's physics frame while the combat session runs.
 const MAX_STEP := 1.0 / 60.0
 const SPEED := 2.4
 const REACH := 1.25
@@ -220,7 +219,7 @@ func _cycle_progress(action: String) -> float:
 				count = maxi(count, frames.get_frame_count(action + "_" + view))
 	return fmod(_walk_time * POSE_FPS / float(count), 1.0)
 
-## The temporary frames have no guard/out clips; fall back instead of asking for a missing one.
+## A set without guard/out clips falls back instead of asking for a missing one.
 func _clip_or(action: String, fallback: String) -> String:
 	var frames := _frames()
 	return action if frames != null and frames.has_animation(action + "_side") else fallback

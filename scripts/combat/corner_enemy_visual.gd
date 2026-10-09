@@ -9,6 +9,15 @@ var _hit_flash: bool = false
 var external_feedback: bool = false
 var _configured := false
 var _cue_root: Node3D
+## Codex return 9 Oct: a character between the camera and the hero (or right at the camera) is
+## dithered to FADE so the hero stays visible; its name label hides near the camera, where it grew
+## over the whole screen.
+const FADE := 0.35
+const FADE_NEAR := 1.2
+const FADE_LINE_WIDTH := 0.6
+const LABEL_HIDE_NEAR := 3.0
+## Current dither (1 = solid), for the checks.
+var fade := 1.0
 
 func _ready() -> void:
 	pass
@@ -107,3 +116,34 @@ func _process(delta: float) -> void:
 	if _cue_root != null:
 		_cue_root.visible = _stored_cue and not external_feedback
 	super._process(delta)
+	_camera_fade(body)
+
+func _camera_fade(body: AnimatedSprite3D) -> void:
+	var camera := get_viewport().get_camera_3d() if is_inside_tree() else null
+	fade = 1.0
+	var label_on := true
+	if camera != null:
+		var eye := camera.global_position
+		var torso := global_position + Vector3(0.0, 0.9, 0.0)
+		var near := eye.distance_to(torso)
+		label_on = near > LABEL_HIDE_NEAR
+		var rig := camera.get_parent().get_parent() if camera.get_parent() != null else null
+		if near < FADE_NEAR:
+			fade = FADE
+		elif rig is CourtyardThirdPersonCamera and rig.target != null and rig.target != get_parent():
+			var to_focus: Vector3 = rig.global_position - eye
+			var length := to_focus.length()
+			if length > 0.01:
+				var axis := to_focus / length
+				# Legs, chest and head: any of them across the line to the hero hides him.
+				for height in [0.5, 1.1, 1.7]:
+					var point := global_position + Vector3(0.0, height, 0.0) - eye
+					var along := point.dot(axis)
+					if along > 0.0 and along < length - 0.3 and (point - axis * along).length() < FADE_LINE_WIDTH:
+						fade = FADE
+	if body != null and body.material_override is ShaderMaterial:
+		(body.material_override as ShaderMaterial).set_shader_parameter("fade", fade)
+	for name in ["EnemyLabel", "NameLabel"]:
+		var label := get_parent().get_node_or_null(name) as Label3D if get_parent() != null else null
+		if label != null:
+			label.visible = label_on

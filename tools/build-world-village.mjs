@@ -50,7 +50,7 @@ resources.push(...files.filter(f=>f.startsWith('assets/voice/en/')&&f.endsWith('
 // COMBAT-WORLD-01B: combat components load scripts/effects by path (not seen by the exporter).
 resources.push(...files.filter(f=>f.startsWith('scripts/combat/')&&f.endsWith('.gd')));
 resources.push(...['hit','block','perfect_block','windup','swing'].map(id=>'assets/vfx/painted-combat-v1/'+id+'.png'),'assets/characters/courtyard/enemy-preview/wolf_frames.tres','assets/characters/courtyard/enemy-preview/guard_frames.tres');
-resources.push(...files.filter(f=>/^assets\/characters\/inn-(temp|v1)\//.test(f)&&/\.(tres|png)$/.test(f)));
+resources.push(...files.filter(f=>f.startsWith('assets/characters/inn-v1/')&&/\.(tres|png)$/.test(f)));
 if(qa)resources.push('scripts/tools/validate_world_village.gd');
 let presets=fs.readFileSync(path.join(stage,'export_presets.cfg'),'utf8')
  .replaceAll('export_files=PackedStringArray(',`export_files=PackedStringArray(${resources.map(v=>JSON.stringify('res://'+v)).join(', ')}, `)

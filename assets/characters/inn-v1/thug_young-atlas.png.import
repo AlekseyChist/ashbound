@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://btfsxs148p6nr"
-path="res://.godot/imported/daughter-atlas.png-31eab69731954803e6cf270e45e539f1.ctex"
+uid="uid://bkq0blfrg4cw8"
+path="res://.godot/imported/thug_young-atlas.png-7be8a2475492e86466b43133c01c368c.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/characters/inn-temp/daughter-atlas.png"
-dest_files=["res://.godot/imported/daughter-atlas.png-31eab69731954803e6cf270e45e539f1.ctex"]
+source_file="res://assets/characters/inn-v1/thug_young-atlas.png"
+dest_files=["res://.godot/imported/thug_young-atlas.png-7be8a2475492e86466b43133c01c368c.ctex"]
 
 [params]
 

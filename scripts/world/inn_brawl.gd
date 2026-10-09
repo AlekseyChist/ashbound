@@ -12,8 +12,8 @@ signal finished(outcome: String)
 
 ## Inn frame (x, floor, z): the door is at +z, the stairs come down at the left rear, the bar is right.
 const FLOOR := 0.36
-const LEADER_AT := Vector3(0.9, FLOOR, 5.2)
-const BRUTE_AT := Vector3(1.7, FLOOR, 6.9)
+const LEADER_AT := Vector3(1.25, FLOOR, 5.2)
+const BRUTE_AT := Vector3(3.4, FLOOR, 7.0)
 const YOUNG_AT := Vector3(1.5, FLOOR, 8.8)
 const DAUGHTER_AT := Vector3(1.2, FLOOR, 4.0)
 ## Where the daughter goes when she is out, and where she stands after the scene.
@@ -33,17 +33,14 @@ const OFFER_RADIUS := 2.2
 ## start, do not turn the camera) - not as soon as the hero steps into the hall with them behind him.
 const START_RADIUS := 7.0
 const START_VIEW_COS := 0.64
-## Owner 3 Oct: the approved looks in the scene now - temporary frames cut from the approved sheets
-## (D-111/D-114) until Codex's full animation sets (inn-v1) replace them.
-## Codex's full drawn sets (inn-v1, bridge 142) replace the temporary frames as soon as they are there.
+## Codex's drawn sets (inn-v1: the daughter, bridge 147; the three, e35ff4e).
 const FINAL_FRAMES_DIR := "res://assets/characters/inn-v1/"
-const TEMP_FRAMES_DIR := "res://assets/characters/inn-temp/"
 const FRAMES := {"leader": "thug_leader_frames.tres", "brute": "thug_brute_frames.tres",
 	"young": "thug_young_frames.tres"}
 const DAUGHTER_FRAMES := "daughter_frames.tres"
 
 static func frames_path(file: String) -> String:
-	return FINAL_FRAMES_DIR + file if ResourceLoader.exists(FINAL_FRAMES_DIR + file) else TEMP_FRAMES_DIR + file
+	return FINAL_FRAMES_DIR + file
 const NAMES := {"leader": "INN_THUG_LEADER_NAME", "brute": "INN_THUG_BRUTE_NAME", "young": "INN_THUG_YOUNG_NAME"}
 
 var world: Node3D

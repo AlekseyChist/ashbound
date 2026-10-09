@@ -1179,7 +1179,10 @@ func _offer_inn_door() -> void:
 		key = "VILLAGE_CLOSE"
 	interact_button.disabled = false
 	interact_button.text = Localization.text(key)
-	if door.moving:
+	if brawl != null and brawl.phase == "fight":
+		# The fight comes first (Codex return 9 Oct): the door still opens with E, without a prompt over the fight.
+		hud.set_prompt("")
+	elif door.moving:
 		hud.set_prompt(Localization.text("VILLAGE_DOOR_MOVING"))
 	else:
 		hud.set_prompt(Localization.text(key) if OS.get_name() == "Android" else "E · " + Localization.text(key))

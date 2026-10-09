@@ -140,7 +140,7 @@ func check_staging() -> void:
 		homes_ok = homes_ok and inn.contains(man.global_position) and not man.engaged
 	check(homes_ok, "the men stand in the hall, not engaged")
 	check(inn.contains(brawl.daughter.global_position), "the daughter stands in the hall")
-	# Codex's inn-v1 set replaces the temporary frames by itself when it is in the project.
+	# Codex's drawn inn-v1 sets (the approved looks D-111/D-114).
 	var body: AnimatedSprite3D = brawl.daughter.get_node("Visual/Body")
 	var wanted: String = brawl.frames_path(brawl.DAUGHTER_FRAMES)
 	check(body.sprite_frames.resource_path == wanted, "the daughter wears " + wanted)
@@ -232,6 +232,37 @@ func check_answers() -> void:
 	world._update_prompt()
 	check(world.interact_button.text != Localization.text("COURTYARD_ACTION_TALK") or not world.inn_keeper_in_reach(), "the innkeeper does not talk during the fight")
 
+## Codex return 9 Oct: during the fight the door prompt does not cover it, a man between the camera and
+## the hero is dithered so the hero shows, and name labels hide near the camera instead of filling it.
+func check_fight_view() -> void:
+	var keep: Vector3 = world.player.global_position
+	var door: Node3D = inn.door
+	var entry: Vector3 = door.to_global(door.entry)
+	var inward: Vector3 = inn.global_basis.z * -1.0
+	world.player.global_position = Vector3(entry.x, inn.global_position.y + brawl.FLOOR + .05, entry.z) + inward * 1.2
+	world.current_door = null
+	world._update_prompt()
+	check(world.current_door != null and world.hud._prompt_label.text.is_empty(), "by the door in the fight: E still opens it, no prompt over the fight (offered: %s, prompt '%s')" % [str(world.current_door != null), world.hud._prompt_label.text])
+	world.player.global_position = keep
+	await get_tree().physics_frame
+	var brute: CharacterBody3D = brawl.men["brute"]
+	var keep_brute: Vector3 = brute.global_position
+	var camera: Camera3D = get_viewport().get_camera_3d()
+	var focus: Vector3 = world.camera_rig.global_position
+	var between: Vector3 = camera.global_position.lerp(focus, .45)
+	brute.global_position = Vector3(between.x, keep_brute.y, between.z)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var visual: Node = brute.get_node("Visual")
+	check(visual.fade < 1.0, "a man between the camera and the hero is dithered (%.2f)" % visual.fade)
+	check(not brute.get_node("EnemyLabel").visible, "his name label hides near the camera")
+	check((brute.get_node("Visual/Body").material_override as ShaderMaterial).get_shader_parameter("fade") == visual.fade, "the dither reaches the sprite's shader")
+	check(world.player.get_node("Visual").get_node("Body").material_override == null or (world.player.get_node("Visual/Body").material_override as ShaderMaterial).get_shader_parameter("fade") in [null, 1.0], "the hero himself is never dithered")
+	brute.global_position = keep_brute
+	await get_tree().process_frame
+	await get_tree().process_frame
+	check(visual.fade == 1.0 or camera.global_position.distance_to(brute.global_position) < 3.0, "back in his place he is solid again")
+
 func check_win() -> void:
 	brawl.ko_hits = 999
 	var leader: CharacterBody3D = brawl.men["leader"]
@@ -239,6 +270,7 @@ func check_win() -> void:
 	check(await wait_for(func(): return leader.state in ["chase", "windup", "recovery"], 3.0), "the ringleader comes at the hero")
 	check(await wait_for(func(): return brawl.daughter.strikes > 0, 6.0), "the daughter strikes the brute")
 	check(await wait_for(func(): return brawl.hero_hits > 0 or brawl.session._contacts > 0, 6.0), "the men's blows reach the hero")
+	await check_fight_view()
 	# A real strike of the hero: facing the ringleader within reach.
 	leader.cancel_attack()
 	var to_leader: Vector3 = leader.global_position - world.player.global_position

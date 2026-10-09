@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dddwvakydjasy"
-path="res://.godot/imported/thug_brute-atlas.png-99a60930d300a08959b2faca307c7833.ctex"
+uid="uid://diyeme8k7h5il"
+path="res://.godot/imported/thug_leader-atlas.png-b9992922cb9d1fed04e51cabf9775570.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/characters/inn-temp/thug_brute-atlas.png"
-dest_files=["res://.godot/imported/thug_brute-atlas.png-99a60930d300a08959b2faca307c7833.ctex"]
+source_file="res://assets/characters/inn-v1/thug_leader-atlas.png"
+dest_files=["res://.godot/imported/thug_leader-atlas.png-b9992922cb9d1fed04e51cabf9775570.ctex"]
 
 [params]
 

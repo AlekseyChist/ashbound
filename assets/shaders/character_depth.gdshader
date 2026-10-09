@@ -12,6 +12,10 @@ render_mode unshaded, cull_disabled, depth_draw_opaque;
 uniform sampler2D texture_albedo : source_color, filter_linear, repeat_disable;
 uniform vec3 foot_world;
 uniform vec3 upright_right; // horizontal unit camera right
+// 1 = solid. Below 1 a screen-door (4x4 ordered dither) lets the hero show through an NPC standing
+// between him and the camera (INN-BRAWL-01, Codex return 9 Oct); stays opaque, cheap on phones.
+uniform float fade : hint_range(0.0, 1.0) = 1.0;
+const float BAYER[16] = float[16](0.0, 8.0, 2.0, 10.0, 12.0, 4.0, 14.0, 6.0, 3.0, 11.0, 1.0, 9.0, 15.0, 7.0, 13.0, 5.0);
 
 varying vec3 desired_world;
 
@@ -25,6 +29,12 @@ void fragment() {
 	ALBEDO = tex.rgb;
 	ALPHA = tex.a;
 	ALPHA_SCISSOR_THRESHOLD = 0.25;
+	if (fade < 0.999) {
+		ivec2 cell = ivec2(FRAGCOORD.xy) % 4;
+		if ((BAYER[cell.y * 4 + cell.x] + 0.5) / 16.0 >= fade) {
+			discard;
+		}
+	}
 
 	// Upright plane through foot_world: normal = cross(upright_right, up).
 	vec3 up = vec3(0.0, 1.0, 0.0);
