@@ -8,21 +8,26 @@ func check(ok: bool, label: String) -> void:
 		failures.append(label)
 		printerr("DAUGHTER_WALK_FAIL ", label)
 func run() -> void:
-	var frames := load("res://assets/characters/inn-v1/daughter_walk_side_frames.tres") as SpriteFrames
+	for view in ["side","back"]:
+		validate_view(view)
+	print("DAUGHTER_WALK_CHECKS failures=",failures.size()," views=2")
+	quit(0 if failures.is_empty() else 1)
+func validate_view(view: String) -> void:
+	var clip := StringName("walk_"+view)
+	var frames := load("res://assets/characters/inn-v1/daughter_walk_%s_frames.tres"%view) as SpriteFrames
 	if frames == null:
-		printerr("DAUGHTER_WALK_FAIL resource import")
-		quit(1)
+		check(false,"resource import "+view)
 		return
-	check(frames.has_animation(&"walk_side"), "walk_side exists")
-	check(frames.get_frame_count(&"walk_side") == 8, "eight whole poses")
-	check(frames.get_animation_loop(&"walk_side"), "loop enabled")
-	check(is_equal_approx(frames.get_animation_speed(&"walk_side"),15.0), "accepted preview cadence")
-	var ppu := float(frames.get_meta("pixel_size_walk_side",0))
+	check(frames.has_animation(clip), "clip exists "+view)
+	check(frames.get_frame_count(clip) == 8, "eight whole poses "+view)
+	check(frames.get_animation_loop(clip), "loop enabled "+view)
+	check(is_equal_approx(frames.get_animation_speed(clip),15.0), "accepted preview cadence "+view)
+	var ppu := float(frames.get_meta("pixel_size_walk_"+view,0))
 	var baseline := float(frames.get_meta("baseline_offset_pixels",0))
 	check(ppu>.003 and ppu<.005 and is_equal_approx(baseline,248), "one scale and shared feet anchor")
 	var distinct := {}
-	for i in range(frames.get_frame_count(&"walk_side")):
-		var texture := frames.get_frame_texture(&"walk_side",i) as AtlasTexture
+	for i in range(frames.get_frame_count(clip)):
+		var texture := frames.get_frame_texture(clip,i) as AtlasTexture
 		if texture == null:
 			check(false,"atlas cell %d"%i)
 			continue
@@ -45,5 +50,4 @@ func run() -> void:
 		check(edge_pixels==0,"no visible clipping %d"%i)
 		check(ground_pixels>0,"walking support reaches common ground band %d"%i)
 	check(distinct.size()==8,"not eight copies of one pose")
-	print("DAUGHTER_WALK_CHECKS failures=",failures.size()," distinct=",distinct.size())
-	quit(0 if failures.is_empty() else 1)
+	print("DAUGHTER_WALK_VIEW ",view," distinct=",distinct.size())
