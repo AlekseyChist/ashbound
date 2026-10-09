@@ -158,6 +158,29 @@ func check_staging() -> void:
 	var wanted: String = brawl.frames_path(brawl.DAUGHTER_FRAMES)
 	check(body.sprite_frames.resource_path == wanted, "the daughter wears " + wanted)
 	check(brawl.men["leader"].get_node("Visual/Body").sprite_frames.resource_path == brawl.frames_path(brawl.FRAMES["leader"]), "the ringleader wears his set")
+	# D-117: the innkeeper in his own drawn set (variant A): idle, talks while his line is on screen,
+	# turns to the hero near him; the watchman's sprite is hidden.
+	var keeper: Node3D = world.inn_keeper
+	var keeper_body: AnimatedSprite3D = keeper.get_node("Visual/Body")
+	check(not (keeper.get_node("Body") as Node3D).visible and keeper_body.sprite_frames.resource_path == world.INN_KEEPER_FRAMES, "the innkeeper wears his own set")
+	await get_tree().process_frame
+	check(String(keeper_body.animation).begins_with("idle_"), "the innkeeper stands idle (%s)" % keeper_body.animation)
+	world.hud.show_message("INN_KEEPER_NAME", "INN_KEEPER_GREETING")
+	await get_tree().process_frame
+	await get_tree().process_frame
+	check(String(keeper_body.animation).begins_with("talk_"), "he talks while his line is on screen (%s)" % keeper_body.animation)
+	world.hud.clear_message()
+	await get_tree().process_frame
+	await get_tree().process_frame
+	check(String(keeper_body.animation).begins_with("idle_"), "his line over, he is idle again (%s)" % keeper_body.animation)
+	var keep_hero: Vector3 = world.player.global_position
+	world.player.global_position = keeper.global_position + inn.global_basis * Vector3(-2.0, 0.0, 1.0)
+	await get_tree().process_frame
+	var to_hero: Vector3 = world.player.global_position - keeper.global_position
+	to_hero.y = 0.0
+	check(keeper.get_node("Visual")._stored_facing.dot(to_hero.normalized()) > 0.95, "he turns to the hero near the bar")
+	world.player.global_position = keep_hero
+	await get_tree().process_frame
 	# Drawn walk phases change at 15 a second whatever the number of phases (Codex 142).
 	var count := 1
 	for view in ["side", "front", "back"]:

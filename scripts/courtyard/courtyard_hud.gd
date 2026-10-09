@@ -232,6 +232,11 @@ func _render_message() -> void:
 	_show_part()
 
 
+## Who is speaking the line on screen now ("" when no line is shown).
+func current_speaker() -> String:
+	return _speaker_key if _message_visible else ""
+
+
 ## The whole current line (all its parts), for checks and readers.
 func message_text() -> String:
 	return " ".join(_message_parts) if _message_visible else ""

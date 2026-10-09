@@ -34,6 +34,7 @@ const INN_RECORD := {
 const INN_BACK_FROM_SPAWN := 13.5
 ## Behind the bar (Blender x 4.6, y 1.5 -> Godot x 4.6, z -1.5), guard look for now.
 const INN_KEEPER_AT := Vector3(4.6, 0.36, -1.5)
+const INN_KEEPER_FRAMES := "res://assets/characters/inn-v1/innkeeper_frames.tres"
 const INN_KEEPER_TALK: QuestData = preload("res://data/quests/forest_inn_keeper.tres")
 const INN_TALK_RADIUS := 2.8
 const Pad = preload("res://scripts/world/world_settlement_pad.gd")
@@ -1204,6 +1205,12 @@ func _add_inn_keeper() -> void:
 	inn_keeper.appearance = preload("res://assets/characters/courtyard/watchman_frames.tres")
 	inn_keeper.position = INN_KEEPER_AT
 	inn.add_child(inn_keeper)
+	# D-117: his own drawn look (Codex, variant A) instead of the watchman's.
+	if ResourceLoader.exists(INN_KEEPER_FRAMES):
+		var presence: Node = preload("res://scripts/world/inn_keeper_presence.gd").new()
+		presence.name = "Presence"
+		inn_keeper.add_child(presence)
+		presence.setup(self, INN_KEEPER_FRAMES, inn.global_basis * Vector3.LEFT)
 
 func inn_keeper_in_reach() -> bool:
 	if inn_keeper == null or player == null:
