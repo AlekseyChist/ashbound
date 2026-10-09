@@ -107,6 +107,8 @@ func run() -> void:
 	await check_win()
 	await check_owned_bed(purse)
 	await check_leader_round_table()
+	await check_men_walk_out(false)
+	await check_men_walk_out(true)
 	await check_leave_and_first_strike()
 	await check_daughter_out_and_knockout()
 	await check_voice_and_subtitles()
@@ -386,6 +388,56 @@ func check_leader_round_table() -> void:
 		put_hero(Vector3(0.0, .5, 14.0))
 		check(await wait_for(func(): return brawl.phase == "waiting", 3.0), "out of the hall the scene waits again")
 		world.hud.clear_message()
+
+## Codex return 155: beaten, the three walk round the furniture and out of the door - a closed door
+## is opened by the first of them - and only then are gone; nobody vanishes inside the hall.
+func check_men_walk_out(door_open: bool) -> void:
+	await fresh()
+	await sleep_night()
+	var door: Node3D = inn.door
+	if door.moving or (door_open != (door.fraction > 0.5)):
+		# Set the door the way the case needs it (the hero's usual toggle from the entry).
+		put_hero(inn.to_local(door.to_global(door.entry)) + Vector3(0, .14, -1.2))
+		await get_tree().physics_frame
+		door.try_toggle(world.player)
+		check(await wait_for(func(): return not door.moving, 4.0), "the door settles before the case")
+	check((door.fraction > 0.5) == door_open, "the case starts with the door %s (%.2f)" % ["open" if door_open else "closed", door.fraction])
+	put_hero(Vector3(0.5, .5, 1.5))
+	await look_at_men()
+	check(await wait_for(func(): return world.choices.is_open, 6.0), "%s: the answers open" % ("open door" if door_open else "closed door"))
+	world.choices.choose(&"step_in")
+	brawl.ko_hits = 999
+	# Codex's case: the ringleader came to the hero left of the table, by the bench, before giving up.
+	put_hero(Vector3(-2.0, .5, 6.5))
+	check(await wait_for(func(): return brawl.men["leader"].state in ["windup", "recovery"], 8.0), "the ringleader comes to the hero by the bench")
+	for role in ["leader", "brute", "young"]:
+		var man: CharacterBody3D = brawl.men[role]
+		for i in 12:
+			if man.state == "flee" or man.state == "gone":
+				break
+			man.receive_hit()
+			await get_tree().physics_frame
+			await get_tree().physics_frame
+	var was_out := {"leader": false, "brute": false, "young": false}
+	var gone_inside: Array[String] = []
+	# The moment each one is gone (fled is emitted before the scene lets him go) tells where he stood.
+	for role in brawl.men:
+		var man: CharacterBody3D = brawl.men[role]
+		man.fled.connect(func() -> void:
+			if inn.contains(man.global_position):
+				gone_inside.append(role)
+			else:
+				was_out[role] = true, CONNECT_ONE_SHOT)
+	var until := Time.get_ticks_msec() + 16000
+	while brawl.phase == "fight" and Time.get_ticks_msec() < until:
+		await get_tree().physics_frame
+	var case := "open door" if door_open else "closed door"
+	check(gone_inside.is_empty(), "%s: nobody vanishes inside the hall (%s)" % [case, gone_inside])
+	check(was_out.values().all(func(v): return v), "%s: all three walk out of the hall (%s)" % [case, was_out])
+	check(brawl.outcome == "won" and brawl.phase in ["after", "done"], "%s: the fight is won once they are out (%s/%s)" % [case, brawl.phase, brawl.outcome])
+	if not door_open:
+		check(door.fraction > 0.5, "the first of them opened the closed door (%.2f)" % door.fraction)
+	await wait_for(func(): return brawl.phase == "done", 12.0)
 
 func check_leave_and_first_strike() -> void:
 	await fresh()

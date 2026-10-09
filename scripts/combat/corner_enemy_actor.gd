@@ -80,6 +80,13 @@ var _detour_dir := Vector3.ZERO
 var _gain_clock := 0.0
 var _gain_from := INF
 var _detour_fails := 0
+## Codex return 155 (inn): a beaten man walks these points in order (round the furniture with the detour
+## above) and is gone only once flee_done says he is really out - not after FLEE_TIME inside the hall.
+var flee_route: Array[Vector3] = []
+var flee_done: Callable
+var _route_index := 0
+## Safety only (a route that can never be walked must not hang a scene); checks require the real exit.
+const FLEE_GIVE_UP := 20.0
 var _steer_side: int = 1
 var _steer_attempts: int = 0
 var _stagger_duration: float = STAGGER_TIME
@@ -314,6 +321,9 @@ func receive_hit() -> void:
 		state = "flee"
 		state_time = 0.0
 		_contact_done = false
+		_route_index = 0
+		_gain_from = INF
+		_detour_left = 0.0
 		return
 	# ALWAYS enter stagger (idle/chase/return/windup/recovery), no stale windup.
 	state = "stagger"
@@ -419,17 +429,19 @@ func _step_chase(delta: float) -> void:
 	_walk_sim_time += delta
 
 
-func _chase_around(dir: Vector3, planar_dist: float, delta: float) -> void:
+func _chase_around(dir: Vector3, planar_dist: float, delta: float, speed: float = -1.0) -> void:
+	if speed < 0.0:
+		speed = _chase_speed
 	if _detour_left > 0.0:
 		_detour_left -= delta
 		var along := (_detour_dir + dir * 0.25).normalized()
 		facing_direction = along
-		if not _move_horizontal(along * _chase_speed, delta) or _detour_left <= 0.0:
+		if not _move_horizontal(along * speed, delta) or _detour_left <= 0.0:
 			_detour_left = 0.0
 			_gain_from = planar_dist
 			_gain_clock = 0.0
 		return
-	_move_horizontal(dir * _chase_speed, delta)
+	_move_horizontal(dir * speed, delta)
 	_gain_clock += delta
 	if planar_dist < _gain_from - DETOUR_GAIN:
 		_gain_from = planar_dist
@@ -498,6 +510,9 @@ func _step_stagger(delta: float) -> void:
 
 ## Run straight away from the hero (or to flee_point); after FLEE_TIME the enemy is gone (hidden, no collision).
 func _step_flee(delta: float) -> void:
+	if not flee_route.is_empty():
+		_flee_along_route(delta)
+		return
 	var away := global_position - (_player.global_position if _player != null else home)
 	if flee_point != null:
 		away = (flee_point as Vector3) - global_position
@@ -509,6 +524,30 @@ func _step_flee(delta: float) -> void:
 		_move_horizontal((dir + perp).normalized() * _chase_speed * FLEE_SPEED_SCALE, delta)
 	_walk_sim_time += delta
 	if state_time >= FLEE_TIME:
+		state = "gone"
+		state_time = 0.0
+		visible = false
+		collision_layer = 0
+		collision_mask = 0
+		fled.emit()
+
+
+func _flee_along_route(delta: float) -> void:
+	var point: Vector3 = flee_route[mini(_route_index, flee_route.size() - 1)]
+	var to := point - global_position
+	to.y = 0.0
+	if to.length() < 0.45 and _route_index < flee_route.size() - 1:
+		_route_index += 1
+		_gain_from = INF
+		_gain_clock = 0.0
+		_detour_left = 0.0
+		return
+	var dir := to.normalized() if to.length() > 0.01 else facing_direction
+	facing_direction = dir
+	_chase_around(dir, to.length(), delta, _chase_speed * FLEE_SPEED_SCALE)
+	_walk_sim_time += delta
+	var out := bool(flee_done.call()) if flee_done.is_valid() else state_time >= FLEE_TIME
+	if out or state_time >= FLEE_GIVE_UP:
 		state = "gone"
 		state_time = 0.0
 		visible = false
@@ -573,6 +612,9 @@ func flee_now() -> void:
 	state = "flee"
 	state_time = 0.0
 	_contact_done = false
+	_route_index = 0
+	_gain_from = INF
+	_detour_left = 0.0
 
 
 func _begin_return() -> void:

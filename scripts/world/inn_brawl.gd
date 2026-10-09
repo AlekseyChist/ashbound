@@ -127,6 +127,11 @@ func _settle(man: CharacterBody3D, role: String) -> void:
 	man.opponent = null
 	man.flee_after_hits = GIVE_UP[role]
 	man.flee_point = inn.to_global(DOOR_OUT)
+	# Codex return 155: beaten, he walks the aisle to the door and out (round tables and benches);
+	# he is gone only once he is out of the hall.
+	var route: Array[Vector3] = [inn.to_global(Vector3(0.0, FLOOR, 8.1)), inn.to_global(Vector3(0.0, FLOOR, 11.0)), inn.to_global(DOOR_OUT)]
+	man.flee_route = route
+	man.flee_done = func() -> bool: return not inn.contains(man.global_position)
 	man.visible = true
 	man.collision_layer = 4
 	man.collision_mask = 7
@@ -314,7 +319,19 @@ func _on_hero_contact(result: String) -> void:
 	if hero_hits >= ko_hits:
 		_knockout()
 
+## A beaten man at a closed door opens it the usual way (it swings away from him) and goes out.
+func _open_door_for_the_beaten() -> void:
+	var door: Node3D = inn.door
+	if door == null or door.moving or not is_zero_approx(door.fraction):
+		return
+	for role in men:
+		var man: CharacterBody3D = men[role]
+		if man.state == "flee" and door.can_interact(man):
+			door.try_toggle(man)
+			return
+
 func _watch_fight() -> void:
+	_open_door_for_the_beaten()
 	var left := 0
 	for role in men:
 		var man: CharacterBody3D = men[role]
