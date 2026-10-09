@@ -16,7 +16,7 @@ func _initialize() -> void:
 
 func _run() -> void:
 	loc = root.get_node("Localization")
-	settings_path = "res://.tools/courtyard-locale-qa-%d.cfg" % OS.get_process_id()
+	settings_path = "user://courtyard-locale-qa-%d.cfg" % OS.get_process_id()
 	loc.load_preferences(settings_path, "ru_RU")
 	for entry in JSON.parse_string(FileAccess.get_file_as_string("res://scripts/tools/fixtures/courtyard_localization.json")):
 		fixture[entry.key] = entry
@@ -145,7 +145,8 @@ func _practice_and_controls() -> void:
 		_check(_message() == _expected("COURTYARD_DIALOGUE_GUARD_LESSON"), "watchman line translated")
 	hud.reset_controls()
 	await _switch("en")
-	_check(_label("BottomRight/VBox/RunButton") == "Walk", "idle walk mode text")
+	# UI book 1.0: the button always reads Run; the idle state is the unpressed button without the marker.
+	_check(_label("BottomRight/VBox/RunButton") == "Run" and not (hud.get_node("RootControl/BottomRight/VBox/RunButton") as Button).button_pressed, "idle run button unpressed")
 	completed += 1
 
 func _focus_prompts() -> void:
