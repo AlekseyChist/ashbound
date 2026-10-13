@@ -7,10 +7,11 @@ var styled_section:=""
 func _ready() -> void:
 	process_mode=Node.PROCESS_MODE_ALWAYS
 	super._ready()
-	# No quick bar in the village/world yet: give the HUD back the room the bar reserved.
+	# The world places its play controls after this _ready(). Reserve the bar's
+	# space once that layout (including Jump and Block) has finished.
 	var bar: Control=_root_control.get_node("QuickBar")
 	bar.release_hud()
-	bar.queue_free()
+	_reserve_quick_space.call_deferred()
 	var book: Theme=preload("res://assets/ui/ashbound_ui.tres")
 	_root_control.theme=book
 	_open_button.offset_top=180;_open_button.offset_bottom=300
@@ -26,6 +27,20 @@ func _ready() -> void:
 		get_tree().paused=previous_pause
 		if world.settings_menu!=null: world.settings_menu.save_settings()
 		world.sync_input_state())
+
+func _reserve_quick_space() -> void:
+	var bar: Control = _root_control.get_node("QuickBar")
+	bar._shift_hud()
+	# These controls live outside the courtyard's BottomLeft/BottomRight groups.
+	for path in ["RootControl/JumpButton", "RootControl/PromptLabel"]:
+		var control: Control = _hud.get_node_or_null(path)
+		if control != null:
+			control.position.y -= bar.BAR_RESERVE
+	var block: Node = world.get_node_or_null("Combat/BlockControls")
+	if block != null:
+		var guard: Control = block.get("_guard_btn")
+		if guard != null:
+			guard.position.y -= bar.BAR_RESERVE
 
 func request_open() -> bool:
 	if not world.is_input_available(): return false
