@@ -27,7 +27,16 @@ def box(n,p,s,m,solid=False):
 box('floor',(0,0,-.15),(14,8,.3),STONE,True)
 for x in (-4.2,4.2):box('loading wall pier',(x,-3.8,1.7),(5.6,.4,3.4),STONE,True)
 box('loading lintel',(0,-3.8,3.05),(2.8,.4,.7),STONE,True)
-box('back wall',(0,3.8,1.7),(14,.4,3.4),STONE,True)
+for a,b in [(-7,-5.1),(-3.9,3.9),(5.1,7)]:
+    box('rear wall pier',((a+b)/2,3.8,1.7),(b-a,.4,3.4),STONE,True)
+for x in (-4.5,4.5):
+    box('vent sill wall',(x,3.8,1.2),(1.2,.4,2.4),STONE,True)
+    box('vent header',(x,3.8,3.225),(1.2,.4,.35),STONE,True)
+    for dx in (-.64,.64):box('vent jamb',(x+dx,3.8,2.73),(.08,.48,.74),WOOD)
+    for z in (2.42,3.03):box('vent frame',(x,3.8,z),(1.35,.48,.08),WOOD)
+    for z in (2.49,2.64,2.79,2.94):
+        louvre=box('rain louvre',(x,3.86,z),(1.2,.24,.06),WOOD)
+        louvre.rotation_euler.x=math.radians(-20)
 for x in (-6.8,6.8):box('side wall',(x,0,1.7),(.4,7.2,3.4),STONE,True)
 for y in (-3.8,0,3.8):
     for x in (-6.6,6.6):box('frame post',(x,y,1.7),(.24,.24,3.4),WOOD)
