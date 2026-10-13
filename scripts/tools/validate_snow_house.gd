@@ -1,0 +1,101 @@
+extends SceneTree
+
+var failures: Array[String] = []
+var root3d: Node3D
+var actor: CharacterBody3D
+
+func _initialize() -> void:
+    call_deferred("run")
+
+func require(ok: bool, detail: String) -> void:
+    if not ok:
+        failures.append(detail)
+        push_error(detail)
+
+func walk(to: Vector2, detail: String) -> void:
+    for tick in range(600):
+        await physics_frame
+        var offset := Vector3(to.x - actor.position.x, 0, to.y - actor.position.z)
+        if offset.length() < 0.08:
+            print("S_H_WALK ", detail, " ", actor.position)
+            return
+        actor.velocity = offset.normalized() * 2.0
+        actor.velocity.y = -2.0
+        actor.move_and_slide()
+    require(false, "No physical passage: " + detail + " at " + str(actor.position))
+
+func run() -> void:
+    root3d = Node3D.new()
+    root.add_child(root3d)
+    var packed := load("res://scenes/buildings/world-architecture-v1/s_warm_house.tscn") as PackedScene
+    require(packed != null, "GLB failed to import")
+    if packed == null:
+        quit(1)
+        return
+    var house := packed.instantiate() as Node3D
+    root3d.add_child(house)
+    var colliders := house.find_children("*", "CollisionShape3D", true, false)
+    require(colliders.size() == 26, "Expected24 wall/furniture boxes and2 roof colliders; got " + str(colliders.size()))
+    var visuals := house.find_children("*", "MeshInstance3D", true, false)
+    require(visuals.size() == 8, "Expected8 merged material meshes; got " + str(visuals.size()))
+    for node in visuals:
+        var mesh := node as MeshInstance3D
+        require(mesh.mesh != null, "Null mesh")
+        for surface in range(mesh.mesh.get_surface_count()):
+            var mat := mesh.mesh.surface_get_material(surface) as StandardMaterial3D
+            require(mat != null, "Missing imported material")
+            if mat != null and (mat.resource_name.contains("limewash") or mat.resource_name.contains("stone") or mat.resource_name.contains("timber") or mat.resource_name.contains("slate") or mat.resource_name.contains("boards")):
+                require(mat.albedo_texture != null, "Embedded paint texture lost on import: " + mat.resource_name)
+    var ground := StaticBody3D.new()
+    var ground_col := CollisionShape3D.new()
+    var ground_box := BoxShape3D.new()
+    ground_box.size = Vector3(30, 0.1, 30)
+    ground_col.shape = ground_box
+    ground_col.position.y = -0.05
+    ground.add_child(ground_col)
+    root3d.add_child(ground)
+    actor = CharacterBody3D.new()
+    var capsule := CapsuleShape3D.new()
+    capsule.radius = 0.30
+    capsule.height = 1.75
+    var shape := CollisionShape3D.new()
+    shape.shape = capsule
+    actor.add_child(shape)
+    root3d.add_child(actor)
+    actor.position = Vector3(0, 0.90, 6)
+    for i in range(10):
+        await physics_frame
+        actor.velocity = Vector3(0,-2,0)
+        actor.move_and_slide()
+    await walk(Vector2(0,2.6), "street into vestibule")
+    await walk(Vector2(0,1.3), "vestibule into room")
+    await walk(Vector2(1.3,0), "past table")
+    await walk(Vector2(1.4,-1.7), "living space")
+    await walk(Vector2(1.3,0), "return past table")
+    await walk(Vector2(0,1.3), "room to vestibule threshold")
+    await walk(Vector2(0,2.6), "inside vestibule on return")
+    await walk(Vector2(0,6.0), "outside return")
+    require(actor.is_on_floor(), "Lost floor contact")
+    require(abs(actor.position.y-.875)<.08, "Wrong floor elevation")
+    actor.position=Vector3(3.0,.90,2.4)
+    for tick in range(90):
+        await physics_frame
+        actor.velocity=Vector3(2,-2,0)
+        actor.move_and_slide()
+    require(actor.position.x > 3.29 and actor.position.x < 3.40, "East exterior wall contact at unexpected position")
+    print("S_H_BLOCKED_WALL ",actor.position)
+    var ray := PhysicsRayQueryParameters3D.create(Vector3(1,10,0),Vector3(1,0,0))
+    var roof_hit := root3d.get_world_3d().direct_space_state.intersect_ray(ray)
+    require(not roof_hit.is_empty(), "Roof has no physical surface")
+    if not roof_hit.is_empty():
+        require(roof_hit.position.y>6.1 and roof_hit.position.y<6.4,"Unexpected roof contact height")
+        print("S_H_ROOF_CONTACT ",roof_hit.position)
+    var report := {"failures":failures,"collision_shapes":colliders.size(),"visual_meshes":visuals.size(),"walk_segments":8,"capsule":{"radius":.30,"height":1.75},"scope":"isolated actual Godot imported asset; no campaign or phone acceptance"}
+    DirAccess.make_dir_recursive_absolute("res://local/qa/world-snow-assets")
+    var file := FileAccess.open("res://local/qa/world-snow-assets/result.json",FileAccess.WRITE)
+    file.store_string(JSON.stringify(report,"  "))
+    if failures.is_empty():
+        print("S_H_GODOT_OK colliders=26 meshes=8 walk_segments=8 roof_contact=1")
+        quit(0)
+    else:
+        quit(1)

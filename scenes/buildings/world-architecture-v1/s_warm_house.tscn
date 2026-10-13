@@ -1,0 +1,3 @@
+[gd_scene load_steps=2 format=3]
+[ext_resource type="PackedScene" path="res://assets/buildings/world-architecture-v1/s_warm_house.glb" id="1_house"]
+[node name="ConclaveWarmHouse" instance=ExtResource("1_house")]
