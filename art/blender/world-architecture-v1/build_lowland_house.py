@@ -236,6 +236,21 @@ for ya, yb in ((yu, yu + 0.22), (y1 - 0.22, y1)):
     v = [(x0, ya, top), (x1, ya, top), (x1, yb, top), (x0, yb, top),
          (x0, ya, roof_under(ya)), (x1, ya, roof_under(ya)), (x1, yb, roof_under(yb)), (x0, yb, roof_under(yb))]
     C.mesh('eaves blocking', v, [(0, 3, 2, 1), (4, 5, 6, 7), (0, 1, 5, 4), (1, 2, 6, 5), (2, 3, 7, 6), (3, 0, 4, 7)], PLASTER)
+# the roof over the living room (Codex 151: bare tile undersides upstairs): board sheathing under
+# the tiles between the gables, rafters every metre and a ridge beam - the book's dark timber
+ix0, ix1 = x0 + 0.22, x1 - 0.22
+for ya in (yu + 0.22, y1 - 0.22):
+    za, zr = roof_under(ya) - 0.02, roof_under(cy) - 0.02
+    v = [(ix0, ya, za), (ix1, ya, za), (ix1, cy, zr), (ix0, cy, zr)]
+    v += [(x, y, z - 0.03) for x, y, z in v]
+    faces = [(0, 1, 2, 3), (4, 7, 6, 5), (0, 4, 5, 1), (1, 5, 6, 2), (2, 6, 7, 3), (3, 7, 4, 0)]
+    if ya > cy: faces = [tuple(reversed(f)) for f in faces]
+    C.mesh('roof sheathing', v, faces, BOARDS)
+    n = 7
+    for k in range(n + 1):
+        x = ix0 + 0.1 + k * (ix1 - ix0 - 0.2) / n
+        C.beam('rafter', (x, ya, za - 0.12), (x, cy, zr - 0.12), 0.12, 0.16, TIMBER)
+C.beam('ridge beam', (ix0, cy, roof_under(cy) - 0.16), (ix1, cy, roof_under(cy) - 0.16), 0.18, 0.22, TIMBER)
 # gable triangles in plaster with timber edge boards
 for sx in (-1, 1):
     x = sx * (W / 2 - 0.11)
