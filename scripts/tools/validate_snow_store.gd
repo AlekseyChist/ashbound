@@ -19,6 +19,15 @@ func run():
     col.shape=capsule;actor.add_child(col);stage.add_child(actor)
     actor.position=Vector3(0,.875,5.3)
     await physics_frame
+    if house.interior_meshes.is_empty():
+        push_error("Interior visibility metadata missing");quit(1);return
+    if house.set_interior_visible(false, true):
+        push_error("Occupied interior was hidden");quit(1);return
+    if not house.set_interior_visible(false):
+        push_error("Closed vacant interior cannot hide");quit(1);return
+    for mesh in house.interior_meshes:
+        if mesh.visible:
+            push_error("Hidden furniture still visible");quit(1);return
     if house.door.leaves.size()!=10:
         push_error("Door parts missing");quit(1);return
     for i in range(90):
@@ -37,6 +46,8 @@ func run():
     if not house.door.try_toggle(actor):
         push_error("Door interaction failed");quit(1);return
     for i in range(90):await physics_frame
+    if not house.interior_visible or house.set_interior_visible(false):
+        push_error("Opening door did not protect interior visibility");quit(1);return
     if not house.door.blocked or house.door.fraction>=1.0:
         push_error("Door swept through obstruction");quit(1);return
     obstruction.queue_free()

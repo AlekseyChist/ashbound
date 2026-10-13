@@ -22,6 +22,8 @@ GRAIN=C.mat('S store sacks',(.43,.38,.28,1))
 collision=[]
 def box(n,p,s,m,solid=False):
     o=C.box(n,p,s,m,.015)
+    if n.startswith(('grain platform','platform leg','sack tie','counting desk','desk leg')):
+        o['part_role']='interior_furniture'
     if solid:collision.append((n,p,s))
     return o
 box('floor',(0,0,-.15),(14,8,.3),STONE,True)
@@ -76,15 +78,16 @@ for x in (-4.7,4.7):
             for dy in (-.75,.75):box('platform leg',(x+dx,y+dy,.12),(.18,.18,.24),WOOD)
         for dx in (-.65,0,.65):
             # Rounded, tied cloth sacks rest on the platform; no placeholder cubes.
-            bpy.ops.mesh.primitive_uv_sphere_add(segments=12,ring_count=8,location=(x+dx,y,.57))
+            bpy.ops.mesh.primitive_uv_sphere_add(segments=12,ring_count=8,location=(x+dx,y,.66))
             sack=bpy.context.object;sack.name='grain sack'
             sack.scale=(.26,.37,.33)
             bpy.ops.object.transform_apply(location=False,rotation=False,scale=True)
             sack.data.materials.append(GRAIN);C._link(sack)
+            sack['part_role']='interior_furniture'
             for vertex in sack.data.vertices:
                 if vertex.co.z>.23:
                     vertex.co.x*=.35;vertex.co.y*=.35
-            box('sack tie',(x+dx,y,.84),(.14,.14,.035),WOOD)
+            box('sack tie',(x+dx,y,.93),(.14,.14,.035),WOOD)
 box('counting desk',(-2.8,2.8,.75),(1.3,.65,.12),WOOD,True)
 for x in (-3.25,-2.35):box('desk leg',(x,2.8,.35),(.12,.5,.7),WOOD)
 hinges=[]
@@ -109,7 +112,11 @@ for o in visual:
             u,v=((p.y,p.z) if axis==0 else (p.x,p.z) if axis==1 else (p.x,p.y))
             loop[uv].uv=(u/scale,v/scale)
     bm.to_mesh(o.data);bm.free()
-C._join_by_material([o for o in visual if not o.name.startswith('Door')])
+static=[o for o in visual if not o.name.startswith('Door')]
+inside=[o for o in static if o.get('part_role')=='interior_furniture']
+shell=[o for o in static if o.get('part_role')!='interior_furniture']
+C._join_by_material(shell)
+C._join_by_material(inside)
 for o,hinge in door_parts:
     matrix=o.matrix_world.copy();o.parent=hinge;o.matrix_world=matrix
 visual=[o for o in C.ASSET.objects if o.type=='MESH']
