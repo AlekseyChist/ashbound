@@ -174,7 +174,7 @@ func _entry_target(p: Vector2) -> Vector2:
 	var ring := Vector2(float(plan.palisade.center[0]) - float(world.HALF), float(plan.palisade.center[1]) - float(world.HALF))
 	if p.distance_to(ring) < float(plan.palisade.radius):
 		return Vector2(float(plan.plaza.center[0]) - float(world.HALF), float(plan.plaza.center[1]) - float(world.HALF))
-	return _nearest_road(p, 40.0)
+	return _way_point(p)
 
 
 func _closed_house(b: Dictionary, kit: String) -> void:
@@ -255,6 +255,11 @@ func _closed_house(b: Dictionary, kit: String) -> void:
 	var mid: Vector2 = rect.get_center()
 	var yard: Vector3 = at + basis * Vector3(mid.x, 0, mid.y)
 	yards.append(Vector3(yard.x, yard.z, rect.size.length() * 0.5 + 0.5))
+	# FOREST-CITY-02 (Codex route review 13 Oct: the lower posad, the tannery and Vetla's hut stood
+	# in tall grass with no way to their doors): a trodden path from the front to the nearest road.
+	if TRODDEN_KINDS.has(str(b.kind)):
+		var front: Vector3 = at + basis * Vector3(0, 0, rect.end.y)
+		_fronts.append(Vector2(front.x, front.z))
 	house.set_meta("cleared_m", pushed.distance_to(Vector2(float(b.map[0]) - float(world.HALF), float(b.map[1]) - float(world.HALF))))
 	# A closed house (owner 28 Sep): no interior - furniture and ceilings go - and the shell is solid
 	# by its real geometry, the porch and its steps included; the shut door keeps the hero out.
@@ -293,8 +298,51 @@ const HOUSE_GAP := 2.0
 const PALISADE_CLEAR := 1.2
 ## A tower's roof reaches (TOWER + 1) * 0.72 / sqrt(2) from its middle.
 const TOWER_REACH := 2.65
-## Grass-free circles (x, z, radius) round the closed houses, read by world.gd's grass obstacles.
+## Grass-free circles (x, z, radius) round the closed houses, read by world.gd's grass obstacles
+## and by the far forest (no tree in a yard or on a trodden path).
 var yards: Array[Vector3] = []
+## Trodden ground [a, b, width] in the world_root frame: world.gd paints it into the ground's road
+## mask after the city is built, so it reads like the roads' earth.
+var trodden: Array = []
+const TRODDEN_KINDS := ["posad", "tannery", "healer_hut"]
+## The fronts of those houses (world_root frame): joined to the posad street or a road at the end.
+var _fronts: Array[Vector2] = []
+var _street: Array[Vector2] = []
+
+## The lower posad's street (book sheet 03) in the world_root frame, from the plan's additions.
+func _posad_street() -> Array[Vector2]:
+	if _street.is_empty():
+		for q in plan.get("additions", {}).get("posad_street", {}).get("points", []):
+			_street.append(Vector2(float(q[0]), float(q[1])) - Vector2(float(world.HALF), float(world.HALF)))
+	return _street
+
+## The nearest point of the posad street within `reach`; INF when there is none.
+func _nearest_street(p: Vector2, reach: float) -> Vector2:
+	var street := _posad_street()
+	var best := Vector2.INF
+	var best_d := reach
+	for i in range(street.size() - 1):
+		var q := Geometry2D.get_closest_point_to_segment(p, street[i], street[i + 1])
+		if p.distance_to(q) < best_d:
+			best_d = p.distance_to(q)
+			best = q
+	return best
+
+## The nearest point of the posad street or of a road within 40 m; INF when there is none.
+func _way_point(p: Vector2) -> Vector2:
+	var road := _nearest_road(p, 40.0)
+	var street := _nearest_street(p, 40.0)
+	if street == Vector2.INF or (road != Vector2.INF and p.distance_to(road) <= p.distance_to(street)):
+		return road
+	return street
+
+## A trodden path from a to b: earth on the ground, grass and trees kept off it.
+func _trodden_path(a: Vector2, b: Vector2, width: float) -> void:
+	trodden.append([a, b, width])
+	var steps := maxi(1, ceili(a.distance_to(b) / 2.0))
+	for k in steps + 1:
+		var p := a.lerp(b, float(k) / steps)
+		yards.append(Vector3(p.x, p.y, width * 0.5 + 1.0))
 var _placed: Array = []
 const RIVER_BANK := 1.5
 ## Segments of the roads and rivers near the city: [a, b, keep-off distance from the axis].
@@ -318,6 +366,10 @@ func _keepout_segments() -> Array:
 			var b := Vector2(float(pts[i + 1][0]), float(pts[i + 1][2]))
 			if a.distance_to(centre) < 220.0:
 				_keepout.append([a, b, float(river.world_widths[i]) * 0.5 + RIVER_BANK])
+	# FOREST-CITY-02: the posad houses stood on the book's posad street - it keeps clear like a road.
+	var street := _posad_street()
+	for i in range(street.size() - 1):
+		_keepout.append([street[i], street[i + 1], float(plan.additions.posad_street.width) * 0.5 + ROAD_SHOULDER])
 	return _keepout
 
 ## The model's footprint in its own x/z (every mesh's box through the node chain; furniture and
@@ -981,6 +1033,21 @@ func _additions() -> void:
 	var rist: Dictionary = extra.get("ristalishe", {})
 	if not rist.is_empty():
 		yards.append(Vector3(float(rist.map[0]) - float(world.HALF), float(rist.map[1]) - float(world.HALF), float(rist.size[0]) * 0.5))
+		# Trodden earth over the yard (Codex 13 Oct: in the grass its purpose did not read).
+		var c := Vector2(float(rist.map[0]), float(rist.map[1])) - Vector2(float(world.HALF), float(world.HALF))
+		var half := float(rist.size[0]) * 0.5 - float(rist.size[1]) * 0.5 + 1.0
+		trodden.append([c - Vector2(half, 0), c + Vector2(half, 0), float(rist.size[1])])
+		_fronts.append(c + Vector2(0, -float(rist.size[1]) * 0.5))
+	# The lower posad's street from the south-east gate (book sheet 03), and a path from each posad
+	# house, Vetla's hut, the tannery and the ristalishe to it or to the nearest road (Codex 13 Oct:
+	# they stood in tall grass with no way to their doors).
+	var street := _posad_street()
+	for i in range(street.size() - 1):
+		_trodden_path(street[i], street[i + 1], float(extra.posad_street.width))
+	for f in _fronts:
+		var to := _way_point(f)
+		if to != Vector2.INF:
+			_trodden_path(f, to, 1.8)
 		for m in rist.get("dummies", []):
 			var dummy: Node3D = Dummy.instantiate()
 			dummy.position = ground_at(Vector2(float(m[0]), float(m[1])))

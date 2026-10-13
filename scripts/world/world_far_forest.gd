@@ -43,9 +43,17 @@ func build(scene: Node3D) -> void:
 	mesh = _spruce_mesh()
 	for kind in NEAR_KINDS:
 		near_parts.append(_kind_parts(kind))
+	# FOREST-CITY-02: no tree in a forest city house's yard or on its trodden path (Codex 13 Oct:
+	# spruce branches over the tannery's approach); the city is built before the forest.
+	var keep_off: Array[Vector3] = []
+	var city: Node = world.get("forest_city")
+	if city != null:
+		keep_off = city.yards
 	var chunks: Dictionary = {}
 	for i in range(0, data.size() - RECORD_FLOATS + 1, RECORD_FLOATS):
 		var map := Vector2(data[i], data[i + 1])
+		if _kept_off(map - Vector2(world.HALF, world.HALF), keep_off):
+			continue
 		var key := Vector2i(floori(map.x / CHUNK), floori(map.y / CHUNK))
 		if not chunks.has(key):
 			chunks[key] = []
@@ -53,6 +61,15 @@ func build(scene: Node3D) -> void:
 	for key: Vector2i in chunks:
 		_build_chunk(key, chunks[key], data)
 	print("WORLD_FAR_FOREST trees=%d chunks=%d" % [tree_count, chunk_count])
+
+
+## Whether a tree at `p` (world_root frame) stands in one of the circles (x, z, radius), its crown
+## (TRUNK_RADIUS + 1.5 m) included.
+func _kept_off(p: Vector2, circles: Array[Vector3]) -> bool:
+	for c in circles:
+		if p.distance_to(Vector2(c.x, c.y)) < c.z + TRUNK_RADIUS + 1.5:
+			return true
+	return false
 
 
 func _build_chunk(key: Vector2i, records: Array, data: PackedFloat32Array) -> void:

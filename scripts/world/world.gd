@@ -930,6 +930,12 @@ func _build_water_and_sites() -> void:
 			forest_city.name = "ForestCity"
 			world_root.add_child(forest_city)
 			forest_city.build(self)
+			# FOREST-CITY-02: its trodden yards and paths in the ground's road mask, like the roads.
+			if not forest_city.trodden.is_empty() and road_mask != null:
+				var whole := Rect2(0, 0, road_mask.get_width(), road_mask.get_height())
+				for seg in forest_city.trodden:
+					_stamp_segment(seg[0] + Vector2(HALF, HALF), seg[1] + Vector2(HALF, HALF), float(seg[2]), whole)
+				(terrain.material as ShaderMaterial).set_shader_parameter("road_mask", ImageTexture.create_from_image(road_mask))
 			# Its halls open like the inns' doors (the action button when no village door is nearer).
 			for hall in forest_city.halls:
 				inns.append(hall)
