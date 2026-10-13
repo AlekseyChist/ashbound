@@ -3,8 +3,8 @@ Plastered stone ground floor (shop allowed), dark timber-framed upper floor with
 steep tiled gable roof, stone chimney. Walls 8 x 7 m, ridge ~9.6 m.
 Run: blender --background --factory-startup --python-exit-code 1 --python this_file
 Blender: XY footprint, Z up, entry on -Y; the GLB export turns it to Godot Y up, entry +Z. Pivot: floor centre.
-Photo textures (CC0, already in the project) with world-scale cube UVs; furniture tagged part_role=furniture
-so the game's closed variant can drop it. Renders and stats stay in local/ (D-080).
+Photo textures (CC0, already in the project) with world-scale cube UVs; furniture tagged part_role=interior_furniture
+so the game can hide it from afar; the entry leaf hangs on L_entry_hinge for village_door.gd. Renders and stats stay in local/ (D-080).
 """
 import sys, math, random, json, hashlib
 from pathlib import Path
@@ -94,8 +94,8 @@ x0, x1, y0, y1 = -W / 2, W / 2, -D / 2, D / 2
 
 # --- floor, plinth
 box('floor', (0, 0, -0.1), (W, D, 0.2), STONE, True, 0)
+box('plinth back', (0, D / 2 + 0.04, 0.25), (W + 0.16, 0.12, 0.5), STONE)
 for side in (-1, 1):
-    box('plinth front back', (0, side * (D / 2 + 0.04), 0.25), (W + 0.16, 0.12, 0.5), STONE)
     box('plinth sides', (side * (W / 2 + 0.04), 0, 0.25), (0.12, D + 0.16, 0.5), STONE)
 
 # --- ground storey: plastered masonry with a door and a shop window on the front
@@ -112,18 +112,30 @@ wall_x('front pier E', yf, SHOP[0] + SHOP[1] / 2, x1, 0, G)
 wall_x('door head', yf, DOOR[0] - DOOR[1] / 2, DOOR[0] + DOOR[1] / 2, DOOR[2], G)
 wall_x('shop sill wall', yf, SHOP[0] - SHOP[1] / 2, SHOP[0] + SHOP[1] / 2, 0, SHOP[2])
 wall_x('shop head', yf, SHOP[0] - SHOP[1] / 2, SHOP[0] + SHOP[1] / 2, SHOP[3], G)
+# front plinth on either side of the doorway (it ran across it: a 0.5 m stone band the hero walked
+# through), a low threshold stone in the opening
+dl, dr = DOOR[0] - DOOR[1] / 2 - 0.2, DOOR[0] + DOOR[1] / 2 + 0.2
+box('plinth front', ((x0 - 0.08 + dl) / 2, -(D / 2 + 0.04), 0.25), (dl - x0 + 0.08, 0.12, 0.5), STONE)
+box('plinth front', ((dr + x1 + 0.08) / 2, -(D / 2 + 0.04), 0.25), (x1 + 0.08 - dr, 0.12, 0.5), STONE)
+box('threshold stone', (DOOR[0], y0 - 0.035, 0.025), (DOOR[1], 0.22, 0.05), STONE, bevel=0.01)   # in front of the shut leaf
 box('door frame top', (DOOR[0], y0 - 0.02, DOOR[2] + 0.12), (DOOR[1] + 0.4, 0.14, 0.22), STONE)
 for sx in (-1, 1):
     box('door jamb stone', (DOOR[0] + sx * (DOOR[1] / 2 + 0.1), y0 - 0.02, DOOR[2] / 2), (0.2, 0.14, DOOR[2]), STONE)
-# open door leaf against the inner wall (the doorway stays 1.2 m clear)
+# The entry leaf, shut in the doorway, hangs on an empty named *_entry_hinge: the game's shared
+# village_door.gd swings it (Codex's D-H/S-H contract); its parts stay separate meshes.
+hinge = bpy.data.objects.new('L_entry_hinge', None); C.ASSET.objects.link(hinge)
+DOOR_Y = y0 + 0.12
+hinge.location = (DOOR[0] - DOOR[1] / 2, DOOR_Y, 0); hinge['open_angle_degrees'] = -95.0   # village_door: the leaf swings away from the actor
+door_parts = []
 for k in range(4):
-    box('door plank', (DOOR[0] - DOOR[1] / 2 - 0.04 - k * 0.0, y0 + T + 0.05 + k * 0.3, 1.15), (0.06, 0.29, 2.25), TIMBER, role=None)
-box('door strap', (DOOR[0] - DOOR[1] / 2 + 0.0, y0 + T + 0.5, 0.5), (0.02, 1.1, 0.06), IRON)
+    door_parts.append(box('Door entry plank', (DOOR[0] - DOOR[1] / 2 + 0.15 + k * 0.29, DOOR_Y, 1.14), (0.285, 0.07, 2.26), TIMBER, bevel=0.01))
+for z in (0.45, 1.8):
+    door_parts.append(box('Door iron strap', (DOOR[0], DOOR_Y - 0.045, z), (DOOR[1] - 0.08, 0.018, 0.06), IRON, bevel=0))
 # shop window: sill board, two shutters folded open, counter inside
 box('shop sill board', (SHOP[0], y0 - 0.15, SHOP[2] + 0.04), (SHOP[1] + 0.2, 0.42, 0.08), TIMBER)
 for sx in (-1, 1):
     box('shop shutter', (SHOP[0] + sx * (SHOP[1] / 2 + 0.47), y0 - 0.06, (SHOP[2] + SHOP[3]) / 2), (0.9, 0.06, SHOP[3] - SHOP[2]), TIMBER)
-box('shop counter', (SHOP[0], y0 + T + 0.35, 0.95), (SHOP[1], 0.6, 0.08), TIMBER, True, role='furniture')
+box('shop counter', (SHOP[0], y0 + T + 0.35, 0.95), (SHOP[1], 0.6, 0.08), TIMBER, True, role='interior_furniture')
 wall_x('rear wall', yb, x0, x1, 0, G)
 wall_y('west wall', x0 + T / 2, y0 + T, y1 - T, 0, G)
 # east wall with one window
@@ -270,13 +282,13 @@ box('chimney', (2.6, 2.3, (ridge + 0.9 + 2.7) / 2), (0.7, 0.7, ridge + 0.9 - 2.7
 box('chimney cap', (2.6, 2.3, ridge + 1.05), (0.9, 0.9, 0.12), STONE)
 
 # --- interior (ground floor): hearth, table, bench, straight stair to the upper floor
-box('hearth', (2.6, 2.75, 0.55), (1.4, 0.9, 1.1), STONE, True, role='furniture')
-box('hearth hood', (2.6, 2.75, 1.9), (1.2, 0.9, 1.6), STONE, role='furniture')
-box('table', (-0.4, 1.0, 0.76), (1.6, 0.8, 0.08), TIMBER, True, role='furniture')
+box('hearth', (2.6, 2.75, 0.55), (1.4, 0.9, 1.1), STONE, True)
+box('hearth hood', (2.6, 2.75, 1.9), (1.2, 0.9, 1.6), STONE)
+box('table', (-0.4, 1.0, 0.76), (1.6, 0.8, 0.08), TIMBER, True, role='interior_furniture')
 for x in (-1.1, 0.3):
-    for y in (0.7, 1.3): box('table leg', (x, y, 0.36), (0.09, 0.09, 0.72), TIMBER, role='furniture')
-box('bench', (-0.4, 0.3, 0.42), (1.5, 0.35, 0.07), TIMBER, True, role='furniture')
-box('sack', (1.0, 2.7, 0.3), (0.5, 0.4, 0.6), CLOTH, role='furniture')
+    for y in (0.7, 1.3): box('table leg', (x, y, 0.36), (0.09, 0.09, 0.72), TIMBER, role='interior_furniture')
+box('bench', (-0.4, 0.3, 0.42), (1.5, 0.35, 0.07), TIMBER, True, role='interior_furniture')
+box('sack', (1.0, 2.7, 0.3), (0.5, 0.4, 0.6), CLOTH, role='interior_furniture')
 # stair along the west wall: 13 treads + the upper floor = 14 equal risers; boarded understair.
 # The walking surface is a ramp through the tread centres (40.6 deg, under the 45 deg floor limit),
 # its top tucked under the landing floor so the step onto the floor is smooth.
@@ -307,18 +319,22 @@ for y in (OPEN_Y0 + 0.6, (OPEN_Y0 + OPEN_Y1) / 2, OPEN_Y1):
     box('landing post', (OX1 + 0.03, y, FLOOR_TOP + 0.48), (0.08, 0.08, 0.96), TIMBER)
 COLLISIONS.append(('landing rail', (OX1 + 0.03, (OPEN_Y0 + 0.6 + OPEN_Y1) / 2, FLOOR_TOP + 0.5), (0.1, OPEN_Y1 - OPEN_Y0 - 0.6, 1.0)))
 ex = x1 - 0.22                             # upper east wall inner face
-box('bed frame', (ex - 0.5, -1.7, FLOOR_TOP + 0.2), (0.95, 2.0, 0.4), TIMBER, True, role='furniture')
-box('bed straw', (ex - 0.5, -1.7, FLOOR_TOP + 0.44), (0.85, 1.9, 0.1), CLOTH, role='furniture')
-box('bed head', (ex - 0.5, -2.72, FLOOR_TOP + 0.5), (0.95, 0.06, 1.0), TIMBER, role='furniture')
-box('chest', (0.9, y1 - 0.22 - 0.25, FLOOR_TOP + 0.25), (0.9, 0.48, 0.5), TIMBER, True, role='furniture')
-box('chest band', (0.9, y1 - 0.22 - 0.25, FLOOR_TOP + 0.4), (0.92, 0.5, 0.05), IRON, role='furniture')
-box('stool', (2.0, -2.8, FLOOR_TOP + 0.22), (0.4, 0.4, 0.44), TIMBER, role='furniture')
+box('bed frame', (ex - 0.5, -1.7, FLOOR_TOP + 0.2), (0.95, 2.0, 0.4), TIMBER, True, role='interior_furniture')
+box('bed straw', (ex - 0.5, -1.7, FLOOR_TOP + 0.44), (0.85, 1.9, 0.1), CLOTH, role='interior_furniture')
+box('bed head', (ex - 0.5, -2.72, FLOOR_TOP + 0.5), (0.95, 0.06, 1.0), TIMBER, role='interior_furniture')
+box('chest', (0.9, y1 - 0.22 - 0.25, FLOOR_TOP + 0.25), (0.9, 0.48, 0.5), TIMBER, True, role='interior_furniture')
+box('chest band', (0.9, y1 - 0.22 - 0.25, FLOOR_TOP + 0.4), (0.92, 0.5, 0.05), IRON, role='interior_furniture')
+box('stool', (2.0, -2.8, FLOOR_TOP + 0.22), (0.4, 0.4, 0.44), TIMBER, role='interior_furniture')
 
 # --- join, collisions, export
-visual = list(C.ASSET.objects)
-roles = {o.name: o.get('part_role') for o in visual}
-C._join_by_material([o for o in visual if not o.get('part_role')])
-visual = list(C.ASSET.objects)
+visual = [o for o in C.ASSET.objects if o.type == 'MESH']
+# shell by material; the interior furniture by material too (the game hides it from afar);
+# the door's parts stay apart, then go under the hinge
+C._join_by_material([o for o in visual if not o.get('part_role') and o not in door_parts])
+C._join_by_material([o for o in C.ASSET.objects if o.type == 'MESH' and o.get('part_role') == 'interior_furniture'])
+for o in door_parts:
+    matrix = o.matrix_world.copy(); o.parent = hinge; o.matrix_world = matrix
+visual = [o for o in C.ASSET.objects if o.type == 'MESH']
 # world-scale cube UVs so the photo textures keep their size on every face
 for o in visual:
     m = o.data.materials[0] if o.data.materials else None
@@ -358,7 +374,9 @@ stats = {'triangles': tris, 'visual_meshes': len(visual), 'collision_boxes': len
          'pivot': 'floor centre', 'sha256': hashlib.sha256(path.read_bytes()).hexdigest(), 'bytes': path.stat().st_size,
          'approval': 'PDF141 D118; awaiting Codex 3D acceptance'}
 (QA / 'stats.json').write_text(json.dumps(stats, indent=2), encoding='utf-8')
+C.ASSET.objects.unlink(hinge)   # _studio() measures every ASSET object's vertices; the empty has none
 C._studio()
+C.ASSET.objects.link(hinge)
 sc = bpy.context.scene
 sc.render.engine = 'CYCLES'; sc.cycles.device = 'CPU'; sc.cycles.samples = 24; sc.cycles.use_denoising = True
 sc.render.resolution_x = 1280; sc.render.resolution_y = 960
@@ -373,7 +391,7 @@ view('rear', (-10, 13, 6), (0, 0, 3.5))
 view('entry', (-1.8, -6, 1.7), (-1.8, 1, 1.4))
 # cut-away views of the stair and the upper room (the roof tiles hidden)
 for o in C.ASSET.objects:
-    if o.get('collision_only'): continue
+    if o.type != 'MESH' or o.get('collision_only'): continue
     if o.data.materials and o.data.materials[0].name.startswith('L clay roof tile'): o.hide_render = True
 cam.data.lens = 22
 view('upper-room', (5.0, -7.0, 9.5), (-0.3, 0.3, FLOOR_TOP))

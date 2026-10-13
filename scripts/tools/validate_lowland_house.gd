@@ -1,11 +1,11 @@
 extends SceneTree
-# L-H (l_town_house.glb, WORLD-PLAN-01 plate L): the imported asset on its own - collisions, embedded
+# L-H (l_town_house.tscn over the GLB, WORLD-PLAN-01 plate L): the canonical scene on its own - collisions, embedded
 # photo materials with their tint, and a physical walk street -> ground floor -> stair -> upper room ->
 # back out, plus wall contacts. Pattern: Codex's validate_desert_house.gd. Not a campaign or phone check.
 # Movement follows the hero: no downward push on the floor, gravity in the air, 0.4 m floor snap.
 # Godot frame: Blender (x, y, z) -> (x, z, -y); the entry faces +z.
 
-const GLB := "res://assets/buildings/world-architecture-v1/l_town_house.glb"
+const SCENE := "res://scenes/buildings/world-architecture-v1/l_town_house.tscn"
 const FLOOR_TOP := 3.24
 const CENTRE := 0.875             # capsule centre over the floor (height 1.75)
 
@@ -74,17 +74,20 @@ func _average(visuals: Array, material: String) -> Color:
 func run() -> void:
 	var root3d := Node3D.new()
 	root.add_child(root3d)
-	var packed := load(GLB) as PackedScene
-	require(packed != null, "GLB failed to import")
+	var packed := load(SCENE) as PackedScene
+	require(packed != null, "Scene/GLB failed to load")
 	if packed == null:
 		quit(1)
 		return
 	var house := packed.instantiate() as Node3D
 	root3d.add_child(house)
 	var colliders := house.find_children("*", "CollisionShape3D", true, false)
-	require(colliders.size() == 36, "Expected 36 collision shapes (34 boxes, stair ramp, roof); got " + str(colliders.size()))
+	require(colliders.size() == 42, "Expected 42 collision shapes (34 boxes, stair ramp, roof, 6 door parts); got " + str(colliders.size()))
 	var visuals := house.find_children("*", "MeshInstance3D", true, false)
-	require(visuals.size() >= 20, "Too few visual meshes: " + str(visuals.size()))
+	require(visuals.size() >= 18, "Too few visual meshes: " + str(visuals.size()))
+	var door = house.get("door")
+	require(door != null and door.leaves.size() == 6, "Door hinge/parts missing")
+	require(house.interior_meshes.size() > 0, "No interior_furniture meshes")
 	var tints := {}
 	for node in visuals:
 		var mesh := (node as MeshInstance3D).mesh
@@ -126,10 +129,37 @@ func run() -> void:
 	shape.shape = capsule
 	actor.add_child(shape)
 	actor.floor_snap_length = 0.4
+	# The hero's layer (village_door.gd: actors on 2, its ray looks for layer 1 only).
+	actor.collision_layer = 2
 	root3d.add_child(actor)
 
 	actor.position = Vector3(-1.8, 0.9, 6.0)
 	await settle()
+	# The shut leaf blocks the doorway.
+	await push(Vector3(0, 0, -1), 120)
+	print("L_H_DOOR_SHUT ", actor.position)
+	require(actor.position.z > 3.6, "Closed door allowed passage: " + str(actor.position))
+	# Far interior: hidden while shut and empty; an obstacle in the swing stops the leaf.
+	require(house.set_interior_visible(false), "Hiding the furniture with the door shut failed")
+	require(not house.set_interior_visible(false, true), "Hiding allowed while occupied")
+	var obstacle := StaticBody3D.new()
+	obstacle.collision_layer = 8
+	obstacle.position = Vector3(-1.4, 1.2, 2.9)
+	var obstacle_shape := CollisionShape3D.new()
+	var obstacle_box := BoxShape3D.new()
+	obstacle_box.size = Vector3(0.3, 2.0, 0.3)
+	obstacle_shape.shape = obstacle_box
+	obstacle.add_child(obstacle_shape)
+	root3d.add_child(obstacle)
+	await physics_frame
+	require(door.try_toggle(actor), "Opening the door from the street failed")
+	for i in 90: await physics_frame
+	require(door.blocked and door.fraction < 1.0, "The leaf swept through an obstacle")
+	obstacle.queue_free()
+	for i in 90: await physics_frame
+	require(is_equal_approx(door.fraction, 1.0), "The door did not open fully")
+	require(house.interior_visible, "Opening did not show the furniture again")
+	require(not house.set_interior_visible(false), "Hiding allowed with the door open")
 	await walk(Vector2(-1.8, 3.5), "street to the door")
 	await walk(Vector2(-1.8, 2.2), "through the door")
 	await walk(Vector2(-2.0, -2.62), "along the stair to its foot")
@@ -149,6 +179,15 @@ func run() -> void:
 	require(absf(actor.position.y - CENTRE) < 0.08, "Not back on the ground floor: " + str(actor.position))
 	await walk(Vector2(-2.0, -2.62), "off the stair")
 	await walk(Vector2(-1.8, 2.2), "back to the door")
+	# From inside, clear of the leaf's swing (radius 1.2 round the hinge at x -2.4, z 3.38): shut it,
+	# then open it again (it swings out, away from the hero).
+	await walk(Vector2(-1.6, 1.8), "clear of the door's swing")
+	require(door.try_toggle(actor), "Closing the door from inside failed")
+	for i in 90: await physics_frame
+	require(is_zero_approx(door.fraction), "The door did not close from inside")
+	require(door.try_toggle(actor), "Opening the door from inside failed")
+	for i in 90: await physics_frame
+	require(is_equal_approx(door.fraction, 1.0), "The door did not open from inside")
 	await walk(Vector2(-1.8, 6.0), "out to the street")
 	require(actor.is_on_floor(), "Lost floor contact")
 	require(absf(actor.position.y - CENTRE) < 0.08, "Wrong street elevation: " + str(actor.position))
@@ -173,13 +212,13 @@ func run() -> void:
 	require(actor.position.z < -3.75 and actor.position.z > -3.9, "Rear exterior wall contact at an unexpected place: " + str(actor.position))
 
 	var report := {"failures": failures, "collision_shapes": colliders.size(), "visual_meshes": visuals.size(),
-		"walk_segments": 16, "materials": str(tints), "capsule": {"radius": 0.30, "height": 1.75},
+		"walk_segments": 16, "door": "shut blocks, obstacle stops, opens both sides, interior guards", "materials": str(tints), "capsule": {"radius": 0.30, "height": 1.75},
 		"scope": "isolated imported asset in Godot; no campaign placement, no phone check"}
 	DirAccess.make_dir_recursive_absolute("res://local/qa/world-lowland-assets")
 	var file := FileAccess.open("res://local/qa/world-lowland-assets/lh-result.json", FileAccess.WRITE)
 	file.store_string(JSON.stringify(report, "  "))
 	if failures.is_empty():
-		print("L_H_GODOT_OK colliders=%d meshes=%d walk_segments=16" % [colliders.size(), visuals.size()])
+		print("L_H_GODOT_OK colliders=%d meshes=%d walk_segments=16 door_sides=2 obstacle_stop=1 interior_guards=1" % [colliders.size(), visuals.size()])
 		quit(0)
 	else:
 		quit(1)
