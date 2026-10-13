@@ -3,7 +3,8 @@ extends SceneTree
 # - every pad: the ground over its inner part at the book's level (+-0.3 m);
 # - every new place: its spawn on the ground, its grey volumes resting on the ground (none floats,
 #   none buried) and clear of every road's deck;
-# - the debug list offers the places, and a teleport to the ruins puts the hero on the terrace.
+# - the debug list offers the places, and a teleport to the ruins puts the hero on the terrace;
+# - the ruins' west approach from the road to the gate is walkable on foot.
 
 var failures: Array[String] = []
 var checks := 0
@@ -99,6 +100,42 @@ func run() -> void:
 		require(w.player.is_on_floor() and absf(local.y - g) < 1.5, "Teleport to %s: hero not on the ground" % place.id)
 		if str(place.id) == "capital_ruins":
 			require(absf(local.y - 128.0) < 1.0, "Hero not on the ruins terrace: %.2f" % local.y)
+
+	# The ruins' approach on foot: from the lower valley road up the west slope to the west gate and
+	# in (a capsule moving like the hero: no downward push on the floor, gravity in the air, a 0.4 m
+	# floor snap, the 45 deg floor limit; no step-up, so it is stricter than the hero).
+	var actor := CharacterBody3D.new()
+	var capsule := CapsuleShape3D.new()
+	capsule.radius = 0.3
+	capsule.height = 1.75
+	var shape := CollisionShape3D.new()
+	shape.shape = capsule
+	actor.add_child(shape)
+	actor.collision_layer = 2
+	actor.floor_snap_length = 0.4
+	w.world_root.add_child(actor)
+	w.player.process_mode = Node.PROCESS_MODE_DISABLED
+	var start := Vector2(1104, 1140) - Vector2(1000, 1000)
+	actor.position = Vector3(start.x, w.world_ground(start.x, start.y) + 1.2, start.y)
+	var route := [Vector2(1110, 1160), Vector2(1116, 1180), Vector2(1124, 1196), Vector2(1137, 1203), Vector2(1152, 1206)]
+	for target_map in route:
+		var target: Vector2 = target_map - Vector2(1000, 1000)
+		var reached := false
+		for tick in 1800:
+			await physics_frame
+			var offset := Vector2(target.x - actor.position.x, target.y - actor.position.z)
+			if offset.length() < 0.5:
+				reached = true
+				break
+			var horizontal := Vector3(offset.x, 0, offset.y).normalized() * 3.0
+			var fall := 0.0 if actor.is_on_floor() else actor.velocity.y - 22.0 / 60.0
+			actor.velocity = Vector3(horizontal.x, fall, horizontal.z)
+			actor.move_and_slide()
+		print("BOOK_RUINS_WALK to=%s at=%s reached=%s" % [target_map, actor.position + Vector3(1000, 0, 1000), reached])
+		require(reached, "The ruins' west approach is not walkable towards %s (stuck at %s)" % [target_map, actor.position + Vector3(1000, 0, 1000)])
+		if not reached:
+			break
+	require(absf(actor.position.y - 0.875 - 128.0) < 0.6, "Not on the ruins terrace after the gate: %.2f" % (actor.position.y - 0.875))
 
 	print("WORLD_BOOK_PLACES_CHECKS checks=%d failures=%d" % [checks, failures.size()])
 	quit(0 if failures.is_empty() else 1)
