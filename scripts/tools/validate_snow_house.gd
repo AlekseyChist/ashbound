@@ -35,7 +35,7 @@ func run() -> void:
     var house := packed.instantiate() as Node3D
     root3d.add_child(house)
     var colliders := house.find_children("*", "CollisionShape3D", true, false)
-    require(colliders.size() == 33, "Expected26 static and7 door colliders; got " + str(colliders.size()))
+    require(colliders.size() == 34, "Expected27 static and7 door colliders; got " + str(colliders.size()))
     var visuals := house.find_children("*", "MeshInstance3D", true, false)
     require(visuals.size() == 16, "Expected9 static meshes and7 door parts; got " + str(visuals.size()))
     require(house.interior_meshes.size() == 2, "Furniture role grouping missing")
@@ -43,7 +43,7 @@ func run() -> void:
     require(house.set_interior_visible(false), "Closed empty house did not hide furniture")
     for mesh in house.interior_meshes:
         require(not mesh.visible, "Furniture remained visible")
-    require(house.find_children("*", "CollisionShape3D", true, false).size() == 33, "Interior hiding changed physics")
+    require(house.find_children("*", "CollisionShape3D", true, false).size() == 34, "Interior hiding changed physics")
     require(house.set_interior_visible(true), "Furniture did not restore")
     for node in visuals:
         var mesh := node as MeshInstance3D
@@ -122,12 +122,16 @@ func run() -> void:
     if not roof_hit.is_empty():
         require(roof_hit.position.y>6.1 and roof_hit.position.y<6.4,"Unexpected roof contact height")
         print("S_H_ROOF_CONTACT ",roof_hit.position)
+    var ceiling_ray := PhysicsRayQueryParameters3D.create(Vector3(0, 1.6, -1), Vector3(0, 4, -1))
+    var ceiling_hit := root3d.get_world_3d().direct_space_state.intersect_ray(ceiling_ray)
+    require(not ceiling_hit.is_empty(), "Closed loft ceiling missing")
+    if not ceiling_hit.is_empty(): require(abs(ceiling_hit.position.y - 3.03) < .02, "Unexpected room ceiling height")
     var report := {"failures":failures,"collision_shapes":colliders.size(),"visual_meshes":visuals.size(),"walk_segments":8,"capsule":{"radius":.30,"height":1.75},"scope":"isolated actual Godot imported asset; no campaign or phone acceptance"}
     DirAccess.make_dir_recursive_absolute("res://local/qa/world-snow-assets")
     var file := FileAccess.open("res://local/qa/world-snow-assets/result.json",FileAccess.WRITE)
     file.store_string(JSON.stringify(report,"  "))
     if failures.is_empty():
-        print("S_H_GODOT_OK colliders=33 meshes=16 walk_segments=8 roof_contact=1 door_sides=2 interior_guards=1")
+        print("S_H_GODOT_OK colliders=34 meshes=16 walk_segments=8 roof_contact=1 door_sides=2 interior_guards=1")
         quit(0)
     else:
         quit(1)

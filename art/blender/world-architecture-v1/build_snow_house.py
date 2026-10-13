@@ -66,13 +66,11 @@ doorway('vestibule door',-1.95,-1.45,1.45,1.2)
 for x in (-1.45,1.45):wy('vestibule cheek',x,-3.14,-2.13,0,2.6,WOOD)
 box('vestibule ceiling',(0,-2.60,2.67),(3.0,1.75,.15),WOOD,True)
 # Stone base and timber frame are shared in silhouette with the approved Conclave plate.
-for y in (-3.52,3.52):
-    for k in range(10):
-        x=-3.6+k*.8
-        if y<0 and abs(x)<.9:continue
-        box('stone base',(x,y,.21),(.77,.10,.42),STONE)
-for x in (-4.02,4.02):
-    for k in range(9):box('side stone base',(x,-3.2+k*.8,.21),(.10,.77,.42),STONE)
+for x in (-2.39,2.39):box('front stone belt',(x,-3.52,.21),(3.28,.12,.42),STONE)
+box('rear stone belt',(0,3.52,.21),(8.14,.12,.42),STONE)
+for x in (-4.02,4.02):box('side stone belt',(x,0,.21),(.12,7.04,.42),STONE)
+# The living room ends at the closed loft; vent apertures belong to that loft.
+box('closed loft ceiling',(0,0,3.10),(7.60,6.60,.14),WOOD,True)
 for x in (-3.78,3.78):
     for y in (-3.28,3.28):box('corner post',(x,y,1.75),(.23,.23,2.70),WOOD)
 for y in (-3.31,3.31):box('wall plate',(0,y,3.0),(7.72,.22,.23),WOOD)
