@@ -72,24 +72,28 @@ for lake in D['lakes']:
     ox,oz=lake['outlet'][:2]
     lake['center'][2]=round(min(float(lake['center'][2]),natural_floor(ox,oz)-1.0),2)
     lake['outlet'][2]=lake['center'][2]
-# WORLD-BUILD-01B (D-118, the book's W1 project, sheet wfW1): the mountain lake's water hung 60 m
-# over its southern slope (mirror 228, ground 221-162). Its mirror goes down to 220 m and its south
-# shore to the stone sill at z~355: the lake is the ellipse north of it (85 x 34 m round 330/322,
-# its tip at the sill - the book's sheet cuts the 85 x 60 ellipse with a straight sill there). The
+# WORLD-BUILD-01B (D-118, the book's W1 project, sheet wfW1, PDF141 pp 86-87): the mountain lake's
+# water hung 60 m over its southern slope (mirror 228, ground 221-162). Its mirror goes down to 220 m
+# and the 85 x 60 m ellipse is cut by the stone sill at z 355 (cut_z): south of it is land. The
 # west river starts at the sill and falls by the book's nodes, a cascade of 57 m on the ground to the
 # pool at 163 m; those nodes are pinned (no rapids limit, no smoothing) - the rest of the river is
 # settled as before.
 W1_NODES=[(330,355,220.0),(330,371,206.0),(330,385,192.0),(330,399,178.0),(330,415,163.0)]
+# The sheet's ledges: from the sill a fall to each node, a 4 m plunge pool level at the node
+# (the sheet's 10 x 4 m basins under ledges 1-3), then the next fall; the river's own pool at 163 m.
+W1_PROFILE=[(330,355,220.0)]
+for (_x,_z,_h),(_x2,_z2,_h2) in zip(W1_NODES,W1_NODES[1:]):
+    W1_PROFILE+= [(330,_z2,_h2),(330,_z2+4,_h2)]
 for lake in D['lakes']:
     if lake['id']=='mountain_lake':
-        lake['center']=[330,322,220.0];lake['radii_m']=[85,34];lake['outlet']=[330,355,220.0]
+        lake['center']=[330,360,220.0];lake['radii_m']=[85,60];lake['outlet']=[330,355,220.0];lake['cut_z']=355.0
 for rv in D['rivers']:
     if rv['id']=='west':
         tail=[(p,w,dw) for p,w,dw in zip(rv['points'],rv['widths_m'],rv['depth_widths_m']) if p[1]>420]
-        rv['points']=[list(n) for n in W1_NODES]+[t[0] for t in tail]
-        rv['widths_m']=[12.0]*len(W1_NODES)+[t[1] for t in tail]
-        rv['depth_widths_m']=[12.0]*len(W1_NODES)+[t[2] for t in tail]
-        rv['pinned_head']=len(W1_NODES)
+        rv['points']=[list(n) for n in W1_PROFILE]+[t[0] for t in tail]
+        rv['widths_m']=[12.0]*len(W1_PROFILE)+[t[1] for t in tail]
+        rv['depth_widths_m']=[12.0]*len(W1_PROFILE)+[t[2] for t in tail]
+        rv['pinned_head']=len(W1_PROFILE)
 lake_of={l['river_id']:l for l in D['lakes'] if l.get('river_id')}
 settled_courses={}
 def natural_course(rv):
@@ -574,6 +578,8 @@ heights=heights*(1-w)+(dh-.05)*w
 for lake in D['lakes']:
     px,pz,level=lake['center'];rx,rz=lake['radii_m']
     q=np.hypot((x-px)/rx,(z-pz)/rz)
+    # a cut lake (W1 sill): past the cut the ground is shore, rising as outside the ellipse
+    if 'cut_z' in lake:q=np.where(z>lake['cut_z'],np.maximum(q,1.0+(z-lake['cut_z'])/rz),q)
     bed=level-7*(1-np.minimum(q,1)**2)+10*smooth((q-1)/.35)
     influence=1-smooth((q-1.08)/.45)
     heights=heights*(1-influence)+bed*influence
@@ -746,6 +752,7 @@ rock=smooth((heights-165)/155)[:,:,None]
 for lake in D['lakes']:
     lx,lz,_lv=lake['center'];lrx,lrz=lake['radii_m']
     lq=np.hypot((x-lx)/lrx,(z-lz)/lrz)
+    if 'cut_z' in lake:lq=np.where(z>lake['cut_z'],np.maximum(lq,1.0+(z-lake['cut_z'])/lrz),lq)
     meadow=(1-smooth((lq-1.7)/.6))*(1-smooth((heights-300)/30))
     rock=rock*(1-meadow[:,:,None])
 colors[:,:,:3]=colors[:,:,:3]*(1-rock)+np.array([.55,.56,.54])*rock

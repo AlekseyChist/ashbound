@@ -142,7 +142,7 @@ func _build_headwaters() -> void:
 	add_child(water)
 	for lake in layout.lakes:
 		var p: Array = lake.center
-		var mesh: MeshInstance3D = water.add_lake(Vector3(p[0] - 1000, p[2], p[1] - 1000), Vector2(lake.radii_m[0], lake.radii_m[1]))
+		var mesh: MeshInstance3D = water.add_lake(Vector3(p[0] - 1000, p[2], p[1] - 1000), Vector2(lake.radii_m[0], lake.radii_m[1]), float(lake.get("cut_z", INF)) - 1000)
 		mesh.name = lake.id
 	for spring in layout.springs:
 		var p: Array = spring.mouth

@@ -729,9 +729,14 @@ func _index_grass_obstacles() -> void:
 	# LAKE-SHORE-01: a lake is an ellipse; one circle over its long radius kept the whole shore bare.
 	# Circles of the short radius along the long axis cover the water and leave the shore to the grass.
 	for lake in world_layout.lakes:
-		var c: Array = lake.center
+		var c: Array = lake.center.duplicate()
 		var rx := float(lake.radii_m[0])
 		var rz := float(lake.radii_m[1])
+		# A cut lake (the W1 sill): its water is the part north of the cut.
+		if lake.has("cut_z") and float(lake.cut_z) < float(c[1]) + rz:
+			var north := float(c[1]) - rz
+			c[1] = (north + float(lake.cut_z)) * 0.5
+			rz = (float(lake.cut_z) - north) * 0.5
 		var r := minf(rx, rz) + 2.0
 		var reach := absf(rx - rz)
 		for k in range(-2, 3):
@@ -912,7 +917,7 @@ func _build_water_and_sites() -> void:
 	world_root.add_child(water)
 	for lake in world_layout.lakes:
 		var p: Array = lake.center
-		var lake_mesh: MeshInstance3D = water.add_lake(Vector3(p[0] - HALF, p[2], p[1] - HALF), Vector2(lake.radii_m[0], lake.radii_m[1]))
+		var lake_mesh: MeshInstance3D = water.add_lake(Vector3(p[0] - HALF, p[2], p[1] - HALF), Vector2(lake.radii_m[0], lake.radii_m[1]), float(lake.get("cut_z", INF)) - HALF)
 		if lake_mesh != null:
 			lake_mesh.material_override = water_material(false)
 	for spring in world_layout.springs:

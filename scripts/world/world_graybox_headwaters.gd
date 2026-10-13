@@ -6,7 +6,8 @@ const _ROCK_COLOR := Color("777970")
 const _DARK_COLOR := Color("252a29")
 
 
-func add_lake(center: Vector3, radii: Vector2) -> MeshInstance3D:
+## `cut_z` (world frame z): a straight shore - the ellipse south of it is land (W1 sill, D-118).
+func add_lake(center: Vector3, radii: Vector2, cut_z := INF) -> MeshInstance3D:
 	if not (is_finite(radii.x) and is_finite(radii.y)) or radii.x <= 0.0 or radii.y <= 0.0:
 		push_warning("world_graybox_headwaters: invalid lake radii %s" % radii)
 		return null
@@ -14,16 +15,34 @@ func add_lake(center: Vector3, radii: Vector2) -> MeshInstance3D:
 	var vertices := PackedVector3Array()
 	var normals := PackedVector3Array()
 	var indices := PackedInt32Array()
-	vertices.append(Vector3(center.x, center.y, center.z))
+	var cut := cut_z < center.z + radii.y and cut_z > center.z - radii.y
+	var middle := center
+	if cut:
+		middle.z = (center.z - radii.y + cut_z) * 0.5
+	vertices.append(Vector3(middle.x, middle.y, middle.z))
 	normals.append(Vector3.UP)
-	for i in range(segments):
-		var angle := TAU * float(i) / float(segments)
-		vertices.append(Vector3(
-			center.x + radii.x * cos(angle),
-			center.y,
-			center.z + radii.y * sin(angle)
-		))
-		normals.append(Vector3.UP)
+	if not cut:
+		for i in range(segments):
+			var angle := TAU * float(i) / float(segments)
+			vertices.append(Vector3(center.x + radii.x * cos(angle), center.y, center.z + radii.y * sin(angle)))
+			normals.append(Vector3.UP)
+	else:
+		# The same turning order as the full ellipse: the arc of the water side from the west end of
+		# the cut round to its east end, then back along the straight cut (no vertex folded onto it).
+		var edge := asin(clampf((cut_z - center.z) / radii.y, -1.0, 1.0))
+		var arc_start := PI - edge
+		var arc_end := TAU + edge
+		var chord := clampi(int(round(segments * 2.0 * radii.x * cos(edge) / (2.0 * radii.x * cos(edge) + (arc_end - arc_start) * (radii.x + radii.y) * 0.5))), 4, segments - 8)
+		var arc := segments - chord
+		for i in range(arc):
+			var angle := arc_start + (arc_end - arc_start) * float(i) / float(arc - 1)
+			vertices.append(Vector3(center.x + radii.x * cos(angle), center.y, center.z + radii.y * sin(angle)))
+			normals.append(Vector3.UP)
+		var east := center.x + radii.x * cos(arc_end)
+		var west := center.x + radii.x * cos(arc_start)
+		for j in range(1, chord + 1):
+			vertices.append(Vector3(lerpf(east, west, float(j) / float(chord + 1)), center.y, cut_z))
+			normals.append(Vector3.UP)
 	for i in range(segments):
 		var current := 1 + i
 		var next := 1 + (i + 1) % segments

@@ -78,7 +78,8 @@ func water_at(p: Vector3) -> Vector2:
 		var c: Array = lake.center
 		var r: Array = lake.radii_m
 		var q := Vector2((at.x + world.HALF - float(c[0])) / float(r[0]), (at.y + world.HALF - float(c[1])) / float(r[1]))
-		if q.length() < 1.05:
+		# a cut lake (the W1 sill): south of the cut is land
+		if q.length() < 1.05 and at.y + world.HALF <= float(lake.get("cut_z", INF)) + 0.5:
 			water = maxf(water, float(c[2]))
 	var ground: float = world.shore_ground(local.x, local.z) if world.has_method("shore_ground") else world.world_ground(local.x, local.z)
 	return Vector2(water, ground)
