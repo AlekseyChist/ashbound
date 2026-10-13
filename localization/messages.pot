@@ -626,6 +626,9 @@ msgstr ""
 msgid "WORLD_FOREST_CITY_BARRACKS"
 msgstr ""
 
+msgid "WORLD_FOREST_CITY_COUNTING_HOUSE"
+msgstr ""
+
 msgid "WORLD_FOREST_CITY_WATER_MILL"
 msgstr ""
 

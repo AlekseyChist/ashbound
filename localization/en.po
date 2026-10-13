@@ -628,6 +628,9 @@ msgstr "Town hall"
 msgid "WORLD_FOREST_CITY_BARRACKS"
 msgstr "Militia barracks"
 
+msgid "WORLD_FOREST_CITY_COUNTING_HOUSE"
+msgstr "Counting house"
+
 msgid "WORLD_FOREST_CITY_WATER_MILL"
 msgstr "Water mill"
 

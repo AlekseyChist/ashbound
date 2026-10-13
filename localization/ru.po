@@ -629,6 +629,9 @@ msgstr "Ратуша"
 msgid "WORLD_FOREST_CITY_BARRACKS"
 msgstr "Казарма ополчения"
 
+msgid "WORLD_FOREST_CITY_COUNTING_HOUSE"
+msgstr "Счётная изба"
+
 msgid "WORLD_FOREST_CITY_WATER_MILL"
 msgstr "Водяная мельница"
 

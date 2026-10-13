@@ -139,5 +139,12 @@ plan={'id':'forest_city','source':'Watabou MFCG Middlehill seed 7736 (https://wa
  'water_wheels':[[419.0,895.0],[452.0,952.0]],
  'wheat_field':[[438,818],[505,806],[525,868],[468,884],[446,872]],
  'buildings':PLAN}
+# FOREST-CITY-02 (book D-118): re-running the schema keeps the book's additions already in plan.json -
+# house 7 as the counting house, the tannery, Vetla's hut, the lower posad and the stalls/ford/pier block.
+_old=json.load(open('assets/world/forest-city-v1/plan.json',encoding='utf8')) if os.path.exists('assets/world/forest-city-v1/plan.json') else {}
+for b in PLAN:
+    if str(b['code'])=='7': b.update(kind='counting_house',code='СИ',enterable=True)
+plan['buildings']=PLAN+[b for b in _old.get('buildings',[]) if b['kind'] in ('tannery','healer_hut','posad')]
+if 'additions' in _old: plan['additions']=_old['additions']
 open('assets/world/forest-city-v1/plan.json','w',encoding='utf8',newline=chr(10)).write(json.dumps(plan,ensure_ascii=False,indent=1)+chr(10))
 print('ok',img.size)

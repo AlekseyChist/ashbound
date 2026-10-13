@@ -46,6 +46,7 @@ func build(scene: Node3D) -> void:
 	_water_wheels()
 	_outer_buildings()
 	_wheat_field()
+	_additions()
 	print("FOREST_CITY stakes=%d towers=%d houses=%d wheat=%d wheels=%d" % [stake_count, tower_count, house_count, wheat_count, wheels.size()])
 
 
@@ -61,6 +62,10 @@ const CIVIC := {
 	"barracks": {"id": "K01", "scene_path": "res://assets/buildings/forest-city-v1/k01.glb", "width": 20.0, "depth": 10.0,
 		"entry": Vector3(2.5, 0.8, 5.0), "floor_height": 0.8, "stair_run": 1.8, "own_lights": true,
 		"title_key": "WORLD_FOREST_CITY_BARRACKS"},
+	# FOREST-CITY-02 (book D-118): house 7 by the north-east gate becomes Gisbert's counting house -
+	# the village log house H01 with its interior; its own furniture (ledger cupboard) waits for Codex.
+	"counting_house": {"id": "H01", "scene_path": "res://assets/buildings/forest-village-v1/h01.glb", "width": 6.0, "depth": 8.0,
+		"entry": Vector3(-1.25, 0.36, 4.0), "floor_height": 0.36, "title_key": "WORLD_FOREST_CITY_COUNTING_HOUSE"},
 }
 const Hall = preload("res://scripts/world/village_building.gd")
 const Entry = preload("res://scripts/world/closed_house_entry.gd")
@@ -138,7 +143,9 @@ const KIT := {
 	"T5": {"path": "res://assets/buildings/forest-city-v1/t5.glb", "size": Vector3(10, 6.0, 6), "skin": true},
 }
 const WORKSHOP_KIT := {"water_mill": "W01", "sawmill": "B01", "log_yard": "B01", "bakery": "W01", "granary": "H01",
-	"carpenter": "H01", "smithy": "H01", "charcoal_burner": "H01", "tar_kiln": "H01"}
+	"carpenter": "H01", "smithy": "H01", "charcoal_burner": "H01", "tar_kiln": "H01",
+	# FOREST-CITY-02: the tannery downstream, Vetla's hut and the lower posad (closed kit houses for now).
+	"tannery": "W01", "healer_hut": "H01", "posad": "H01"}
 var house_count := 0
 
 func _outer_buildings() -> void:
@@ -942,3 +949,106 @@ func _box(parent: Node3D, at: Vector3, size: Vector3, material: Material) -> voi
 	instance.position = at
 	instance.visibility_range_end = VISIBLE
 	parent.add_child(instance)
+
+
+# --- FOREST-CITY-02: the book's additions (D-118) - stalls, ristalishe, ford, pier ----------------------
+
+const STALL := "res://assets/environment/village-props-v1/Stall_Cart_Empty.gltf"
+const Dummy = preload("res://scenes/courtyard/props/dummy.tscn")
+var additions_count := 0
+
+func _additions() -> void:
+	var extra: Dictionary = plan.get("additions", {})
+	if extra.is_empty():
+		return
+	# Market stalls by the well: the village's stall cart, solid as one box.
+	for s in extra.get("market_stalls", []):
+		var stall: Node3D = (load(STALL) as PackedScene).instantiate()
+		stall.position = ground_at(Vector2(float(s[0]), float(s[1])))
+		stall.rotation.y = deg_to_rad(float(s[2]))
+		add_child(stall)
+		var body := StaticBody3D.new()
+		var shape := CollisionShape3D.new()
+		var box := BoxShape3D.new()
+		box.size = Vector3(1.8, 2.0, 1.2)
+		shape.shape = box
+		shape.position = Vector3(0, 1.0, 0)
+		body.add_child(shape)
+		stall.add_child(body)
+		additions_count += 1
+	# The ristalishe: a trodden yard outside the south-east gate, two straw dummies on its edge.
+	var rist: Dictionary = extra.get("ristalishe", {})
+	if not rist.is_empty():
+		yards.append(Vector3(float(rist.map[0]) - float(world.HALF), float(rist.map[1]) - float(world.HALF), float(rist.size[0]) * 0.5))
+		for m in rist.get("dummies", []):
+			var dummy: Node3D = Dummy.instantiate()
+			dummy.position = ground_at(Vector2(float(m[0]), float(m[1])))
+			add_child(dummy)
+			additions_count += 1
+	# The ford below the bridge: marker poles across the riverbed, two posts on the far bank (SQ-FOR-02).
+	var ford: Dictionary = extra.get("ford", {})
+	for pole in ford.get("poles", []):
+		var at := ground_at(Vector2(float(pole[0]), float(pole[1])))
+		_pole(at - Vector3(0, 0.4, 0), 0.06, 2.4)
+	for post in ford.get("posts", []):
+		var at := ground_at(Vector2(float(post[0]), float(post[1])))
+		_pole(at - Vector3(0, 0.5, 0), 0.14, 3.0, true)
+	# The pier below the mill: plank deck on piles, 0.6 m over the water (SQ-FOR-08).
+	var pier: Dictionary = extra.get("pier", {})
+	if not pier.is_empty():
+		var map := Vector2(float(pier.map[0]), float(pier.map[1]))
+		var base := ground_at(map)
+		var water := base.y
+		var near: Array = world._shore_near(base.x, base.z)
+		if not near.is_empty():
+			water = float(near[1])
+		var root := Node3D.new()
+		root.name = "Pier"
+		root.position = Vector3(base.x, water + 0.6, base.z)
+		root.rotation.y = deg_to_rad(float(pier.yaw_deg))
+		add_child(root)
+		var w := float(pier.size[0])
+		var l := float(pier.size[1])
+		var deck := StaticBody3D.new()
+		deck.set_meta("footstep_surface", "wood")
+		root.add_child(deck)
+		_box(root, Vector3(0, 0, 0), Vector3(w, 0.12, l), roof)
+		var shape := CollisionShape3D.new()
+		var box := BoxShape3D.new()
+		box.size = Vector3(w, 0.12, l)
+		shape.shape = box
+		deck.add_child(shape)
+		for k in 4:
+			for side in [-1.0, 1.0]:
+				var py := Vector3(side * (w * 0.5 - 0.15), 0, -l * 0.5 + 0.4 + k * (l - 0.8) / 3.0)
+				# In the world frame (this node's parent space), not global: world_ground takes world x/z.
+				var lp: Vector3 = root.transform * py
+				var bottom: float = world.world_ground(lp.x, lp.z) - 0.3
+				var height: float = root.position.y - bottom
+				_box(root, py - Vector3(0, height * 0.5, 0), Vector3(0.22, height, 0.22), timber)
+		additions_count += 1
+	print("FOREST_CITY_ADDITIONS %d" % additions_count)
+
+
+func _pole(base: Vector3, radius: float, height: float, solid := false) -> void:
+	var mesh := MeshInstance3D.new()
+	var cyl := CylinderMesh.new()
+	cyl.top_radius = radius
+	cyl.bottom_radius = radius * 1.15
+	cyl.height = height
+	cyl.radial_segments = 8
+	mesh.mesh = cyl
+	mesh.material_override = timber
+	mesh.position = base + Vector3(0, height * 0.5, 0)
+	mesh.visibility_range_end = VISIBLE
+	add_child(mesh)
+	if solid:
+		var body := StaticBody3D.new()
+		var shape := CollisionShape3D.new()
+		var c := CylinderShape3D.new()
+		c.radius = radius
+		c.height = height
+		shape.shape = c
+		body.add_child(shape)
+		mesh.add_child(body)
+	additions_count += 1
