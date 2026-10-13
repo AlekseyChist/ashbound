@@ -17,8 +17,21 @@ def surface(name,filename,metres):
     return m
 STONE=surface('S store stone','stone_wall_02_diff_1k.jpg',2)
 WOOD=surface('S store timber','fine_grained_wood_col_1k.jpg',.65)
-SLATE=C.mat('S store slate',(.12,.16,.18,1))
-GRAIN=C.mat('S store sacks',(.43,.38,.28,1))
+def paint(name,color,metres,woven=False):
+    m=C.mat(name,(*color,1),.98);m['uv_metres']=metres
+    im=bpy.data.images.new(name+' paint',width=256,height=256)
+    pixels=[]
+    for y in range(256):
+        for x in range(256):
+            variation=(.018 if woven else .022)*math.sin(x*(1.57 if woven else .039)+y*.023)
+            variation+=.012*math.sin(y*(1.57 if woven else .073)-x*.013)
+            pixels.extend([max(0,min(1,t+variation)) for t in color]+[1])
+    im.pixels.foreach_set(pixels);im.pack()
+    tex=m.node_tree.nodes.new('ShaderNodeTexImage');tex.image=im
+    m.node_tree.links.new(tex.outputs['Color'],m.node_tree.nodes['Principled BSDF'].inputs['Base Color'])
+    return m
+SLATE=paint('S store slate',(.10,.135,.15),.65)
+GRAIN=paint('S store sacks',(.43,.38,.28),.4,True)
 collision=[]
 def box(n,p,s,m,solid=False):
     o=C.box(n,p,s,m,.015)
@@ -46,8 +59,8 @@ for y in (-3.8,0,3.8):
     for x in (-6.8,6.8):C.beam('rafter',(x,y,3.20),(0,y,5.70),.18,.20,WOOD)
 roof_meshes=[]
 for side in (-1,1):
-    x=side*7.25
-    vs=[(x,-4.35,3.35),(x,4.35,3.35),(0,4.35,5.95),(0,-4.35,5.95)]
+    x=side*7.5
+    vs=[(x,-4.8,3.35),(x,4.8,3.35),(0,4.8,5.95),(0,-4.8,5.95)]
     vs += [(a,b,c-.12) for a,b,c in vs]
     faces=[(0,1,2,3),(7,6,5,4),(0,4,5,1),(1,5,6,2),(2,6,7,3),(3,7,4,0)]
     if side<0:faces=[tuple(reversed(f)) for f in faces]
@@ -59,17 +72,26 @@ for side in (-1,1):
     for row in range(16):
         a=(row+.02)/16;b=min(1,(row+1.05)/16)
         shift=.30 if row%2 else 0
-        for col in range(16):
-            ya=max(-4.35,-4.65+col*.60+shift);yb=min(4.35,-4.07+col*.60+shift)
+        for col in range(18):
+            ya=max(-4.8,-5.1+col*.60+shift);yb=min(4.8,-4.52+col*.60+shift)
             if yb-ya<.05:continue
             xa,xb=x*a,x*b;za,zb=5.95-2.6*a+.035,5.95-2.6*b+.055
             tile=[(xa,ya,za),(xb,ya,zb),(xb,yb,zb),(xa,yb,za)]
             tile += [(xx,yy,zz-.025) for xx,yy,zz in tile]
             C.mesh('overlapping slate',tile,faces,SLATE)
-C.beam('ridge',(0,-4.4,6.0),(0,4.4,6.0),.18,.14,SLATE)
-for x in (-7.25,7.25):C.beam('eaves',(x,-4.4,3.35),(x,4.4,3.35),.16,.16,WOOD)
+C.beam('ridge',(0,-4.85,6.0),(0,4.85,6.0),.18,.14,SLATE)
+for x in (-7.5,7.5):C.beam('eaves',(x,-4.85,3.35),(x,4.85,3.35),.16,.16,WOOD)
 for y in (-3.8,3.8):
-    C.mesh('gable', [(-6.9,y-.12,3.4),(6.9,y-.12,3.4),(0,y-.12,5.95),(-6.9,y+.12,3.4),(6.9,y+.12,3.4),(0,y+.12,5.95)],[(0,2,1),(3,4,5),(0,1,4,3),(1,2,5,4),(2,0,3,5)],WOOD)
+    edge=5.83-6.9*2.6/7.5
+    outline=[(-6.9,3.4),(-6.9,edge),(0,5.83),(6.9,edge),(6.9,3.4)]
+    vertices=[(x,y+depth,z) for depth in (-.12,.12) for x,z in outline]
+    C.mesh('gable',vertices,[tuple(range(5)),tuple(range(5,10))]+[(i,(i+1)%5,(i+1)%5+5,i+5) for i in range(5)],WOOD)
+    face=y+(.16 if y>0 else -.16)
+    for k in range(53):
+        x=-6.76+k*.26
+        top=5.83-(abs(x)+.125)*2.6/7.5
+        if top>3.43:box('gable sheathing plank',(x,face,(top+3.4)/2),(.248,.07,top-3.4),WOOD)
+    for side in (-1,1):C.beam('gable rake',(side*6.9,face,edge),(0,face,5.83),.12,.12,WOOD)
 # Storage keeps the central loading aisle clear; goods stand on raised platforms.
 for x in (-4.7,4.7):
     for y in (-1.5,1.5):
