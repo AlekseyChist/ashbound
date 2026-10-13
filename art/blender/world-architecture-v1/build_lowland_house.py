@@ -88,6 +88,8 @@ def box(name, loc, size, mat, solid=False, bevel=0.02, role=None):
 W, D = 8.0, 7.0            # walls, X by Y
 T = 0.5                    # wall thickness
 G = 3.0                    # ground storey height (floor 0 .. 3.0)
+WALL_TOP = G + 0.12         # ground walls reach the upper floor's underside (Codex LH04: a 12 cm slot ran round the house
+                           # between the wall tops at 3.0 and the floor slab, open in the stair well)
 U = 2.7                    # upper storey
 JET = 0.30                 # upper floor jetty over the front (-Y)
 x0, x1, y0, y1 = -W / 2, W / 2, -D / 2, D / 2
@@ -106,12 +108,12 @@ def wall_y(name, x, a, b, z0, z1, mat=PLASTER):
 yf, yb = y0 + T / 2, y1 - T / 2
 DOOR = (-1.8, 1.2, 2.3)        # centre x, width, height
 SHOP = (1.6, 1.8, 1.0, 2.1)    # centre x, width, sill, top
-wall_x('front pier W', yf, x0, DOOR[0] - DOOR[1] / 2, 0, G)
-wall_x('front pier mid', yf, DOOR[0] + DOOR[1] / 2, SHOP[0] - SHOP[1] / 2, 0, G)
-wall_x('front pier E', yf, SHOP[0] + SHOP[1] / 2, x1, 0, G)
-wall_x('door head', yf, DOOR[0] - DOOR[1] / 2, DOOR[0] + DOOR[1] / 2, DOOR[2], G)
+wall_x('front pier W', yf, x0, DOOR[0] - DOOR[1] / 2, 0, WALL_TOP)
+wall_x('front pier mid', yf, DOOR[0] + DOOR[1] / 2, SHOP[0] - SHOP[1] / 2, 0, WALL_TOP)
+wall_x('front pier E', yf, SHOP[0] + SHOP[1] / 2, x1, 0, WALL_TOP)
+wall_x('door head', yf, DOOR[0] - DOOR[1] / 2, DOOR[0] + DOOR[1] / 2, DOOR[2], WALL_TOP)
 wall_x('shop sill wall', yf, SHOP[0] - SHOP[1] / 2, SHOP[0] + SHOP[1] / 2, 0, SHOP[2])
-wall_x('shop head', yf, SHOP[0] - SHOP[1] / 2, SHOP[0] + SHOP[1] / 2, SHOP[3], G)
+wall_x('shop head', yf, SHOP[0] - SHOP[1] / 2, SHOP[0] + SHOP[1] / 2, SHOP[3], WALL_TOP)
 # front plinth on either side of the doorway (it ran across it: a 0.5 m stone band the hero walked
 # through), a low threshold stone in the opening
 dl, dr = DOOR[0] - DOOR[1] / 2 - 0.2, DOOR[0] + DOOR[1] / 2 + 0.2
@@ -136,11 +138,11 @@ box('shop sill board', (SHOP[0], y0 - 0.15, SHOP[2] + 0.04), (SHOP[1] + 0.2, 0.4
 for sx in (-1, 1):
     box('shop shutter', (SHOP[0] + sx * (SHOP[1] / 2 + 0.47), y0 - 0.06, (SHOP[2] + SHOP[3]) / 2), (0.9, 0.06, SHOP[3] - SHOP[2]), TIMBER)
 box('shop counter', (SHOP[0], y0 + T + 0.35, 0.95), (SHOP[1], 0.6, 0.08), TIMBER, True, role='interior_furniture')
-wall_x('rear wall', yb, x0, x1, 0, G)
-wall_y('west wall', x0 + T / 2, y0 + T, y1 - T, 0, G)
+wall_x('rear wall', yb, x0, x1, 0, WALL_TOP)
+wall_y('west wall', x0 + T / 2, y0 + T, y1 - T, 0, WALL_TOP)
 # east wall with one window
-wall_y('east wall S', x1 - T / 2, y0 + T, -0.6, 0, G); wall_y('east wall N', x1 - T / 2, 0.6, y1 - T, 0, G)
-wall_y('east sill', x1 - T / 2, -0.6, 0.6, 0, 1.1); wall_y('east head', x1 - T / 2, -0.6, 0.6, 2.0, G)
+wall_y('east wall S', x1 - T / 2, y0 + T, -0.6, 0, WALL_TOP); wall_y('east wall N', x1 - T / 2, 0.6, y1 - T, 0, WALL_TOP)
+wall_y('east sill', x1 - T / 2, -0.6, 0.6, 0, 1.1); wall_y('east head', x1 - T / 2, -0.6, 0.6, 2.0, WALL_TOP)
 box('east window', (x1 - 0.05, 0, 1.55), (0.05, 1.2, 0.9), GLASS)
 for k in (-1, 1): box('east shutter', (x1 + 0.03, k * 0.9, 1.55), (0.05, 0.6, 0.95), TIMBER)
 
