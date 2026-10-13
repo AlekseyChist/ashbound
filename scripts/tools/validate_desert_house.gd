@@ -37,7 +37,14 @@ func run() -> void:
     var colliders := house.find_children("*", "CollisionShape3D", true, false)
     require(colliders.size() == 45, "Expected38 static boxes and7 moving door colliders; got " + str(colliders.size()))
     var visuals := house.find_children("*", "MeshInstance3D", true, false)
-    require(visuals.size() == 15, "Expected8 static material meshes and7 door parts; got " + str(visuals.size()))
+    require(visuals.size() == 17, "Expected10 static material meshes and7 door parts; got " + str(visuals.size()))
+    require(house.interior_meshes.size() == 2, "Interior furniture grouping missing")
+    require(not house.set_interior_visible(false, true), "Occupied house allowed hiding furniture")
+    require(house.set_interior_visible(false), "Closed-house hiding failed")
+    for mesh in house.interior_meshes:
+        require(not mesh.visible, "Furniture remained visible")
+    require(house.find_children("*", "CollisionShape3D", true, false).size() == 45, "Furniture hiding changed physics")
+    require(house.set_interior_visible(true), "Furniture restore failed")
     for node in visuals:
         var mesh := node as MeshInstance3D
         require(mesh.mesh != null, "Null mesh")
@@ -83,6 +90,7 @@ func run() -> void:
     require(actor.position.z > 4.6, "Closed door allowed passage")
     actor.position.z = 5.6
     await physics_frame
+    require(house.set_interior_visible(false), "Hiding before opening failed")
     var obstacle := StaticBody3D.new()
     obstacle.collision_layer = 8
     obstacle.position = Vector3(.2, 1.2, 3.75)
@@ -99,6 +107,8 @@ func run() -> void:
     obstacle.queue_free()
     for i in range(90): await physics_frame
     require(is_equal_approx(door.fraction, 1.0), "Door did not open fully")
+    require(house.interior_visible, "Opening did not restore furniture")
+    require(not house.set_interior_visible(false), "Open portal allowed hiding furniture")
     await walk(Vector2(0,3.0), "street through main entrance")
     await walk(Vector2(0,0), "courtyard")
     await walk(Vector2(.65,-.6), "living door approach")
@@ -131,7 +141,7 @@ func run() -> void:
     var file := FileAccess.open("res://local/qa/world-3d-assets/result.json",FileAccess.WRITE)
     file.store_string(JSON.stringify(report,"  "))
     if failures.is_empty():
-        print("D_H_GODOT_OK colliders=45 meshes=15 walk_segments=12 door_sides=2 obstacle_stop=1")
+        print("D_H_GODOT_OK colliders=45 meshes=17 walk_segments=12 door_sides=2 obstacle_stop=1 interior_guards=1")
         quit(0)
     else:
         quit(1)

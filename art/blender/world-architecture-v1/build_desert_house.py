@@ -64,6 +64,8 @@ LIME=C.mat('D edge limewash',(0.74,0.66,0.51,1))
 
 def box(name, loc, size, mat, solid=False, bevel=0.025):
     o=C.box(name,loc,size,mat,bevel)
+    if name.startswith(('bed','linen mattress','blanket','table','stool','pantry shelf','shelf post','grain sack')):
+        o['part_role']='interior_furniture'
     if solid: COLLISIONS.append((name,tuple(loc),tuple(size)))
     return o
 
@@ -204,7 +206,11 @@ for o in visual:
             shade=max(.58,1-low-drip)
             attr.data[k].color=(shade,shade,shade,1)
         o.data.color_attributes.active_color=attr
-C._join_by_material([o for o in visual if o not in door_parts])
+static=[o for o in visual if o not in door_parts]
+interior=[o for o in static if o.get('part_role')=='interior_furniture']
+shell=[o for o in static if o.get('part_role')!='interior_furniture']
+C._join_by_material(shell)
+C._join_by_material(interior)
 for o in door_parts:
     matrix=o.matrix_world.copy();o.parent=hinge;o.matrix_world=matrix
 visual=[o for o in C.ASSET.objects if o.type=="MESH"]
