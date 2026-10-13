@@ -42,10 +42,13 @@ func run() -> void:
         var mesh := node as MeshInstance3D
         require(mesh.mesh != null, "Null mesh")
         for surface in range(mesh.mesh.get_surface_count()):
-            var mat := mesh.mesh.surface_get_material(surface) as StandardMaterial3D
+            var mat := mesh.get_active_material(surface) as StandardMaterial3D
             require(mat != null, "Missing imported material")
             if mat != null and (mat.resource_name.contains("plaster") or mat.resource_name.contains("sandstone") or mat.resource_name.contains("oak")):
                 require(mat.albedo_texture != null, "Embedded paint texture lost on import: " + mat.resource_name)
+                require(mat.albedo_color.r>mat.albedo_color.b+.03,"Warm material tint was lost on import: "+mat.resource_name)
+            if mat != null and mat.resource_name.contains("plaster"):
+                require(mat.vertex_color_use_as_albedo,"Wall weather colours were lost on import")
     var ground := StaticBody3D.new()
     var ground_col := CollisionShape3D.new()
     var ground_box := BoxShape3D.new()

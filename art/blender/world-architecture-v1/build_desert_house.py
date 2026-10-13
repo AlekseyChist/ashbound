@@ -3,9 +3,9 @@ Run Blender --background --factory-startup --python-exit-code 1 --python this_fi
 Only its GLB is a game asset; renders, measurements and BLEND remain in local/.
 Blender XY footprint; Z up. Export converts to Godot Y up. Pivot: floor centre.
 """
-import sys, math, random, json, hashlib
+import sys, math, random, json, hashlib, struct
 from pathlib import Path
-import bpy
+import bpy, bmesh
 from mathutils import Vector
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -36,9 +36,25 @@ def painted(name, colour, grain):
     mat.node_tree.links.new(tex.outputs['Color'], mat.node_tree.nodes.get('Principled BSDF').inputs['Base Color'])
     return mat
 
-PLASTER=painted('D warm lime plaster', (0.68,0.57,0.40), 0.015)
-STONE=painted('D cut sandstone', (0.46,0.37,0.25), 0.022)
-WOOD=painted('D dark oak', (0.21,0.13,0.075), 0.025)
+def surface(name,filename,tint,metres,weather=False):
+    """Use the existing licensed surface maps, with restrained material tint, not new copies."""
+    m=C.mat(name,(*tint,1),.96)
+    m['uv_metres']=metres;m['weather']=weather
+    im=bpy.data.images.load(str(ROOT/'assets/environment/village-house-materials-v1'/filename))
+    im.pack()
+    nt=m.node_tree;tex=nt.nodes.new('ShaderNodeTexImage');tex.image=im
+    mix=nt.nodes.new('ShaderNodeMixRGB');mix.blend_type='MULTIPLY';mix.inputs[0].default_value=1
+    mix.inputs[2].default_value=(*tint,1);nt.links.new(tex.outputs['Color'],mix.inputs[1])
+    output=mix.outputs['Color']
+    if weather:
+        colour=nt.nodes.new('ShaderNodeVertexColor');colour.layer_name='Weather'
+        damp=nt.nodes.new('ShaderNodeMixRGB');damp.blend_type='MULTIPLY';damp.inputs[0].default_value=1
+        nt.links.new(output,damp.inputs[1]);nt.links.new(colour.outputs['Color'],damp.inputs[2]);output=damp.outputs['Color']
+    nt.links.new(output,nt.nodes['Principled BSDF'].inputs['Base Color'])
+    return m
+PLASTER=surface('D warm lime plaster','plaster_grey_04_diff_1k.jpg',(.78,.68,.52),3.0,True)
+STONE=surface('D cut sandstone','stone_wall_02_diff_1k.jpg',(.72,.63,.49),2.0)
+WOOD=surface('D dark oak','fine_grained_wood_col_1k.jpg',(.32,.23,.15),.65)
 CLAY=C.mat('D russet pottery',(0.39,0.20,0.12,1))
 CLOTH=C.mat('D faded ochre cloth',(0.49,0.35,0.19,1))
 IRON=C.mat('D forged iron',(0.095,0.09,0.075,1),0.8)
@@ -65,7 +81,8 @@ def door_x(name,y,cx,width=1.3,top=2.35,extent=(-4.3,4.3),height=2.95):
     box(name+' cap',(cx,y,2.48),(width+0.44,0.52,0.26),STONE)
 
 # Exterior boundary exactly 9x9; wall centre ±4.3, thickness 0.4.
-box('continuous floor',(0,0,-0.12),(9,9,0.24),FLOOR,True,0)
+box('continuous foundation',(0,0,-0.60),(9.14,9.14,1.20),STONE,True,0)
+box('courtyard paving',(0,0,-.02),(9,9,.04),FLOOR,False,0)
 door_x('entry',-4.3,0,width=1.5,top=2.5,height=2.8)
 wall_y('west wall',-4.3,-4.1,4.1,0,3.1)
 wall_y('east wall',4.3,-4.1,4.1,0,3.1)
@@ -97,9 +114,9 @@ for y in (-4.51,4.51):
     for k in range(9):
         x=-4+k
         if y<0 and abs(x)<1:continue
-        box('plinth block',(x,y,.17),(.96,.12,.34),STONE)
+        box('plinth block',(x,y,.045),(.96,.12,.59),STONE)
 for x in (-4.51,4.51):
-    for k in range(9):box('side plinth',(x,-4+k,.17),(.12,.96,.34),STONE)
+    for k in range(9):box('side plinth',(x,-4+k,.045),(.12,.96,.59),STONE)
 # Roof scupper discharges outside, away from entrance.
 box('stone scupper',(4.50,3.75,3.2),(.52,.20,.18),STONE)
 # Open wooden leaf rests inside the courtyard; it does not narrow the entrance.
@@ -154,6 +171,32 @@ for x in (3.47,3.93):
     for y in (-1.23,-.07):box('workbench leg',(x,y,.34),(.12,.12,.68),WOOD)
 # Ground pivot remains zero; do not recenter to asymmetric chimney.
 visual=list(C.ASSET.objects)
+for o in visual:
+    m=o.data.materials[0]
+    scale=float(m.get('uv_metres',0))
+    if not scale:continue
+    bm=bmesh.new();bm.from_mesh(o.data)
+    if m.get('weather'):
+        edges=[e for e in bm.edges if e.calc_length()>1]
+        bmesh.ops.subdivide_edges(bm,edges=edges,cuts=3,use_grid_fill=True)
+    uv=bm.loops.layers.uv.verify()
+    for face in bm.faces:
+        axis=max(range(3),key=lambda i:abs(face.normal[i]))
+        for loop in face.loops:
+            p=o.matrix_world@loop.vert.co
+            u,v=((p.y,p.z) if axis==0 else (p.x,p.z) if axis==1 else (p.x,p.y))
+            loop[uv].uv=(u/scale,v/scale)
+    bm.to_mesh(o.data);bm.free()
+    if m.get('weather'):
+        attr=o.data.color_attributes.new(name='Weather',type='FLOAT_COLOR',domain='CORNER')
+        for k,loop in enumerate(o.data.loops):
+            p=o.matrix_world@o.data.vertices[loop.vertex_index].co
+            outside=abs(p.x)>4.2 or abs(p.y)>4.2
+            low=.24*max(0,1-p.z/.9) if outside else 0
+            drip=.18*math.exp(-((p.y-3.75)/.55)**2)*max(0,1-abs(p.z-1.6)/2) if p.x>4.4 else 0
+            shade=max(.58,1-low-drip)
+            attr.data[k].color=(shade,shade,shade,1)
+        o.data.color_attributes.active_color=attr
 C._join_by_material(visual)
 visual=list(C.ASSET.objects)
 for name,loc,size in COLLISIONS:
@@ -165,10 +208,23 @@ bpy.ops.object.select_all(action='DESELECT')
 for o in all_mesh:o.select_set(True)
 bpy.context.view_layer.objects.active=visual[0]
 path=OUT/'d_courtyard_house.glb'
-bpy.ops.export_scene.gltf(filepath=str(path),use_selection=True,export_format='GLB',export_apply=True,export_yup=True,export_materials='EXPORT',export_cameras=False,export_lights=False)
+bpy.ops.export_scene.gltf(filepath=str(path),use_selection=True,export_format='GLB',export_apply=True,export_yup=True,export_materials='EXPORT',export_cameras=False,export_lights=False,export_all_vertex_colors=True)
+# The exporter preserved these photo bytes but omitted MixRGB's constant multiplier
+# (verified against source-image means). Write the standard glTF linear colour factor;
+# binary image/mesh chunks and buffer-view offsets remain untouched.
+data=path.read_bytes();json_size=struct.unpack_from('<I',data,12)[0]
+document=json.loads(data[20:20+json_size])
+tints={'D warm lime plaster':(.78,.68,.52),'D cut sandstone':(.72,.63,.49),'D dark oak':(.32,.23,.15)}
+for material in document['materials']:
+    if material['name'] in tints:
+        material['pbrMetallicRoughness']['baseColorFactor']=[*tints[material['name']],1]
+encoded=json.dumps(document,separators=(',',':'),ensure_ascii=False).encode('utf-8')
+encoded+=b' '*((-len(encoded))%4)
+remaining=data[20+json_size:]
+path.write_bytes(struct.pack('<III',0x46546c67,2,20+len(encoded)+len(remaining))+struct.pack('<II',len(encoded),0x4e4f534a)+encoded+remaining)
 tris=0
 for o in visual:o.data.calc_loop_triangles();tris+=len(o.data.loop_triangles)
-points=[o.matrix_world@Vector(c) for o in visual for c in o.bound_box]
+points=[o.matrix_world@v.co for o in visual for v in o.data.vertices]
 mn=[min(p[i] for p in points) for i in range(3)];mx=[max(p[i] for p in points) for i in range(3)]
 stats={'triangles':tris,'materials':len({m.name for o in visual for m in o.data.materials}),'visual_meshes':len(visual),'collision_boxes':len(COLLISIONS),'bbox_blender':[mn,mx],'wall_footprint':[9,9],'main_door_clear':[1.5,2.5],'room_door_clear':[1.3,2.35],'godot_front':[0,0,1],'pivot':'floor centre','sha256':hashlib.sha256(path.read_bytes()).hexdigest(),'approval':'PDF141 D118','limitations':['asset studio review only; campaign placement and phone performance require later QA']}
 (QA/'stats.json').write_text(json.dumps(stats,indent=2),encoding='utf-8')
