@@ -25,6 +25,8 @@ func run():
         push_error("Occupied interior was hidden");quit(1);return
     if not house.set_interior_visible(false):
         push_error("Closed vacant interior cannot hide");quit(1);return
+    if house.lamp_assembly.visible or house.interior_light.visible:
+        push_error("Hidden interior kept its lamp enabled");quit(1);return
     for mesh in house.interior_meshes:
         if mesh.visible:
             push_error("Hidden furniture still visible");quit(1);return
@@ -48,6 +50,21 @@ func run():
     for i in range(90):await physics_frame
     if not house.interior_visible or house.set_interior_visible(false):
         push_error("Opening door did not protect interior visibility");quit(1);return
+    if not house.lamp_assembly.visible or not house.interior_light.visible:
+        push_error("Opening did not restore the visible lamp");quit(1);return
+    var camera=Camera3D.new();stage.add_child(camera);camera.make_current()
+    camera.position=Vector3(100,3,0)
+    for tick in range(40):await physics_frame
+    if house.interior_light.visible:
+        push_error("Distant interior light did not sleep");quit(1);return
+    camera.position=Vector3(0,1.6,2)
+    for tick in range(40):await physics_frame
+    if not house.interior_light.visible:
+        push_error("Nearby lamp did not recover");quit(1);return
+    house.set_interior_lights_enabled(false)
+    if house.interior_light.visible:
+        push_error("World lighting override ignored");quit(1);return
+    house.set_interior_lights_enabled(true)
     if not house.door.blocked or house.door.fraction>=1.0:
         push_error("Door swept through obstruction");quit(1);return
     obstruction.queue_free()
