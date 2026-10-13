@@ -44,7 +44,10 @@ def box(n,p,s,m,solid=True):
     return o
 box('foundation',(0,0,-.18),(18,12,.36),STONE)
 # Upper slab excludes the full stair envelope, including the upper landing.
-box('upper west slab',(-2.125,0,3.48),(13.75,12,.24),WOOD)
+box('upper west slab left',(-8.55,0,3.48),(.9,12,.24),WOOD)
+box('upper west slab right',(-1.275,0,3.48),(12.05,12,.24),WOOD)
+box('upper flue front slab',(-7.7,-3.9,3.48),(.8,4.2,.24),WOOD)
+box('upper flue rear slab',(-7.7,2.5,3.48),(.8,7,.24),WOOD)
 box('upper front slab',(6.875,-3.25,3.48),(4.25,5.5,.24),WOOD)
 box('upper back slab',(6.875,5.5,3.48),(4.25,1,.24),WOOD)
 box('upper stair landing',(7.3,-.35,3.48),(1.6,.7,.24),WOOD)
@@ -99,12 +102,25 @@ def ramp(n,x,y0,y1,bottom,top):
 ramp('first stair',5.6,0,3.36,0,1.8)
 ramp('second stair',7.3,3.36,0,1.8,3.6)
 # Ceiling closes nonplayable roof; the top ridge remains exactly11m.
-box('upper ceiling',(0,0,7.14),(18,12,.12),WOOD)
+box('upper ceiling left',(-8.55,0,7.14),(.9,12,.12),WOOD)
+box('upper ceiling right',(.85,0,7.14),(16.3,12,.12),WOOD)
+box('ceiling flue front',(-7.7,-3.9,7.14),(.8,4.2,.12),WOOD)
+box('ceiling flue rear',(-7.7,2.5,7.14),(.8,7,.12),WOOD)
+BOX_FACES=[(0,1,3,2),(4,6,7,5),(0,4,5,1),(2,3,7,6),(0,2,6,4),(1,5,7,3)]
+def cut_flue(rect):
+    x0,x1,y0,y1=rect
+    a,b=max(x0,-8.1),min(x1,-7.3)
+    c,d=max(y0,-1.8),min(y1,-1.0)
+    if a>=b or c>=d:return [rect]
+    return [r for r in [(x0,a,y0,y1),(b,x1,y0,y1),(a,b,y0,c),(a,b,d,y1)] if r[1]-r[0]>.001 and r[3]-r[2]>.001]
+def roof_piece(name,rect,top,thickness,material):
+    x0,x1,y0,y1=rect
+    vertices=[(x,y,top-abs(y)*3.75/6.4+dz) for x in (x0,x1) for y in (y0,y1) for dz in (-thickness,0)]
+    return C.mesh(name,vertices,BOX_FACES,material)
 for side in (-1,1):
-    points=[(x,y,z) for x in (-9.4,9.4) for y,z in ((0,10.88),(side*6.4,7.13),(side*6.4,6.98),(0,10.73))]
-    o=C.mesh('roof panel',points,[(0,1,5,4),(3,7,6,2),(0,4,7,3),(1,2,6,5),(0,3,2,1),(4,5,6,7)],SLATE)
-    roof_col=C.mesh('roof panel-colonly',points,[(0,1,5,4),(3,7,6,2),(0,4,7,3),(1,2,6,5),(0,3,2,1),(4,5,6,7)],SLATE)
-    roof_col.hide_render=True
+    for rect in cut_flue((-9.4,9.4,min(0,side*6.4),max(0,side*6.4))):
+        roof_piece('roof panel',rect,10.88,.15,SLATE)
+        roof_piece('roof panel-colonly',rect,10.88,.15,SLATE).hide_render=True
 for x in (-8.8,8.8):
     outline=[(-5.8,7.2),(-5.8,7.33),(0,10.73),(5.8,7.33),(5.8,7.2)]
     vertices=[(x+dx,y,z) for dx in (-.2,.2) for y,z in outline]
@@ -115,10 +131,10 @@ for side in (-1,1):
         y=side*(row+.5)*6.4/12
         for column in range(38):
             x=-9.25+column*.5
-            vertices=[(dx,dy,dz) for dx in (-.255,.255) for dy in (-.335,.335) for dz in (-.025,.025)]
-            tile=C.mesh('slate plate',vertices,[(0,1,3,2),(4,6,7,5),(0,4,5,1),(2,3,7,6),(0,2,6,4),(1,5,7,3)],SLATE)
-            tile.location=(x,y,10.94-abs(y)*3.75/6.4)
-            tile.rotation_euler.x=-side*math.atan(3.75/6.4)
+            for rect in cut_flue((x-.245,x+.245,max(min(0,side*6.4),y-.335),min(max(0,side*6.4),y+.335))):
+                roof_piece('slate plate',rect,10.965+row*.008,.05,SLATE)
+for rect in [(-8.25,-8,-1.95,-.85),(-7.4,-7.15,-1.95,-.85),(-8,-7.4,-1.95,-1.7),(-8,-7.4,-1.1,-.85)]:
+    roof_piece('flue flashing',rect,10.995,.025,IRON)
 box('ridge cap',(0,0,10.94),(19,.24,.12),SLATE,False)
 # Window joinery follows the actual aperture dimensions on both floors.
 for level in (0,3.6):
@@ -155,9 +171,9 @@ for y in (-3.8,.1,3.8):
 for x in (3.3,6.5):
     table('class desk',x,-4,0,1.8);bench('class bench',x,-3.2,0,1.6)
 prop('teaching board',(3.1,-5.49,1.8),(2.6,.08,1.1),BOOK,False)
-for z in (.35,.95,1.55):prop('reading shelf',(-8.08,.1,z),(.6,2.8,.09))
-for y in (-1.25,1.45):prop('shelf end',(-8.08,y,.95),(.6,.09,1.4))
-for k in range(12):prop('shelved book',(-8.08,-1.08+k*.19,1.13),(.3,.09,.28),BOOK,False)
+for z in (.35,.95,1.55):prop('reading shelf',(-8.08,.5,z),(.6,1.9,.09))
+for y in (-.4,1.4):prop('shelf end',(-8.08,y,.95),(.6,.09,1.4))
+for k in range(9):prop('shelved book',(-8.08,-.26+k*.19,1.13),(.3,.09,.28),BOOK,False)
 for x,y in [(-6.1,-4.6),(-6.1,1),(-6.1,4.5),(6.5,-4.6),(2.9,3.3)]:
     z=3.6
     prop('cell bed frame',(x,y,z+.36),(2.1,.95,.14))
@@ -169,6 +185,18 @@ for x,y in [(-6.1,-4.6),(-6.1,1),(-6.1,4.5),(6.5,-4.6),(2.9,3.3)]:
     desk_y=.9 if y==3.3 else 3.8 if y==4.5 else y
     table('cell desk',-3.1 if x<0 else 3.1,desk_y,z,.8)
 # Entry leaf uses the existing door contract; no extra static blocker.
+box('stove hearth',(-7.7,-1.4,.07),(1.5,1.5,.14),STONE)
+box('masonry stove',(-7.7,-1.4,.88),(1.2,1.2,1.48),STONE)
+box('stove hatch',(-7.055,-1.4,.70),(.09,.48,.42),IRON,False)
+box('stove cornice',(-7.7,-1.4,1.70),(1.3,1.3,.16),STONE)
+box('continuous flue',(-7.7,-1.4,5.6),(.6,.6,7.8),STONE)
+for dx in (-.25,.25):box('chimney wall',(-7.7+dx,-1.4,10.16),(.1,.6,1.32),STONE)
+for dy in (-.25,.25):box('chimney wall',(-7.7,-1.4+dy,10.16),(.4,.1,1.32),STONE)
+for floor,thickness in [(3.48,.24),(7.14,.12)]:
+    for dx in (-.35,.35):box('flue collar',(-7.7+dx,-1.4,floor),(.10,.8,thickness),STONE)
+    for dy in (-.35,.35):box('flue collar',(-7.7,-1.4+dy,floor),(.6,.10,thickness),STONE)
+for dx in (-.30,.30):box('chimney rim',(-7.7+dx,-1.4,10.88),(.2,.8,.12),STONE)
+for dy in (-.30,.30):box('chimney rim',(-7.7,-1.4+dy,10.88),(.4,.2,.12),STONE)
 hinge=bpy.data.objects.new('SA_entry_hinge',None);C.ASSET.objects.link(hinge)
 hinge.location=(-.76,-5.8,0);hinge['open_angle_degrees']=-100.0
 door_parts=[]

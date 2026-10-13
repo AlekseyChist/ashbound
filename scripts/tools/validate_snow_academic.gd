@@ -25,6 +25,13 @@ func run():
     var shape=CollisionShape3D.new();shape.shape=capsule
     actor.add_child(shape);root.add_child(actor);actor.position=Vector3(0,.9,7.5)
     await physics_frame
+    var space=actor.get_world_3d().direct_space_state
+    var mouth=space.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(-7.7,12,1.4),Vector3(-7.7,8,1.4),1))
+    if mouth.is_empty() or not is_equal_approx(mouth.position.y,9.5):
+        push_error("Roof plugged the chimney mouth");quit(1);return
+    var stove=space.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(-6,.7,1.4),Vector3(-8.5,.7,1.4),1))
+    if stove.is_empty() or absf(stove.position.x+7.1)>.02:
+        push_error("Stove footprint lacks physical support");quit(1);return
     if building.interior_meshes.is_empty() or building.set_interior_visible(false,true):
         push_error("Interior metadata or occupancy guard missing");quit(1);return
     if not building.set_interior_visible(false):
