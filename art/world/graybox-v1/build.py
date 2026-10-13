@@ -72,11 +72,30 @@ for lake in D['lakes']:
     ox,oz=lake['outlet'][:2]
     lake['center'][2]=round(min(float(lake['center'][2]),natural_floor(ox,oz)-1.0),2)
     lake['outlet'][2]=lake['center'][2]
+# WORLD-BUILD-01B (D-118, the book's W1 project, sheet wfW1): the mountain lake's water hung 60 m
+# over its southern slope (mirror 228, ground 221-162). Its mirror goes down to 220 m and its south
+# shore to the stone sill at z~355: the lake is the ellipse north of it (85 x 34 m round 330/322,
+# its tip at the sill - the book's sheet cuts the 85 x 60 ellipse with a straight sill there). The
+# west river starts at the sill and falls by the book's nodes, a cascade of 57 m on the ground to the
+# pool at 163 m; those nodes are pinned (no rapids limit, no smoothing) - the rest of the river is
+# settled as before.
+W1_NODES=[(330,355,220.0),(330,371,206.0),(330,385,192.0),(330,399,178.0),(330,415,163.0)]
+for lake in D['lakes']:
+    if lake['id']=='mountain_lake':
+        lake['center']=[330,322,220.0];lake['radii_m']=[85,34];lake['outlet']=[330,355,220.0]
+for rv in D['rivers']:
+    if rv['id']=='west':
+        tail=[(p,w,dw) for p,w,dw in zip(rv['points'],rv['widths_m'],rv['depth_widths_m']) if p[1]>420]
+        rv['points']=[list(n) for n in W1_NODES]+[t[0] for t in tail]
+        rv['widths_m']=[12.0]*len(W1_NODES)+[t[1] for t in tail]
+        rv['depth_widths_m']=[12.0]*len(W1_NODES)+[t[2] for t in tail]
+        rv['pinned_head']=len(W1_NODES)
 lake_of={l['river_id']:l for l in D['lakes'] if l.get('river_id')}
 settled_courses={}
 def natural_course(rv):
-    pts=rv['points'];cols=[rv['widths_m'],rv['depth_widths_m']];out=[];ws=[[],[]]
-    for a,b,*w in zip(pts,pts[1:],*[c for c in cols],*[c[1:] for c in cols]):
+    pts=rv['points'];cols=[rv['widths_m'],rv['depth_widths_m']];out=[];ws=[[],[]];pinned_upto=-1
+    for k,(a,b,*w) in enumerate(zip(pts,pts[1:],*[c for c in cols],*[c[1:] for c in cols])):
+        if k==rv.get('pinned_head',0)-1:pinned_upto=len(out)
         n=max(1,math.ceil(math.dist(a[:2],b[:2])/RIVER_STEP))
         for i in range(n):
             t=i/n;out.append([a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t])
@@ -84,16 +103,19 @@ def natural_course(rv):
     out.append(list(pts[-1]));ws[0].append(cols[0][-1]);ws[1].append(cols[1][-1])
     level=[min(p[2],natural_floor(p[0],p[1])-RIVER_INTO_GROUND) for p in out]
     if rv['id'] in lake_of:level[0]=float(lake_of[rv['id']]['center'][2])
+    # WORLD-BUILD-01B: a pinned head (the W1 cascade) keeps the book's levels between its nodes.
+    for i in range(pinned_upto+1):level[i]=out[i][2]
     for i in range(1,len(level)):level[i]=min(level[i],level[i-1])
     # A tributary ends in its river's water (that river is settled first).
     end=out[-1]
     for other,(opts,olevel) in settled_courses.items():
         d=[math.dist(end[:2],q[:2]) for q in opts];k=int(np.argmin(d))
         if d[k]<20.0:level[-1]=min(level[-1],olevel[k])
-    for i in range(len(level)-2,-1,-1):
+    for i in range(len(level)-2,pinned_upto,-1):
         level[i]=min(level[i],level[i+1]+RAPIDS*math.dist(out[i][:2],out[i+1][:2]))
     for p,h in zip(out,level):p[2]=round(h,2)
     rv['points']=out;rv['widths_m']=ws[0];rv['depth_widths_m']=ws[1]
+    if pinned_upto>=0:rv['pinned_head_z']=out[pinned_upto][1]
     settled_courses[rv['id']]=(out,level)
 # Rivers others flow into come first (main before its tributaries).
 for rv in sorted(D['rivers'],key=lambda r:0 if r['id']=='main' else 1):natural_course(rv)
@@ -430,7 +452,11 @@ def settle_river(r):
     pts=dense(r['points']);widths=river_widths(r)
     assert len(widths)==len(pts)
     planned=[p[1] for p in pts]
+    head_z=r.get('pinned_head_z')   # WORLD-BUILD-01B: the W1 cascade keeps the book's levels
     for i,(p,w) in enumerate(zip(pts,widths)):
+        if head_z is not None and p[2]+HALF<=head_z+0.5:
+            if i:p[1]=min(p[1],pts[i-1][1])
+            continue
         a=pts[max(i-1,0)];b=pts[min(i+1,len(pts)-1)]
         tx,tz=b[0]-a[0],b[2]-a[2];n=math.hypot(tx,tz) or 1.0
         reach=max(w*.5,3.0)+3.0
@@ -672,13 +698,43 @@ for _ in range(2):
 # WATER-02 (owner 28 Sep: "on the drops and joints the water looks untidy"): the settled water kept
 # small steps (0.5-1 m within 2 m) where a bank pulled it down; each is spread into a ramp: the
 # water sinks to the mean of +-10 m, twice, and is never raised (it stays inside its banks).
+# WORLD-BUILD-01B: the W1 cascade (a pinned head) keeps its falls - no ramps spread over them.
 for rid,(pts,widths) in settled.items():
+    head_z=next((r.get('pinned_head_z') for r in D['rivers'] if r['id']==rid),None)
     for _ in range(2):
         ys=[p[1] for p in pts]
         for i in range(len(pts)):
+            if head_z is not None and pts[i][2]+HALF<=head_z+2.0:continue
             lo,hi=max(0,i-5),min(len(pts),i+6)
             pts[i][1]=min(ys[i],sum(ys[lo:hi])/(hi-lo))
 
+# WORLD-BUILD-01B: under the W1 cascade the ground follows its water at the stream's depth (the
+# valley shaping had cut a 4-5 m trough under the pinned falls): a shallow cascade on its ledges.
+for r in D['rivers']:
+    head_z=r.get('pinned_head_z')
+    if head_z is None:continue
+    pts,widths=settled[r['id']]
+    # Each cell takes the bed of its nearest stretch (on a 1:1 fall a neighbour's end lies within
+    # the half width and would lift the cell to the water upstream).
+    best=np.full(heights.shape,np.inf);beds=np.zeros(heights.shape);waters=np.zeros(heights.shape);halves=np.zeros(heights.shape)
+    for a,b,w in zip(pts,pts[1:],widths):
+        if b[2]+HALF>head_z+0.5:break
+        half=max(w*.5,3.0)+1.0;reach=half+12.0
+        ax,az,bx,bz=a[0]+HALF,a[2]+HALF,b[0]+HALF,b[2]+HALF
+        sl=(slice(max(0,int((min(az,bz)-reach)/STEP)),min(WIDTH,int((max(az,bz)+reach)/STEP)+2)),slice(max(0,int((min(ax,bx)-reach)/STEP)),min(WIDTH,int((max(ax,bx)+reach)/STEP)+2)))
+        xx,zz=x[sl],z[sl];dx,dz=bx-ax,bz-az
+        t=np.clip(((xx-ax)*dx+(zz-az)*dz)/max(dx*dx+dz*dz,1e-9),0,1)
+        dist=np.hypot(xx-(ax+t*dx),zz-(az+t*dz))
+        water=a[1]+t*(b[1]-a[1]);bed=water-float(river_depth_for(w))
+        nearer=(dist<=reach)&(dist<best[sl])
+        best[sl]=np.where(nearer,dist,best[sl]);beds[sl]=np.where(nearer,bed,beds[sl])
+        waters[sl]=np.where(nearer,water,waters[sl]);halves[sl]=np.where(nearer,half,halves[sl])
+    # under the water its bed; beside it a low bank 0.5 m over the water to 3 m past the edge, then
+    # 1:1 down to the land (the cascade had run on a crest, its edges over lower ground)
+    levee=waters+.5-np.maximum(best-(halves+3.0),0)
+    inside=np.isfinite(best)&(best<=halves)
+    beside=np.isfinite(best)&(best>halves)
+    heights=np.where(inside,np.maximum(heights,beds),np.where(beside,np.maximum(heights,levee),heights))
 # Clay color masses only. Roads come from the road mask, water from its own strips.
 colors=np.zeros((WIDTH,WIDTH,4));colors[:,:,:]=[.43,.52,.43,1]
 desert=(x>1210)&(z<1570);colors[desert]=[.66,.57,.43,1]
