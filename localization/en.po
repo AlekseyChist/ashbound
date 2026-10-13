@@ -647,6 +647,9 @@ msgstr "Peat Farmstead"
 msgid "WORLD_SITE_OUTSKIRTS_FARMSTEADS"
 msgstr "Outskirts Farmsteads"
 
+msgid "WORLD_SITE_W1_VIEWPOINT"
+msgstr "Falls viewpoint"
+
 #. World exploration graybox; working place label.
 msgid "WORLD_SITE_FOOTHILL_CAVE"
 msgstr "Foothill cave"

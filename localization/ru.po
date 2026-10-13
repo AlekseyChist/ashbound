@@ -648,6 +648,9 @@ msgstr "Торфяной хутор"
 msgid "WORLD_SITE_OUTSKIRTS_FARMSTEADS"
 msgstr "Хутора окраин"
 
+msgid "WORLD_SITE_W1_VIEWPOINT"
+msgstr "Смотровая у водопада"
+
 #. World exploration graybox; working place label.
 msgid "WORLD_SITE_FOOTHILL_CAVE"
 msgstr "Пещера предгорий"

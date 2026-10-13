@@ -133,9 +133,12 @@ for city in D['cities']:
     # WORLD-TERRAIN-02: the plaza height comes later from the ground (a basin), not from the plan.
     cities.append({**city,'plaza':plaza})
     if ox or oz:roads.append({'id':'approach_'+city['id'],'points':[plaza,city['point']],'connector':True})
-# WORLD-BUILD-01B (sheet wfW1): the footbridge below the W1 pool (z 440, 32 m from bank to bank) - a
-# short trail across the west river; the game's bridges stand on every crossing (BRIDGES-01).
-roads.append({'id':'w1_footbridge','points':[[352,440,160],[286,440,150]],'width_m':3,'label':'W1 footbridge'})
+# WORLD-BUILD-01B (sheet wfW1): the footbridge below the W1 pool (z 440) - a trail across the west
+# river; the game's bridges stand on every crossing (BRIDGES-01). The west bank is a plain 6 m under
+# the deck: the trail runs on to x 250 so its ramp down stays as gentle as the bridge's own (Codex
+# 14 Oct: at 286 the end pinned it to the plain, a 40 % drop the bridge ramp could not follow and the
+# hero was stopped by its toe).
+roads.append({'id':'w1_footbridge','points':[[352,440,160],[250,440,150]],'width_m':3,'label':'W1 footbridge'})
 
 sites=D['sites']
 plazas=[c['plaza'] for c in cities]+[s['point'] for s in sites]
@@ -822,12 +825,15 @@ BOOK_PLACES=[
     {'id':'salt_flats','kind':'saltworks','point':[1820,700],'key':'WORLD_SITE_SALT_FLATS','label_ru':'Солончаки','label_en':'Salt Flats','facing':[0,0,1]},
     {'id':'peat_farmstead','kind':'farmstead','point':[600,1820],'key':'WORLD_SITE_PEAT_FARMSTEAD','label_ru':'Торфяной хутор','label_en':'Peat Farmstead','facing':[0,0,-1]},
     {'id':'outskirts_farmsteads','kind':'farmsteads','point':[760,1300],'key':'WORLD_SITE_OUTSKIRTS_FARMSTEADS','label_ru':'Хутора окраин','label_en':'Outskirts Farmsteads','facing':[0,0,1]},
+    # sheet wfW1: the viewing platform by ledge 2 - the visible 6 x 4 m stone platform on its terrace
+    {'id':'w1_viewpoint','kind':'viewpoint','point':[354,385],'key':'WORLD_SITE_W1_VIEWPOINT','label_ru':'Смотровая у водопада','label_en':'Falls viewpoint','facing':[-1,0,0],'arrival_at':[359.5,388.5]},
 ]
 # Where the hero arrives at a book place (Codex 13 Oct: the spawns stood in the trees or faced a
 # wall): towards its nearest road, past the place's own volumes (STANDOFF by kind) - on the road
 # itself when it is nearer - so the hero comes from the way and looks at the place.
-STANDOFF={'camp':10.0,'hollow':14.0,'lookout':13.0,'ruins':10.0,'saltworks':18.0,'farmstead':15.0,'farmsteads':10.0}
+STANDOFF={'viewpoint':6.0,'camp':10.0,'hollow':14.0,'lookout':13.0,'ruins':10.0,'saltworks':18.0,'farmstead':15.0,'farmsteads':10.0}
 def book_arrival(b):
+    if 'arrival_at' in b:return list(b['arrival_at'])   # a place on a small terrace sets its own
     px,pz=b['point'];best=None
     for r in roads:
         for q in dense(r['geometry_points'],True):

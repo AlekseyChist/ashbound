@@ -26,7 +26,7 @@ func run() -> void:
 	var pads: Array = layout.get("book_pads", [])
 	var places: Array = layout.get("book_places", [])
 	require(pads.size() == 4, "Expected 4 book pads (ruins, two snow terraces, the W1 viewpoint), got %d" % pads.size())
-	require(places.size() == 7, "Expected 7 book places, got %d" % places.size())
+	require(places.size() == 8, "Expected 8 book places (seven places and the W1 viewpoint), got %d" % places.size())
 
 	# Pads: sample a grid over the polygon shrunk towards its centroid (the margin eases outside it).
 	for pad in pads:
@@ -154,6 +154,29 @@ func run() -> void:
 		if not reached:
 			break
 	require(absf(actor.position.y - 0.875 - 128.0) < 0.6, "Not on the ruins terrace after the gate: %.2f" % (actor.position.y - 0.875))
+
+	# The W1 footbridge both ways (Codex 14 Oct: the real hero was stopped on the way back at 305.8).
+	for leg in [[Vector2(352, 440), Vector2(256, 440)], [Vector2(256, 440), Vector2(352, 440)]]:
+		var a: Vector2 = leg[0] - Vector2(1000, 1000)
+		var b: Vector2 = leg[1] - Vector2(1000, 1000)
+		actor.velocity = Vector3.ZERO
+		actor.position = Vector3(a.x, w.world_ground(a.x, a.y) + 1.2, a.y)
+		for i in 20:
+			await physics_frame
+			actor.velocity = Vector3(0, 0.0 if actor.is_on_floor() else actor.velocity.y - 22.0 / 60.0, 0)
+			actor.move_and_slide()
+		var crossed := false
+		for tick in 2400:
+			await physics_frame
+			var off := Vector2(b.x - actor.position.x, b.y - actor.position.z)
+			if off.length() < 0.6:
+				crossed = true
+				break
+			var hv := Vector3(off.x, 0, off.y).normalized() * 3.0
+			actor.velocity = Vector3(hv.x, 0.0 if actor.is_on_floor() else actor.velocity.y - 22.0 / 60.0, hv.z)
+			actor.move_and_slide()
+		print("BOOK_W1_BRIDGE %s -> %s at=%s crossed=%s" % [leg[0], leg[1], actor.position + Vector3(1000, 0, 1000), crossed])
+		require(crossed, "The W1 footbridge is not walkable %s -> %s (stuck at %s)" % [leg[0], leg[1], actor.position + Vector3(1000, 0, 1000)])
 
 	print("WORLD_BOOK_PLACES_CHECKS checks=%d failures=%d" % [checks, failures.size()])
 	quit(0 if failures.is_empty() else 1)

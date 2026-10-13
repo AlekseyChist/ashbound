@@ -42,6 +42,8 @@ func build(world_node: Node, places: Array) -> void:
 				_lookout(node, at)
 			"saltworks":
 				_saltworks(node, at)
+			"viewpoint":
+				_viewpoint(node, at)
 			"farmstead":
 				_farmstead(node, at)
 			"farmsteads":
@@ -218,3 +220,12 @@ func _farmstead(parent: Node3D, o: Vector2) -> void:
 	_box(parent, o + Vector2(8, -4), Vector3(5.6, 0.2, 4.6), "roof", 0.0, 2.4, false)
 	for k in 3:
 		_box(parent, o + Vector2(-8 + k * 2.2, 4), Vector3(1.6, 1.1, 1.0), "peat", 10.0 * k, 0.0, false)
+
+
+# --- the W1 viewpoint (sheet wfW1): a 6 x 4 m stone platform by ledge 2, a low parapet towards the falls
+
+func _viewpoint(parent: Node3D, o: Vector2) -> void:
+	_box(parent, o, Vector3(6.0, 0.3, 4.0), "rock")
+	_box(parent, o + Vector2(-2.85, 0), Vector3(0.3, 0.9, 4.0), "rock", 0.0, 0.3)
+	for z in [-1.85, 1.85]:
+		_box(parent, o + Vector2(-1.5, z), Vector3(2.7, 0.6, 0.3), "rock", 0.0, 0.3)

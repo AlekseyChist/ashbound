@@ -645,6 +645,9 @@ msgstr ""
 msgid "WORLD_SITE_OUTSKIRTS_FARMSTEADS"
 msgstr ""
 
+msgid "WORLD_SITE_W1_VIEWPOINT"
+msgstr ""
+
 #. World exploration graybox; working place label.
 msgid "WORLD_SITE_FOOTHILL_CAVE"
 msgstr ""
