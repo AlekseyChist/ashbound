@@ -751,11 +751,34 @@ for r in D['rivers']:
     # under the water its bed; beside it a low bank 0.5 m over the water to 3 m past the edge, then
     # 1:1 down to the land (the cascade had run on a crest, its edges over lower ground)
     levee=waters+.5-np.maximum(best-(halves+3.0),0)
-    inside=np.isfinite(best)&(best<=halves)
-    beside=np.isfinite(best)&(best>halves)
+    # only south of the lake's cut: inside the lake its own basin holds (no bank islands by the outflow)
+    south=np.ones(heights.shape,bool)
+    for lake in D['lakes']:
+        if lake.get('river_id')==r['id'] and lake.get('cut_z') is not None:south=z>=lake['cut_z']-0.5
+    inside=np.isfinite(best)&(best<=halves)&south
+    beside=np.isfinite(best)&(best>halves)&south
     heights=np.where(inside,np.maximum(heights,beds),np.where(beside,np.maximum(heights,levee),heights))
 for pad in BOOK_PADS:
     if pad.get('late'):lay_pad(pad)
+# The W1 sill (Codex 14 Oct: along the straight cut the ground lay 3 m under the 220 m mirror outside
+# the outflow, the water's edge hung over the slope): a stone sill along the whole chord, its crest
+# 0.6 m over the mirror, 4 m wide; the outflow's 12 m channel stays open.
+for lake in D['lakes']:
+    cz=lake.get('cut_z')
+    if cz is None:continue
+    lx,lz,level=lake['center'];rx,rz=lake['radii_m']
+    half_chord=rx*math.sqrt(max(0.0,1-((cz-lz)/rz)**2))
+    out_x=lake['outlet'][0]
+    across=np.abs(z-cz)
+    along=np.abs(x-lx)<=half_chord+2.0
+    clear=np.abs(x-out_x)>7.0
+    crest=level+.6-np.maximum(across-2.0,0)*1.0
+    sill=along&clear&(across<=6.0)
+    heights=np.where(sill,np.maximum(heights,crest),heights)
+    # inside the lake, north of the sill, nothing stands out of the water (the rivers' levee by the
+    # outflow had lifted three points to 220.5)
+    q=np.hypot((x-lx)/rx,(z-lz)/rz)
+    heights=np.where((q<0.97)&(z<cz-1.0),np.minimum(heights,level-.6),heights)
 # Clay color masses only. Roads come from the road mask, water from its own strips.
 colors=np.zeros((WIDTH,WIDTH,4));colors[:,:,:]=[.43,.52,.43,1]
 desert=(x>1210)&(z<1570);colors[desert]=[.66,.57,.43,1]
