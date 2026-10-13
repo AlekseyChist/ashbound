@@ -25,7 +25,7 @@ func run() -> void:
 	var layout: Dictionary = w.world_layout
 	var pads: Array = layout.get("book_pads", [])
 	var places: Array = layout.get("book_places", [])
-	require(pads.size() == 3, "Expected 3 book pads, got %d" % pads.size())
+	require(pads.size() == 4, "Expected 4 book pads (ruins, two snow terraces, the W1 viewpoint), got %d" % pads.size())
 	require(places.size() == 7, "Expected 7 book places, got %d" % places.size())
 
 	# Pads: sample a grid over the polygon shrunk towards its centroid (the margin eases outside it).

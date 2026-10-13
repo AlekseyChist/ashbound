@@ -133,6 +133,9 @@ for city in D['cities']:
     # WORLD-TERRAIN-02: the plaza height comes later from the ground (a basin), not from the plan.
     cities.append({**city,'plaza':plaza})
     if ox or oz:roads.append({'id':'approach_'+city['id'],'points':[plaza,city['point']],'connector':True})
+# WORLD-BUILD-01B (sheet wfW1): the footbridge below the W1 pool (z 440, 32 m from bank to bank) - a
+# short trail across the west river; the game's bridges stand on every crossing (BRIDGES-01).
+roads.append({'id':'w1_footbridge','points':[[352,440,160],[286,440,150]],'width_m':3,'label':'W1 footbridge'})
 
 sites=D['sites']
 plazas=[c['plaza'] for c in cities]+[s['point'] for s in sites]
@@ -661,6 +664,10 @@ BOOK_PADS=[
     {'id':'capital_ruins','level':128.0,'margin':12.0,'poly':[(1130,1162),(1270,1162),(1270,1277),(1130,1277)]},
     {'id':'snow_middle_terrace','level':288.0,'margin':4.0,'poly':[(930,258),(1016,258),(1020,284),(928,286)]},
     {'id':'snow_academy_shelf','level':298.0,'margin':4.0,'poly':[(1046,278),(1088,274),(1090,306),(1050,310)]},
+    # sheet wfW1: the viewing platform beside ledge 2, east of the falls (6 x 4 m on the sheet) - a
+    # 10 x 10 m terrace on the 5 m grid (a 4 m pad falls between grid points), its own ground;
+    # laid late, after the rivers' final cut (see the W1 block)
+    {'id':'w1_viewpoint','level':None,'margin':3.0,'late':True,'poly':[(350,380),(360,380),(360,390),(350,390)]},
 ]
 def poly_distance(poly):
     """Distance of every grid point to the polygon (0 inside)."""
@@ -672,11 +679,17 @@ def poly_distance(poly):
         t=np.clip(((x-ax)*dx+(z-az)*dz)/(dx*dx+dz*dz),0,1)
         dist=np.minimum(dist,np.hypot(x-ax-t*dx,z-az-t*dz))
     return np.where(inside,0.0,dist)
-for pad in BOOK_PADS:
+def lay_pad(pad):
+    global heights
+    if pad['level'] is None:
+        cx=sum(p[0] for p in pad['poly'])/len(pad['poly']);cz=sum(p[1] for p in pad['poly'])/len(pad['poly'])
+        pad['level']=round(float(heights[int(round(cz/STEP)),int(round(cx/STEP))]),2)
     d=poly_distance(pad['poly'])
     w=1-smooth(d/pad['margin'])
     keep=road_cells|channel
     heights=np.where(keep,heights,heights*(1-w)+pad['level']*w)
+for pad in BOOK_PADS:
+    if not pad.get('late'):lay_pad(pad)
 
 # WORLD-EDGES-01 (owner 27 Sep): the world ends in mountains - along the north, west and east edges
 # the land rises 45-95 m within ~30 m (steeper than 60 deg, the hero climbs 45 at most), a ridge that
@@ -741,6 +754,8 @@ for r in D['rivers']:
     inside=np.isfinite(best)&(best<=halves)
     beside=np.isfinite(best)&(best>halves)
     heights=np.where(inside,np.maximum(heights,beds),np.where(beside,np.maximum(heights,levee),heights))
+for pad in BOOK_PADS:
+    if pad.get('late'):lay_pad(pad)
 # Clay color masses only. Roads come from the road mask, water from its own strips.
 colors=np.zeros((WIDTH,WIDTH,4));colors[:,:,:]=[.43,.52,.43,1]
 desert=(x>1210)&(z<1570);colors[desert]=[.66,.57,.43,1]
