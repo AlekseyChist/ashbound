@@ -29,6 +29,11 @@ func run():
         push_error("Interior metadata or occupancy guard missing");quit(1);return
     if not building.set_interior_visible(false):
         push_error("Closed vacant interior cannot hide");quit(1);return
+    if building.lamp_root.visible or building.interior_lights.size()!=3:
+        push_error("Hidden lamp assembly or source count incorrect");quit(1);return
+    for light in building.interior_lights:
+        if light.visible:
+            push_error("Hidden room light remained enabled");quit(1);return
     for tick in range(100):
         await physics_frame
         actor.velocity=Vector3(0,-2,-2);actor.move_and_slide()
@@ -39,6 +44,22 @@ func run():
     for tick in range(90):await physics_frame
     if not building.interior_visible or building.set_interior_visible(false):
         push_error("Open portal visibility guard failed");quit(1);return
+    var camera=Camera3D.new();root.add_child(camera);camera.make_current()
+    camera.position=Vector3(100,5,0)
+    for tick in range(40):await physics_frame
+    for light in building.interior_lights:
+        if light.visible:
+            push_error("Distant room light did not sleep");quit(1);return
+    camera.position=Vector3(0,2,0)
+    for tick in range(40):await physics_frame
+    for light in building.interior_lights:
+        if not light.visible:
+            push_error("Nearby room light did not recover");quit(1);return
+    building.set_interior_lights_enabled(false)
+    for light in building.interior_lights:
+        if light.visible:
+            push_error("Lighting override ignored");quit(1);return
+    building.set_interior_lights_enabled(true)
     var targets=[Vector3(0,.875,3.5),Vector3(0,.875,1.7),Vector3(-4,.875,1.7),Vector3(-4,.875,-1.8),Vector3(0,.875,-1.8),Vector3(3,.875,-1.8),Vector3(3,.875,.7),Vector3(5.6,.875,.7),Vector3(5.6,.875,.3),Vector3(5.6,2.675,-4),Vector3(7.3,2.675,-4),Vector3(7.3,4.475,.35),Vector3(3,4.475,1.7),Vector3(0,4.475,1.7),Vector3(-4,4.475,1.7),Vector3(0,4.475,1.7),Vector3(0,4.475,-1.8),Vector3(-4,4.475,-1.8),Vector3(0,4.475,-1.8),Vector3(0,4.475,-4.6),Vector3(-4,4.475,-4.6),Vector3(0,4.475,-4.6),Vector3(3,4.475,-4.6),Vector3(4.4,4.475,-4.6),Vector3(4.4,4.475,-1.8),Vector3(0,4.475,-1.8),Vector3(0,4.475,1.7),Vector3(3,4.475,1.7),Vector3(7.3,4.475,.35),Vector3(7.3,2.675,-4),Vector3(5.6,2.675,-4),Vector3(5.6,.875,.3),Vector3(5.6,.875,.7),Vector3(3,.875,.7),Vector3(3,.875,-1.8),Vector3(0,.875,-1.8),Vector3(0,.875,1.7),Vector3(3,.875,1.7),Vector3(4.8,.875,2.2),Vector3(3,.875,1.7),Vector3(0,.875,1.7),Vector3(0,.875,4.2)]
     for target in targets:
         if not await walk(target):quit(1);return
