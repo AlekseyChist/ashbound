@@ -53,10 +53,11 @@ def surface(name,filename,tint,metres,weather=False):
     nt.links.new(output,nt.nodes['Principled BSDF'].inputs['Base Color'])
     return m
 PLASTER=surface('D warm lime plaster','plaster_grey_04_diff_1k.jpg',(.78,.68,.52),3.0,True)
+ROOM=surface('D warm room limewash','plaster_grey_04_diff_1k.jpg',(.93,.81,.62),3.0)
 STONE=surface('D cut sandstone','stone_wall_02_diff_1k.jpg',(.72,.63,.49),2.0)
 WOOD=surface('D dark oak','fine_grained_wood_col_1k.jpg',(.32,.23,.15),.65)
 CLAY=C.mat('D russet pottery',(0.39,0.20,0.12,1))
-CLOTH=C.mat('D faded ochre cloth',(0.49,0.35,0.19,1))
+CLOTH=painted('D faded ochre cloth',(.30,.235,.14),.006)
 IRON=C.mat('D forged iron',(0.095,0.09,0.075,1),0.8)
 FLOOR=painted('D worn flagstones',(0.46,0.40,0.30),0.014)
 LIME=C.mat('D edge limewash',(0.74,0.66,0.51,1))
@@ -110,13 +111,11 @@ box('rear parapet',(0,4.24,3.38),(8.5,.28,.65),PLASTER,True)
 box('rear lime cap',(0,4.24,3.72),(8.58,.34,.10),LIME)
 box('pantry parapet',(-4.24,-1.48,3.35),(.30,5.3,.60),PLASTER,True)
 # Discrete stone plinth courses, variation concentrated at edges, not random debris.
-for y in (-4.51,4.51):
-    for k in range(9):
-        x=-4+k
-        if y<0 and abs(x)<1:continue
-        box('plinth block',(x,y,.045),(.96,.12,.59),STONE)
+for a,b in [(-4.5,-.8),(.8,4.5)]:
+    box('front stone plinth',((a+b)/2,-4.51,.045),(b-a,.12,.59),STONE)
+box('rear stone plinth',(0,4.51,.045),(9,.12,.59),STONE)
 for x in (-4.51,4.51):
-    for k in range(9):box('side plinth',(x,-4+k,.045),(.12,.96,.59),STONE)
+    box('side stone plinth',(x,0,.045),(.12,9,.59),STONE)
 # Roof scupper discharges outside, away from entrance.
 box('stone scupper',(4.50,3.75,3.2),(.52,.20,.18),STONE)
 # Open wooden leaf rests inside the courtyard; it does not narrow the entrance.
@@ -179,6 +178,11 @@ for o in visual:
     if m.get('weather'):
         edges=[e for e in bm.edges if e.calc_length()>1]
         bmesh.ops.subdivide_edges(bm,edges=edges,cuts=3,use_grid_fill=True)
+        o.data.materials.append(ROOM)
+        for face in bm.faces:
+            centre=o.matrix_world@face.calc_center_median()
+            if abs(centre.x)<4.25 and abs(centre.y)<4.25 and centre.z<3.1:
+                face.material_index=1
     uv=bm.loops.layers.uv.verify()
     for face in bm.faces:
         axis=max(range(3),key=lambda i:abs(face.normal[i]))
@@ -214,7 +218,7 @@ bpy.ops.export_scene.gltf(filepath=str(path),use_selection=True,export_format='G
 # binary image/mesh chunks and buffer-view offsets remain untouched.
 data=path.read_bytes();json_size=struct.unpack_from('<I',data,12)[0]
 document=json.loads(data[20:20+json_size])
-tints={'D warm lime plaster':(.78,.68,.52),'D cut sandstone':(.72,.63,.49),'D dark oak':(.32,.23,.15)}
+tints={'D warm lime plaster':(.78,.68,.52),'D warm room limewash':(.93,.81,.62),'D cut sandstone':(.72,.63,.49),'D dark oak':(.32,.23,.15)}
 for material in document['materials']:
     if material['name'] in tints:
         material['pbrMetallicRoughness']['baseColorFactor']=[*tints[material['name']],1]

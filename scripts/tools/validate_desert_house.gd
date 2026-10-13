@@ -44,7 +44,7 @@ func run() -> void:
         for surface in range(mesh.mesh.get_surface_count()):
             var mat := mesh.get_active_material(surface) as StandardMaterial3D
             require(mat != null, "Missing imported material")
-            if mat != null and (mat.resource_name.contains("plaster") or mat.resource_name.contains("sandstone") or mat.resource_name.contains("oak")):
+            if mat != null and (mat.resource_name.contains("plaster") or mat.resource_name.contains("room limewash") or mat.resource_name.contains("sandstone") or mat.resource_name.contains("oak")):
                 require(mat.albedo_texture != null, "Embedded paint texture lost on import: " + mat.resource_name)
                 require(mat.albedo_color.r>mat.albedo_color.b+.03,"Warm material tint was lost on import: "+mat.resource_name)
             if mat != null and mat.resource_name.contains("plaster"):
