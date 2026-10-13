@@ -1047,6 +1047,13 @@ func _additions() -> void:
 	var street := _posad_street()
 	for i in range(street.size() - 1):
 		_trodden_path(street[i], street[i + 1], float(extra.posad_street.width))
+	# The gateways trodden through, 8 m in and out, 3 m wide (Codex night gate route 14 Oct: grass
+	# stood on the dry strip in the south-east and west gateways; the road is not widened).
+	var ring := Vector2(float(plan.palisade.center[0]), float(plan.palisade.center[1])) - Vector2(float(world.HALF), float(world.HALF))
+	for gate in plan.palisade.gates:
+		var out := Vector2.from_angle(deg_to_rad(float(gate.deg)))
+		var mouth := ring + out * float(plan.palisade.radius)
+		_trodden_path(mouth - out * 8.0, mouth + out * 8.0, 3.0)
 	for f in _fronts:
 		var to := _way_point(f)
 		if to != Vector2.INF:
