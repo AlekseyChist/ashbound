@@ -47,6 +47,9 @@ func build(scene: Node3D) -> void:
 	_outer_buildings()
 	_wheat_field()
 	_additions()
+	var lanterns := preload("res://scripts/world/forest_city_lanterns.gd").new()
+	add_child(lanterns)
+	lanterns.build(self)
 	print("FOREST_CITY stakes=%d towers=%d houses=%d wheat=%d wheels=%d" % [stake_count, tower_count, house_count, wheat_count, wheels.size()])
 
 
