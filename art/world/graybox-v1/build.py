@@ -616,6 +616,36 @@ channel=water_distance<=river_half+.5
 heights=np.where(np.isfinite(best)&~channel,target,heights)
 road_cells=np.isfinite(best)
 
+# WORLD-BUILD-01A (D-118, the accepted world book WORLD-PLAN-01): the book's level pads, map metres.
+# Inside the polygon the ground takes the level; over `margin` metres outside it eases back to the
+# land. Road decks and river channels keep their ground (they were laid before). The snow city's
+# middle terrace and the Academy shelf are cuts into the slope with a short margin: their steep
+# edges are where the book puts retaining walls and the rock face; the capital ruins' terrace is a
+# plateau over the lower valley with a long soft slope.
+BOOK_PADS=[
+    # The book's sheet put the terrace's north edge at z 1135: the lower valley road (forest_desert)
+    # runs along z 1140-1149 there. The whole ruins moved 22 m south (centre 1200/1212), a 12 m
+    # slope keeps clear of the road's cells; deviation recorded in WORLD_BUILD_01_TASK.md.
+    {'id':'capital_ruins','level':128.0,'margin':12.0,'poly':[(1130,1162),(1270,1162),(1270,1277),(1130,1277)]},
+    {'id':'snow_middle_terrace','level':288.0,'margin':4.0,'poly':[(930,258),(1016,258),(1020,284),(928,286)]},
+    {'id':'snow_academy_shelf','level':298.0,'margin':4.0,'poly':[(1046,278),(1088,274),(1090,306),(1050,310)]},
+]
+def poly_distance(poly):
+    """Distance of every grid point to the polygon (0 inside)."""
+    inside=np.zeros(x.shape,bool);dist=np.full(x.shape,np.inf)
+    for (ax,az),(bx,bz) in zip(poly,poly[1:]+poly[:1]):
+        cross=((az>z)!=(bz>z))&(x<(bx-ax)*(z-az)/((bz-az) if bz!=az else 1e-9)+ax)
+        inside^=cross
+        dx,dz=bx-ax,bz-az
+        t=np.clip(((x-ax)*dx+(z-az)*dz)/(dx*dx+dz*dz),0,1)
+        dist=np.minimum(dist,np.hypot(x-ax-t*dx,z-az-t*dz))
+    return np.where(inside,0.0,dist)
+for pad in BOOK_PADS:
+    d=poly_distance(pad['poly'])
+    w=1-smooth(d/pad['margin'])
+    keep=road_cells|channel
+    heights=np.where(keep,heights,heights*(1-w)+pad['level']*w)
+
 # WORLD-EDGES-01 (owner 27 Sep): the world ends in mountains - along the north, west and east edges
 # the land rises 45-95 m within ~30 m (steeper than 60 deg, the hero climbs 45 at most), a ridge that
 # varies along the edge; rock models dress its face in the game. The south is the sea.
@@ -681,6 +711,17 @@ if SEA:
     colors[:,:,:3]=colors[:,:,:3]*(1-face)+np.array([.50,.49,.46])*face
 colors[:,:,:3]=np.where(colors[:,:,:3]<=.04045,colors[:,:,:3]/12.92,((colors[:,:,:3]+.055)/1.055)**2.4)
 
+# WORLD-BUILD-01A: the book's new places (PLACES.md), kept out of the source's sites on purpose -
+# a source site flattens a plaza and pulls roads; these only mark a point on the land as it is.
+BOOK_PLACES=[
+    {'id':'old_pine_grove','kind':'camp','point':[248,1282],'key':'WORLD_SITE_OLD_PINE_GROVE','label_ru':'Старый бор','label_en':'Old Pine Grove','facing':[1,0,0]},
+    {'id':'wolf_hollow','kind':'hollow','point':[215,1500],'key':'WORLD_SITE_WOLF_HOLLOW','label_ru':'Волчий лог','label_en':'Wolf Hollow','facing':[0,0,-1]},
+    {'id':'watch_rock','kind':'lookout','point':[105,1330],'key':'WORLD_SITE_WATCH_ROCK','label_ru':'Смотровая скала','label_en':'Watch Rock','facing':[1,0,0]},
+    {'id':'capital_ruins','kind':'ruins','point':[1200,1212],'key':'WORLD_SITE_CAPITAL_RUINS','label_ru':'Руины столицы','label_en':'Capital Ruins','facing':[-1,0,0]},
+    {'id':'salt_flats','kind':'saltworks','point':[1820,700],'key':'WORLD_SITE_SALT_FLATS','label_ru':'Солончаки','label_en':'Salt Flats','facing':[0,0,1]},
+    {'id':'peat_farmstead','kind':'farmstead','point':[600,1820],'key':'WORLD_SITE_PEAT_FARMSTEAD','label_ru':'Торфяной хутор','label_en':'Peat Farmstead','facing':[0,0,-1]},
+    {'id':'outskirts_farmsteads','kind':'farmsteads','point':[760,1300],'key':'WORLD_SITE_OUTSKIRTS_FARMSTEADS','label_ru':'Хутора окраин','label_en':'Outskirts Farmsteads','facing':[0,0,1]},
+]
 OUT.mkdir(parents=True,exist_ok=True)
 (OUT/'heights.bin').write_bytes(heights.astype('<f4').tobytes())
 (OUT/'colors.bin').write_bytes(colors.astype('<f4').tobytes())
@@ -700,6 +741,8 @@ layout={'version':'0.21.2-headwaters','width':WIDTH,'spacing':STEP,'extent_m':20
         'lakes':D['lakes'],'springs':D['springs'],
         'sea':({**SEA,'world_coast':[[p[0]-HALF,float(SEA['level']),p[1]-HALF] for p in SEA['coast']]} if SEA else None),
         'gates':D['gates'],'peaks':D['peaks'],'source_ridge':ridge,
+        'book_pads':BOOK_PADS,
+        'book_places':[{**b,'spawn':[b['point'][0]-HALF,sample(*b['point'])+.12,b['point'][1]-HALF]} for b in BOOK_PLACES],
         'limits':'Graybox hypothesis. No vegetation, swimming, NPC, campaign or streaming.'}
 (OUT/'layout.json').write_text(json.dumps(layout,ensure_ascii=False,separators=(',',':'))+'\n',encoding='utf8',newline='\n')
 # ROADS-UNIFY-01: roads are painted into the ground, as in the village: a 1 m mask over the map

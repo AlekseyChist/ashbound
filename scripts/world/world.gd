@@ -7,6 +7,7 @@ const Geometry = preload("res://scripts/world/world_graybox_geometry.gd")
 const Shapes = preload("res://scripts/world/world_graybox_shapes.gd")
 const Headwaters = preload("res://scripts/world/world_graybox_headwaters.gd")
 const Landmarks = preload("res://scripts/world/world_graybox_landmarks.gd")
+const BookPlaces = preload("res://scripts/world/world_book_places.gd")
 ## TAVERN-01B (D-089): the forest inn — a one-storey log hall with beds on the loft — replaces
 ## the grey landmark at the forest_inn site, door towards the trail.
 const InnBuilding = preload("res://scripts/world/village_building.gd")
@@ -713,6 +714,10 @@ func _index_grass_obstacles() -> void:
 			continue
 		var radius := 30.0 if site.kind == "settlement" else 16.0
 		_grass_blocks.append(Vector3(float(site.spawn[0]) + offset.x, float(site.spawn[2]) + offset.y, radius))
+	const BOOK_CLEAR := {"ruins": 75.0, "farmsteads": 75.0, "saltworks": 22.0, "farmstead": 16.0}
+	for place in world_layout.get("book_places", []):
+		if BOOK_CLEAR.has(str(place.kind)):
+			_grass_blocks.append(Vector3(float(place.spawn[0]) + offset.x, float(place.spawn[2]) + offset.y, float(BOOK_CLEAR.get(str(place.kind), 0.0))))
 	for site_id in INN_SITES:
 		var inn_frame := _inn_frame(site_id)
 		if not inn_frame.is_empty():
@@ -937,6 +942,10 @@ func _build_water_and_sites() -> void:
 		var direction: Array = site.facing
 		var s: Array = site.spawn
 		landmark.build(site.kind, Vector3(s[0], float(site.point[2]), s[2]), Vector3(direction[0], 0, direction[2]))
+	# WORLD-BUILD-01A (D-118): the world book's new places - grey volumes until their own models.
+	var book := BookPlaces.new()
+	world_root.add_child(book)
+	book.build(self, world_layout.get("book_places", []))
 
 
 func open_debug_map() -> void:
@@ -950,6 +959,8 @@ func debug_locations() -> Array:
 		places.append(city)
 	for site in world_layout.sites:
 		places.append(site)
+	for place in world_layout.get("book_places", []):
+		places.append(place)
 	return places
 
 

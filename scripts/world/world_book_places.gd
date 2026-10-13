@@ -1,0 +1,220 @@
+extends Node3D
+## WORLD-BUILD-01A (D-118): grey volumes at the new places of the accepted world book (PLACES.md) -
+## the capital ruins on their terrace, the band's camp in the Old Pine Grove, Wolf Hollow, Watch
+## Rock, the salt works, the peat farmstead and the outskirts farmsteads. The graybox landmarks'
+## palette, no new looks: the buildings come later, place by place, from Codex's sheets. Solid boxes
+## (the hero walks round the walls and climbs the lookout's steps); each stands on the lowest ground
+## under it and reaches 0.3 m into it, so nothing floats on a slope.
+
+const PALETTE := {
+	"clay": Color("#92938b"),
+	"roof": Color("#766a56"),
+	"rock": Color("#777970"),
+	"dark": Color("#252a29"),
+	"timber": Color("#6e5f4c"),
+	"salt": Color("#d6d3c8"),
+	"peat": Color("#3b2f26"),
+}
+const HALF := 1000.0
+const SINK := 0.3
+
+var world: Node
+var boxes := 0
+var _materials := {}
+
+
+func build(world_node: Node, places: Array) -> void:
+	world = world_node
+	name = "BookPlaces"
+	for place in places:
+		var node := Node3D.new()
+		node.name = str(place.id)
+		add_child(node)
+		var at := Vector2(float(place.point[0]) - HALF, float(place.point[1]) - HALF)
+		match str(place.kind):
+			"ruins":
+				_ruins(node, at)
+			"camp":
+				_camp(node, at)
+			"hollow":
+				_hollow(node, at)
+			"lookout":
+				_lookout(node, at)
+			"saltworks":
+				_saltworks(node, at)
+			"farmstead":
+				_farmstead(node, at)
+			"farmsteads":
+				for offset in [Vector2(-50, -20), Vector2(40, 10), Vector2(0, 55)]:
+					_farmstead(node, at + offset)
+			_:
+				push_warning("BOOK_PLACES unknown kind %s" % place.kind)
+	print("BOOK_PLACES places=%d boxes=%d" % [places.size(), boxes])
+
+
+## A box whose footprint centre is `c` (world frame x/z), `size` metres, turned by `yaw` degrees:
+## its base on the lowest ground under its corners, SINK below; `lift` raises it off that base.
+func _box(parent: Node3D, c: Vector2, size: Vector3, colour: String, yaw := 0.0, lift := 0.0, solid := true, tilt := 0.0) -> void:
+	var basis := Basis(Vector3.UP, deg_to_rad(yaw))
+	var low := INF
+	for k in [Vector2(-1, -1), Vector2(1, -1), Vector2(-1, 1), Vector2(1, 1), Vector2.ZERO]:
+		var p: Vector3 = basis * Vector3(k.x * size.x * 0.5, 0, k.y * size.z * 0.5)
+		low = minf(low, ground(c.x + p.x, c.y + p.z))
+	var height := size.y + SINK
+	var centre := Vector3(c.x, low - SINK + lift + height * 0.5, c.y)
+	var mesh := MeshInstance3D.new()
+	var box := BoxMesh.new()
+	box.size = Vector3(size.x, height, size.z)
+	mesh.mesh = box
+	mesh.material_override = _material(colour)
+	mesh.position = centre
+	mesh.rotation = Vector3(deg_to_rad(tilt), deg_to_rad(yaw), 0)
+	mesh.visibility_range_end = 450.0
+	parent.add_child(mesh)
+	boxes += 1
+	if solid:
+		var body := StaticBody3D.new()
+		var shape := CollisionShape3D.new()
+		var bs := BoxShape3D.new()
+		bs.size = box.size
+		shape.shape = bs
+		body.add_child(shape)
+		body.position = centre
+		body.rotation.y = deg_to_rad(yaw)
+		parent.add_child(body)
+
+
+## The ground the hero walks on at a world-frame point: near the start the village's own terrain
+## (the world lifts its grid round it), elsewhere the world grid.
+func ground(x: float, z: float) -> float:
+	var off: Vector3 = world.world_root.position
+	return world.ground_height_local(x + off.x, z + off.z) - off.y
+
+
+func _material(colour: String) -> StandardMaterial3D:
+	if not _materials.has(colour):
+		var m := StandardMaterial3D.new()
+		m.albedo_color = PALETTE[colour]
+		m.roughness = 1.0
+		_materials[colour] = m
+	return _materials[colour]
+
+
+## A wall from a to b (world frame), `thick` wide, `height` tall.
+func _wall(parent: Node3D, a: Vector2, b: Vector2, thick: float, height: float, colour := "rock") -> void:
+	var d := b - a
+	_box(parent, (a + b) * 0.5, Vector3(thick, height, d.length()), colour, rad_to_deg(atan2(d.x, d.y)))
+
+
+## A wall from a to b in pieces of about 6 m with uneven broken tops; `gaps` are [from, to] metres
+## along it left open (gates and breaches).
+func _broken_wall(parent: Node3D, a: Vector2, b: Vector2, low: float, high: float, gaps: Array, seed: int) -> void:
+	var length := a.distance_to(b)
+	var count := maxi(1, int(round(length / 6.0)))
+	for i in count:
+		var t0 := float(i) / count * length
+		var t1 := float(i + 1) / count * length
+		var open := false
+		for g in gaps:
+			if t1 > float(g[0]) and t0 < float(g[1]):
+				open = true
+		if open:
+			continue
+		var h := lerpf(low, high, fposmod(sin(float(seed * 31 + i * 7)) * 43758.5453, 1.0))
+		_wall(parent, a.lerp(b, t0 / length), a.lerp(b, t1 / length), 1.2, h)
+
+
+## Four broken walls round a w x d footprint (no roof): a ruined building, door gap on `door` side.
+func _shell(parent: Node3D, c: Vector2, w: float, d: float, low: float, high: float, door_side: int, seed: int) -> void:
+	var h := Vector2(w, d) * 0.5
+	var corners := [c + Vector2(-h.x, -h.y), c + Vector2(h.x, -h.y), c + Vector2(h.x, h.y), c + Vector2(-h.x, h.y)]
+	for side in 4:
+		var a: Vector2 = corners[side]
+		var b: Vector2 = corners[(side + 1) % 4]
+		var gaps := []
+		if side == door_side:
+			var mid := a.distance_to(b) * 0.5
+			gaps = [[mid - 1.8, mid + 1.8]]
+		_broken_wall(parent, a, b, low, high, gaps, seed + side)
+
+
+# --- the capital ruins (book sheet 15): a walled plateau at 128 m, gates west and south -------------
+
+func _ruins(parent: Node3D, o: Vector2) -> void:
+	var ring := [o + Vector2(-64, -50), o + Vector2(64, -50), o + Vector2(64, 60), o + Vector2(-64, 60)]
+	# north, east, south (gate at x 0, 10 m), west (gate at z -10, 8 m) - with two breaches
+	_broken_wall(parent, ring[0], ring[1], 2.0, 5.0, [[40, 52]], 1)
+	_broken_wall(parent, ring[1], ring[2], 2.0, 5.0, [[70, 78]], 2)
+	_broken_wall(parent, ring[2], ring[3], 2.0, 5.0, [[59, 69]], 3)
+	_broken_wall(parent, ring[3], ring[0], 2.0, 5.0, [[65, 73]], 4)
+	for corner in ring:
+		_box(parent, corner, Vector3(4, 7, 4), "rock")
+	_shell(parent, o + Vector2(22, -22), 36, 20, 5.0, 11.0, 3, 10)      # cathedral, door west
+	_shell(parent, o + Vector2(-34, 20), 16, 10, 2.5, 4.5, 0, 20)      # archive
+	_shell(parent, o + Vector2(40, 26), 14, 9, 2.5, 4.5, 3, 30)        # mint
+	_shell(parent, o + Vector2(-40, -32), 12, 8, 2.0, 3.5, 2, 40)      # royal kennel
+	_box(parent, o + Vector2(18, 44), Vector3(4, 1.6, 3), "timber", 15.0)   # marauders' tent
+	for rubble in [Vector2(55, 50), Vector2(10, 5), Vector2(-15, -40)]:
+		_box(parent, o + rubble, Vector3(5, 1.2, 4), "rock", 25.0)
+
+
+# --- the band's glade in the Old Pine Grove (book sheet 01: common pot, lean-tos) -------------------
+
+func _camp(parent: Node3D, o: Vector2) -> void:
+	for k in 8:
+		var a := TAU * k / 8.0
+		_box(parent, o + Vector2(cos(a), sin(a)) * 1.1, Vector3(0.4, 0.3, 0.4), "rock", rad_to_deg(a), 0.0, false)
+	_box(parent, o, Vector3(0.9, 0.15, 0.9), "dark", 0.0, 0.0, false)
+	for side in [-1, 1]:
+		var c := o + Vector2(side * 5.5, -3.0)
+		_box(parent, c + Vector2(0, 1.2), Vector3(3.2, 1.9, 0.2), "timber")                 # back screen
+		_box(parent, c, Vector3(3.4, 0.12, 2.4), "roof", 0.0, 1.6, false)                    # roof sheet
+		_box(parent, o + Vector2(side * 2.6, 1.8), Vector3(2.2, 0.4, 0.4), "timber", 90.0 * side)  # log seat
+
+
+# --- Wolf Hollow: boulders round the pack's lair ----------------------------------------------------
+
+func _hollow(parent: Node3D, o: Vector2) -> void:
+	var stones := [[Vector2(-7, -3), 3.0, 20.0], [Vector2(6, -5), 2.4, -35.0], [Vector2(2, 7), 3.6, 60.0],
+		[Vector2(-4, 6), 1.8, 10.0], [Vector2(9, 4), 2.0, 75.0]]
+	for s in stones:
+		_box(parent, o + s[0], Vector3(s[1] * 1.3, s[1], s[1]), "rock", s[2])
+	_box(parent, o + Vector2(0, -9), Vector3(4, 2.2, 3), "dark", 0.0)   # the lair under the bank
+
+
+# --- Watch Rock: an outcrop with steps to a viewing ledge -------------------------------------------
+
+func _lookout(parent: Node3D, o: Vector2) -> void:
+	_box(parent, o + Vector2(0, -4), Vector3(9, 3.2, 7), "rock", 8.0)
+	_box(parent, o + Vector2(2, -6), Vector3(5, 5.0, 4), "rock", -12.0)
+	# rough steps up the near side to the ledge (0.32 m each)
+	for k in 9:
+		_box(parent, o + Vector2(-3.5, 3.0 - k * 0.45), Vector3(1.6, 0.32 * (k + 1), 0.5), "rock")
+	_box(parent, o + Vector2(0, -4), Vector3(0.6, 1.2, 0.6), "rock", 0.0, 3.2)   # cairn on the ledge
+
+
+# --- the salt works (sheet 22): boiling shed, evaporation pans, salt heaps --------------------------
+
+func _saltworks(parent: Node3D, o: Vector2) -> void:
+	_box(parent, o + Vector2(0, -10), Vector3(8, 3.0, 5), "clay")
+	_box(parent, o + Vector2(0, -10), Vector3(8.8, 0.3, 5.8), "roof", 0.0, 3.0, false)
+	_box(parent, o + Vector2(3, -12), Vector3(0.8, 4.5, 0.8), "rock")   # boiling-house chimney
+	for i in 3:
+		for j in 2:
+			var c := o + Vector2(-8 + i * 8, 2 + j * 7)
+			_box(parent, c, Vector3(6, 0.25, 5), "salt", 0.0, 0.0, false)
+	for c in [Vector2(10, -6), Vector2(12, -2)]:
+		_box(parent, o + c, Vector3(2.0, 1.2, 2.0), "salt", 45.0)
+
+
+# --- a lone farmstead (peat farmstead, outskirts): house, shed, stacks --------------------------------
+
+func _farmstead(parent: Node3D, o: Vector2) -> void:
+	_box(parent, o + Vector2(0, -6), Vector3(8, 3.0, 6), "clay")
+	for side in [-1, 1]:
+		var slope := Vector3(8.6, 0.18, 3.7)
+		_box(parent, o + Vector2(0, -6 + side * 1.55), slope, "roof", 0.0, 3.55, false, side * 28.0)
+	_box(parent, o + Vector2(8, -4), Vector3(5, 2.4, 4), "timber")
+	_box(parent, o + Vector2(8, -4), Vector3(5.6, 0.2, 4.6), "roof", 0.0, 2.4, false)
+	for k in 3:
+		_box(parent, o + Vector2(-8 + k * 2.2, 4), Vector3(1.6, 1.1, 1.0), "peat", 10.0 * k, 0.0, false)

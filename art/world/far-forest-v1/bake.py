@@ -110,6 +110,13 @@ discs = [((c['point'][0], c['point'][1]), CITY_CLEAR) for c in layout['cities']]
 discs.append(RUINS)
 for s in layout['sites']:
     discs.append(((s['point'][0], s['point'][1]), SITE_CLEAR.get(s['kind'], 30.0)))
+# WORLD-BUILD-01A (D-118): the world book's new places (layout.book_places) - glades round their
+# grey volumes; the outskirts are three farmsteads (offsets as in world_book_places.gd).
+BOOK_CLEAR = {'camp': 15.0, 'hollow': 12.0, 'lookout': 12.0, 'saltworks': 30.0, 'farmstead': 22.0, 'ruins': 110.0}
+for b in layout.get('book_places', []):
+    offsets = [(-50, -20), (40, 10), (0, 55)] if b['kind'] == 'farmsteads' else [(0, 0)]
+    for dx, dz in offsets:
+        discs.append(((b['point'][0] + dx, b['point'][1] + dz), BOOK_CLEAR.get(b['kind'], 22.0)))
 lakes = [(l['center'][0], l['center'][1], l['radii_m'][0] + 10.0, l['radii_m'][1] + 10.0) for l in layout['lakes']]
 
 def lakeside(x, z):
