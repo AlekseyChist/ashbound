@@ -63,8 +63,9 @@ const CIVIC := {
 		"entry": Vector3(2.5, 0.8, 5.0), "floor_height": 0.8, "stair_run": 1.8, "own_lights": true,
 		"title_key": "WORLD_FOREST_CITY_BARRACKS"},
 	# FOREST-CITY-02 (book D-118): house 7 by the north-east gate becomes Gisbert's counting house -
-	# the village log house H01 with its interior; its own furniture (ledger cupboard) waits for Codex.
-	"counting_house": {"id": "H01", "scene_path": "res://assets/buildings/forest-village-v1/h01.glb", "width": 6.0, "depth": 8.0,
+	# the village log house H01 furnished as a counting house (forest_village_kit.py --furnish counting:
+	# desk, ledgers, record shelf, chests; Codex 13 Oct asked for them instead of the bed).
+	"counting_house": {"id": "H01", "scene_path": "res://assets/buildings/forest-village-v1/h01_counting.glb", "width": 6.0, "depth": 8.0,
 		"entry": Vector3(-1.25, 0.36, 4.0), "floor_height": 0.36, "title_key": "WORLD_FOREST_CITY_COUNTING_HOUSE"},
 }
 const Hall = preload("res://scripts/world/village_building.gd")

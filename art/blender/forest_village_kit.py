@@ -25,6 +25,9 @@ def parse_args():
     # HOUSES-CLOSED (owner 28 Sep): the shell alone - no furniture, no ceiling - exported as
     # <slug>_closed.glb for the houses nobody enters (forest city suburbs, village neighbours).
     parser.add_argument("--closed", action="store_true")
+    # FOREST-CITY-02: another furnishing of the same shell, exported as <slug>_<furnish>.glb
+    # (counting: Gisbert's counting house - desk, ledgers, a record shelf, chests; no bed).
+    parser.add_argument("--furnish", default="")
     return parser.parse_args(argv)
 
 def load_specs():
@@ -175,6 +178,9 @@ def main():
     for spec in specs:
         spec_id = spec["id"]
         slug = spec.get("slug", spec_id.lower()) + ("_closed" if args.closed else "")
+        if args.furnish:
+            slug += "_" + args.furnish
+            spec = dict(spec, furnish=args.furnish)
         out_dir = BUILD_DATA.parent
         out_dir.mkdir(parents=True, exist_ok=True)
         tex_dir = out_dir / "textures"

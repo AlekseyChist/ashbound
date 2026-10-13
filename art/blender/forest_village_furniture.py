@@ -337,9 +337,72 @@ def _hay(spec, mats, x, y, z, item="hay"):
     _tag(bale, spec, item)
 
 
+def _ledger(spec, mats, x, y, z, yaw_deg=0.0, open_=False, item="ledger"):
+    """A bound ledger: a dark leather cover and a block of pages; open, two pages on the cover."""
+    root = _new_root(item, spec, x, y, z)
+    root.rotation_euler[2] = math.radians(yaw_deg)
+    if open_:
+        cover = C.box(item + "_cover", (0, 0, 0.008), (0.46, 0.32, 0.016), mats["roof"], bevel=0.0)
+        _tag(cover, spec, item)
+        _parent_local(cover, root)
+        for sx in (-1, 1):
+            page = C.box(item + "_pages", (sx * 0.112, 0, 0.026), (0.21, 0.29, 0.02), mats["cloth"], bevel=0.004)
+            _tag(page, spec, item)
+            _parent_local(page, root)
+    else:
+        cover = C.box(item + "_cover", (0, 0, 0.03), (0.24, 0.32, 0.06), mats["roof"], bevel=0.006)
+        _tag(cover, spec, item)
+        _parent_local(cover, root)
+        pages = C.box(item + "_pages", (0.012, 0, 0.03), (0.22, 0.3, 0.046), mats["cloth"], bevel=0.0)
+        _tag(pages, spec, item)
+        _parent_local(pages, root)
+
+
+def _ledger_row(spec, mats, x0, x1, y, z, item):
+    """Ledgers standing on a shelf plank, spines out (-y), a few leaning at the end."""
+    x = x0
+    k = 0
+    while x < x1 - 0.05:
+        t = 0.05 + 0.02 * (k % 3)
+        h = 0.30 + 0.03 * ((k * 7) % 3)
+        book = C.box(item + "_book%d" % k, (x + t / 2, y, z + h / 2), (t, 0.24, h),
+                     mats["roof"] if k % 4 != 2 else mats["oak"], bevel=0.004)
+        _tag(book, spec, item)
+        x += t + 0.006
+        k += 1
+
+
+def _counting(spec, mats):
+    """FOREST-CITY-02 (book D-118, Codex 13 Oct): H01 as Gisbert's counting house - the clerk's desk
+    by the front window with an open ledger and an ink pot, a visitor's chair, a record shelf of
+    ledgers on the back wall where the bed was, two strapped chests; hearth, ladder, pegs and bucket
+    as in the village house. The village kit's own pieces only."""
+    f = spec["floor"]
+    _hearth(spec, mats, -1.6, 2.65)
+    _table(spec, mats, 1.55, -2.1, 1.4, 0.85, 0.78, "desk")
+    _chair(spec, mats, 1.55, -1.15, -1, "clerk_chair")
+    _chair(spec, mats, 1.55, -3.0, 1, "visitor_chair")
+    _ledger(spec, mats, 1.45, -2.05, f + 0.81, 8.0, True, "open_ledger")
+    _ledger(spec, mats, 2.0, -2.25, f + 0.81, -12.0, False, "closed_ledger")
+    _vessel(spec, mats, 'ink_pot', 1.0, -1.9, f + 0.81, 0.035, 0.06)
+    _shelf(spec, mats, 1.55, 3.4, 1.8, 0.4, 3, "record_shelf")
+    for level, z in ((0, 0.5), (1, 1.2)):
+        _ledger_row(spec, mats, 0.72, 2.38, 3.4, f + z + 0.025, "shelf_ledgers%d" % level)
+    _crate(spec, mats, 1.1, 3.4, 0.36, "shelf_crate", z_offset=1.9 + 0.025)
+    _vessel(spec, mats, 'shelf_jar', 2.0, 3.4, f + 1.925, 0.1, 0.22)
+    _chest(spec, mats, 2.05, 0.65)
+    _chest(spec, mats, 2.1, 2.05, item="tax_chest")
+    pegs = C.box("coatpegs", (-2.7, -2.7, f + 1.6), (0.4, 0.08, 0.5), mats["oak"], bevel=0.0)
+    _tag(pegs, spec, "coatpegs")
+    _vessel(spec, mats, 'bucket', -2.4, -3.3, f, .18, .35)
+    _ladder(spec, mats, -2.1, -1.05, 0.35, 2.95, 0.6, "attic_ladder")
+
+
 def build_furniture(spec, mats):
     fid = spec["id"]
-    if fid == "H01":
+    if fid == "H01" and spec.get("furnish") == "counting":
+        _counting(spec, mats)
+    elif fid == "H01":
         _hearth(spec, mats, -1.6, 2.65)
         _bed(spec, mats, 1.55, 2.25, 1.2, 2.1)
         _chest(spec, mats, 2.05, 0.65)
