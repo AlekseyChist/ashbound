@@ -118,9 +118,12 @@ for x in (-4.51,4.51):
     box('side stone plinth',(x,0,.045),(.12,9,.59),STONE)
 # Roof scupper discharges outside, away from entrance.
 box('stone scupper',(4.50,3.75,3.2),(.52,.20,.18),STONE)
-# Open wooden leaf rests inside the courtyard; it does not narrow the entrance.
-for k in range(5):box('entry open door plank',(-.84,-4.05+k*.25,1.13),(.08,.24,2.26),WOOD)
-for z in (.43,1.75):box('door iron strap',(-.785,-3.54,z),(.018,1.28,.06),IRON)
+# The closed leaf stays separate from static walls and uses the existing door API.
+hinge=bpy.data.objects.new('D_entry_hinge',None);C.ASSET.objects.link(hinge)
+hinge.location=(-.71,-4.30,0);hinge['open_angle_degrees']=-100.0
+door_parts=[]
+for k in range(5):door_parts.append(box('Door entry plank',(-.568+k*.284,-4.30,1.22),(.278,.08,2.44),WOOD))
+for z in (.43,1.75):door_parts.append(box('Door iron strap',(0,-4.35,z),(1.40,.018,.06),IRON))
 # Shaded work alcove on the eastern courtyard side, unobstructed entry axis x=0.
 for y in (-2.8,.85):
     box('pergola upright',(2.1,y,1.39),(.16,.16,2.78),WOOD,True)
@@ -169,7 +172,7 @@ box('work bench',(3.7,-.65,.70),(.65,1.45,.13),WOOD,True)
 for x in (3.47,3.93):
     for y in (-1.23,-.07):box('workbench leg',(x,y,.34),(.12,.12,.68),WOOD)
 # Ground pivot remains zero; do not recenter to asymmetric chimney.
-visual=list(C.ASSET.objects)
+visual=[o for o in C.ASSET.objects if o.type=="MESH"]
 for o in visual:
     m=o.data.materials[0]
     scale=float(m.get('uv_metres',0))
@@ -201,8 +204,10 @@ for o in visual:
             shade=max(.58,1-low-drip)
             attr.data[k].color=(shade,shade,shade,1)
         o.data.color_attributes.active_color=attr
-C._join_by_material(visual)
-visual=list(C.ASSET.objects)
+C._join_by_material([o for o in visual if o not in door_parts])
+for o in door_parts:
+    matrix=o.matrix_world.copy();o.parent=hinge;o.matrix_world=matrix
+visual=[o for o in C.ASSET.objects if o.type=="MESH"]
 for name,loc,size in COLLISIONS:
     o=box(name+'-colonly',loc,size,PLASTER,False,0)
     o.hide_render=True
@@ -212,7 +217,7 @@ bpy.ops.object.select_all(action='DESELECT')
 for o in all_mesh:o.select_set(True)
 bpy.context.view_layer.objects.active=visual[0]
 path=OUT/'d_courtyard_house.glb'
-bpy.ops.export_scene.gltf(filepath=str(path),use_selection=True,export_format='GLB',export_apply=True,export_yup=True,export_materials='EXPORT',export_cameras=False,export_lights=False,export_all_vertex_colors=True)
+bpy.ops.export_scene.gltf(filepath=str(path),use_selection=True,export_format='GLB',export_apply=True,export_yup=True,export_materials='EXPORT',export_cameras=False,export_lights=False,export_all_vertex_colors=True,export_extras=True)
 # The exporter preserved these photo bytes but omitted MixRGB's constant multiplier
 # (verified against source-image means). Write the standard glTF linear colour factor;
 # binary image/mesh chunks and buffer-view offsets remain untouched.
@@ -233,7 +238,9 @@ mn=[min(p[i] for p in points) for i in range(3)];mx=[max(p[i] for p in points) f
 stats={'triangles':tris,'materials':len({m.name for o in visual for m in o.data.materials}),'visual_meshes':len(visual),'collision_boxes':len(COLLISIONS),'bbox_blender':[mn,mx],'wall_footprint':[9,9],'main_door_clear':[1.5,2.5],'room_door_clear':[1.3,2.35],'godot_front':[0,0,1],'pivot':'floor centre','sha256':hashlib.sha256(path.read_bytes()).hexdigest(),'approval':'PDF141 D118','limitations':['asset studio review only; campaign placement and phone performance require later QA']}
 (QA/'stats.json').write_text(json.dumps(stats,indent=2),encoding='utf-8')
 # CPU renders: full exterior, elevated courtyard, pedestrian entry and living room.
+C.ASSET.objects.unlink(hinge)
 C._studio()
+C.ASSET.objects.link(hinge)
 bpy.data.objects['PreviewGround'].location.z=-.26
 bpy.context.scene.world.node_tree.nodes['Background'].inputs[0].default_value=(.32,.38,.45,1)
 bpy.context.scene.world.node_tree.nodes['Background'].inputs[1].default_value=.65

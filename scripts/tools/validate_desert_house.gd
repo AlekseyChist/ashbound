@@ -35,9 +35,9 @@ func run() -> void:
     var house := packed.instantiate() as Node3D
     root3d.add_child(house)
     var colliders := house.find_children("*", "CollisionShape3D", true, false)
-    require(colliders.size() == 38, "Expected38 physical boxes; got " + str(colliders.size()))
+    require(colliders.size() == 45, "Expected38 static boxes and7 moving door colliders; got " + str(colliders.size()))
     var visuals := house.find_children("*", "MeshInstance3D", true, false)
-    require(visuals.size() == 8, "Expected8 merged material meshes; got " + str(visuals.size()))
+    require(visuals.size() == 15, "Expected8 static material meshes and7 door parts; got " + str(visuals.size()))
     for node in visuals:
         var mesh := node as MeshInstance3D
         require(mesh.mesh != null, "Null mesh")
@@ -58,6 +58,7 @@ func run() -> void:
     ground.add_child(ground_col)
     root3d.add_child(ground)
     actor = CharacterBody3D.new()
+    actor.collision_layer = 2
     var capsule := CapsuleShape3D.new()
     capsule.radius = 0.30
     capsule.height = 1.75
@@ -70,6 +71,34 @@ func run() -> void:
         await physics_frame
         actor.velocity = Vector3(0,-2,0)
         actor.move_and_slide()
+    var door = house.get("door")
+    require(door != null and door.leaves.size() == 7, "Door hinge/parts missing")
+    if door == null:
+        quit(1)
+        return
+    for i in range(90):
+        await physics_frame
+        actor.velocity = Vector3(0, 0, -2)
+        actor.move_and_slide()
+    require(actor.position.z > 4.6, "Closed door allowed passage")
+    actor.position.z = 5.6
+    await physics_frame
+    var obstacle := StaticBody3D.new()
+    obstacle.collision_layer = 8
+    obstacle.position = Vector3(.2, 1.2, 3.75)
+    var obstacle_shape := CollisionShape3D.new()
+    var obstacle_box := BoxShape3D.new()
+    obstacle_box.size = Vector3(.3, 2, .3)
+    obstacle_shape.shape = obstacle_box
+    obstacle.add_child(obstacle_shape)
+    root3d.add_child(obstacle)
+    await physics_frame
+    require(door.try_toggle(actor), "Exterior door interaction failed")
+    for i in range(90): await physics_frame
+    require(door.blocked and door.fraction < 1.0, "Door swept through obstacle")
+    obstacle.queue_free()
+    for i in range(90): await physics_frame
+    require(is_equal_approx(door.fraction, 1.0), "Door did not open fully")
     await walk(Vector2(0,3.0), "street through main entrance")
     await walk(Vector2(0,0), "courtyard")
     await walk(Vector2(.65,-.6), "living door approach")
@@ -80,7 +109,13 @@ func run() -> void:
     await walk(Vector2(-.7,2.1), "pantry approach")
     await walk(Vector2(-2.2,2.1), "inside pantry")
     await walk(Vector2(-.7,2.1), "pantry return")
-    await walk(Vector2(0,3.0), "return to entrance")
+    await walk(Vector2(0,2.3), "return outside door swing")
+    require(door.try_toggle(actor), "Interior door closing failed")
+    for i in range(90): await physics_frame
+    require(is_zero_approx(door.fraction), "Door did not close from courtyard")
+    require(door.try_toggle(actor), "Interior door opening failed")
+    for i in range(90): await physics_frame
+    require(is_equal_approx(door.fraction, 1.0), "Door did not open from courtyard")
     await walk(Vector2(0,6.0), "outside return")
     require(actor.is_on_floor(), "Lost floor contact")
     require(abs(actor.position.y-.875)<.08, "Wrong floor elevation")
@@ -96,7 +131,7 @@ func run() -> void:
     var file := FileAccess.open("res://local/qa/world-3d-assets/result.json",FileAccess.WRITE)
     file.store_string(JSON.stringify(report,"  "))
     if failures.is_empty():
-        print("D_H_GODOT_OK colliders=38 meshes=8 walk_segments=12")
+        print("D_H_GODOT_OK colliders=45 meshes=15 walk_segments=12 door_sides=2 obstacle_stop=1")
         quit(0)
     else:
         quit(1)
