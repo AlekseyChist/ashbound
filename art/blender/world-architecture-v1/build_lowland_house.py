@@ -24,16 +24,28 @@ OUT.mkdir(parents=True, exist_ok=True)
 QA.mkdir(parents=True, exist_ok=True)
 TEX = ROOT / 'assets/environment/village-house-materials-v1'
 COLLISIONS = []
+COLLISION_MESHES = []   # (name, verts, faces): closed collision volumes that are not boxes
 ROLE = {}          # object name -> part_role
 
 def photo(name, stem, tint=(1, 1, 1), rough=0.92, scale=1.0):
-    """Principled material on a CC0 photo texture; colour multiplied by tint."""
+    """Principled material on a CC0 photo texture with the tint baked into its pixels: glTF drops a
+    Multiply node (Codex 13 Oct, checked in Godot: albedo came back white) and caps a colour factor at 1."""
+    import numpy as np
     mat = bpy.data.materials.new(name); mat.use_nodes = True
     nt = mat.node_tree; bsdf = nt.nodes.get('Principled BSDF')
-    tex = nt.nodes.new('ShaderNodeTexImage'); tex.image = bpy.data.images.load(str(TEX / f'{stem}_diff_1k.jpg' if (TEX / f'{stem}_diff_1k.jpg').exists() else TEX / f'{stem}_col_1k.jpg'))
-    mix = nt.nodes.new('ShaderNodeMixRGB'); mix.blend_type = 'MULTIPLY'; mix.inputs[0].default_value = 1.0
-    mix.inputs[2].default_value = (*tint, 1)
-    nt.links.new(tex.outputs['Color'], mix.inputs[1]); nt.links.new(mix.outputs['Color'], bsdf.inputs['Base Color'])
+    src = bpy.data.images.load(str(TEX / f'{stem}_diff_1k.jpg' if (TEX / f'{stem}_diff_1k.jpg').exists() else TEX / f'{stem}_col_1k.jpg'))
+    px = np.empty(len(src.pixels), dtype=np.float32); src.pixels.foreach_get(px)
+    # 8-bit pixels are sRGB-encoded; the tint was chosen as a linear multiply (the former Mix node)
+    px = px.reshape(-1, 4); px[:, :3] = np.clip(px[:, :3] * np.array(tint, dtype=np.float32) ** (1 / 2.2), 0, 1)
+    key = name.lower().replace(' ', '_')
+    img = bpy.data.images.new(f'{key}_tinted', src.size[0], src.size[1])
+    img.pixels.foreach_set(px.ravel())
+    img.file_format = 'JPEG'; img.filepath_raw = str(QA / f'{key}_tinted.jpg')
+    sc = bpy.context.scene; sc.render.image_settings.quality = 90
+    img.save(); img.source = 'FILE'; img.reload(); img.pack()
+    bpy.data.images.remove(src)
+    tex = nt.nodes.new('ShaderNodeTexImage'); tex.image = img
+    nt.links.new(tex.outputs['Color'], bsdf.inputs['Base Color'])
     bsdf.inputs['Roughness'].default_value = rough
     mat['uv_scale'] = scale
     return mat
@@ -41,6 +53,7 @@ def photo(name, stem, tint=(1, 1, 1), rough=0.92, scale=1.0):
 PLASTER = photo('L warm plaster', 'plaster_grey_04', (1.18, 1.04, 0.80), 0.95, 0.5)
 STONE = photo('L grey stone', 'stone_wall_02', (0.80, 0.80, 0.82), 0.95, 0.6)
 TIMBER = photo('L dark timber', 'fine_grained_wood', (0.30, 0.22, 0.17), 0.85, 1.2)
+BOARDS = photo('L floor boards', 'fine_grained_wood', (0.62, 0.46, 0.32), 0.9, 1.2)
 def tiles(name, base, seed):
     """Barrel clay tiles painted into a small packed image (0.33 m per tile, 0.5 m per course)."""
     rnd = random.Random(seed)
@@ -124,36 +137,79 @@ box('storey beam front', (0, y0 - JET + 0.15, G + 0.12), (W + 0.3, 0.32, 0.24), 
 for k in range(9):
     x = x0 + 0.2 + k * (W - 0.4) / 8
     box('joist end', (x, y0 - JET + 0.05, G - 0.08), (0.16, 0.5, 0.16), TIMBER)
-box('upper floor', (0, -JET / 2, G + 0.18), (W, D + JET, 0.12), TIMBER, True, 0)
+# Stair (west wall, rising to the front): 14 equal risers to the upper floor top FLOOR_TOP.
+FLOOR_TOP = G + 0.24
+RISERS = 14
+RISE = FLOOR_TOP / RISERS                  # 0.2314 m
+RUN = 0.27
+SX0, SX1 = x0 + T, x0 + T + 0.9           # stair width along the west wall
+STEP0 = 2.015                             # first tread centre (y); the foot leaves 0.7 m to the rear wall
+def tread_y(k): return STEP0 - k * RUN
+OPEN_Y0 = tread_y(RISERS - 2) - RUN / 2   # visual floor edge = the last riser
+SLOPE = RISE / RUN
+RAMP_Y0 = STEP0 + RISE / SLOPE            # ramp through the tread centres: z 0 here ...
+RAMP_Y1 = RAMP_Y0 - FLOOR_TOP / SLOPE     # ... and FLOOR_TOP here (just under the landing floor)
+OPEN_Y1 = y1 - T - 0.05                   # the opening reaches the rear wall
+FY0, FY1 = y0 - JET, y1                   # upper floor extent (y)
+def floor_piece(name, xa, xb, ya, yb, z, th, mat, role=None):
+    return box(name, ((xa + xb) / 2, (ya + yb) / 2, z), (xb - xa, yb - ya, th), mat, False, 0, role)
+OX1 = SX1 + 0.05
+floor_piece('upper floor', OX1, x1, FY0, FY1, G + 0.18, 0.12, BOARDS)
+floor_piece('upper floor', x0, OX1, FY0, OPEN_Y0, G + 0.18, 0.12, BOARDS)
+floor_piece('upper floor', x0, OX1, OPEN_Y1, FY1, G + 0.18, 0.12, BOARDS)
+for name, xa, xb, ya, yb in (('upper floor', OX1, x1, FY0, FY1), ('upper floor', x0, OX1, FY0, RAMP_Y1),
+                             ('upper floor', x0, OX1, OPEN_Y1, FY1)):
+    COLLISIONS.append((name, ((xa + xb) / 2, (ya + yb) / 2, G + 0.18), (xb - xa, yb - ya, 0.12)))
 
 # --- upper storey: timber frame with plaster infill
 yu = y0 - JET
-def frame_x(name, y, z0, z1):
-    box(name + ' infill', (0, y, (z0 + z1) / 2), (W, 0.22, z1 - z0), PLASTER, True)
+WIN = (0.8, G + 0.95, G + 1.85)          # upper window width, sill, head
+WIN_X = (-1.0, 1.0)                       # in the two middle bays of the front
+def frame_x(name, y, z0, z1, windows=(), out=-1):
+    # out: the outside direction (-1 front, +1 rear) - the timbers sit on the outer face
+    if not windows:
+        box(name + ' infill', (0, y, (z0 + z1) / 2), (W, 0.22, z1 - z0), PLASTER, True)
+    else:
+        box(name + ' infill low', (0, y, (z0 + WIN[1]) / 2), (W, 0.22, WIN[1] - z0), PLASTER, True)
+        box(name + ' infill high', (0, y, (WIN[2] + z1) / 2), (W, 0.22, z1 - WIN[2]), PLASTER, True)
+        edges = [x0] + [e for cx in windows for e in (cx - WIN[0] / 2, cx + WIN[0] / 2)] + [x1]
+        for a, b in zip(edges[0::2], edges[1::2]):
+            box(name + ' infill pier', ((a + b) / 2, y, (WIN[1] + WIN[2]) / 2), (b - a, 0.22, WIN[2] - WIN[1]), PLASTER, True)
     for k in range(5):
         x = x0 + k * W / 4
-        box(name + ' post', (x if abs(x) < W / 2 else x * 0.985, y - 0.06, (z0 + z1) / 2), (0.2, 0.18, z1 - z0), TIMBER)
-    box(name + ' sill', (0, y - 0.06, z0 + 0.1), (W, 0.2, 0.2), TIMBER)
-    box(name + ' plate', (0, y - 0.06, z1 - 0.1), (W, 0.2, 0.2), TIMBER)
+        box(name + ' post', (x if abs(x) < W / 2 else x * 0.985, y + out * 0.06, (z0 + z1) / 2), (0.2, 0.18, z1 - z0), TIMBER)
+    box(name + ' sill', (0, y + out * 0.06, z0 + 0.1), (W, 0.2, 0.2), TIMBER)
+    box(name + ' plate', (0, y + out * 0.06, z1 - 0.1), (W, 0.2, 0.2), TIMBER)
     for k in range(4):
         xa = x0 + k * W / 4 + 0.12; xb = xa + W / 4 - 0.24
-        C.beam(name + ' brace', (xa, y - 0.08, z0 + 0.2), (xb, y - 0.08, z1 - 0.2) if k % 2 == 0 else (xb, y - 0.08, z0 + 0.2), 0.14, 0.14, TIMBER) if False else None
+        if any(xa < cx < xb for cx in windows):
+            continue
         if k % 2 == 0:
-            C.beam(name + ' brace', (xa, y - 0.08, z0 + 0.2), (xb, y - 0.08, z1 - 0.2), 0.14, 0.14, TIMBER)
+            C.beam(name + ' brace', (xa, y + out * 0.08, z0 + 0.2), (xb, y + out * 0.08, z1 - 0.2), 0.14, 0.14, TIMBER)
         else:
-            C.beam(name + ' brace', (xa, y - 0.08, z1 - 0.2), (xb, y - 0.08, z0 + 0.2), 0.14, 0.14, TIMBER)
-frame_x('upper front', yu + 0.11, G + 0.24, G + U)
-frame_x('upper rear', y1 - 0.11, G + 0.24, G + U)
+            C.beam(name + ' brace', (xa, y + out * 0.08, z1 - 0.2), (xb, y + out * 0.08, z0 + 0.2), 0.14, 0.14, TIMBER)
+frame_x('upper front', yu + 0.11, G + 0.24, G + U, WIN_X)
+frame_x('upper rear', y1 - 0.11, G + 0.24, G + U, out=1)
 for sx in (-1, 1):
     x = sx * (W / 2 - 0.11)
     box('upper side infill', (x, -JET / 2, G + 0.24 + (U - 0.24) / 2), (0.22, D + JET, U - 0.24), PLASTER, True)
     for k in range(4):
         y = yu + k * (D + JET) / 3
         box('upper side post', (x + sx * 0.06, y, G + 0.24 + (U - 0.24) / 2), (0.18, 0.2, U - 0.24), TIMBER)
-# two upper windows on the front
-for cx in (-2.0, 2.0):
-    box('upper window', (cx, yu - 0.01, G + 1.4), (0.8, 0.05, 0.9), GLASS)
-    box('upper window frame', (cx, yu - 0.04, G + 1.4), (1.0, 0.06, 1.1), TIMBER)
+# two upper windows on the front: real openings, a four-bar frame round them, recessed panes
+# with a muntin cross, shutters folded open against the wall
+wy = yu + 0.11
+wz = (WIN[1] + WIN[2]) / 2
+wh = WIN[2] - WIN[1]
+for cx in WIN_X:
+    box('upper window pane', (cx, wy + 0.04, wz), (WIN[0], 0.03, wh), GLASS)
+    box('upper window muntin', (cx, wy - 0.01, wz), (0.05, 0.05, wh), TIMBER)
+    box('upper window muntin', (cx, wy - 0.01, wz), (WIN[0], 0.05, 0.05), TIMBER)
+    for sz in (-1, 1):
+        box('upper window frame', (cx, wy - 0.14, wz + sz * (wh / 2 + 0.06)), (WIN[0] + 0.24, 0.1, 0.12), TIMBER)
+        box('upper window frame', (cx + sz * (WIN[0] / 2 + 0.06), wy - 0.14, wz), (0.12, 0.1, wh), TIMBER)
+        box('upper window shutter', (cx + sz * (WIN[0] / 2 + 0.33), wy - 0.2, wz), (0.4, 0.05, wh), TIMBER)
+    box('upper window sill', (cx, wy - 0.2, WIN[1] - 0.04), (WIN[0] + 0.3, 0.22, 0.06), TIMBER)
 
 # --- steep gable roof (ridge along X), clay tile rows, overhang 0.5 m
 top = G + U
@@ -172,18 +228,30 @@ for side in (-1, 1):
         if side < 0: faces = [tuple(reversed(f)) for f in faces]   # outward normals on both slopes
         C.mesh('roof tile row', verts, faces, TILE if r % 2 == 0 else TILE2)
 box('ridge tiles', (0, cy, ridge + 0.04), (W + 1.1, 0.34, 0.18), TILE2)
+# eaves blocking: the front and rear upper walls reach up under the tiles (Godot frames: a 0.5 m slot
+# of sky between the wall plate and the roof), the top following the slope
+def roof_under(y):
+    return top + (ridge - top) * (half - abs(y - cy)) / half - 0.06
+for ya, yb in ((yu, yu + 0.22), (y1 - 0.22, y1)):
+    v = [(x0, ya, top), (x1, ya, top), (x1, yb, top), (x0, yb, top),
+         (x0, ya, roof_under(ya)), (x1, ya, roof_under(ya)), (x1, yb, roof_under(yb)), (x0, yb, roof_under(yb))]
+    C.mesh('eaves blocking', v, [(0, 3, 2, 1), (4, 5, 6, 7), (0, 1, 5, 4), (1, 2, 6, 5), (2, 3, 7, 6), (3, 0, 4, 7)], PLASTER)
 # gable triangles in plaster with timber edge boards
 for sx in (-1, 1):
     x = sx * (W / 2 - 0.11)
-    verts = [(x, cy - half + 0.5, top), (x, cy + half - 0.5, top), (x, cy, ridge - 0.25)]
-    v2 = [(x - 0.11, *p[1:]) for p in verts] + [(x + 0.11, *p[1:]) for p in verts]
-    C.mesh('gable infill', v2, [(0, 1, 2), (5, 4, 3), (0, 3, 4, 1), (1, 4, 5, 2), (2, 5, 3, 0)], PLASTER)
+    # up to the underside of the tiles (Godot frames: a 0.2-0.4 m slot of sky along both gables)
+    yz = [(yu, top), (y1, top), (y1, roof_under(y1)), (cy, roof_under(cy)), (yu, roof_under(yu))]
+    v2 = [(x - 0.11, y, z) for y, z in yz] + [(x + 0.11, y, z) for y, z in yz]
+    C.mesh('gable infill', v2, [(4, 3, 2, 1, 0), (5, 6, 7, 8, 9)] + [(i, (i + 1) % 5, (i + 1) % 5 + 5, i + 5) for i in range(5)], PLASTER)
     COLLISIONS.append(('gable', (x, cy, top + (ridge - top) / 3), (0.22, D + JET - 1.0, (ridge - top) * 0.6)))
-# a roof collision slab per side (the roof is not walked on, it only blocks)
-COLLISIONS.append(('roof', (0, cy, (top + ridge) / 2), (W + 1.0, D + JET + 1.0, 0.4)))
+# the roof's collision is its own volume: a prism from the eaves to the ridge
+COLLISION_MESHES.append(('roof', [(x0 - 0.5, cy - half, top), (x1 + 0.5, cy - half, top), (x1 + 0.5, cy + half, top),
+                                  (x0 - 0.5, cy + half, top), (x0 - 0.5, cy, ridge), (x1 + 0.5, cy, ridge)],
+                         [(0, 1, 2, 3), (0, 4, 5, 1), (3, 2, 5, 4), (0, 3, 4), (1, 5, 2)]))
 
 # --- chimney through the rear slope, from the ground-floor hearth
-box('chimney', (2.6, 2.3, (ridge + 0.9 + G) / 2 + 0.6), (0.7, 0.7, ridge + 0.9 - G - 1.2), STONE, True)
+# the stack rises from the hearth hood (2.7 m) through the upper room and the rear slope
+box('chimney', (2.6, 2.3, (ridge + 0.9 + 2.7) / 2), (0.7, 0.7, ridge + 0.9 - 2.7), STONE, True)
 box('chimney cap', (2.6, 2.3, ridge + 1.05), (0.9, 0.9, 0.12), STONE)
 
 # --- interior (ground floor): hearth, table, bench, straight stair to the upper floor
@@ -193,12 +261,43 @@ box('table', (-0.4, 1.0, 0.76), (1.6, 0.8, 0.08), TIMBER, True, role='furniture'
 for x in (-1.1, 0.3):
     for y in (0.7, 1.3): box('table leg', (x, y, 0.36), (0.09, 0.09, 0.72), TIMBER, role='furniture')
 box('bench', (-0.4, 0.3, 0.42), (1.5, 0.35, 0.07), TIMBER, True, role='furniture')
-box('sack', (-3.2, 2.6, 0.3), (0.5, 0.4, 0.6), CLOTH, role='furniture')
-# stair along the west wall, 13 risers of 0.23 m to the upper floor
-for k in range(13):
-    box('stair step', (x0 + T + 0.45, y1 - T - 0.4 - k * 0.27, 0.115 + k * 0.23), (0.9, 0.3, 0.06), TIMBER, role='furniture')
-COLLISIONS.append(('stair', (x0 + T + 0.45, y1 - T - 2.0, 1.5), (0.9, 3.6, 0.2)))
-box('ceiling', (0, 0, G + 0.05), (W - 2 * T, D - 2 * T, 0.06), TIMBER, role='ceiling')
+box('sack', (1.0, 2.7, 0.3), (0.5, 0.4, 0.6), CLOTH, role='furniture')
+# stair along the west wall: 13 treads + the upper floor = 14 equal risers; boarded understair.
+# The walking surface is a ramp through the tread centres (40.6 deg, under the 45 deg floor limit),
+# its top tucked under the landing floor so the step onto the floor is smooth.
+scx = (SX0 + SX1) / 2
+for k in range(RISERS - 1):
+    zt = (k + 1) * RISE
+    box('stair tread', (scx, tread_y(k), zt - 0.03), (SX1 - SX0, RUN + 0.03, 0.06), TIMBER, bevel=0.01)
+    box('stair riser', (scx, tread_y(k) + RUN / 2 - 0.015, zt - RISE / 2), (SX1 - SX0 - 0.02, 0.03, RISE - 0.06), TIMBER, bevel=0)
+side = SX1 + 0.02
+C.mesh('understair boards', [(side - 0.02, RAMP_Y0 - 0.25, 0), (side - 0.02, OPEN_Y0, 0), (side - 0.02, OPEN_Y0, FLOOR_TOP - RISE - 0.08),
+                             (side + 0.02, RAMP_Y0 - 0.25, 0), (side + 0.02, OPEN_Y0, 0), (side + 0.02, OPEN_Y0, FLOOR_TOP - RISE - 0.08)],
+       [(0, 2, 1), (3, 4, 5), (0, 3, 5, 2), (1, 2, 5, 4), (0, 1, 4, 3)], TIMBER)
+C.beam('stair rail', (side + 0.03, STEP0 + 0.1, 1.05), (side + 0.03, OPEN_Y0 + 0.05, FLOOR_TOP + 0.9), 0.07, 0.07, TIMBER)
+for k in (0, 6, 12):
+    C.beam('stair baluster', (side + 0.03, tread_y(k), (k + 1) * RISE), (side + 0.03, tread_y(k), (k + 1) * RISE + 0.95), 0.06, 0.06, TIMBER)
+COLLISION_MESHES.append(('stair ramp', [(SX0, RAMP_Y0, 0), (SX1, RAMP_Y0, 0), (SX1, RAMP_Y1, 0), (SX0, RAMP_Y1, 0),
+                                        (SX0, RAMP_Y1, FLOOR_TOP), (SX1, RAMP_Y1, FLOOR_TOP)],
+                         [(0, 3, 2, 1), (0, 1, 5, 4), (2, 3, 4, 5), (0, 4, 3), (1, 2, 5)]))
+# ground-floor ceiling with the stair opening
+cx0, cx1, cy0, cy1 = x0 + T, x1 - T, y0 + T, y1 - T
+floor_piece('ceiling', OX1, cx1, cy0, cy1, G + 0.05, 0.06, TIMBER, 'ceiling')
+floor_piece('ceiling', cx0, OX1, cy0, OPEN_Y0, G + 0.05, 0.06, TIMBER, 'ceiling')
+# upstairs: a rail round the opening, a bed, a chest and a stool
+ux0 = x0 + 0.22
+box('landing rail', (OX1 + 0.03, (OPEN_Y0 + 0.6 + OPEN_Y1) / 2, FLOOR_TOP + 0.95), (0.07, OPEN_Y1 - OPEN_Y0 - 0.6, 0.07), TIMBER)
+box('landing rail', ((ux0 + OX1) / 2, OPEN_Y1 + 0.03, FLOOR_TOP + 0.95), (OX1 - ux0, 0.07, 0.07), TIMBER)
+for y in (OPEN_Y0 + 0.6, (OPEN_Y0 + OPEN_Y1) / 2, OPEN_Y1):
+    box('landing post', (OX1 + 0.03, y, FLOOR_TOP + 0.48), (0.08, 0.08, 0.96), TIMBER)
+COLLISIONS.append(('landing rail', (OX1 + 0.03, (OPEN_Y0 + 0.6 + OPEN_Y1) / 2, FLOOR_TOP + 0.5), (0.1, OPEN_Y1 - OPEN_Y0 - 0.6, 1.0)))
+ex = x1 - 0.22                             # upper east wall inner face
+box('bed frame', (ex - 0.5, -1.7, FLOOR_TOP + 0.2), (0.95, 2.0, 0.4), TIMBER, True, role='furniture')
+box('bed straw', (ex - 0.5, -1.7, FLOOR_TOP + 0.44), (0.85, 1.9, 0.1), CLOTH, role='furniture')
+box('bed head', (ex - 0.5, -2.72, FLOOR_TOP + 0.5), (0.95, 0.06, 1.0), TIMBER, role='furniture')
+box('chest', (0.9, y1 - 0.22 - 0.25, FLOOR_TOP + 0.25), (0.9, 0.48, 0.5), TIMBER, True, role='furniture')
+box('chest band', (0.9, y1 - 0.22 - 0.25, FLOOR_TOP + 0.4), (0.92, 0.5, 0.05), IRON, role='furniture')
+box('stool', (2.0, -2.8, FLOOR_TOP + 0.22), (0.4, 0.4, 0.44), TIMBER, role='furniture')
 
 # --- join, collisions, export
 visual = list(C.ASSET.objects)
@@ -222,6 +321,9 @@ for o in visual:
 for name, loc, size in COLLISIONS:
     o = box(name + '-colonly', loc, size, PLASTER, False, 0)
     o.hide_render = True; o['collision_only'] = True
+for name, verts, faces in COLLISION_MESHES:
+    o = C.mesh(name + '-colonly', verts, faces, PLASTER)
+    o.hide_render = True; o['collision_only'] = True
 all_mesh = list(C.ASSET.objects)
 bpy.ops.object.select_all(action='DESELECT')
 for o in all_mesh: o.select_set(True)
@@ -234,7 +336,10 @@ for o in visual: o.data.calc_loop_triangles(); tris += len(o.data.loop_triangles
 points = [o.matrix_world @ Vector(c) for o in visual for c in o.bound_box]
 mn = [min(p[i] for p in points) for i in range(3)]; mx = [max(p[i] for p in points) for i in range(3)]
 stats = {'triangles': tris, 'visual_meshes': len(visual), 'collision_boxes': len(COLLISIONS), 'bbox_blender': [mn, mx],
-         'wall_footprint': [W, D], 'door_clear': [DOOR[1], DOOR[2]], 'ridge_m': round(ridge, 2), 'godot_front': [0, 0, 1],
+         'full_bbox_m': [round(mx[i] - mn[i], 3) for i in range(3)], 'wall_footprint': [W, D],
+         'stair': {'risers': RISERS, 'rise': round(RISE, 4), 'run': RUN, 'ramp_y': [round(RAMP_Y0, 3), round(RAMP_Y1, 3)],
+                   'opening_y': [round(OPEN_Y0, 3), round(OPEN_Y1, 3)], 'floor_top': FLOOR_TOP},
+         'collision_meshes': len(COLLISION_MESHES), 'door_clear': [DOOR[1], DOOR[2]], 'ridge_m': round(ridge, 2), 'godot_front': [0, 0, 1],
          'pivot': 'floor centre', 'sha256': hashlib.sha256(path.read_bytes()).hexdigest(), 'bytes': path.stat().st_size,
          'approval': 'PDF141 D118; awaiting Codex 3D acceptance'}
 (QA / 'stats.json').write_text(json.dumps(stats, indent=2), encoding='utf-8')
@@ -251,5 +356,12 @@ view('front', (6, -15, 4.5), (0, 0, 3.5))
 view('corner', (13, -11, 7), (0, 0, 3.5))
 view('rear', (-10, 13, 6), (0, 0, 3.5))
 view('entry', (-1.8, -6, 1.7), (-1.8, 1, 1.4))
+# cut-away views of the stair and the upper room (the roof tiles hidden)
+for o in C.ASSET.objects:
+    if o.get('collision_only'): continue
+    if o.data.materials and o.data.materials[0].name.startswith('L clay roof tile'): o.hide_render = True
+cam.data.lens = 22
+view('upper-room', (5.0, -7.0, 9.5), (-0.3, 0.3, FLOOR_TOP))
+view('stair', (2.6, -3.6, 7.6), (-3.0, 0.6, 1.4))
 bpy.ops.wm.save_as_mainfile(filepath=str(QA / 'l_town_house.blend'))
 print('L_H_ASSET_BUILT', json.dumps(stats))
