@@ -716,6 +716,10 @@ func _index_grass_obstacles() -> void:
 		_grass_blocks.append(Vector3(float(site.spawn[0]) + offset.x, float(site.spawn[2]) + offset.y, radius))
 	const BOOK_CLEAR := {"ruins": 75.0, "farmsteads": 75.0, "saltworks": 22.0, "farmstead": 16.0}
 	for place in world_layout.get("book_places", []):
+		# The arrival point (world frame map - 1000) and the way to the place stay trodden.
+		var arrive: Array = place.get("arrival", place.point)
+		for t in [0.0, 0.5]:
+			_grass_blocks.append(Vector3(lerpf(float(arrive[0]), float(place.point[0]), t) - HALF + offset.x, lerpf(float(arrive[1]), float(place.point[1]), t) - HALF + offset.y, 4.0))
 		if BOOK_CLEAR.has(str(place.kind)):
 			_grass_blocks.append(Vector3(float(place.spawn[0]) + offset.x, float(place.spawn[2]) + offset.y, float(BOOK_CLEAR.get(str(place.kind), 0.0))))
 	for site_id in INN_SITES:

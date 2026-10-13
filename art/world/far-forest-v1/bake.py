@@ -117,6 +117,10 @@ for b in layout.get('book_places', []):
     offsets = [(-50, -20), (40, 10), (0, 55)] if b['kind'] == 'farmsteads' else [(0, 0)]
     for dx, dz in offsets:
         discs.append(((b['point'][0] + dx, b['point'][1] + dz), BOOK_CLEAR.get(b['kind'], 22.0)))
+    # the hero's arrival on the way in and the line of sight from it to the place
+    ax, az = b.get('arrival', b['point'])
+    for t in (0.0, 0.5):
+        discs.append(((ax + (b['point'][0] - ax) * t, az + (b['point'][1] - az) * t), 8.0))
 lakes = [(l['center'][0], l['center'][1], l['radii_m'][0] + 10.0, l['radii_m'][1] + 10.0) for l in layout['lakes']]
 
 def lakeside(x, z):

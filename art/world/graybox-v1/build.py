@@ -778,6 +778,19 @@ BOOK_PLACES=[
     {'id':'peat_farmstead','kind':'farmstead','point':[600,1820],'key':'WORLD_SITE_PEAT_FARMSTEAD','label_ru':'Торфяной хутор','label_en':'Peat Farmstead','facing':[0,0,-1]},
     {'id':'outskirts_farmsteads','kind':'farmsteads','point':[760,1300],'key':'WORLD_SITE_OUTSKIRTS_FARMSTEADS','label_ru':'Хутора окраин','label_en':'Outskirts Farmsteads','facing':[0,0,1]},
 ]
+# Where the hero arrives at a book place (Codex 13 Oct: the spawns stood in the trees or faced a
+# wall): towards its nearest road, past the place's own volumes (STANDOFF by kind) - on the road
+# itself when it is nearer - so the hero comes from the way and looks at the place.
+STANDOFF={'camp':10.0,'hollow':14.0,'lookout':13.0,'ruins':10.0,'saltworks':18.0,'farmstead':15.0,'farmsteads':10.0}
+def book_arrival(b):
+    px,pz=b['point'];best=None
+    for r in roads:
+        for q in dense(r['geometry_points'],True):
+            d=math.hypot(q[0]+HALF-px,q[2]+HALF-pz)
+            if best is None or d<best[0]:best=(d,q[0]+HALF,q[2]+HALF)
+    d,rx,rz=best
+    step=min(STANDOFF.get(b['kind'],10.0),d)
+    return [round(px+(rx-px)/d*step,2),round(pz+(rz-pz)/d*step,2)]
 OUT.mkdir(parents=True,exist_ok=True)
 (OUT/'heights.bin').write_bytes(heights.astype('<f4').tobytes())
 (OUT/'colors.bin').write_bytes(colors.astype('<f4').tobytes())
@@ -798,7 +811,7 @@ layout={'version':'0.21.2-headwaters','width':WIDTH,'spacing':STEP,'extent_m':20
         'sea':({**SEA,'world_coast':[[p[0]-HALF,float(SEA['level']),p[1]-HALF] for p in SEA['coast']]} if SEA else None),
         'gates':D['gates'],'peaks':D['peaks'],'source_ridge':ridge,
         'book_pads':BOOK_PADS,
-        'book_places':[{**b,'spawn':[b['point'][0]-HALF,sample(*b['point'])+.12,b['point'][1]-HALF]} for b in BOOK_PLACES],
+        'book_places':[{**b,'arrival':book_arrival(b),'spawn':[book_arrival(b)[0]-HALF,sample(*book_arrival(b))+.12,book_arrival(b)[1]-HALF]} for b in BOOK_PLACES],
         'limits':'Graybox hypothesis. No vegetation, swimming, NPC, campaign or streaming.'}
 (OUT/'layout.json').write_text(json.dumps(layout,ensure_ascii=False,separators=(',',':'))+'\n',encoding='utf8',newline='\n')
 # ROADS-UNIFY-01: roads are painted into the ground, as in the village: a 1 m mask over the map

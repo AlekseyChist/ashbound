@@ -55,11 +55,29 @@ func run() -> void:
 	if book != null:
 		for place in places:
 			var s: Array = place.spawn
-			require(absf(float(s[0]) + 1000.0 - float(place.point[0])) < 0.01 and absf(float(s[2]) + 1000.0 - float(place.point[1])) < 0.01, "Spawn of %s off its point" % place.id)
 			var node: Node = book.get_node_or_null(str(place.id))
 			require(node != null and node.get_child_count() > 0, "No volumes at %s" % place.id)
 			if node == null:
 				continue
+			var arrive: Array = place.arrival
+			require(absf(float(s[0]) + 1000.0 - float(arrive[0])) < 0.01 and absf(float(s[2]) + 1000.0 - float(arrive[1])) < 0.01, "Spawn of %s off its arrival" % place.id)
+			# The arrival is clear: no far-forest trunk within 5 m, no grey volume within 2 m.
+			var at := Vector2(float(s[0]), float(s[2]))
+			var trees := 0
+			for batch in w.far_forest.find_children("FarForest_*", "MultiMeshInstance3D", false, false):
+				for shape in batch.get_node("Trunks").get_children():
+					var tp: Vector3 = batch.position + shape.position
+					if Vector2(tp.x, tp.z).distance_to(at) < 5.0:
+						trees += 1
+			var blocking := 0
+			for m in node.find_children("*", "MeshInstance3D", false, false):
+				var mi := m as MeshInstance3D
+				var size: Vector3 = (mi.mesh as BoxMesh).size
+				if Vector2(mi.position.x, mi.position.z).distance_to(at) < Vector2(size.x, size.z).length() * 0.5 + 2.0:
+					blocking += 1
+			print("BOOK_ARRIVAL %s at=%s trees=%d volumes_near=%d" % [place.id, arrive, trees, blocking])
+			require(trees == 0, "%s: %d trees at the arrival" % [place.id, trees])
+			require(blocking == 0, "%s: %d volumes right at the arrival" % [place.id, blocking])
 			var meshes := node.find_children("*", "MeshInstance3D", false, false)
 			var floating := 0
 			var on_road := 0
