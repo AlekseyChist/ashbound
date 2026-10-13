@@ -1,0 +1,5 @@
+[gd_scene load_steps=3 format=3]
+[ext_resource type="PackedScene" path="res://assets/buildings/world-architecture-v1/s_caravan_store.glb" id="1_model"]
+[ext_resource type="Script" path="res://scripts/buildings/snow_store.gd" id="2_runtime"]
+[node name="CaravanGrainStore" instance=ExtResource("1_model")]
+script = ExtResource("2_runtime")
