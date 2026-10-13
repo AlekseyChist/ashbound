@@ -40,6 +40,8 @@ LINEN=C.mat('S warm linen',(.35,.31,.23,1));IRON=C.mat('S iron',(.07,.075,.078,1
 CLAY=C.mat('S stove clay',(.27,.24,.20,1));FLOOR=paint('S floor boards',(.22,.16,.105))
 def box(n,p,s,m,solid=False,bevel=.02):
     o=C.box(n,p,s,m,bevel)
+    if n.startswith(('bed','mattress','headboard','table','drying','storage bench')):
+        o['part_role']='interior_furniture'
     if solid:collision.append((n,p,s))
     return o
 def wx(n,y,a,b,z0=0,z1=3.1,m=PLASTER):return box(n,((a+b)/2,y,(z0+z1)/2),(b-a,.36,z1-z0),m,True)
@@ -152,7 +154,11 @@ for o in visual:
             u,v=((p.y,p.z) if axis==0 else (p.x,p.z) if axis==1 else (p.x,p.y))
             loop[uv].uv=(u/scale,v/scale)
     bm.to_mesh(o.data);bm.free()
-C._join_by_material([o for o in visual if o not in door_parts])
+static=[o for o in visual if o not in door_parts]
+interior=[o for o in static if o.get('part_role')=='interior_furniture']
+shell=[o for o in static if o.get('part_role')!='interior_furniture']
+C._join_by_material(shell)
+C._join_by_material(interior)
 for o in door_parts:
     matrix=o.matrix_world.copy();o.parent=hinge;o.matrix_world=matrix
 visual=[o for o in C.ASSET.objects if o.type=='MESH']

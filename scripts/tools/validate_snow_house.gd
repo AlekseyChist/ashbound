@@ -37,7 +37,14 @@ func run() -> void:
     var colliders := house.find_children("*", "CollisionShape3D", true, false)
     require(colliders.size() == 33, "Expected26 static and7 door colliders; got " + str(colliders.size()))
     var visuals := house.find_children("*", "MeshInstance3D", true, false)
-    require(visuals.size() == 15, "Expected8 static meshes and7 door parts; got " + str(visuals.size()))
+    require(visuals.size() == 16, "Expected9 static meshes and7 door parts; got " + str(visuals.size()))
+    require(house.interior_meshes.size() == 2, "Furniture role grouping missing")
+    require(not house.set_interior_visible(false, true), "Occupied house allowed hiding contents")
+    require(house.set_interior_visible(false), "Closed empty house did not hide furniture")
+    for mesh in house.interior_meshes:
+        require(not mesh.visible, "Furniture remained visible")
+    require(house.find_children("*", "CollisionShape3D", true, false).size() == 33, "Interior hiding changed physics")
+    require(house.set_interior_visible(true), "Furniture did not restore")
     for node in visuals:
         var mesh := node as MeshInstance3D
         require(mesh.mesh != null, "Null mesh")
@@ -80,9 +87,12 @@ func run() -> void:
     require(actor.position.z > 3.6, "Closed door allowed passage")
     actor.position.z = 4.6
     await physics_frame
+    require(house.set_interior_visible(false), "Closed-house hiding before interaction failed")
     require(door.try_toggle(actor), "Exterior opening failed")
     for i in range(90): await physics_frame
     require(is_equal_approx(door.fraction, 1.0), "Exterior opening incomplete")
+    require(house.interior_visible, "Opening did not restore hidden furniture")
+    require(not house.set_interior_visible(false), "Open portal allowed hiding contents")
     await walk(Vector2(0,2.6), "street into vestibule")
     await walk(Vector2(0,1.3), "vestibule into room")
     await walk(Vector2(1.3,0), "past table")
@@ -117,7 +127,7 @@ func run() -> void:
     var file := FileAccess.open("res://local/qa/world-snow-assets/result.json",FileAccess.WRITE)
     file.store_string(JSON.stringify(report,"  "))
     if failures.is_empty():
-        print("S_H_GODOT_OK colliders=33 meshes=15 walk_segments=8 roof_contact=1 door_sides=2")
+        print("S_H_GODOT_OK colliders=33 meshes=16 walk_segments=8 roof_contact=1 door_sides=2 interior_guards=1")
         quit(0)
     else:
         quit(1)
