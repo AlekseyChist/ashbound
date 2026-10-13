@@ -135,7 +135,12 @@ box('drying rack rail',(2.65,-.60,1.93),(1.3,.1,.12),WOOD)
 for x in (2.05,3.25):box('drying rack post',(x,-.6,.95),(.1,.1,1.9),WOOD)
 for x in (2.3,2.8):box('drying cloth',(x,-.6,1.50),(.36,.045,.75),LINEN)
 box('storage bench',(-2.95,-1.10,.47),(1.1,.65,.94),WOOD,True)
-visual=list(C.ASSET.objects)
+hinge=bpy.data.objects.new('S_entry_hinge',None);C.ASSET.objects.link(hinge)
+hinge.location=(-.60,-3.32,0);hinge['open_angle_degrees']=-100.0
+door_parts=[]
+for k in range(5):door_parts.append(box('Door plank',(-.48+k*.24,-3.32,1.14),(.234,.08,2.28),WOOD))
+for z in (.45,1.72):door_parts.append(box('Door strap',(0,-3.37,z),(1.18,.018,.06),IRON))
+visual=[o for o in C.ASSET.objects if o.type=='MESH']
 for o in visual:
     scale=float(o.data.materials[0].get('uv_metres',0))
     if not scale:continue
@@ -147,7 +152,10 @@ for o in visual:
             u,v=((p.y,p.z) if axis==0 else (p.x,p.z) if axis==1 else (p.x,p.y))
             loop[uv].uv=(u/scale,v/scale)
     bm.to_mesh(o.data);bm.free()
-C._join_by_material(visual);visual=list(C.ASSET.objects)
+C._join_by_material([o for o in visual if o not in door_parts])
+for o in door_parts:
+    matrix=o.matrix_world.copy();o.parent=hinge;o.matrix_world=matrix
+visual=[o for o in C.ASSET.objects if o.type=='MESH']
 for n,p,s in collision:
     o=box(n+'-colonly',p,s,STONE,False,0);o.hide_render=True
 for k,(vs,fs) in enumerate(roof_collision):
@@ -156,7 +164,7 @@ bpy.ops.object.select_all(action='DESELECT')
 for o in C.ASSET.objects:o.select_set(True)
 bpy.context.view_layer.objects.active=visual[0]
 asset=OUT/'s_warm_house.glb'
-bpy.ops.export_scene.gltf(filepath=str(asset),use_selection=True,export_format='GLB',export_apply=True,export_yup=True,export_cameras=False,export_lights=False)
+bpy.ops.export_scene.gltf(filepath=str(asset),use_selection=True,export_format='GLB',export_apply=True,export_yup=True,export_cameras=False,export_lights=False,export_extras=True)
 # Use explicit standard glTF factors so Blender and Godot keep the same tint.
 data=asset.read_bytes();size=struct.unpack_from('<I',data,12)[0]
 document=json.loads(data[20:20+size])
@@ -171,7 +179,9 @@ for o in visual:o.data.calc_loop_triangles();tri+=len(o.data.loop_triangles)
 points=[o.matrix_world@Vector(v) for o in visual for v in o.bound_box]
 stats={'triangles':tri,'meshes':len(visual),'collision_boxes':len(collision),'roof_collisions':len(roof_collision),'wall_footprint':[8,7],'bbox':[[min(v[i] for v in points) for i in range(3)],[max(v[i] for v in points) for i in range(3)]],'front':'Godot+Z','pivot':'floor0','attic':'ventilated,closed;notplayable','sha256':hashlib.sha256(asset.read_bytes()).hexdigest(),'state':'built;notaccepted;GodotQAandrenderreviewpending'}
 (QA/'stats.json').write_text(json.dumps(stats,indent=2),encoding='utf-8')
+C.ASSET.objects.unlink(hinge)
 C._studio();bpy.data.objects['PreviewGround'].location.z=-.26
+C.ASSET.objects.link(hinge)
 scene=bpy.context.scene;scene.render.engine='CYCLES';scene.cycles.device='CPU';scene.cycles.samples=20;scene.cycles.use_denoising=True
 scene.render.resolution_x=1280;scene.render.resolution_y=960;scene.render.resolution_percentage=100
 cam=scene.camera;cam.rotation_mode='XYZ';cam.data.type='PERSP';cam.data.lens=40

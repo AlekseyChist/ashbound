@@ -35,9 +35,9 @@ func run() -> void:
     var house := packed.instantiate() as Node3D
     root3d.add_child(house)
     var colliders := house.find_children("*", "CollisionShape3D", true, false)
-    require(colliders.size() == 26, "Expected24 wall/furniture boxes and2 roof colliders; got " + str(colliders.size()))
+    require(colliders.size() == 33, "Expected26 static and7 door colliders; got " + str(colliders.size()))
     var visuals := house.find_children("*", "MeshInstance3D", true, false)
-    require(visuals.size() == 8, "Expected8 merged material meshes; got " + str(visuals.size()))
+    require(visuals.size() == 15, "Expected8 static meshes and7 door parts; got " + str(visuals.size()))
     for node in visuals:
         var mesh := node as MeshInstance3D
         require(mesh.mesh != null, "Null mesh")
@@ -55,6 +55,7 @@ func run() -> void:
     ground.add_child(ground_col)
     root3d.add_child(ground)
     actor = CharacterBody3D.new()
+    actor.collision_layer = 2
     var capsule := CapsuleShape3D.new()
     capsule.radius = 0.30
     capsule.height = 1.75
@@ -67,12 +68,33 @@ func run() -> void:
         await physics_frame
         actor.velocity = Vector3(0,-2,0)
         actor.move_and_slide()
+    var door = house.get("door")
+    require(door != null and door.leaves.size() == 7, "Door hinge/parts missing")
+    if door == null:
+        quit(1)
+        return
+    for i in range(120):
+        await physics_frame
+        actor.velocity = Vector3(0, 0, -2)
+        actor.move_and_slide()
+    require(actor.position.z > 3.6, "Closed door allowed passage")
+    actor.position.z = 4.6
+    await physics_frame
+    require(door.try_toggle(actor), "Exterior opening failed")
+    for i in range(90): await physics_frame
+    require(is_equal_approx(door.fraction, 1.0), "Exterior opening incomplete")
     await walk(Vector2(0,2.6), "street into vestibule")
     await walk(Vector2(0,1.3), "vestibule into room")
     await walk(Vector2(1.3,0), "past table")
     await walk(Vector2(1.4,-1.7), "living space")
     await walk(Vector2(1.3,0), "return past table")
     await walk(Vector2(0,1.3), "room to vestibule threshold")
+    require(door.try_toggle(actor), "Interior closing failed")
+    for i in range(90): await physics_frame
+    require(is_zero_approx(door.fraction), "Interior closing incomplete")
+    require(door.try_toggle(actor), "Interior opening failed")
+    for i in range(90): await physics_frame
+    require(is_equal_approx(door.fraction, 1.0), "Interior opening incomplete")
     await walk(Vector2(0,2.6), "inside vestibule on return")
     await walk(Vector2(0,6.0), "outside return")
     require(actor.is_on_floor(), "Lost floor contact")
@@ -95,7 +117,7 @@ func run() -> void:
     var file := FileAccess.open("res://local/qa/world-snow-assets/result.json",FileAccess.WRITE)
     file.store_string(JSON.stringify(report,"  "))
     if failures.is_empty():
-        print("S_H_GODOT_OK colliders=26 meshes=8 walk_segments=8 roof_contact=1")
+        print("S_H_GODOT_OK colliders=33 meshes=15 walk_segments=8 roof_contact=1 door_sides=2")
         quit(0)
     else:
         quit(1)
