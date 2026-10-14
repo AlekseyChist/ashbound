@@ -49,10 +49,13 @@ func apply_distance(world: Node3D) -> void:
 			node.set_meta("base_visibility_end", node.visibility_range_end)
 		var base: float = node.get_meta("base_visibility_end")
 		# TREES-01: where near trees end and the far cones begin moves with the setting too.
+		# LOD-CAP-01 (Codex review 28 Sep): the detailed trees grew with the setting to ~364 m on a
+		# phone at 1 km (base 80 m); a begin_cap / end_cap keeps them within it.
+		# begin_cap: where the far cones start; end_cap: where the detailed trees end.
 		if node.has_meta("base_visibility_begin"):
-			node.visibility_range_begin = float(node.get_meta("base_visibility_begin")) * draw_distance / 220.0
+			node.visibility_range_begin = minf(float(node.get_meta("base_visibility_begin")) * draw_distance / 220.0, float(node.get_meta("begin_cap", INF)))
 		if base <= 0: continue
-		node.visibility_range_end = base * draw_distance / 220.0
+		node.visibility_range_end = minf(base * draw_distance / 220.0, float(node.get_meta("end_cap", INF)))
 		node.visibility_range_end_margin = minf(10, node.visibility_range_end * .15)
 
 static func _number(value: Variant, fallback: float, low: float, high: float) -> float:

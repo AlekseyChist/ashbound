@@ -110,6 +110,13 @@ discs = [((c['point'][0], c['point'][1]), CITY_CLEAR) for c in layout['cities']]
 discs.append(RUINS)
 for s in layout['sites']:
     discs.append(((s['point'][0], s['point'][1]), SITE_CLEAR.get(s['kind'], 30.0)))
+# FOREST-CITY-02 (book D-118): the forest city's additions outside its 140 m disc (tannery, Vetla's hut,
+# the lower posad) get their own clearings, so the kit houses do not stand inside the conifers.
+_city_plan = os.path.join(ROOT, 'assets/world/forest-city-v1/plan.json')
+if os.path.exists(_city_plan):
+    for b in json.load(open(_city_plan, encoding='utf-8'))['buildings']:
+        if b['kind'] in ('tannery', 'healer_hut', 'posad'):
+            discs.append(((float(b['map'][0]), float(b['map'][1])), 16.0))
 lakes = [(l['center'][0], l['center'][1], l['radii_m'][0] + 10.0, l['radii_m'][1] + 10.0) for l in layout['lakes']]
 
 def lakeside(x, z):

@@ -1,0 +1,10 @@
+# Civic interior props
+
+Used for the forest town hall and militia barracks. All files below must have an actual scene/script reference before being committed to assets/props/civic-v1/.
+
+- `wooden_axe_03.glb`: Wooden Axe 03 by Ulan Cabanilla, Poly Haven, https://polyhaven.com/a/wooden_axe_03 . Asset license CC0 1.0, https://polyhaven.com/license and https://creativecommons.org/publicdomain/zero/1.0/ . Downloaded 2026-09-28 through https://api.polyhaven.com/files/wooden_axe_03; all original download MD5 values verified. Optimized with the project's art/blender/optimize_props.py: 3886 to 1500 triangles, 512px textures, embedded GLB 160420 bytes. Physical height 0.631806m; Y vertical; broad face normal X. Bounds min(-.025667,-.223756,-.035861), max(.024831,.408050,.122640). To rest the handle on a horizontal shelf, position.y = shelf_y + .223756 before any scaling/rotation. Do not replace its surface with the house wood material.
+- `sheepskin-rug-v1.png`: generated specifically for AshBound using OpenAI built-in image generation on 2026-09-28; not a third-party CC0 asset. Top-down ivory sheepskin, 320×512 RGBA. Flat unlit base-color style, no borrowed image input. Use a 1.2×1.92m PlaneMesh with alpha scissor .5, mipmaps, roughness1, low specular and floor+0.01m. No fur geometry, physics or added light needed. The saved PNG is the reproducible selected game texture; source and prompts are preserved locally.
+
+Originals, download metadata, unselected image and prompts: local/assets-src/civic-interiors-01/. Engine previews and logs: local/qa/civic-interiors-01/. Existing lamps, woven rugs, bowls, buckets, barrels and baskets are reused from tavern-v1 with that pack's attribution.
+
+Validation: Windows Godot4.7.2 Vulkan mobile renderer; axe compared against original glTF from the same camera, silhouette and cut-outs preserved. Pelt rendered on a floor plane with alpha scissor: clean neutral edge, no colored fringe. These isolated asset checks do not constitute acceptance of the furnished game rooms or APK.
