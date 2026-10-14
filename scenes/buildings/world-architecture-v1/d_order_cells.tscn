@@ -1,0 +1,7 @@
+[gd_scene load_steps=3 format=3]
+[ext_resource type="PackedScene" path="res://assets/buildings/world-architecture-v1/d_order_cells.glb" id="1_model"]
+[ext_resource type="Script" path="res://scripts/buildings/desert_order_cells.gd" id="2_runtime"]
+[node name="DesertOrderCells" instance=ExtResource("1_model")]
+script = ExtResource("2_runtime")
+metadata/wall_footprint = Vector2(14, 7)
+metadata/room_count = 5

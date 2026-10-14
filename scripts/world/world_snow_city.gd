@@ -33,6 +33,18 @@ const MODULES := {
     "вс12": {"scene":"res://scenes/buildings/world-architecture-v1/s_cottage_6x5.tscn","walls":Vector2(6,5)},
     "вс13": {"scene":"res://scenes/buildings/world-architecture-v1/s_cottage_6x5.tscn","walls":Vector2(6,5)},
     "Уч": {"scene":"res://scenes/buildings/world-architecture-v1/s_apprentice_dorm.tscn","walls":Vector2(8,4)},
+    "Б1": {"scene":"res://scenes/buildings/world-architecture-v1/s_porters_barracks_11x5.tscn","walls":Vector2(11,5)},
+    "Б2": {"scene":"res://scenes/buildings/world-architecture-v1/s_porters_barracks_11x5.tscn","walls":Vector2(11,5)},
+    "Б3": {"scene":"res://scenes/buildings/world-architecture-v1/s_porters_barracks_11x5.tscn","walls":Vector2(11,5)},
+    "Б4": {"scene":"res://scenes/buildings/world-architecture-v1/s_porters_barracks_11x5.tscn","walls":Vector2(11,5)},
+    "Б10": {"scene":"res://scenes/buildings/world-architecture-v1/s_porters_barracks_10x5.tscn","walls":Vector2(10,5)},
+    "Б11": {"scene":"res://scenes/buildings/world-architecture-v1/s_porters_barracks_10x5.tscn","walls":Vector2(10,5)},
+    "л1": {"scene":"res://scenes/buildings/world-architecture-v1/s_shoemaker.tscn","walls":Vector2(7,5)},
+    "л2": {"scene":"res://scenes/buildings/world-architecture-v1/s_saddler.tscn","walls":Vector2(7,5)},
+    "л3": {"scene":"res://scenes/buildings/world-architecture-v1/s_candlemaker.tscn","walls":Vector2(7,5)},
+    "Пд": {"scene":"res://scenes/buildings/world-architecture-v1/s_caravan_inn.tscn","walls":Vector2(12,7)},
+    "Др": {"scene":"res://scenes/buildings/world-architecture-v1/s_wood_store.tscn","walls":Vector2(6,4)},
+    "Бш": {"scene":"res://scenes/buildings/world-architecture-v1/s_academy_tower.tscn","walls":Vector2(11,11)},
 }
 const MAX_SHADOW_LIGHTS := 3
 const SHADOW_DISTANCE := 45.0
