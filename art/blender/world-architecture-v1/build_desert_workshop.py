@@ -34,6 +34,29 @@ def box(n,p,s,m,solid=True):
         o['part_role']='interior_furniture'
     if solid:coll.append((n,p,s))
     return o
+def ring_solid(n,x,y,z,rings,m,role=True):
+    # a closed solid of octagonal rings [(dz, half_x, half_y), ...] from bottom to top around (x,y,z)
+    k=8
+    v=[]
+    for dz,hx,hy in rings:
+        for i in range(k):
+            a=math.pi*2*i/k+math.pi/8
+            v.append((x+hx*math.cos(a),y+hy*math.sin(a),z+dz))
+    f=[tuple(range(k-1,-1,-1))]
+    for r in range(len(rings)-1):
+        for i in range(k):
+            j=(i+1)%k
+            f.append((r*k+i,r*k+j,(r+1)*k+j,(r+1)*k+i))
+    t=(len(rings)-1)*k
+    f.append(tuple(range(t,t+k)))
+    o=C.mesh(n,v,f,m)
+    if role:o['part_role']='interior_furniture'
+    return o
+def slab(n,pts,t,m):
+    # a thin solid under the quad pts (4 corners, counter-clockwise from above), thickness t downward
+    v=[(px,py,pz-t) for px,py,pz in pts]+list(pts)
+    f=[(3,2,1,0),(4,5,6,7),(0,1,5,4),(1,2,6,5),(2,3,7,6),(3,0,4,7)]
+    return C.mesh(n,v,f,m)
 # Shell: outer walls 6x5 (faces at x +-3, y +-2.5; inner faces +-2.6 / +-2.1), floor z=0, roof top ~3.6.
 box('foundation',(0,0,-.15),(6,5,.3),STONE)
 box('entry porch',(0,-3.1,-.12),(2.6,1.2,.24),STONE)
@@ -73,17 +96,17 @@ for x in (-1.1,1.1):
     box('canopy footing',(x,-3.55,.10),(.24,.24,.2),STONE)
     box('canopy post',(x,-3.55,1.4),(.14,.14,2.4),WOOD)
     C.beam('canopy rafter',(x,-2.5,2.95),(x,-3.62,2.62),.12,.12,WOOD)
-C.mesh('entry shade',[(-1.3,-2.5,2.96),(1.3,-2.5,2.96),(1.3,-3.64,2.62),(-1.3,-3.64,2.62)],[(0,1,2,3)],CLOTH)
+slab('entry shade',[(-1.3,-2.5,2.96),(1.3,-2.5,2.96),(1.3,-3.64,2.62),(-1.3,-3.64,2.62)],.03,CLOTH)
 # Potter's wheel on the left, with a seat.
 box('wheel base',(-1.8,-.8,.225),(.5,.5,.45),WOOD)
-box('wheel',(-1.8,-.8,.5),(.6,.6,.06),CLAY,False)
+ring_solid('wheel',-1.8,-.8,.47,[(0,.3,.3),(.06,.3,.3)],CLAY)
 box('potter seat',(-1.8,-1.45,.22),(.4,.35,.44),WOOD)
 # Shelf of pots against the left wall in the depth.
 box('shelf back',(-2.55,1.2,1.0),(.06,1.6,2.0),WOOD)
 for y in (.4,2.0):box('shelf side',(-2.35,y,1.0),(.4,.08,2.0),WOOD)
 for z in (.06,.7,1.34,1.96):box('shelf board',(-2.35,1.2,z),(.4,1.6,.08),WOOD)
 for z in (.7,1.34,1.96):
-    for y in (.7,1.2,1.7):box('pot',(-2.35,y,z+.17),(.24,.24,.26),CLAY,False)
+    for y in (.7,1.2,1.7):ring_solid('pot',-2.35,y,(z+.17)-0.130,[(0.000,0.074,0.074),(0.078,0.120,0.120),(0.161,0.110,0.110),(0.208,0.060,0.060),(0.239,0.054,0.054),(0.260,0.070,0.070)],CLAY)
 # Loom on the right in the depth, with a weaver bench.
 for x in (1.1,2.3):box('loom upright',(x,1.4,.9),(.1,.1,1.8),WOOD)
 box('loom beam',(1.7,1.4,1.75),(1.3,.1,.1),WOOD,False)
@@ -94,7 +117,7 @@ box('weaver bench',(1.7,.75,.22),(1.0,.35,.44),WOOD)
 box('work table',(1.7,-1.2,.78),(1.2,.6,.08),WOOD)
 for dx in (-.5,.5):
     for dy in (-.22,.22):box('table leg',(1.7+dx,-1.2+dy,.37),(.07,.07,.74),WOOD,False)
-for x in (1.35,1.75,2.1):box('yarn',(x,-1.2,.9),(.25,.25,.16),YARN,False)
+for x in (1.35,1.75,2.1):ring_solid('yarn',x,-1.2,.82,[(0,.09,.09),(.04,.125,.125),(.12,.125,.125),(.16,.09,.09)],YARN)
 # Door: EntryPortal, front hinge, open -100 deg.
 door_parts=[]
 portal=bpy.data.objects.new('EntryPortal',None);C.ASSET.objects.link(portal)
