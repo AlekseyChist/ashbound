@@ -98,9 +98,30 @@ func run():
     for tick in range(90):await physics_frame
     if not is_zero_approx(building.door.fraction):
         push_error("Interior door not fully closed");quit(1);return
+    var guard_route=[Vector3(0,.875,-2.4),Vector3(2.7,.875,-2.4),Vector3(2.7,.875,-1.05),Vector3(2.7,-.725,1.75),Vector3(4.05,-.725,1.75),Vector3(4.05,-2.325,-1.05),Vector3(4.05,-2.325,-2.4),Vector3(0,-2.325,-1.2)]
+    for target in guard_route:
+        if not await walk(target):quit(1);return
+    if building.set_interior_visible(false,true):
+        push_error("Occupied lower hall allowed hiding");quit(1);return
+    # Exercise the caller's vacant state explicitly; collisions stay live.
+    if not building.set_interior_visible(false):
+        push_error("Both closed portals prevented vacant hide");quit(1);return
+    if not building.lab_door.try_toggle(actor):
+        push_error("Hidden lower portal interaction failed");quit(1);return
+    for tick in range(90):await physics_frame
+    if not building.interior_visible or building.set_interior_visible(false):
+        push_error("Rear-only open portal allowed hidden interior");quit(1);return
+    if not building.lab_door.try_toggle(actor):
+        push_error("Rear-only guard closing failed");quit(1);return
+    for tick in range(90):await physics_frame
+    if not is_zero_approx(building.lab_door.fraction):
+        push_error("Rear-only guard door still open");quit(1);return
+    var guard_return=[Vector3(0,-2.325,-2.4),Vector3(4.05,-2.325,-2.4),Vector3(4.05,-2.325,-1.05),Vector3(4.05,-.725,1.75),Vector3(2.7,-.725,1.75),Vector3(2.7,.875,-1.05),Vector3(2.7,.875,-2.4),Vector3(0,.875,-2.4),Vector3(0,.875,1.3)]
+    for target in guard_return:
+        if not await walk(target):quit(1);return
     if not building.door.try_toggle(actor):
         push_error("Interior reopening failed");quit(1);return
     for tick in range(90):await physics_frame
     if not await walk(Vector3(0,.875,4.5)):quit(1);return
-    print("S_LIBRARY_ROOMS_STAIRS_RETURN_PASS segments=",targets.size()+4)
+    print("S_LIBRARY_ROOMS_STAIRS_RETURN_PASS segments=",targets.size()+4+guard_route.size()+guard_return.size())
     quit(0)
