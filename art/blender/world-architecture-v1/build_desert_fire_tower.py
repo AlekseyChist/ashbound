@@ -61,21 +61,32 @@ for sx in (-1,1):
         for z0,z1,t in ((0,8,.6),(8,15,.45),(15,20,.3)):
             box('buttress',(sx*(2.8+t/2),sy*2.55,(z0+z1)/2),(t,.7,z1-z0),STONE)
             box('buttress',(sx*2.55,sy*(2.8+t/2),(z0+z1)/2),(.7,t,z1-z0),STONE)
-# Tiers: floor levels z = 0, 5.25, 10.5, 15.75 and roof platform 21.0.
-# Stair opening in each upper floor: x -2.2..-0.4, y -1.6..2.2.
+# The climb (Codex 298: on the former 0.207 m treads - a 42 deg stair - the adult capsule, radius 0.28,
+# had no room to land on the next step and stopped at the second flight): a stair winding up round the
+# four walls over an open well - eight steps of 0.325 x 0.1875 (30 deg) along each wall, a 0.9 m landing
+# in each corner; 14 sides (1.5 m each) climb the 21 m to the roof, arriving at its north-east corner.
+# Each turn passes 6 m over the one below. The well x/y -1.3..1.3 stays open.
 box('floor',(0,0,.05),(4.4,4.4,.1),STONE)
-for z in (5.25,10.5,15.75,21.0):
-    box('floor',(.9,0,z-.1),(2.6,4.4,.2),STONE)
-    box('floor',(-1.3,-1.9,z-.1),(1.8,.6,.2),STONE)
-# Flights on each tier k (floor zk = 5.25*k): 14 risers of 0.1875 m.
-for k in range(4):
-    zk=5.25*k
-    for i in range(14):
-        box('stair',(-1.75,-1.6+.207*i+.1035,zk+.1875*(i+1)-.094),(.9,.207,.1875),STONE)
-    box('landing',(-1.3,1.75,zk+2.625-.1),(1.8,.9,.2),STONE)
-    for i in range(14):
-        box('stair',(-.85,1.3-.207*i-.1035,zk+2.625+.1875*(i+1)-.094),(.9,.207,.1875),STONE)
-    box('stair wall',(-1.3,-.15,zk+2.6),(.12,2.9,5.2),STONE)
+SIDES=[('W',(-1.75,-1.3),(-1.75,1.3)),('N',(-1.3,1.75),(1.3,1.75)),('E',(1.75,1.3),(1.75,-1.3)),('S',(1.3,-1.75),(-1.3,-1.75))]
+CORNER={'W':(-1.75,1.75),'N':(1.75,1.75),'E':(1.75,-1.75),'S':(-1.75,-1.75)}
+z=0.0
+for side in range(14):
+    name,(x0,y0),(x1,y1)=SIDES[side%4]
+    for i in range(8):
+        t=(i+.5)/8
+        top=z+.1875*(i+1)
+        cx,cy=x0+(x1-x0)*t,y0+(y1-y0)*t
+        size=(.9,.325,.1875) if name in ('W','E') else (.325,.9,.1875)
+        box('stair',(cx,cy,top-.094),size,STONE)
+        # the step's stone under it, 1.2 m deep (it stays 3.3 m over the entry passage below the south side)
+        box('stair body',(cx,cy,top-.1875-.6),(size[0],size[1],1.2),STONE,False)
+    z+=1.5
+    lx,ly=CORNER[name]
+    box('landing',(lx,ly,z-.1),(.9,.9,.2),STONE)
+    box('landing body',(lx,ly,z-.2-.6),(.9,.9,1.2),STONE,False)
+# the roof at 21 m, open over the last two sides (the west and north bands) so the climb keeps its
+# headroom under it: x -1.3..2.2, y -2.2..1.3
+box('roof floor',(.45,-.45,20.9),(3.5,3.5,.2),STONE)
 # Windows: dark pointed niches on three tiers of every face.
 for z in (6.5,11.8,17.0):
     for axis,sign,cx,cy in (('y',-1,0,-2.8),('y',1,0,2.8),('x',-1,-2.8,0),('x',1,2.8,0)):
@@ -92,10 +103,10 @@ for k in range(-2,3):
     for x,y in ((-2.65,k*1.1),(2.65,k*1.1)):
         box('merlon',(x,y,22.0),(.3,.45,.4),STONE)
 # Brazier: plinth outside the stair opening; four iron posts; bowl and flame.
-box('brazier plinth',(1.0,.6,21.4),(1.4,1.4,.8),STONE)
+box('brazier plinth',(0,-.6,21.4),(1.4,1.4,.8),STONE)
 for dx in (-.42,.42):
     for dy in (-.42,.42):
-        box('brazier post',(1.0+dx,.6+dy,22.3),(.08,.08,1.0),IRON)
+        box('brazier post',(dx,-.6+dy,22.3),(.08,.08,1.0),IRON)
 def ring_solid(n,x,y,z,rings,m,role=True):
     k=8
     v=[]
@@ -113,8 +124,8 @@ def ring_solid(n,x,y,z,rings,m,role=True):
     o=C.mesh(n,v,f,m)
     if role:o['part_role']='interior_furniture'
     return o
-ring_solid('brazier bowl',1.0,.6,21.8,[(0,.35,.35),(.25,.6,.6),(.45,.68,.68)],IRON,False)
-ring_solid('flame',1.0,.6,22.2,[(0,.45,.45),(.35,.32,.32),(.75,.12,.12),(.95,.02,.02)],FIRE,False)
+ring_solid('brazier bowl',0,-.6,21.8,[(0,.35,.35),(.25,.6,.6),(.45,.68,.68)],IRON,False)
+ring_solid('flame',0,-.6,22.2,[(0,.45,.45),(.35,.32,.32),(.75,.12,.12),(.95,.02,.02)],FIRE,False)
 # Order banners on the south face.
 for x in (-1.6,1.6):
     box('banner',(x,-2.86,13.5),(.9,.04,4.0),CLOTH,False)
@@ -164,4 +175,4 @@ visual=[o for o in C.ASSET.objects if o.type=='MESH' and '-colonly' not in o.nam
 triangles=0
 for o in visual:o.data.calc_loop_triangles();triangles+=len(o.data.loop_triangles)
 points=[o.matrix_world@Vector(v) for o in visual for v in o.bound_box]
-(QA/'stats.json').write_text(json.dumps({'state':'built; Codex export and Godot review pending','walls':[7,7],'maximum_height':23.2,'rooms':['tier 0','tier 1','tier 2','tier 3','roof platform'],'height_note':'measured 23.2 m to the merlons; the concept\'s 25 m was provisional','triangles':triangles,'meshes':len(visual),'bbox':[[min(p[i] for p in points) for i in range(3)],[max(p[i] for p in points) for i in range(3)]],'entry_hinge':'EntryPortal_entry_hinge at (-0.6,-2.5,0), open -100 deg','stairs':'per tier 2x14 risers 0.1875, flights x -2.2..-1.3 north and x -1.3..-0.4 south','sha256':hashlib.sha256(asset.read_bytes()).hexdigest()},indent=2),encoding='utf-8')
+(QA/'stats.json').write_text(json.dumps({'state':'built; Codex export and Godot review pending','walls':[7,7],'maximum_height':23.2,'rooms':['stair well','roof platform'],'height_note':'measured 23.2 m to the merlons; the concept\'s 25 m was provisional','triangles':triangles,'meshes':len(visual),'bbox':[[min(p[i] for p in points) for i in range(3)],[max(p[i] for p in points) for i in range(3)]],'entry_hinge':'EntryPortal_entry_hinge at (-0.6,-2.5,0), open -100 deg','stairs':'winding round the four walls over an open well: 14 sides x 8 steps 0.325 x 0.1875, corner landings 0.9, arriving at the roof NE','sha256':hashlib.sha256(asset.read_bytes()).hexdigest()},indent=2),encoding='utf-8')
