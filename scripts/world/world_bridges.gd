@@ -53,7 +53,7 @@ func configure(scene: Node3D) -> void:
 ## 28 Sep: "a ramp to the bridge, no gaps, a smooth way up") from the ground on the bank up to it.
 ## `core` marks the samples over the water (the deck height comes from them, not from the road
 ## climbing the bank); `on_land` (optional) is filled with 1 where the ramp stands over the bank.
-func deck_profile(run: PackedVector3Array, core: PackedByteArray, on_land: PackedByteArray = PackedByteArray()) -> PackedVector3Array:
+func deck_profile(run: PackedVector3Array, core: PackedByteArray, on_land: PackedByteArray = PackedByteArray(), half_width := 2.0) -> PackedVector3Array:
 	var deck_top := -INF
 	for i in run.size():
 		if core[i] == 1:
@@ -74,20 +74,33 @@ func deck_profile(run: PackedVector3Array, core: PackedByteArray, on_land: Packe
 		var length := clampf(absf(deck_top - toe) / RAMP_GRADE, 1.0, total / 3.0)
 		var t := smoothstep(0.0, length, from_start if near_start else from_end)
 		var y := lerpf(toe, deck_top, t)
-		# The S-curve leaves its toe level while a bank keeps rising under it: the ramp never dips
-		# under the ground (Codex 14 Oct, the W1 footbridge: grass showed through the west boards).
-		if t < 1.0:
-			# across the deck too (up to 2 m either side of the axis: the bank also slopes sideways)
-			var a := run[maxi(i - 1, 0)]
-			var b := run[mini(i + 1, run.size() - 1)]
-			# - eased in over the first 3 m from the toe, so the ramp starts flush with the road
-			var side := Vector2(-(b.z - a.z), b.x - a.x).normalized() * 2.0
-			var centre: float = world.world_ground(run[i].x, run[i].z) + RAMP_TOE
-			var across := centre
-			for k in [-1.0, 1.0]:
-				across = maxf(across, world.world_ground(run[i].x + side.x * k, run[i].z + side.y * k) + RAMP_TOE)
-			var ease := clampf(minf(from_start, from_end) / 3.0, 0.0, 1.0)
-			y = maxf(y, lerpf(centre, across, ease))
+		# The deck never dips under the ground (Codex 14 Oct, the W1 footbridge: grass through the boards;
+		# Codex e3727b2: 0.45 m over its east ramp, up to 0.18 m on four other bridges). The deck runs
+		# straight between the run's points while the 5 m ground triangles bulge and a wide road's quads
+		# fan out on a bend, so each point takes the highest ground over both its segments and across the
+		# deck with a metre to spare, every 0.5 m. Ramps and the level deck alike. At a toe the deck sits
+		# on the ground under the point itself (flush with the road, no step), the dense maximum eased in
+		# over the first 1.5 m.
+		var prev := run[maxi(i - 1, 0)]
+		var next := run[mini(i + 1, run.size() - 1)]
+		var here := Vector2(run[i].x, run[i].z)
+		var along_dir := (Vector2(next.x, next.z) - Vector2(prev.x, prev.z)).normalized()
+		var side := Vector2(-along_dir.y, along_dir.x)
+		var back := here.distance_to(Vector2(prev.x, prev.z))
+		var ahead := here.distance_to(Vector2(next.x, next.z))
+		var reach := maxf(half_width, 0.5) + 1.0
+		var dense := -INF
+		var u := -back
+		while u <= ahead + 0.001:
+			var v := -reach
+			while v <= reach + 0.001:
+				var q: Vector2 = here + along_dir * u + side * v
+				dense = maxf(dense, world.world_ground(q.x, q.y) + RAMP_TOE)
+				v += 0.5
+			u += 0.5
+		var at_point: float = world.world_ground(here.x, here.y) + RAMP_TOE
+		var ease := clampf(minf(from_start, from_end) / 1.5, 0.0, 1.0)
+		y = maxf(y, lerpf(at_point, dense, ease))
 		result.append(Vector3(run[i].x, y, run[i].z))
 		on_land[i] = 1 if t < 1.0 else 0
 	return result
@@ -121,7 +134,7 @@ func build_bridge(run: PackedVector3Array, width: float, core: PackedByteArray) 
 	_spans.append(span)
 	_centres.append(mid)
 	var on_land := PackedByteArray()
-	run = deck_profile(run, core, on_land)
+	run = deck_profile(run, core, on_land, width * 0.5)
 	var bridge := Node3D.new()
 	bridge.name = "Bridge_%d" % bridge_count
 	add_child(bridge)

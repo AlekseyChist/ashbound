@@ -455,7 +455,7 @@ func _build_roads() -> void:
 				continue
 			if run.size() >= 2:
 				# The hero walks the same profile the bridge shows: ramps down to the ground at both ends.
-				var strip: MeshInstance3D = roads.add_strip(bridges.deck_profile(run, core), width, ROAD_TINT, true)
+				var strip: MeshInstance3D = roads.add_strip(bridges.deck_profile(run, core, PackedByteArray(), width * 0.5), width, ROAD_TINT, true)
 				if strip != null:
 					strip.name = "%s_bridge_%d" % [road.id, i]
 					_paint(strip, Color(ROAD_TINT.srgb_to_linear(), 1.0))

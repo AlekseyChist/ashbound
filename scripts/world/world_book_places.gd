@@ -93,7 +93,22 @@ func ground(x: float, z: float) -> float:
 	return world.ground_height_local(x + off.x, z + off.z) - off.y
 
 
+const MASONRY := "res://assets/environment/village-house-materials-v1/stone_wall_02_%s_1k.jpg"
+
 func _material(colour: String) -> StandardMaterial3D:
+	if colour == "masonry" and not _materials.has(colour):
+		# The stairs' supporting bodies (Codex 14 Oct: tall flat grey planes): the village houses' CC0
+		# stone wall, projected in world space so neighbouring blocks run on as one masonry wall.
+		var m := StandardMaterial3D.new()
+		m.albedo_texture = load(MASONRY % "diff")
+		m.normal_enabled = true
+		m.normal_texture = load(MASONRY % "nor_gl")
+		m.roughness_texture = load(MASONRY % "rough")
+		m.albedo_color = Color(0.78, 0.77, 0.72)
+		m.uv1_triplanar = true
+		m.uv1_world_triplanar = true
+		m.uv1_scale = Vector3.ONE * 0.45
+		_materials[colour] = m
 	if not _materials.has(colour):
 		var m := StandardMaterial3D.new()
 		m.albedo_color = PALETTE[colour]
@@ -254,7 +269,9 @@ func build_stairs(stairs: Array) -> void:
 				low = minf(low, ground(at.x + p.x, at.y + p.z))
 			var height := maxf(top - (low - SINK), 0.3)
 			var tread := depth < 0.6
-			_stair_block(node, Vector3(at.x, top - height * 0.5, at.y), Vector3(width, height, depth), yaw, "rock", not tread)
+			_stair_block(node, Vector3(at.x, top - height * 0.5, at.y), Vector3(width, height, depth), yaw, "masonry", not tread)
+			# a dressed-stone tread over the masonry body: its nosing reads the steps from the side
+			_stair_block(node, Vector3(at.x, top - 0.06, at.y), Vector3(width + 0.06, 0.12, depth + 0.02), yaw, "rock", false)
 			if tread:
 				# Walking surface: a 32 deg slab from each tread's back edge at the step above to its front
 				# edge on the tread itself - so a flight meets its landings flush at both ends (Codex
