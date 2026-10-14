@@ -31,6 +31,12 @@ const PLINTH_LEDGE := 0.25
 const YARD_CLEAR := 0.2
 const YARD_STEP := 0.25
 const YARD_DOOR := 2.5
+## A street's uphill bank higher than LANE_WALL_MIN over the street becomes a stone wall over the whole
+## bank (its STREET_BLEND band past the edge), its top on the ground at the bank's top, sloping with
+## the street (Codex 27c3f38 010/028/029/032: the slum's lane ran in a trench of 50 deg earth cuts).
+## Only in runs of LANE_WALL_RUN m or more; not across a door stair, a house or another street.
+const LANE_WALL_MIN := 0.6
+const LANE_WALL_RUN := 5
 ## The ground under a building's walls lies this far under its floor (no shared plane).
 const FLOOR_GAP := 0.05
 ## The library's lower hall (S-L: its floor 3.2 m under the entrance) needs the ground dug out: no
@@ -630,6 +636,85 @@ func _steps(book: Node3D, node: Node3D, ground: Callable, start: Vector2, dir: V
 			book._stair_collider(node, Vector3(p.x, (before + top) * 0.5 - 0.03, p.y), Vector3(width, 0.06, STOOP_RUN / cos(pitch) + 0.04), turn)
 			book._stair_block(node, Vector3(p.x, top - 0.05, p.y), Vector3(width + 0.04, 0.1, STOOP_RUN + 0.02), yaw, "tread", false)
 	return [built, false, end]
+
+
+## The lane walls (see LANE_WALL_MIN), after build_plinths (they keep off its door stairs).
+func build_lane_walls(book: Node3D, ground: Callable) -> void:
+	var node := Node3D.new()
+	node.name = "SnowLaneWalls"
+	book.add_child(node)
+	var count := 0
+	for si in _profiles.size():
+		var pts: PackedVector2Array = _profiles[si][0]
+		var cum: PackedFloat32Array = _profiles[si][1]
+		var edge: float = float(_profiles[si][3]) + 0.3
+		var run: float = cum[cum.size() - 1]
+		var n := int(floor(run / STREET_STEP))
+		for sx in [-1.0, 1.0]:
+			# each sample: [centre, along, across, street level, top] or null
+			var samples: Array = []
+			for i in n:
+				var t := (i + 0.5) * STREET_STEP
+				var q := _along(pts, cum, t)
+				var dir := (_along(pts, cum, minf(t + 0.5, run)) - _along(pts, cum, maxf(t - 0.5, 0.0))).normalized()
+				var across: Vector2 = Vector2(-dir.y, dir.x) * sx
+				var level := float(_street_at(si, q)[1])
+				var top := -INF
+				for k in 5:
+					var e: Vector2 = q + across * (edge + STREET_BLEND * k / 4.0)
+					top = maxf(top, float(ground.call(e.x, e.y)))
+				var centre: Vector2 = q + across * (edge + STREET_BLEND * 0.5)
+				var ok := top - level >= LANE_WALL_MIN
+				if ok:
+					for sj in _profiles.size():
+						if sj != si and float(_street_at(sj, centre)[0]) < float(_profiles[sj][3]) + 0.3 + STREET_BLEND:
+							ok = false
+					for lot in lots:
+						if _wall_dist(lot, centre) < STREET_BLEND * 0.5 + 0.1:
+							ok = false
+					for code in stoop_paths:
+						var sp: PackedVector2Array = stoop_paths[code]
+						for k in sp.size() - 1:
+							if centre.distance_to(Geometry2D.get_closest_point_to_segment(centre, sp[k], sp[k + 1])) < STOOP_WIDTH * 0.5 + STREET_BLEND * 0.5 + 0.2:
+								ok = false
+					for tr in _treads:
+						if centre.distance_to(tr[0]) < float(tr[1]) + STREET_BLEND * 0.5:
+							ok = false
+				samples.append([centre, dir, across, level, top] if ok else null)
+			# runs only
+			var i := 0
+			while i < n:
+				if samples[i] == null:
+					i += 1
+					continue
+				var j := i
+				while j < n and samples[j] != null:
+					j += 1
+				if j - i >= LANE_WALL_RUN:
+					# the top at each joint: the higher of the two samples it joins, so the coping runs
+					# continuous along the street (no step from block to block)
+					var joints := PackedFloat32Array()
+					for k in range(i, j + 1):
+						var a: float = float(samples[maxi(k - 1, i)][4])
+						var b: float = float(samples[mini(k, j - 1)][4])
+						joints.append(maxf(a, b))
+					for k in range(i, j):
+						var a: Array = samples[k]
+						var t0: float = joints[k - i]
+						var t1: float = joints[k - i + 1]
+						var top_y := (t0 + t1) * 0.5
+						var bottom_y := minf(float(a[3]), minf(t0, t1)) - 1.5
+						var dir: Vector2 = a[1]
+						var yaw := atan2(dir.x, dir.y)
+						var turn := Basis(Vector3.UP, yaw) * Basis(Vector3.RIGHT, -atan((t1 - t0) / STREET_STEP))
+						var c: Vector2 = a[0]
+						var h := top_y - bottom_y
+						book._tilted_block(node, Vector3(c.x, bottom_y + h * 0.5, c.y), Vector3(STREET_BLEND, h, STREET_STEP + 0.04), turn, "masonry", true)
+						var lip: Vector2 = c - (a[2] as Vector2) * (STREET_BLEND * 0.5 - 0.17)
+						book._tilted_block(node, Vector3(lip.x, top_y + 0.04, lip.y), Vector3(0.34, 0.12, STREET_STEP + 0.06), turn, "tread", false)
+						count += 1
+				i = j
+	print("SNOW_LANE_WALLS blocks=%d" % count)
 
 
 ## A house's plinth past its walls on each side [left, right, back, front]: PLINTH_LEDGE; a shack's
