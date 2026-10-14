@@ -204,11 +204,11 @@ def internal_stairs(h):
     for x in (2.0,4.6):box('turn masonry support',(x,2.05,h+.85),(.30,.30,1.7),STONE,True)
 for h in LEVELS[:-1]:internal_stairs(h)
 # Medieval cantilevers: wedges keyed .25m into the wall, never a freestanding cage.
-def corbel(n,face,u,h,reach=7.0):
+def corbel(n,face,u,h,reach=7.0,solid=True):
     v=[(5.25,u-.18,h-.9),(5.25,u+.18,h-.9),(5.25,u-.18,h-.24),(5.25,u+.18,h-.24),(reach,u-.18,h-.24),(reach,u+.18,h-.24)]
     angle=face*math.pi/2
     verts=[(x*math.cos(angle)-y*math.sin(angle),x*math.sin(angle)+y*math.cos(angle),z) for x,y,z in v]
-    mesh(n,verts,[tuple(reversed(f)) for f in [(0,1,3,2),(0,2,4),(1,5,3),(2,3,5,4),(0,4,5,1)]],STONE,True)
+    mesh(n,verts,[tuple(reversed(f)) for f in [(0,1,3,2),(0,2,4),(1,5,3),(2,3,5,4),(0,4,5,1)]],STONE,solid)
 FACES=[((6.25,-3),(6.25,3)),((3,6.25),(-3,6.25)),((-6.25,3),(-6.25,-3)),((-3,-6.25),(3,-6.25))]
 CORNERS=[(6.25,6.25),(-6.25,6.25),(-6.25,-6.25),(6.25,-6.25)]
 def outer_flight(k):
@@ -259,6 +259,12 @@ def ring(h,repair=False):
         for u in (-4.5,-1.5,1.5,4.5):
             if (f==3 or (f==2 and not repair)) and abs(u)<3:continue # Real eighth-flight opening, no consoles across it.
             corbel('gallery masonry corbel',f,u,h,reach=8.05 if f==2 and not repair else 7.0)
+    if not repair:
+        # Machicolation rhythm: lighter corbels between the bearing ones (visual only).
+        for f in range(4):
+            for u in (-3.0,0.0,3.0):
+                if (f==3 or f==2) and abs(u)<3:continue
+                corbel('gallery machicolation corbel',f,u,h,reach=8.05 if f==2 else 7.0,solid=False)
     for a,b in [((-7,-7),(7,-7)),((7,-7),(7,7)),((7,7),(-7,7)),((-7,7),(-7,-7))]:
         if a[1]==-7 and b[1]==-7:
             if repair:
