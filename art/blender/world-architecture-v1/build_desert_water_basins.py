@@ -77,7 +77,8 @@ def build(name,width,depth):
     bpy.ops.export_scene.gltf(filepath=str(target),use_selection=True,export_format='GLB',export_apply=True,export_yup=True,export_cameras=False,export_lights=False,export_extras=True)
     data=target.read_bytes();length=struct.unpack_from('<I',data,12)[0];doc=json.loads(data[20:20+length])
     for m in doc['materials']:
-        if m['name']=='DW weathered sandstone':m['pbrMetallicRoughness']['baseColorFactor']=[.70,.57,.40,1]
+        # Exact cut-sandstone tint used by accepted D-H and D-P foundations.
+        if m['name']=='DW weathered sandstone':m['pbrMetallicRoughness']['baseColorFactor']=[.72,.63,.49,1]
     encoded=json.dumps(doc,separators=(',',':')).encode();encoded+=b' '*((-len(encoded))%4);rest=data[20+length:]
     target.write_bytes(struct.pack('<III',0x46546c67,2,20+len(encoded)+len(rest))+struct.pack('<II',len(encoded),0x4e4f534a)+encoded+rest)
     triangles=0
