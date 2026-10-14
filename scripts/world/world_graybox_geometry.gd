@@ -19,6 +19,8 @@ var shore_height: Callable
 ## SANDY-BANKS-01: optional shore_color(world_x, world_z, coarse_color) -> Color for the same points.
 var shore_color: Callable
 const REFINE := 4
+var _normal_cache := {}
+var _sample_cache := {}
 
 
 func build(heights: PackedFloat32Array, colors: PackedColorArray, width: int, spacing: float) -> void:
@@ -28,6 +30,8 @@ func build(heights: PackedFloat32Array, colors: PackedColorArray, width: int, sp
 	for child in get_children():
 		remove_child(child)
 		child.queue_free()
+	_normal_cache.clear()
+	_sample_cache.clear()
 
 	var half := (width - 1) * spacing * 0.5
 	var cell_count := width - 1
@@ -46,6 +50,9 @@ func build(heights: PackedFloat32Array, colors: PackedColorArray, width: int, sp
 			var x0 := cx * CHUNK_CELLS
 			var x1 := mini(x0 + CHUNK_CELLS, cell_count)
 			_build_chunk(heights, colors, width, spacing, half, x0, x1, z0, z1, mat)
+	# Samples are only needed while building; do not retain a second terrain grid during play.
+	_normal_cache.clear()
+	_sample_cache.clear()
 
 
 func _build_chunk(
@@ -160,19 +167,12 @@ func _add_refined(heights: PackedFloat32Array, colors: PackedColorArray, width: 
 			var colour := ca.lerp(cb, u).lerp(cc.lerp(cd, u), v)
 			tint[j * n + i] = colour if border or not shore_color.is_valid() else shore_color.call((x + u) * spacing - half, (z + v) * spacing - half, colour)
 	var first := verts.size()
-	var step := spacing / REFINE
 	for j in n:
 		for i in n:
 			var u := float(i) / REFINE
 			var v := float(j) / REFINE
 			verts.append(Vector3((x + u) * spacing - half, grid[j * n + i], (z + v) * spacing - half))
-			var il := maxi(i - 1, 0)
-			var ir := mini(i + 1, REFINE)
-			var jl := maxi(j - 1, 0)
-			var jr := mini(j + 1, REFINE)
-			var dhdx := (grid[j * n + ir] - grid[j * n + il]) / float((ir - il) * step)
-			var dhdz := (grid[jr * n + i] - grid[jl * n + i]) / float((jr - jl) * step)
-			normals.append(Vector3(-dhdx, 1.0, -dhdz).normalized())
+			normals.append(_shared_normal(heights, width, spacing, half, x * REFINE + i, z * REFINE + j))
 			cols.append(tint[j * n + i])
 	for j in REFINE:
 		for i in REFINE:
@@ -181,6 +181,60 @@ func _add_refined(heights: PackedFloat32Array, colors: PackedColorArray, width: 
 			var c := a + n
 			var d := c + 1
 			idx.append_array([a, b, c, b, d, c])
+
+
+## A shared lattice point is refined only if every cell touching it is refined. This is the same
+## boundary rule used for vertex positions above, including diagonally adjacent coarse cells.
+func _fine_point(ix: int, iz: int, width: int) -> bool:
+	var x := floori(float(ix) / REFINE)
+	var z := floori(float(iz) / REFINE)
+	for cz in range(z - (1 if iz % REFINE == 0 else 0), z + 1):
+		for cx in range(x - (1 if ix % REFINE == 0 else 0), x + 1):
+			if not _refined(cx, cz, width):
+				return false
+	return true
+
+
+func _fine_sample(heights: PackedFloat32Array, width: int, spacing: float, half: float, ix: int, iz: int) -> float:
+	var key := Vector2i(ix, iz)
+	if _sample_cache.has(key):
+		return _sample_cache[key]
+	var x := mini(floori(float(ix) / REFINE), width - 2)
+	var z := mini(floori(float(iz) / REFINE), width - 2)
+	var u := float(ix) / REFINE - x
+	var v := float(iz) / REFINE - z
+	var a := heights[z * width + x]
+	var b := heights[z * width + x + 1]
+	var c := heights[(z + 1) * width + x]
+	var d := heights[(z + 1) * width + x + 1]
+	var h := a + (b - a) * u + (c - a) * v if u + v <= 1.0 else d + (c - d) * (1.0 - u) + (b - d) * (1.0 - v)
+	if _fine_point(ix, iz, width):
+		h = float(shore_height.call(ix * spacing / REFINE - half, iz * spacing / REFINE - half, h))
+	_sample_cache[key] = h
+	return h
+
+
+## Use both sides of a shared edge, even across chunks. Cell-local one-sided derivatives produced
+## different lighting at the exact same position. At a coarse edge interpolate its original normals
+## so that a T-junction also shades continuously; no vertex position or collision is changed.
+func _shared_normal(heights: PackedFloat32Array, width: int, spacing: float, half: float, ix: int, iz: int) -> Vector3:
+	var key := Vector2i(ix, iz)
+	if _normal_cache.has(key):
+		return _normal_cache[key]
+	var result: Vector3
+	if not _fine_point(ix, iz, width):
+		var x := mini(floori(float(ix) / REFINE), width - 2)
+		var z := mini(floori(float(iz) / REFINE), width - 2)
+		var u := float(ix) / REFINE - x
+		var v := float(iz) / REFINE - z
+		result = _normal_at(heights, width, x, z, spacing).lerp(_normal_at(heights, width, x + 1, z, spacing), u).lerp(
+			_normal_at(heights, width, x, z + 1, spacing).lerp(_normal_at(heights, width, x + 1, z + 1, spacing), u), v).normalized()
+	else:
+		var dhdx := (_fine_sample(heights, width, spacing, half, ix + 1, iz) - _fine_sample(heights, width, spacing, half, ix - 1, iz)) / (2.0 * spacing / REFINE)
+		var dhdz := (_fine_sample(heights, width, spacing, half, ix, iz + 1) - _fine_sample(heights, width, spacing, half, ix, iz - 1)) / (2.0 * spacing / REFINE)
+		result = Vector3(-dhdx, 1.0, -dhdz).normalized()
+	_normal_cache[key] = result
+	return result
 
 
 func _normal_at(heights: PackedFloat32Array, width: int, x: int, z: int, spacing: float) -> Vector3:
