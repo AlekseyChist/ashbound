@@ -1,0 +1,5 @@
+[gd_scene load_steps=3 format=3]
+[ext_resource type="PackedScene" path="res://assets/buildings/world-architecture-v1/s_home_6x5.glb" id="1"]
+[ext_resource type="Script" path="res://scripts/buildings/snow_residence.gd" id="2"]
+[node name="SnowResidence" instance=ExtResource("1")]
+script = ExtResource("2")
