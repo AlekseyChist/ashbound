@@ -721,7 +721,10 @@ func _index_grass_obstacles() -> void:
 		for t in [0.0, 0.5]:
 			_grass_blocks.append(Vector3(lerpf(float(arrive[0]), float(place.point[0]), t) - HALF + offset.x, lerpf(float(arrive[1]), float(place.point[1]), t) - HALF + offset.y, 4.0))
 		if BOOK_CLEAR.has(str(place.kind)):
-			_grass_blocks.append(Vector3(float(place.spawn[0]) + offset.x, float(place.spawn[2]) + offset.y, float(BOOK_CLEAR.get(str(place.kind), 0.0))))
+			# a platform is cleared round itself, not round the hero's arrival (Codex 5b143f4: the
+			# viewpoint's circle sat 6.5 m off its 6 x 4 m floor)
+			var clear_at: Vector2 = Vector2(float(place.point[0]) - HALF, float(place.point[1]) - HALF) if str(place.kind) == "viewpoint" else Vector2(float(place.spawn[0]), float(place.spawn[2]))
+			_grass_blocks.append(Vector3(clear_at.x + offset.x, clear_at.y + offset.y, float(BOOK_CLEAR.get(str(place.kind), 0.0))))
 	# the W1 stair flights stay clear of grass (every fourth tread)
 	for flight in world_layout.get("book_stairs", []):
 		for i in range(0, flight.steps.size(), 4):

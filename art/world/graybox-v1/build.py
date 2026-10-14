@@ -771,60 +771,78 @@ for r in roads:
     gp=r['geometry_points']
     for a,b in zip(gp,gp[1:]):
         if min(abs(a[0]-322),abs(b[0]-322))>18.0:continue
-        reach=float(r.get('width_m',3))*.5+2.5
+        # 6 m: the trail runs along a grid row; the rows 5 m to either side must come down too or their
+        # triangles rise over the boards' edges (Codex 5b143f4 frame 012)
+        reach=6.0
         sl=(slice(max(0,int((min(a[1],b[1])-reach)/STEP)),min(WIDTH,int((max(a[1],b[1])+reach)/STEP)+2)),slice(max(0,int((min(a[0],b[0])-reach)/STEP)),min(WIDTH,int((max(a[0],b[0])+reach)/STEP)+2)))
         xx,zz=x[sl],z[sl];dx,dz=b[0]-a[0],b[1]-a[1]
         t=np.clip(((xx-a[0])*dx+(zz-a[1])*dz)/max(dx*dx+dz*dz,1e-9),0,1)
         dist=np.hypot(xx-(a[0]+t*dx),zz-(a[1]+t*dz))
         deck=a[2]+t*(b[2]-a[2])
         heights[sl]=np.where(dist<=reach,np.minimum(heights[sl],deck-.3),heights[sl])
-# WORLD-BUILD-01B (sheet wfW1, Codex ACK160): the east stair flights from the lake shore at 360/360
-# down to the footbridge at 346/440, landing on the viewpoint's terrace on the way. Stone flights
-# 2 m wide, risers ~0.18 m, treads 0.28 m, a 1.5 m landing after every 12 risers; the corridor is
-# too short for a straight run at that pitch, so the flights zigzag inside it. Under each step the
-# ground is cut below its tread; where a step stands over lower ground the game builds its stone
-# support down to the ground.
-STAIR_RISE,STAIR_RUN,STAIR_FLIGHT,STAIR_LANDING,STAIR_WIDTH=.18,.28,12,1.5,2.0
-def stair_run(start,end,h0,h1):
+# WORLD-BUILD-01B (sheet wfW1, Codex ACK160 and ACK162 variant b): the east stair flights from the lake
+# shore at 360/360 down to the viewpoint's terrace and on to the footbridge at 350/436. Stone flights
+# 2 m wide, risers ~0.18 m, treads ~0.28 m; landings only where the flights turn. Under each tread
+# the ground is cut below it; where a tread stands over lower ground the game builds its stone body
+# down to the ground.
+STAIR_RISE,STAIR_RUN,STAIR_WIDTH=.18,.28,2.0
+# Records: [x, z, top, yaw_deg, depth, width, rail] in map metres; depth along yaw, width across;
+# rail: 0 none, -1/+1 a rail on that side (local x), 2 a rail across the far end (local +z).
+def _rec(x_,z_,top,yaw,depth,width=STAIR_WIDTH,rail=0):
+    return [round(x_,3),round(z_,3),round(top,3),round(yaw,2),round(depth,3),round(width,3),rail]
+def stair_switchback(top_xz,h0,h1,z_end,xc,flights):
+    """Variant (b), Codex 14 Oct: flights across the slope, side by side 2 m apart down the slope
+    (one solid stepped body, no gap to fall in), turn landings at the ends, a rail on each flight's
+    downhill side and round each landing's outer end."""
     n=max(1,int(round((h0-h1)/STAIR_RISE)));rise=(h0-h1)/n
-    flights=[STAIR_FLIGHT]*(n//STAIR_FLIGHT)+([n%STAIR_FLIGHT] if n%STAIR_FLIGHT else [])
-    ux,uz=end[0]-start[0],end[1]-start[1];A=math.hypot(ux,uz);ux,uz=ux/A,uz/A;vx,vz=-uz,ux
-    a=A/len(flights);steps=[];h=h0
-    for k,r in enumerate(flights):
-        L=r*STAIR_RUN+(STAIR_LANDING if k<len(flights)-1 else 0.0)
-        b=math.sqrt(max(L*L-a*a,0.0))
-        l0=-b*.5 if k%2==0 else b*.5
-        px,pz=start[0]+ux*a*k+vx*l0,start[1]+uz*a*k+vz*l0
-        qx,qz=start[0]+ux*a*(k+1)-vx*l0,start[1]+uz*a*(k+1)-vz*l0
-        dx,dz=qx-px,qz-pz;D=math.hypot(dx,dz) or 1.0;dx,dz=dx/D,dz/D
-        yaw=round(math.degrees(math.atan2(dx,dz)),2)
+    per=[n//flights+(1 if k<n%flights else 0) for k in range(flights)]
+    z0=top_xz[1]+1.0
+    out=[];h=h0
+    for k,r in enumerate(per):
+        zc=z0+k*STAIR_WIDTH;L=r*STAIR_RUN;d=-1.0 if k%2==0 else 1.0
+        xs=xc-d*L*.5
+        yaw=-90.0 if d<0 else 90.0
+        if k==0:out.append(_rec(xs-d*1.0,zc-.5,h,yaw,2.0,3.0,0))   # the head landing by the shore
         for i in range(r):
-            c=STAIR_RUN*(i+.5)
-            steps.append([round(px+dx*c,3),round(pz+dz*c,3),round(h-rise*(i+1),3),yaw,STAIR_RUN+.02])
+            out.append(_rec(xs+d*STAIR_RUN*(i+.5),zc,h-rise*(i+1),yaw,STAIR_RUN+.02,STAIR_WIDTH,-1 if d<0 else 1))
         h-=rise*r
-        if k<len(flights)-1:
-            c=r*STAIR_RUN+STAIR_LANDING*.5
-            steps.append([round(px+dx*c,3),round(pz+dz*c,3),round(h,3),yaw,STAIR_LANDING+.02])
-    return steps
+        xe=xs+d*L
+        if k<flights-1:
+            out.append(_rec(xe+d*1.0,zc+STAIR_WIDTH*.5,h,yaw,2.0,2*STAIR_WIDTH,2))
+        else:
+            # the last landing reaches south onto the viewpoint's terrace
+            zz=(zc-STAIR_WIDTH*.5+z_end)*.5
+            out.append(_rec(xe+d*1.0,zz,h,0.0,z_end-(zc-STAIR_WIDTH*.5),2.0,0))
+    return out
+def stair_straight(a_xz,b_xz,h0,h1):
+    n=max(1,int(round((h0-h1)/STAIR_RISE)));rise=(h0-h1)/n
+    dx,dz=b_xz[0]-a_xz[0],b_xz[1]-a_xz[1];L=math.hypot(dx,dz);ux,uz=dx/L,dz/L;run=L/n
+    yaw=math.degrees(math.atan2(ux,uz))
+    # a stone landing from the terrace's edge to the first tread, at the terrace's level
+    out=[_rec(a_xz[0]-ux*1.3,a_xz[1]-uz*1.3,h0,yaw,2.6,STAIR_WIDTH,0)]
+    for i in range(n):
+        c=run*(i+.5)
+        out.append(_rec(a_xz[0]+ux*c,a_xz[1]+uz*c,h0-rise*(i+1),yaw,run+.02,STAIR_WIDTH,3))   # 3: rails both sides
+    return out
 BOOK_STAIRS=[]
-# OFF until the route is agreed (Claude 162 to Codex): the corridor's upper part falls 29 m within
-# ~22 m to the viewpoint - more than 2 m flights at 0.18/0.28 with 1.5 m landings can fold into.
-W1_STAIRS=False
+W1_STAIRS=True
 _vp=next((p_ for p_ in BOOK_PADS if p_['id']=='w1_viewpoint'),None)
 if W1_STAIRS and _vp is not None:
-    _top=(360.0,360.0);_mid_in=(358.0,381.0);_mid_out=(358.0,392.5);_foot=(350.0,436.0)
+    _top=(360.0,360.0);_foot=(350.0,436.0)
     _h_top=float(heights[int(round(_top[1]/STEP)),int(round(_top[0]/STEP))])
     _h_foot=float(heights[int(round(_foot[1]/STEP)),int(round(_foot[0]/STEP))])
-    _steps=stair_run(_top,_mid_in,_h_top,float(_vp['level']))+stair_run(_mid_out,_foot,float(_vp['level']),_h_foot)
-    BOOK_STAIRS.append({'id':'w1_stairs','width':STAIR_WIDTH,'steps':_steps})
-    # the cut: no grid point near a tread stands over it
-    for sx,sz,top,_yaw,_dep in _steps:
-        i0,i1=max(0,int((sz-5)/STEP)),min(WIDTH-1,int((sz+5)/STEP)+1)
-        j0,j1=max(0,int((sx-5)/STEP)),min(WIDTH-1,int((sx+5)/STEP)+1)
-        win=heights[i0:i1+1,j0:j1+1];near=np.hypot(x[i0:i1+1,j0:j1+1]-sx,z[i0:i1+1,j0:j1+1]-sz)<=4.2
-        # the viewpoint's terrace keeps its level (the flights land on it and leave it)
-        _vx,_vz=x[i0:i1+1,j0:j1+1],z[i0:i1+1,j0:j1+1]
-        near&=~((_vx>=349.9)&(_vx<=360.1)&(_vz>=379.9)&(_vz<=390.1))
+    _lvl=float(_vp['level'])
+    _steps=stair_switchback(_top,_h_top,_lvl,381.5,358.0,10)+stair_straight((358.5,392.0),_foot,_lvl,_h_foot)
+    BOOK_STAIRS.append({'id':'w1_stairs','steps':_steps})
+    # the cut under every tread and landing: the grid points near it below its top; the viewpoint's
+    # terrace keeps its level (the flights land on it and leave it)
+    for sx,sz,top,_yaw,dep,wid,_r in _steps:
+        reach=max(dep,wid)*.5+4.0+(1.0 if dep>1.0 else 0.0)
+        i0,i1=max(0,int((sz-reach)/STEP)),min(WIDTH-1,int((sz+reach)/STEP)+1)
+        j0,j1=max(0,int((sx-reach)/STEP)),min(WIDTH-1,int((sx+reach)/STEP)+1)
+        win=heights[i0:i1+1,j0:j1+1];_vx,_vz=x[i0:i1+1,j0:j1+1],z[i0:i1+1,j0:j1+1]
+        near=np.hypot(_vx-sx,_vz-sz)<=reach
+        near&=~((_vx>=349.9)&(_vx<=360.1)&(_vz>=380.1)&(_vz<=390.1))
         heights[i0:i1+1,j0:j1+1]=np.where(near,np.minimum(win,top-.12),win)
 # The W1 sill (Codex 14 Oct: along the straight cut the ground lay 3 m under the 220 m mirror outside
 # the outflow, the water's edge hung over the slope): a stone sill along the whole chord, its crest

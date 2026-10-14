@@ -240,36 +240,67 @@ func build_stairs(stairs: Array) -> void:
 		var node := Node3D.new()
 		node.name = str(flight.id)
 		add_child(node)
-		var width := float(flight.width)
 		for st in flight.steps:
 			var at := Vector2(float(st[0]) - HALF, float(st[1]) - HALF)
 			var top := float(st[2])
 			var yaw := float(st[3])
 			var depth := float(st[4])
-			var low := INF
+			var width := float(st[5]) if st.size() > 5 else 2.0
+			var rail := int(st[6]) if st.size() > 6 else 0
 			var basis := Basis(Vector3.UP, deg_to_rad(yaw))
+			var low := INF
 			for k in [Vector2(-1, -1), Vector2(1, -1), Vector2(-1, 1), Vector2(1, 1)]:
 				var p: Vector3 = basis * Vector3(k.x * width * 0.5, 0, k.y * depth * 0.5)
 				low = minf(low, ground(at.x + p.x, at.y + p.z))
 			var height := maxf(top - (low - SINK), 0.3)
-			var centre := Vector3(at.x, top - height * 0.5, at.y)
-			var mesh := MeshInstance3D.new()
-			var box := BoxMesh.new()
-			box.size = Vector3(width, height, depth)
-			mesh.mesh = box
-			mesh.material_override = _material("rock")
-			mesh.position = centre
-			mesh.rotation.y = deg_to_rad(yaw)
-			mesh.visibility_range_end = 300.0
-			node.add_child(mesh)
-			var body := StaticBody3D.new()
-			var shape := CollisionShape3D.new()
-			var bs := BoxShape3D.new()
-			bs.size = box.size
-			shape.shape = bs
-			body.add_child(shape)
-			body.position = centre
-			body.rotation.y = deg_to_rad(yaw)
-			node.add_child(body)
-			boxes += 1
+			var tread := depth < 0.6
+			_stair_block(node, Vector3(at.x, top - height * 0.5, at.y), Vector3(width, height, depth), yaw, "rock", not tread)
+			if tread:
+				# Walking surface (as the L-H stair): a slab through the treads' centres, 33 deg - the hero
+				# walks it without stepping; the stone block under it collides only below the slab.
+				var body_top := top - STAIR_RISE * 0.5 - 0.08
+				var body_h := maxf(body_top - (low - SINK), 0.1)
+				_stair_collider(node, Vector3(at.x, body_top - body_h * 0.5, at.y), Vector3(width, body_h, depth), basis)
+				var pitch := atan2(STAIR_RISE, depth - 0.02)
+				var slab := basis * Basis(Vector3.RIGHT, pitch)
+				_stair_collider(node, Vector3(at.x, top, at.y), Vector3(width, 0.06, (depth - 0.02) / cos(pitch) + 0.02), slab)
+			# rails: 1 m over the tread, solid
+			var rails: Array = []
+			if rail == -1 or rail == 3:
+				rails.append([Vector3(-width * 0.5 + 0.05, 0, 0), Vector3(0.1, 1.0, depth)])
+			if rail == 1 or rail == 3:
+				rails.append([Vector3(width * 0.5 - 0.05, 0, 0), Vector3(0.1, 1.0, depth)])
+			if rail == 2:
+				rails.append([Vector3(0, 0, depth * 0.5 - 0.05), Vector3(width, 1.0, 0.1)])
+			for r in rails:
+				var off: Vector3 = basis * (r[0] as Vector3)
+				_stair_block(node, Vector3(at.x + off.x, top + 0.5, at.y + off.z), r[1], yaw, "timber")
 	print("BOOK_STAIRS flights=%d boxes=%d" % [stairs.size(), boxes])
+
+
+const STAIR_RISE := 0.18
+
+func _stair_collider(parent: Node3D, centre: Vector3, size: Vector3, basis: Basis) -> void:
+	var body := StaticBody3D.new()
+	var shape := CollisionShape3D.new()
+	var bs := BoxShape3D.new()
+	bs.size = size
+	shape.shape = bs
+	body.add_child(shape)
+	body.transform = Transform3D(basis, centre)
+	parent.add_child(body)
+
+
+func _stair_block(parent: Node3D, centre: Vector3, size: Vector3, yaw: float, colour: String, solid := true) -> void:
+	var mesh := MeshInstance3D.new()
+	var box := BoxMesh.new()
+	box.size = size
+	mesh.mesh = box
+	mesh.material_override = _material(colour)
+	mesh.position = centre
+	mesh.rotation.y = deg_to_rad(yaw)
+	mesh.visibility_range_end = 300.0
+	parent.add_child(mesh)
+	boxes += 1
+	if solid:
+		_stair_collider(parent, centre, size, Basis(Vector3.UP, deg_to_rad(yaw)))
