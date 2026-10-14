@@ -35,10 +35,11 @@ def box(n,p,s,m,solid=True):
     return o
 # Base slab 5x4.
 box('base',(0,0,-.08),(5,4,.16),STONE)
-# Posts 0.12x0.12 timber: front row y=-1.9 (h 2.6), rear row y=1.9 (h 2.2).
+# Posts 0.12x0.12 timber: front row y=-1.9 (h 2.6), rear row y=1.9 (h 2.24).
 for x in (-2.4,0,2.4):
     box('post',(x,-1.9,1.3),(.12,.12,2.6),WOOD)
-    box('post',(x,1.9,1.1),(.12,.12,2.2),WOOD)
+    # up to the awning's underside there (2.24; the task's 2.2 left the cloth 4 cm over the posts)
+    box('post',(x,1.9,1.12),(.12,.12,2.24),WOOD)
 # Sloped cloth roof prism, explicit heights: y0 z0 down to y1 z1, thickness t.
 FACES=[(0,1,3,2),(4,6,7,5),(0,4,5,1),(2,3,7,6),(0,2,6,4),(1,5,7,3)]
 def sloped(name,x0,x1,y0,z0,y1,z1,t,material):
