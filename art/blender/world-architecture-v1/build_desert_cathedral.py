@@ -62,6 +62,19 @@ def roof_slope(n,xa,xb,y0,y1,za,zb,t,m):
     f=[(3,2,1,0),(4,5,6,7),(0,1,5,4),(1,2,6,5),(2,3,7,6),(3,0,4,7)]
     return C.mesh(n,v,f,m)
 # Foundation and floor.
+def lancet(n,cx,cy,z,axis,sign,w,h,depth,m,lift=0.0):
+    # a pointed (Gothic) window shape on a wall face: base width w at height z, straight sides up to z+h,
+    # a pointed head w*0.6 over that; a flat solid `depth` thick standing out of the face by `lift`
+    pts=[(-w/2,0),(w/2,0),(w/2,h),(w/4,h+w*.43),(0,h+w*.6),(-w/4,h+w*.43),(-w/2,h)]
+    def at(u,v,d):
+        return (cx+u,cy+sign*d,z+v) if axis=='y' else (cx+sign*d,cy+u,z+v)
+    k=len(pts)
+    v=[at(u,vv,lift) for u,vv in pts]+[at(u,vv,lift+depth) for u,vv in pts]
+    f=[tuple(range(k)),tuple(range(2*k-1,k-1,-1))]
+    for i in range(k):
+        j=(i+1)%k
+        f.append((i,j,k+j,k+i))
+    return C.mesh(n,v,f,m)
 box('foundation',(0,0,-.2),(30,18,.4),STONE)
 box('floor',(0,0,.05),(28.8,16.8,.1),STONE)
 # Walls (thickness 1.0; centre lines x +-13.9, y +-7.9).
@@ -81,13 +94,17 @@ for x in (-10,-5,5,10):
         box('buttress',(x,sy*8.7,9.0),(.8,.6,2.0),STONE)
 for y in (-4,4):
     box('buttress',(-14.7,y,4.0),(.6,1.0,8.0),STONE)
-# Windows — dark tall niches on the outer faces.
+# Windows: pointed lancets on the outer faces - a stone reveal and a dark niche over it (Codex 292 on
+# the tower: rectangles laid on the wall read as boxes); the rose over the portal a broad lancet.
 for x in (-11,-7.5,7.5,11):
-    box('window',(x,8.42,7.5),(1.2,.06,4.0),DARK,False)          # north
-    box('window',(x,-8.42,7.5),(1.2,.06,4.0),DARK,False)         # south
+    for sign,cy in ((1,8.4),(-1,-8.4)):
+        lancet('window reveal',x,cy,5.3,'y',sign,1.5,3.6,.06,STONE,0.0)
+        lancet('window',x,cy,5.45,'y',sign,1.2,3.4,.04,DARK,.06)
 for y in (-4,0,4):
-    box('window',(-14.42,y,7.5),(.06,1.2,4.0),DARK,False)        # west
-box('window',(0,-8.42,9.5),(3.0,.06,3.0),DARK,False)             # rose over the portal
+    lancet('window reveal',-14.4,y,5.3,'x',-1,1.5,3.6,.06,STONE,0.0)
+    lancet('window',-14.4,y,5.45,'x',-1,1.2,3.4,.04,DARK,.06)
+lancet('window reveal',0,-8.4,7.8,'y',-1,3.4,2.0,.06,STONE,0.0)
+lancet('window',0,-8.4,7.95,'y',-1,3.0,1.8,.04,DARK,.06)
 # Arcades: piers between naves at x +-5, longitudinal arcade beams on top.
 for x in (-5,5):
     for y in (-5,-1.5,2,5.5):
@@ -132,7 +149,8 @@ box('lectern post',(9.7,4.0,.5),(.12,.12,1.0),WOOD,False)
 box('hatch',(11.8,6.4,.12),(1.2,1.2,.06),WOOD,False)             # service hatch to the cisterns
 box('hatch ring',(11.8,6.0,.17),(.2,.04,.04),IRON,False)
 # Banners outside on the south wall flanking the portal.
-for x in (-4,4):
+# clear of the buttresses at x +-5 (x 2.3..3.7)
+for x in (-3,3):
     box('banner',(x,-8.46,7.0),(1.4,.04,5.0),CLOTH,False)
 # Door: EntryPortal in the main portal, hinge at the west jamb, open -100 deg.
 door_parts=[]
