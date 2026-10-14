@@ -2,6 +2,7 @@
 Blender Z-up -> Godot Y-up. All diagnostic outputs stay in ignored local/.
 """
 import sys, math, json, struct, hashlib
+sys.dont_write_bytecode=True
 from pathlib import Path
 import bpy, bmesh
 from mathutils import Vector, Matrix
@@ -10,7 +11,7 @@ sys.path.insert(0, str(ROOT/'art/blender'))
 import buildings_common as C
 C.reset()
 OUT = ROOT/'assets/buildings/world-architecture-v1'; OUT.mkdir(parents=True,exist_ok=True)
-QA = ROOT/'local/qa/snow-academy-tower'; QA.mkdir(parents=True,exist_ok=True)
+QA = ROOT/'local/qa/snow-academy-tower/r2'; QA.mkdir(parents=True,exist_ok=True)
 
 def surface(name,filename,metres):
     m=C.mat(name,(1,1,1,1),.96); m['uv_metres']=metres
@@ -38,15 +39,14 @@ tex=SLATE.node_tree.nodes.new('ShaderNodeTexImage');tex.image=im
 SLATE.node_tree.links.new(tex.outputs['Color'],SLATE.node_tree.nodes['Principled BSDF'].inputs['Base Color'])
 visual=[]; furniture=[]; doors=[]; collision=[]
 
+def collider(o):
+    q=o.copy();q.data=o.data.copy();q.name=o.name+'-colonly';C.ASSET.objects.link(q)
+    q.matrix_world=o.matrix_basis if o.parent is None else o.parent.matrix_world @ o.matrix_basis
+    q.hide_render=True;collision.append(q)
 def keep(o,solid=False,role=''):
     visual.append(o)
-    if role:
-        o['part_role']=role; furniture.append(o)
-    if solid:
-        # Copy actual transformed geometry, not an axis-aligned guess.
-        bpy.context.view_layer.update()
-        q=o.copy();q.data=o.data.copy();q.name=o.name+'-colonly';C.ASSET.objects.link(q)
-        q.hide_render=True; collision.append(q)
+    if role:o['part_role']=role;furniture.append(o)
+    if solid:collider(o)
     return o
 
 def box(n,p,s,m=WOOD,solid=False,role='',bevel=0):
@@ -59,7 +59,11 @@ def box(n,p,s,m=WOOD,solid=False,role='',bevel=0):
     o.location=p
     return keep(o,solid,role)
 def beam(n,a,b,w=.10,d=.14,m=WOOD,solid=False):
-    return keep(C.beam(n,a,b,w,d,m),solid)
+    a,b=Vector(a),Vector(b);v=b-a
+    o=box(n,(a+b)/2,(w,d,max(.001,v.length)),m)
+    o.rotation_mode='QUATERNION';o.rotation_quaternion=v.to_track_quat('Z','Y')
+    if solid:collider(o)
+    return o
 def mesh(n,v,f,m,solid=False,role=''):
     return keep(C.mesh(n,v,f,m),solid,role)
 def prop(n,p,s,m=WOOD,solid=False):
@@ -78,208 +82,237 @@ def panels(rect,cuts):
     return pieces
 FLUE=(-4.2,-3.4,2.4,3.2)
 HOLE=(1.7,4.85,-2,2.3)
-def slab(n,h,rect=(-5.5,5.5,-5.5,5.5),cuts=(),m=WOOD):
+LEVELS=[round(3.6*k,1) for k in range(8)]
+SERVICE=25.2
+REPAIR=28.8
+
+def slab(n,h,rect=(-5.1,5.1,-5.1,5.1),cuts=(),m=STONE):
     for a,b,c,d in panels(rect,cuts):box(n,((a+b)/2,(c+d)/2,h-.12),(b-a,d-c,.24),m,True)
-slab('stone foundation',0,m=STONE)
-for h in (3.6,7.2,10.8):slab('floor %.1f'%h,h,(-5.1,5.1,-5.1,5.1),cuts=(HOLE,FLUE))
-# Lantern cords terminate exactly at the underside of the next floor.
-for h in (0,3.6,7.2):box('lamp fixing cleat',(-1,0,h+3.345),(.20,.20,.03),WOOD)
-box('Eldren lamp fixing cleat',(-3,0,10.545),(.20,.20,.03),WOOD)
 
 def wall(n,axis,fixed,a,b,bottom,top,holes=(),m=STONE,thickness=.4):
     for lo,hi,z0,z1 in panels((a,b,bottom,top),holes):
         p=((lo+hi)/2,fixed,(z0+z1)/2) if axis=='x' else (fixed,(lo+hi)/2,(z0+z1)/2)
         size=(hi-lo,thickness,z1-z0) if axis=='x' else (thickness,hi-lo,z1-z0)
         box(n,p,size,m,True)
-# Deep windows are actual gaps through masonry, never a painted square.
-for h in (0,3.6,7.2):
-    m=STONE if h<7.2 else PLASTER
-    front=[(-3.8,-2.8,h+1.15,h+2.5)]
+slab('tower stone foundation',0,(-5.5,5.5,-5.5,5.5))
+for h in LEVELS[1:]:slab('occupied floor' if h<10.8 else 'service floor',h,cuts=(HOLE,FLUE),m=WOOD if h<10.8 else STONE)
+for h in (0,3.6,7.2):box('lamp fixing cleat',(-1,0,h+3.345),(.20,.20,.03),WOOD)
+box('Eldren lamp fixing cleat',(-3,0,10.545),(.20,.20,.03),WOOD)
+# All exterior walls are old masonry, not residential half-timber.
+for h in LEVELS:
+    top=h+3.6 if h<SERVICE else 27.8
+    front=[(-3.8,-2.8,h+1.15,h+2.5)] if h<10.8 else [(-.35,.35,h+1.4,min(top,h+2.5))]
     if h==0:front.append((-.8,.8,0,2.5))
-    rear=[(-1.2,-.2,h+1.15,h+2.5)]
-    west=[(-2.7,-1.7,h+1.15,h+2.5)]
-    if h==7.2:west.append((-.6,.6,8.2,9.2)) # architectural stash niche, separately backed
-    east=[(3.0,4.0,h+1.15,h+2.5)]
-    wall('front masonry','x',-5.3,-5.5,5.5,h,h+3.6,front,m)
-    wall('rear masonry','x',5.3,-5.5,5.5,h,h+3.6,rear,m)
-    wall('west masonry','y',-5.3,-5.1,5.1,h,h+3.6,west,m)
-    wall('east masonry','y',5.3,-5.1,5.1,h,h+3.6,east,m)
-    for fixed,mid,axis in [(-5.3,-3.3,'x'),(5.3,-.7,'x'),(-5.3,-2.2,'y'),(5.3,3.5,'y')]:
-        if axis=='x':
-            for u in (mid-.55,mid+.55):box('deep window jamb',(u,fixed,h+1.825),(.10,.52,1.45),WOOD)
-            for z in (h+1.10,h+2.55):box('window sill lintel',(mid,fixed,z),(1.2,.58,.12),STONE)
-            box('window mullion',(mid,fixed,h+1.825),(.06,.12,1.35),WOOD)
-        else:
-            for u in (mid-.55,mid+.55):box('deep window jamb',(fixed,u,h+1.825),(.52,.10,1.45),WOOD)
-            for z in (h+1.10,h+2.55):box('window sill lintel',(fixed,mid,z),(.58,1.2,.12),STONE)
-            box('window mullion',(fixed,mid,h+1.825),(.12,.06,1.35),WOOD)
-# The niche is within wall thickness; backing keeps the outside envelope intact.
+    rear=[(-1.2,-.2,h+1.15,h+2.5)] if h<10.8 else [(-.35,.35,h+1.4,min(top,h+2.5))]
+    west=[(-2.7,-1.7,h+1.15,h+2.5)] if h<10.8 else [(-.35,.35,h+1.4,min(top,h+2.5))]
+    if h==7.2:west.append((-.6,.6,8.2,9.2))
+    east=[(3.,4.,h+1.15,h+2.5)] if h<10.8 else [(-.35,.35,h+1.4,min(top,h+2.5))]
+    if h==SERVICE:east=[(-2.9,-1.3,SERVICE,SERVICE+2.5)]
+    for n,axis,fixed,a,b,holes in [('south','x',-5.3,-5.5,5.5,front),('north','x',5.3,-5.5,5.5,rear),('west','y',-5.3,-5.1,5.1,west),('east','y',5.3,-5.1,5.1,east)]:wall(n+' old masonry',axis,fixed,a,b,h,top,holes)
+    # Narrow service lights and deep lower windows have masonry frames.
+    for fixed,mid,axis in [(-5.3,-3.3 if h<10.8 else 0,'x'),(5.3,-.7 if h<10.8 else 0,'x'),(-5.3,-2.2 if h<10.8 else 0,'y'),(5.3,3.5 if h<10.8 else 0,'y')]:
+        if fixed==5.3 and axis=='y' and h==SERVICE:continue
+        w=1.0 if h<10.8 else .7;lo=h+1.15 if h<10.8 else h+1.4;hi=h+2.5
+        for u in (mid-w/2-.055,mid+w/2+.055):
+            p=(u,fixed,(lo+hi)/2) if axis=='x' else (fixed,u,(lo+hi)/2)
+            size=(.11,.54,hi-lo+.22) if axis=='x' else (.54,.11,hi-lo+.22)
+            box('carved stone window jamb',p,size,STONE)
+        for z in (lo-.06,hi+.06):
+            p=(mid,fixed,z) if axis=='x' else (fixed,mid,z)
+            size=(w+.32,.60,.12) if axis=='x' else (.60,w+.32,.12)
+            box('stone window sill and lintel',p,size,STONE)
+        p=(mid,fixed,(lo+hi)/2) if axis=='x' else (fixed,mid,(lo+hi)/2)
+        box('iron window divider',p,(.035,.08,hi-lo) if axis=='x' else (.08,.035,hi-lo),IRON)
+# Preserve the architectural stash entirely within the west wall.
 box('Eldren niche backing',(-5.45,0,8.7),(.10,1.2,1),STONE,True)
-for y in (-.63,.63):box('niche stone cheek',(-5.25,y,8.7),(.4,.06,1.12),STONE)
+for y in (-.63,.63):box('niche carved cheek',(-5.25,y,8.7),(.4,.06,1.12),STONE)
 for z in (8.17,9.23):box('niche stone shelf',(-5.25,0,z),(.4,1.32,.06),STONE)
 prop('niche folded document',(-5.28,0,8.235),(.16,.35,.06),CLOTH)
-def roof_z(y):
-    y=abs(y)
-    return 14.5-y*.3 if y<=3 else 13.6-(y-3)*(2.8/2.9)
-# Maintenance storey has a real east portal and gable supports above it.
-for axis,fixed in [('x',-5.3),('x',5.3),('y',-5.3),('y',5.3)]:
-    holes=[(-2.9,-1.3,10.8,13.3)] if axis=='y' and fixed>0 else []
-    # East doorway rises into the gable-side wall, with continuous jambs.
-    wall('maintenance enclosure',axis,fixed,-5.1 if axis=='y' else -5.5,5.1 if axis=='y' else 5.5,10.8,11.04 if axis=='x' else 11.24,holes,PLASTER)
-    if axis=='x':
-        y0=fixed-.2;y1=fixed+.2
-        cap=[(-5.5,y0,11.04),(5.5,y0,11.04),(5.5,y1,11.04),(-5.5,y1,11.04),(-5.5,y0,roof_z(y0)-.14),(5.5,y0,roof_z(y0)-.14),(5.5,y1,roof_z(y1)-.14),(-5.5,y1,roof_z(y1)-.14)]
-        mesh('wall cap fitted to slate underside',cap,[(3,2,1,0),(4,5,6,7),(0,1,5,4),(1,2,6,5),(2,3,7,6),(3,0,4,7)],PLASTER,True)
-    if holes:wall('maintenance portal header',axis,fixed,-2.9,-1.3,13.3,13.52,m=WOOD)
-# Shared .42 stone belt; entrance gap remains clear.
-for a,b in [(-5.5,-.8),(.8,5.5)]:box('front .42 stone belt',((a+b)/2,-5.54,.21),(b-a,.12,.42),STONE)
-box('rear .42 stone belt',(0,5.54,.21),(11.12,.12,.42),STONE)
-for x in (-5.54,5.54):box('side .42 stone belt',(x,0,.21),(.12,11,.42),STONE)
-# Old tower: patched corners, restrained framing and exposed repair joinery.
-for x in (-5.36,5.36):
-    for y in (-5.36,5.36):
-        box('stone corner buttress',(x,y,3.5),(.4,.4,7),STONE,True)
-        box('supported upper corner post',(x,y,9.10),(.24,.24,4.20),WOOD)
-for y in (-5.52,5.52):
-    for z in (7.2,10.8,11.0):box('facade timber belt',(0,y,z),(11,.16,.18),WOOD)
-    for x in (-4,-1.8,1.8,4):box('upper facade post',(x,y,9),(.18,.16,3.6),WOOD)
-    for x in (-4,1.8):beam('upper diagonal brace',(x,y,7.5),(x+1.6,y,10.5),.14,.14)
-for x in (-5.52,5.52):
-    for z in (7.2,10.8,11.15):box('side timber belt',(x,0,z),(.16,11,.18),WOOD)
-for k in range(5):
-    box('repaired stone blocks',(-4.7+(k%2)*.3,-5.515,.7+k*.48),(.58,.065,.40),STONE)
-slab('dry entrance porch',0,(-1.3,1.3,-7,-5.5),m=STONE)
-for x in (-1.15,1.15):box('porch canopy post',(x,-6.8,1.6),(.14,.14,3.2),WOOD,True)
-box('porch lintel',(0,-6.8,3.2),(2.5,.18,.18),WOOD)
-for x in (-1.15,1.15):beam('porch supported slope',(x,-5.5,3.55),(x,-7,3.2),.12,.18)
-porch=box('porch slate canopy',(0,-6.25,3.38),(2.7,1.7,.12),SLATE)
-porch.rotation_euler.x=math.atan2(.35,1.5)
+# The old recess backing is framed externally and weather-tight.
+# The actual open service vent is separately louvred on the north wall.
+for y in (-.70,.70):box('vent stone jamb',(-5.56,y,8.70),(.16,.12,1.22),STONE)
+for z in (8.12,9.28):box('vent sill lintel',(-5.56,0,z),(.22,1.52,.12),STONE)
+for z in (8.27,8.47,8.67,8.87,9.07):
+    o=box('repaired backing grille',(-5.63,0,z),(.13,1.25,.08),IRON)
+    o.rotation_euler.y=math.radians(22)
+for z in (26.72,26.94,27.16,27.38,27.60):
+    o=box('open service rain louvre',(0,5.37,z),(.7,.22,.07),IRON)
+    o.rotation_euler.x=math.radians(-23)
+# One cell beacon, physically in the south window, independent of furniture culling.
+GLASS=C.mat('ST cell warm glass',(.18,.11,.04,1),.95)
+glass=box('Eldren warm window',(-3.3,-5.37,9.025),(.98,.015,1.32),GLASS)
+glass['part_role']='cell_window'
+for z in (8.62,9.06,9.50):box('cell window iron grille',(-3.3,-5.59,z),(.99,.035,.025),IRON)
+# Stone quoins and sparse string courses give vertical mass, not timber framing.
+for x in (-5.35,5.35):
+    for y in (-5.35,5.35):
+        for k in range(42):
+            z=.35+k*.66
+            box('alternating masonry quoin',(x,y,z),(.50 if k%2 else .63,.63 if k%2 else .50,.58),STONE)
+for h in (0.21,10.8,21.6,27.65):
+    for y in (-5.52,5.52):box('masonry string course',(0,y,h),(11.12,.14,.20 if h else .42),STONE)
+    for x in (-5.52,5.52):box('masonry side string course',(x,0,h),(.14,11.12,.20),STONE)
+# Shared .42m base belt, with the main door kept clear.
+for a,b in [(-5.5,-.8),(.8,5.5)]:box('south .42 foundation belt',((a+b)/2,-5.54,.21),(b-a,.12,.42),STONE)
+for fixed,axis in [(5.54,'x'),(-5.54,'y'),(5.54,'y')]:
+    box('old .42 foundation belt',(0,fixed,.21) if axis=='x' else (fixed,0,.21),(11,.12,.42) if axis=='x' else (.12,11,.42),STONE)
+slab('dry stone threshold',0,(-1.3,1.3,-7,-5.5))
+# Entry has a masonry hood, no permanent residential wooden porch.
+box('entry arch spring left',(-1,-5.65,2.7),(.35,.55,.40),STONE)
+box('entry arch spring right',(1,-5.65,2.7),(.35,.55,.40),STONE)
+box('entry protective stone hood',(0,-5.9,2.95),(2.5,.95,.22),STONE)
 
-# Physical ramp prisms: top endpoints coincide with the walking route.
-def ramp(n,x,y0,y1,z0,z1,width=1.35):
-    a=x-width/2;b=x+width/2;t=.14
-    verts=[(a,y0,z0),(b,y0,z0),(b,y1,z1),(a,y1,z1),(a,y0,z0-t),(b,y0,z0-t),(b,y1,z1-t),(a,y1,z1-t)]
-    q=C.mesh(n+'-colonly',verts,[(0,1,2,3),(7,6,5,4),(0,4,5,1),(1,5,6,2),(2,6,7,3),(3,7,4,0)],WOOD);q.hide_render=True;collision.append(q)
-    for dx in (-.56,.56):beam(n+' stringer',(x+dx,y0,z0-.2),(x+dx,y1,z1-.2),.12,.22)
-    for dx in (-.73,.73):
-        beam(n+' handrail',(x+dx,y0,z0+1.05),(x+dx,y1,z1+1.05),.08,.09,WOOD,True)
-        beam(n+' lower rail',(x+dx,y0,z0+.45),(x+dx,y1,z1+.45),.07,.08,WOOD,True)
-        for t in (0,.25,.5,.75,1):
-            y=y0+(y1-y0)*t;z=z0+(z1-z0)*t
-            box(n+' baluster',(x+dx,y,z+.525),(.07,.07,1.05),WOOD,True)
-
-def guard(n,a,b,h):
-    beam(n+' top',(*a,h+1.05),(*b,h+1.05),.09,.09,WOOD,True)
-    beam(n+' mid',(*a,h+.45),(*b,h+.45),.08,.08,WOOD,True)
-    length=math.hypot(b[0]-a[0],b[1]-a[1]);count=max(1,math.ceil(length/.65))
+# Closed solid ramp prisms and continuous stone parapets are shared by all stairs.
+def prism(n,a,b,h0,h1,width,thickness,m=STONE,solid=True,base=None):
+    av,bv=Vector(a),Vector(b);along=(bv-av).normalized();side=Vector((-along.y,along.x))*width/2
+    xy=[av-side,av+side,bv+side,bv-side]
+    v=[(p.x,p.y,h0 if i<2 else h1) for i,p in enumerate(xy)]
+    v += [(p.x,p.y,(h0 if i<2 else h1)-thickness if base is None else base) for i,p in enumerate(xy)]
+    return mesh(n,v,[tuple(reversed(f)) for f in [(0,1,2,3),(7,6,5,4),(0,4,5,1),(1,5,6,2),(2,6,7,3),(3,7,4,0)]],m,solid)
+def stone_guard(n,a,b,h0,h1=None,width=.14):
+    if h1 is None:h1=h0
+    prism(n,a,b,h0+1.05,h1+1.05,width,1.05,STONE,True)
+def repair_guard(n,a,b,h):
+    beam(n+' repair handrail',(*a,h+1.05),(*b,h+1.05),.08,.09,WOOD,True)
+    beam(n+' repair midrail',(*a,h+.45),(*b,h+.45),.07,.08,WOOD,True)
+    length=math.dist(a,b);count=max(1,math.ceil(length/.7))
     for k in range(count+1):
-        t=k/count;box(n+' post',(a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,h+.525),(.08,.08,1.05),WOOD,True)
-
-def stairs(n,x1,x2,h,external=False):
+        t=k/count;box(n+' repair baluster',(a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,h+.525),(.07,.07,1.05),WOOD,True)
+def internal_stairs(h):
     for k in range(10):
-        box(n+' first tread %02d'%k,(x1,-2+(k+.5)*.3,h+(k+1)*.18-.05),(1.35,.30,.10),WOOD)
-        box(n+' second tread %02d'%k,(x2,1-(k+.5)*.3,h+1.8+(k+1)*.18-.05),(1.35,.30,.10),WOOD)
-    ramp(n+' first ramp',x1,-2,1,h,h+1.8)
-    ramp(n+' second ramp',x2,1,-2,h+1.8,h+3.6)
-    slab(n+' turn',h+1.8,(x1-.73,x2+.73,1,2.3))
-    guard(n+' turn back',(x1-.73,2.3),(x2+.73,2.3),h+1.8)
-    for x in (x1-.73,x2+.73):guard(n+' turn cheek',(x,1),(x,2.3),h+1.8)
-    if external:
-        slab(n+' upper landing',h+3.6,(x1-.73,x2+.73,-3.3,-2))
-        guard(n+' front guard',(x1-.73,-3.3),(x2+.73,-3.3),h+3.6)
-        guard(n+' outer landing',(x2+.73,-3.3),(x2+.73,-2),h+3.6)
-        # Deck load goes to continuous grounded posts and diagonal bracing.
-        for x in (x1-.60,x2+.60):
-            for y in (-3.15,2.12):
-                box(n+' pier',(x,y,h+1.8),(.20,.20,3.6),WOOD,True)
-            beam(n+' grounded brace',(x,-3.1,h+.05),(x,2.1,h+3.2),.15,.18)
-            beam(n+' landing knee',(x,1.1,h+.5),(x,2.1,h+1.7),.14,.18)
+        box('old internal first step',(2.5,-2+(k+.5)*.3,h+(k+1)*.18-.06),(1.35,.3,.12),STONE)
+        box('old internal second step',(4.05,1-(k+.5)*.3,h+1.8+(k+1)*.18-.06),(1.35,.3,.12),STONE)
+    prism('first masonry flight',(2.5,-2),(2.5,1),h,h+1.8,1.35,.25)
+    prism('second masonry flight',(4.05,1),(4.05,-2),h+1.8,h+3.6,1.35,.25)
+    slab('internal turn',h+1.8,(1.77,4.78,1,2.3))
+    box('central masonry stair spine',(3.275,-.5,h+1.8),(.16,3,3.6),STONE,True)
+    stone_guard('lower flight west',(1.75,-2),(1.75,1),h,h+1.8)
+    stone_guard('upper flight east',(4.8,1),(4.8,-2),h+1.8,h+3.6)
+    for x in (1.7,4.85):stone_guard('upper hole edge',(x,-2),(x,2.3),h+3.6)
+    stone_guard('upper hole rear',(1.7,2.3),(4.85,2.3),h+3.6)
+    stone_guard('turn rear',(1.77,2.3),(4.78,2.3),h+1.8)
+    for x in (1.77,4.78):stone_guard('turn cheek',(x,1),(x,2.3),h+1.8)
+    for x in (2.0,4.6):box('turn masonry support',(x,2.05,h+.85),(.30,.30,1.7),STONE,True)
+for h in LEVELS[:-1]:internal_stairs(h)
+# Medieval cantilevers: wedges keyed .25m into the wall, never a freestanding cage.
+def corbel(n,face,u,h,reach=7.0):
+    v=[(5.25,u-.18,h-.9),(5.25,u+.18,h-.9),(5.25,u-.18,h-.24),(5.25,u+.18,h-.24),(reach,u-.18,h-.24),(reach,u+.18,h-.24)]
+    angle=face*math.pi/2
+    verts=[(x*math.cos(angle)-y*math.sin(angle),x*math.sin(angle)+y*math.cos(angle),z) for x,y,z in v]
+    mesh(n,verts,[tuple(reversed(f)) for f in [(0,1,3,2),(0,2,4),(1,5,3),(2,3,5,4),(0,4,5,1)]],STONE,True)
+FACES=[((6.25,-3),(6.25,3)),((3,6.25),(-3,6.25)),((-6.25,3),(-6.25,-3)),((-3,-6.25),(3,-6.25))]
+CORNERS=[(6.25,6.25),(-6.25,6.25),(-6.25,-6.25),(6.25,-6.25)]
+def outer_flight(k):
+    a,b=map(Vector,FACES[k%4]);h=round(k*3.6,1);along=(b-a).normalized()
+    for step in range(20):
+        p=a+along*(step+.5)*.30
+        box('cantilever stone tread',(p.x,p.y,h+(step+1)*.18-.065),(1.35,.30,.13) if k%2==0 else (.30,1.35,.13),STONE)
+    prism('wall borne exterior flight',a,b,h,h+3.6,1.35,.30,base=h-.24 if k==7 else None)
+    # Outward parapet is a single masonry wall following the slope.
+    outward=Vector((a.x+b.x,a.y+b.y)).normalized()*.77
+    stone_guard('sloping exterior parapet',a+outward,b+outward,h,h+3.6,.18)
+    for step in (1,6,11,16,19):
+        p=a+along*(step*.30);u=p.y if k%4==0 else -p.x if k%4==1 else -p.y if k%4==2 else p.x
+        corbel('flight load corbel',k%4,u,h+step*.18)
+    c=Vector(CORNERS[k%4]);nxt=Vector(FACES[(k+1)%4][0]);level=h+3.6
+    if level>=SERVICE-.01:return
+    # L-shaped corner deck stays outside both masonry faces.
+    sx=1 if c.x>0 else -1;sy=1 if c.y>0 else -1
+    def rect(xs,ys):return (min(xs),max(xs),min(ys),max(ys))
+    slab('wall corner turn',level,rect([sx*5.5,sx*7],[b.y,c.y+sy*.75])) if k%2==0 else slab('wall corner turn',level,rect([b.x,c.x+sx*.75],[sy*5.5,sy*7]))
+    slab('corner continuation',level,rect([nxt.x,sx*5.5],[sy*5.5,sy*7])) if k%2==0 else slab('corner continuation',level,rect([sx*5.5,sx*7],[nxt.y,sy*5.5]))
+    if k%2==0:
+        stone_guard('corner outside eastwest',(sx*7,b.y),(sx*7,sy*7),level)
+        stone_guard('corner outside northsouth',(sx*7,sy*7),(nxt.x,sy*7),level)
     else:
-        for x in (x1-.60,x2+.60):box(n+' landing bearer',(x,2.12,h+.85),(.18,.18,1.7),WOOD,True)
-        guard(n+' floor hole west',(1.7,-2),(1.7,2.3),h+3.6)
-        guard(n+' floor hole east',(4.85,-2),(4.85,2.3),h+3.6)
-        guard(n+' floor hole back',(1.7,2.3),(4.85,2.3),h+3.6)
-for h in (0,3.6,7.2):
-    stairs('internal %.1f'%h,2.5,4.05,h)
-    stairs('external %.1f'%h,6.4,8.0,h,True)
-slab('external grounded start',0,(5.67,8.73,-3.3,-2))
-# Bridge to the maintenance portal, with continuous support to tower wall.
-slab('maintenance bridge',10.8,(5.1,5.67,-3.3,-1.3))
-for y in (-3.3,-1.3):guard('maintenance bridge edge',(5.5,y),(5.67,y),10.8)
-for y in (-3.15,-2.15):beam('maintenance bridge corbel',(5.5,y,9.2),(6.5,y,10.65),.18,.20)
-# First/second flights at each stage use the floor front strip for the U return.
-for h in (3.6,7.2):
-    guard('external left landing cheek',(5.67,-3.3),(5.67,-2),h)
-
-# Steep lower slate pitches and a short ridge cap form a repaired gambrel roof.
-# The shoulder preserves 2.4m headroom along the upper service route.
-def gable(n,x):
-    outline=[(-5.1,11.24),(5.1,11.24),(5.1,roof_z(5.1)-.14),(3,13.46),(0,14.36),(-3,13.46),(-5.1,roof_z(5.1)-.14)]
-    count=len(outline)
-    verts=[(x+dx,y,z) for dx in (-.1,.1) for y,z in outline]
-    faces=[tuple(reversed(range(count))),tuple(range(count,count*2))]+[(k,(k+1)%count,(k+1)%count+count,k+count) for k in range(count)]
-    o=mesh(n,verts,faces,PLASTER,False)
-    if x>0:
-        cutter=C.box('temporary portal cut',(x,-2.1,12.25),(.8,1.6,2.1),STONE,0)
-        mod=o.modifiers.new('real upper portal opening','BOOLEAN');mod.operation='DIFFERENCE';mod.object=cutter;mod.solver='EXACT'
-        bpy.context.view_layer.objects.active=o
-        bpy.ops.object.modifier_apply(modifier=mod.name)
-        bpy.data.objects.remove(cutter,do_unlink=True)
-    q=o.copy();q.data=o.data.copy();q.name=n+'-colonly';C.ASSET.objects.link(q);q.hide_render=True;collision.append(q)
-for x in (-5.3,5.3):gable('closed supported gable',x)
-eave=10.8;ridge=14.5;half=5.9
-for sign in (-1,1):
-    strips=[(0,3),(3,half)] if sign>0 else [(-half,-3),(-3,0)]
-    for y0,y1 in strips:
-        for a,b,c,d in panels((-5.9,5.9,y0,y1),[FLUE] if sign>0 else []):
-            verts=[]
-            for dz in (0,-.14):
-                verts += [(a,c,roof_z(c)+dz),(b,c,roof_z(c)+dz),(b,d,roof_z(d)+dz),(a,d,roof_z(d)+dz)]
-            mesh('slate roof with genuine penetration',verts,[(0,1,2,3),(7,6,5,4),(0,4,5,1),(1,5,6,2),(2,6,7,3),(3,7,4,0)],SLATE,True)
-    for x in (-5.7,-1.5,1.5,5.7):
-        beam('ridge to shoulder rafter',(x,0,14.32),(x,sign*3,13.42),.14,.19)
-        beam('shoulder to wall supported rafter',(x,sign*3,13.42),(x,sign*5.7,roof_z(5.7)-.18),.14,.19)
-    for x in (-5.85,5.85):
-        beam('gable upper rake',(x,0,14.57),(x,sign*3,13.67),.13,.15)
-        beam('gable steep rake',(x,sign*3,13.67),(x,sign*half,10.87),.13,.15)
-    box('roof eave fascia',(0,sign*half,10.8),(12,.12,.20),WOOD)
-    box('load bearing wall plate',(0,sign*5.3,11.16),(11,.2,.16),WOOD)
-    box('roof shoulder purlin',(0,sign*3,13.42),(11,.18,.20),WOOD)
-    for x in (-5.3,5.3):
-        beam('gable upper diagonal',(x,0,14.32),(x,sign*3,13.42),.18,.18)
-        beam('gable lower diagonal',(x,sign*3,13.42),(x,sign*5.3,11.25),.18,.18)
-box('structural ridgebeam',(0,0,14.32),(11,.24,.24),WOOD)
-box('slate ridge cap',(0,0,14.57),(12,.28,.16),SLATE)
-for x in (-5.3,5.3):box('gable supported kingpost',(x,0,12.95),(.18,.18,2.7),WOOD)
-
-# Heated occupied floors; flue has actual slab and roof holes.
+        stone_guard('corner outside northsouth',(b.x,sy*7),(sx*7,sy*7),level)
+        stone_guard('corner outside eastwest',(sx*7,sy*7),(sx*7,nxt.y),level)
+    corbel('corner wall corbel',k%4,4.7,level)
+    corbel('corner next face corbel',(k+1)%4,-4.7,level)
+for k in range(8):outer_flight(k)
+# Horizontal masonry service ring and a temporary upper repair gallery.
+def ring(h,repair=False):
+    m=WOOD if repair else STONE
+    for x in (-6.25,6.25):
+        if not repair and x<0:
+            for a,b in [(-7,-3),(3,7)]:slab('service stair opening cheek',h,(-7,-5.5,a,b))
+            slab('wall borne service bypass',h,(-8,-7.1,-7,7))
+            box('bypass longitudinal masonry bearer',(-7.55,0,h-.62),(.9,9,.76),STONE,True)
+            for a,b in [(-7,-3),(3,7)]:slab('bypass corner connection',h,(-8,-7,a,b))
+            stone_guard('bypass outer parapet',(-8.05,-7),(-8.05,7),h)
+            stone_guard('bypass stair well cheek',(-7.08,-3),(-7.08,3),h,width=.12)
+            for y in (-7,7):stone_guard('bypass end guard',(-8.05,y),(-7,y),h)
+        else:slab('repair deck' if repair else 'wall service gallery',h,(x-.75,x+.75,-7,7),m=m)
+    for y in (-6.25,6.25):
+        strips=[(-5.5,-3),(3,5.5)] if y<0 else [(-5.5,5.5)]
+        for a,b in strips:slab('repair deck' if repair else 'wall service gallery',h,(a,b,y-.75,y+.75),m=m)
+    for f in range(4):
+        for u in (-4.5,-1.5,1.5,4.5):
+            if (f==3 or (f==2 and not repair)) and abs(u)<3:continue # Real eighth-flight opening, no consoles across it.
+            corbel('gallery masonry corbel',f,u,h,reach=8.05 if f==2 and not repair else 7.0)
+    for a,b in [((-7,-7),(7,-7)),((7,-7),(7,7)),((7,7),(-7,7)),((-7,7),(-7,-7))]:
+        if a[1]==-7 and b[1]==-7:
+            if repair:
+                repair_guard('repair outer edge',(-7,-7),(-3,-7),h)
+                repair_guard('repair outer edge',(3,-7),(7,-7),h)
+                repair_guard('stair hole closed west edge',(-3,-7),(-3,-5.5),h)
+            else:
+                stone_guard('service gallery edge',(-7,-7),(-3,-7),h)
+                stone_guard('service gallery edge',(3,-7),(7,-7),h)
+        elif not repair and a[0]==-7 and b[0]==-7:
+            pass # Stair hole and its separately supported, guarded outer bypass.
+        else:repair_guard('upper repair edge',a,b,h) if repair else stone_guard('service gallery edge',a,b,h)
+    if repair:
+        for a,b in [((-5.6,-5.6),(-3,-5.6)),((3,-5.6),(5.6,-5.6)),((5.6,-5.6),(5.6,5.6)),((5.6,5.6),(-5.6,5.6)),((-5.6,5.6),(-5.6,-5.6))]:repair_guard('broken wall fall guard',a,b,h)
+ring(SERVICE)
+ring(REPAIR,True)
+slab('exterior stair grounded first landing',0,(5.5,7,-4.5,-3))
+# Irregular solid masonry crown, deliberately asymmetric and broken.
+heights=[30.5,30.8,30.1,29.4,28.5,28.1,29.0,29.4,30.2,31.0,31.4,31.8,31.2,30.0,29.6,28.6,28.0,28.5,29.7,30.6,31.0,30.4]
+for face in range(4):
+    for k in range(22):
+        a=-5.5+k*.5;b=a+.5;top=heights[(k+face*5)%22]
+        fixed=-5.3 if face==0 else 5.3 if face==1 else -5.3 if face==2 else 5.3
+        axis='x' if face<2 else 'y';wall('fractured old crown',axis,fixed,a,b,27.8,top)
+# Heavy surviving north-east masonry anchors the one plain lightning pin.
+box('lightning anchor surviving pier',(5.15,5.15,29.65),(.70,.70,3.70),STONE,True)
+for z in (29.1,30.0,30.9):beam('mast masonry bracket',(5.35,5.15,z),(5.68,5.15,z),.10,.10,IRON)
+beam('single plain lightning pin',(5.68,5.15,29.0),(5.68,5.15,33.2),.055,.055,IRON)
+beam('clipped copper downlead',(5.60,5.35,.25),(5.60,5.35,30.8),.025,.025,IRON)
+for k in range(21):beam('downlead stone clip',(5.40,5.35,.3+k*1.5),(5.60,5.35,.3+k*1.5),.05,.05,IRON)
+beam('pin to conductor link',(5.68,5.15,30.8),(5.60,5.35,30.8),.025,.025,IRON)
+box('conductor foundation anchor',(5.52,5.35,.2),(.24,.24,.4),STONE)
+# Modest repair scaffold tied to the NORTH masonry, only upper levels.
+for x in (-2.1,2.1):
+    for y in (5.8,6.75):
+        box('repair scaffold upright',(x,y,28.45),(.14,.14,6.5),WOOD)
+        beam('scaffold masonry tie',(x,5.32,28.55),(x,y,28.55),.12,.12,WOOD)
+    beam('scaffold diagonal',(x,6.8,25.2),(-x,6.8,31.7),.12,.12,WOOD)
+for z in (28.7,31.6):box('north scaffold crossbearer',(0,6.25,z),(4.35,.14,.18),WOOD)
+beam('scaffold face diagonal',(-2.1,6.75,28.9),(2.1,6.75,31.6),.12,.12,WOOD)
+# Temporary low-pitched board lid BELOW the broken crown; roof is not a barn.
+def roof_z(y):return 28.35+(y+5.5)*.055
+for k in range(23):
+    a=-5.5+k*11/23;b=-5.5+(k+1)*11/23
+    for xa,xb,ya,yb in panels((a,b,-5.5,5.5),[FLUE]):
+        v=[(xa,ya,roof_z(ya)),(xb,ya,roof_z(ya)),(xb,yb,roof_z(yb)),(xa,yb,roof_z(yb))]
+        v += [(x,y,z-.12) for x,y,z in v]
+        mesh('temporary individual roof boards',v,[(0,1,2,3),(7,6,5,4),(0,4,5,1),(1,5,6,2),(2,6,7,3),(3,7,4,0)],WOOD,True)
+for x in (-4.7,0,4.7):beam('repair roof bearer',(x,-5.1,roof_z(-5.1)-.22),(x,5.1,roof_z(5.1)-.22),.16,.22,WOOD)
+for y in (-4.8,0,4.8):box('roof bearer masonry pocket',(0,y,roof_z(y)-.32),(10.4,.18,.20),WOOD)
+# The flue has real holes in every floor and the board lid, plus an open mouth.
 for h in (0,3.6,7.2):
     box('stove supported hearth',(-3.8,2.8,h+.06),(1.4,1.4,.12),STONE,True)
-    box('stove masonry',(-3.8,2.8,h+.82),(1.1,1.1,1.40),STONE,True)
+    box('stove masonry',(-3.8,2.8,h+.82),(1.1,1.1,1.4),STONE,True)
     box('stove cornice',(-3.8,2.8,h+1.6),(1.2,1.2,.14),STONE)
     box('stove iron hatch',(-3.8,2.22,h+.70),(.42,.05,.40),IRON)
-box('continuous solid flue shaft',(-3.8,2.8,7.28),(.72,.72,14.56),STONE,True)
-# Above the roof the chimney is hollow; central shaft ends at14.56.
-for dx in (-.30,.30):box('hollow chimney cheek',(-3.8+dx,2.8,14.95),(.12,.72,.78),STONE,True)
-for dy in (-.30,.30):box('hollow chimney cheek',(-3.8,2.8+dy,14.95),(.48,.12,.78),STONE,True)
-for dx in (-.32,.32):box('chimney lip',(-3.8+dx,2.8,15.38),(.16,.84,.12),STONE)
-for dy in (-.32,.32):box('chimney lip',(-3.8,2.8+dy,15.38),(.52,.16,.12),STONE)
-for y in (2.38,3.22):box('chimney flashing return',(-3.8,y,roof_z(y)+.03),(1.02,.09,.18),IRON)
-for x in (-4.22,-3.38):beam('chimney flashing side',(x,2.38,roof_z(2.38)+.03),(x,3.22,roof_z(3.22)+.03),.09,.10,IRON)
-# Genuine ridge-mounted supported rods with continuous, clipped downconductor.
-for x in (-2.2,2.2):
-    box('rod ridge saddle',(x,0,14.62),(.45,.48,.16),IRON)
-    beam('supported lightning mast',(x,0,14.62),(x,0,16.0),.055,.055,IRON)
-    for y in (-.6,.6):beam('lightning mast bracket',(x,y,roof_z(y)),(x,0,15.1),.045,.045,IRON)
-    box('mast crossbar',(x,0,15.75),(.55,.035,.035),IRON)
-beam('ridge conductor',(-2.2,0,14.73),(5.6,0,14.73),.025,.025,IRON)
-beam('upper roof conductor',(5.6,0,14.73),(5.6,-3,13.68),.025,.025,IRON)
-beam('steep roof conductor',(5.6,-3,13.68),(5.6,-5.4,roof_z(-5.4)+.08),.025,.025,IRON)
-for y in (-1,-2,-3,-4,-5):beam('roof conductor clip',(5.6,y,roof_z(y)-.06),(5.6,y,roof_z(y)+.08),.045,.045,IRON)
-for x in (0,4.2,5.6):beam('ridge conductor clip',(x,0,14.5),(x,0,14.73),.045,.045,IRON)
-beam('wall conductor',(5.6,-5.4,roof_z(-5.4)+.08),(5.6,-5.4,.25),.025,.025,IRON)
-for z in (.3,1.8,3.3,4.8,6.3,7.8,9.3,10.8,11.25):beam('conductor wall clip',(5.42,-5.4,z),(5.6,-5.4,z),.05,.05,IRON)
-box('grounded conductor anchor',(5.56,-5.4,.2),(.22,.22,.4),STONE,True)
+box('continuous flue',(-3.8,2.8,14.475),(.72,.72,28.95),STONE,True)
+for dx in (-.30,.30):box('open chimney cheek',(-3.8+dx,2.8,29.45),(.12,.72,1),STONE,True)
+for dy in (-.30,.30):box('open chimney cheek',(-3.8,2.8+dy,29.45),(.48,.12,1),STONE,True)
+for dx in (-.32,.32):box('chimney rim',(-3.8+dx,2.8,29.98),(.16,.84,.12),STONE)
+for dy in (-.32,.32):box('chimney rim',(-3.8,2.8+dy,29.98),(.52,.16,.12),STONE)
+for y in (2.38,3.22):box('flue flashing',(-3.8,y,roof_z(y)+.02),(1.02,.09,.12),IRON)
+for x in (-4.22,-3.38):beam('flue flashing side',(x,2.38,roof_z(2.38)+.02),(x,3.22,roof_z(3.22)+.02),.09,.10,IRON)
 
 # Purposeful furnishings with whole joined structures and curved props.
 def table(n,x,y,h,w=1.8,d=.8):
@@ -353,8 +386,8 @@ for o in C.ASSET.objects:
         o.matrix_world=bed_transform @ o.matrix_world
 
 # Maintenance repair area keeps the corridor and rod-support view unobstructed.
-table('maintenance repair bench',-2.7,-2.8,10.8,1.6,.7)
-for k in range(3):prop('replacement iron rods',(-2.7,-2.8+k*.12,11.7),(1.2,.04,.04),IRON)
+table('maintenance repair bench',-2.7,-2.8,SERVICE,1.6,.7)
+for k in range(3):prop('replacement iron rods',(-2.7,-2.8+k*.12,SERVICE+.9),(1.2,.04,.04),IRON)
 
 # Door parts remain independent and parented in portal local coordinates.
 def portal(name,p,angle,door_y):
@@ -367,10 +400,10 @@ def portal(name,p,angle,door_y):
         o.parent=hinge;o.location=(.76,-.05,z);doors.append(o)
     return root
 portal('EntryPortal',(0,0,0),0,-5.3)
-portal('MaintenancePortal',(5.3,-2.1,10.8),math.pi/2,0)
-for x in (-.86,.86):box('entry supported jamb',(x,-5.3,1.25),(.12,.5,2.5),WOOD)
-box('entry supported lintel',(0,-5.3,2.59),(1.9,.5,.18),WOOD)
-for y in (-2.96,-1.24):box('maintenance supported jamb',(5.3,y,12.05),(.5,.12,2.5),WOOD)
+portal('MaintenancePortal',(5.3,-2.1,SERVICE),math.pi/2,0)
+for x in (-.86,.86):box('entry supported jamb',(x,-5.3,1.25),(.12,.5,2.5),STONE)
+box('entry supported lintel',(0,-5.3,2.59),(1.9,.5,.18),STONE)
+for y in (-2.96,-1.24):box('maintenance supported jamb',(5.3,y,SERVICE+1.25),(.5,.12,2.5),STONE)
 # UV uses metre-scaled world coordinates; wall joins retain continuous pattern.
 bpy.context.view_layer.update()
 for o in visual:
@@ -394,6 +427,13 @@ for o in visual:o.data.calc_loop_triangles();triangles+=len(o.data.loop_triangle
 bpy.ops.object.select_all(action='DESELECT')
 for o in C.ASSET.objects:o.select_set(True)
 bpy.context.view_layer.objects.active=visual[0]
+facts=empty('TowerFacts')
+facts['architecture_revision']=2;facts['wall_footprint']=[11,11];facts['floor_heights']=LEVELS
+facts['service_level']=SERVICE;facts['repair_level']=REPAIR;facts['design_height']=33.2
+facts['bounds_min_godot']=list(lo);facts['bounds_max_godot']=list(hi)
+facts['internal_treads']=140;facts['external_treads']=160;facts['rise']=.18;facts['run']=.30
+facts['outside_path_godot']=[[[a[0],round(k*3.6,1),-a[1]],[b[0],round((k+1)*3.6,1),-b[1]]] for k in range(8) for a,b in [FACES[k%4]]]
+facts.select_set(True)
 asset=OUT/'s_academy_tower.glb'
 bpy.ops.export_scene.gltf(filepath=str(asset),use_selection=True,export_format='GLB',export_apply=True,export_yup=True,export_cameras=False,export_lights=False,export_extras=True)
 data=asset.read_bytes();size=struct.unpack_from('<I',data,12)[0];j=json.loads(data[20:20+size])
@@ -402,7 +442,7 @@ for m in j['materials']:
     if tint:m['pbrMetallicRoughness']['baseColorFactor']=[*tint,1]
 encoded=json.dumps(j,separators=(',',':')).encode();encoded+=b' '*((-len(encoded))%4);remaining=data[20+size:]
 asset.write_bytes(struct.pack('<III',0x46546c67,2,20+len(encoded)+len(remaining))+struct.pack('<II',len(encoded),0x4e4f534a)+encoded+remaining)
-stats={'author':'Codex after local worker stalled at zero processed tokens','wall_footprint':[11,11],'design_floor_heights':[0,3.6,7.2,10.8],'design_ridge':14.5,'all_vertex_bounds_godot':[list(lo),list(hi)],'triangles':triangles,'visual_meshes':len(visual),'collision_meshes':sum(1 for o in C.ASSET.objects if o.type=='MESH' and '-colonly' in o.name),'staircases':6,'flights':12,'treads_per_flight':10,'rise':.18,'run':.30,'width':1.35,'sha256':hashlib.sha256(asset.read_bytes()).hexdigest(),'state':'geometry generated; coordinator QA pending'}
+stats={'author':'Codex direct revision2; no worker launches','wall_footprint':[11,11],'floor_heights':LEVELS,'service_level':SERVICE,'repair_level':REPAIR,'broken_stone_top':31.8,'design_height':33.2,'all_vertex_bounds_godot':[list(lo),list(hi)],'triangles':triangles,'visual_meshes':len(visual),'collision_meshes':sum(1 for o in C.ASSET.objects if o.type=='MESH' and '-colonly' in o.name),'internal_treads':140,'external_treads':160,'rise':.18,'run':.30,'width':1.35,'bytes':asset.stat().st_size,'sha256':hashlib.sha256(asset.read_bytes()).hexdigest(),'state':'revision2 built; QA pending'}
 (QA/'stats.json').write_text(json.dumps(stats,indent=2),encoding='utf-8')
 bpy.ops.wm.save_as_mainfile(filepath=str(QA/'s_academy_tower.blend'))
 print('ACADEMY_TOWER_BUILD',json.dumps(stats))

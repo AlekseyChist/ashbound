@@ -3,3 +3,9 @@
 [ext_resource type="Script" path="res://scripts/buildings/snow_academy_tower.gd" id="2_runtime"]
 [node name="ConclaveAcademyTower" instance=ExtResource("1_model")]
 script = ExtResource("2_runtime")
+metadata/architecture_revision = 2
+metadata/wall_footprint = Vector2(11, 11)
+metadata/service_level = 25.2
+metadata/repair_level = 28.8
+metadata/design_height = 33.2
+metadata/height_is_design_choice = true

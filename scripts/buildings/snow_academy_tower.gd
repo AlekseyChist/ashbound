@@ -11,6 +11,10 @@ var lamp_root: Node3D
 var interior_lights: Array[OmniLight3D] = []
 var lights_enabled := true
 var light_check := 0.0
+var warm_window: MeshInstance3D
+var window_material: StandardMaterial3D
+var window_daylight := 1.0
+var atmosphere: Node
 
 func _ready() -> void:
     var entry := find_child("EntryPortal", true, false) as Node3D
@@ -27,6 +31,17 @@ func _ready() -> void:
     for node in find_children("*", "MeshInstance3D", true, false):
         if node.get_meta("extras", {}).get("part_role", "") == "interior_furniture":
             interior_meshes.append(node)
+    for node in find_children("*", "MeshInstance3D", true, false):
+        if node.get_meta("extras", {}).get("part_role", "") == "cell_window":
+            warm_window = node
+    assert(warm_window != null, "Cell window beacon must be part of the architecture")
+    window_material = StandardMaterial3D.new()
+    window_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+    window_material.roughness = .95
+    window_material.emission = Color(1, .34, .08)
+    warm_window.material_override = window_material
+    warm_window.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    set_window_daylight(1.0)
     lamp_root = Node3D.new()
     lamp_root.name = "InteriorLanterns"
     add_child(lamp_root)
@@ -67,12 +82,28 @@ func _process(delta: float) -> void:
     if light_check < .5:
         return
     light_check = 0
+    # The existing settlement creates Atmosphere after child buildings are ready.
+    # Retry the sibling lookup without loading its calendar/weather dependencies.
+    if not is_instance_valid(atmosphere):
+        var ancestor := get_parent()
+        while ancestor != null:
+            var candidate := ancestor.get_node_or_null("Atmosphere")
+            if candidate != null:
+                for property in candidate.get_property_list():
+                    if property.name == "daylight":
+                        atmosphere = candidate
+                        break
+            if is_instance_valid(atmosphere): break
+            ancestor = ancestor.get_parent()
+    if is_instance_valid(atmosphere):
+        set_window_daylight(float(atmosphere.get("daylight")))
     var camera := get_viewport().get_camera_3d()
     for light in interior_lights:
         light.visible = lights_enabled and interior_visible and (camera == null or camera.global_position.distance_to(light.global_position) < 45)
 
 func set_interior_lights_enabled(enabled: bool) -> void:
     lights_enabled = enabled
+    set_window_daylight(window_daylight)
     for light in interior_lights:
         light.visible = enabled and interior_visible
 
@@ -97,3 +128,14 @@ func set_interior_visible(enabled: bool, occupied: bool = false) -> bool:
             light.visible = false
     set_physics_process(not enabled)
     return true
+
+## New bounded rendering interface. The existing Atmosphere.daylight overrides it
+## when present; standalone previews can explicitly supply daylight in [0,1].
+func set_window_daylight(value: float) -> void:
+    if not is_finite(value): return
+    window_daylight = clampf(value, 0.0, 1.0)
+    if window_material == null: return
+    var night := (1.0 - smoothstep(.12, .45, window_daylight)) if lights_enabled else 0.0
+    window_material.albedo_color = Color(.18,.11,.04,.55).lerp(Color(.72,.27,.06,.9), night)
+    window_material.emission_enabled = night > .01
+    window_material.emission_energy_multiplier = 1.8 * night

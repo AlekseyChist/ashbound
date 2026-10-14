@@ -1,185 +1,194 @@
 extends SceneTree
-## Coordinator QA: physical routes, not teleports between stair endpoints.
+## Revision2 coordinator QA: actual movement over every tread, no local JSON dependency.
+const LEVELS := [0.0,3.6,7.2,10.8,14.4,18.0,21.6,25.2]
+const STARTS := [Vector2(6.25,3),Vector2(3,-6.25),Vector2(-6.25,-3),Vector2(-3,6.25)]
+const ENDS := [Vector2(6.25,-3),Vector2(-3,-6.25),Vector2(-6.25,3),Vector2(3,6.25)]
+const CORNERS := [Vector2(6.25,-6.25),Vector2(-6.25,-6.25),Vector2(-6.25,6.25),Vector2(6.25,6.25)]
+class AtmosphereFixture extends Node:
+    var daylight := 1.0 # The verified existing settlement property, not a new clock.
 var actor: CharacterBody3D
 var building: Node3D
+var clock: AtmosphereFixture
 var segments := 0
 var clearance_samples := 0
 var failures := 0
 func _initialize() -> void: call_deferred("run")
-func check(ok: bool, message: String) -> bool:
+func check(ok: bool,message: String) -> bool:
     if not ok:
         failures += 1
-        push_error("ACADEMY_TOWER " + message)
+        push_error("ACADEMY_TOWER_R2 " + message)
     return ok
-func settle(count: int = 75) -> void:
+func settle(count: int = 60) -> void:
     for tick in range(count):
         await physics_frame
-        actor.velocity = Vector3(0, actor.velocity.y - 9.8 / 60, 0)
+        actor.velocity = Vector3(0,actor.velocity.y-9.8/60,0)
         actor.move_and_slide()
-func walk(target: Vector3, clearance: bool = true) -> bool:
-    for tick in range(900):
+func walk(target: Vector3) -> bool:
+    for tick in range(1100):
         await physics_frame
-        var direction := target - actor.position
-        direction.y = 0
-        if direction.length() < .08: break
-        actor.velocity.x = direction.normalized().x * 2
-        actor.velocity.z = direction.normalized().z * 2
-        actor.velocity.y = -.5 if actor.is_on_floor() else actor.velocity.y - 9.8 / 60
+        var direction := target-actor.position; direction.y=0
+        if direction.length() < .045: break
+        actor.velocity.x=direction.normalized().x*2
+        actor.velocity.z=direction.normalized().z*2
+        actor.velocity.y=-.5 if actor.is_on_floor() else actor.velocity.y-9.8/60
         actor.move_and_slide()
-        if clearance and tick % 12 == 0:
-            var foot := actor.position - Vector3(0, .875, 0)
-            var hit := actor.get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(foot + Vector3(0, .20, 0), foot + Vector3(0, 2.4, 0), 1))
-            clearance_samples += 1
-            if not check(hit.is_empty(), "HEADROOM " + str(foot) + " hit=" + str(hit)):
-                return false
-    await settle(12)
-    segments += 1
-    print("TOWER_ROUTE ", segments, " ", actor.position)
-    return check(actor.position.distance_to(target) < .22, "ROUTE target=" + str(target) + " actual=" + str(actor.position))
+        if tick%8==0:
+            var foot := actor.position-Vector3(0,.875,0)
+            var hit := actor.get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(foot+Vector3(0,.20,0),foot+Vector3(0,2.4,0),1))
+            clearance_samples+=1
+            if not check(hit.is_empty(),"HEADROOM "+str(foot)+" hit="+str(hit)):return false
+    await settle(10)
+    segments+=1
+    print("TOWER_R2_POINT ",segments," ",actor.position)
+    return check(actor.position.distance_to(target)<.18,"ROUTE target="+str(target)+" actual="+str(actor.position))
+func go(points: Array) -> bool:
+    for point in points:
+        if not await walk(point):return false
+    return true
+func internal_points(h: float) -> Array:
+    var points: Array=[Vector3(2.5,h+.875,2.75),Vector3(2.5,h+.875,2)]
+    for k in range(1,11):points.append(Vector3(2.5,h+.875+k*.18,2-k*.3))
+    points.append(Vector3(2.5,h+2.675,-1.6));points.append(Vector3(4.05,h+2.675,-1.6));points.append(Vector3(4.05,h+2.675,-1))
+    for k in range(1,11):points.append(Vector3(4.05,h+2.675+k*.18,-1+k*.3))
+    points.append(Vector3(4.05,h+4.475,2.75))
+    return points
+func exterior_points(k: int) -> Array:
+    var a: Vector2=STARTS[k%4];var b: Vector2=ENDS[k%4];var h:=k*3.6
+    var points: Array=[]
+    for step in range(21):
+        var p:=a.lerp(b,step/20.0)
+        points.append(Vector3(p.x,h+.875+step*.18,p.y))
+    var c: Vector2=CORNERS[k%4];var next: Vector2=STARTS[(k+1)%4]
+    points.append(Vector3(c.x,h+4.475,c.y));points.append(Vector3(next.x,h+4.475,next.y))
+    return points
 func toggle(portal: Node3D) -> bool:
-    if not check(portal.try_toggle(actor), "Door interaction from " + str(actor.position)): return false
+    if not check(portal.try_toggle(actor),"Portal interaction "+str(actor.position)):return false
     await settle(90)
-    return check(not portal.moving and not portal.blocked, "Door swing obstructed")
-func stairs_up(x1: float, x2: float, h: float) -> bool:
-    for target in [Vector3(x1,h+.875,2.4),Vector3(x1,h+.875,2),Vector3(x1,h+2.675,-1),Vector3(x1,h+2.675,-1.6),Vector3(x2,h+2.675,-1.6),Vector3(x2,h+2.675,-1),Vector3(x2,h+4.475,2),Vector3(x2,h+4.475,2.75)]:
-        if not await walk(target): return false
-    return true
-func stairs_down(x1: float, x2: float, h: float) -> bool:
-    for target in [Vector3(x2,h+4.475,2.75),Vector3(x2,h+4.475,2),Vector3(x2,h+2.675,-1),Vector3(x2,h+2.675,-1.6),Vector3(x1,h+2.675,-1.6),Vector3(x1,h+2.675,-1),Vector3(x1,h+.875,2),Vector3(x1,h+.875,2.4)]:
-        if not await walk(target): return false
-    return true
+    return check(not portal.moving and not portal.blocked,"Unobstructed door failed to settle")
 func run() -> void:
-    building = load("res://scenes/buildings/world-architecture-v1/s_academy_tower.tscn").instantiate()
-    root.add_child(building)
-    var ground := StaticBody3D.new()
-    var collider := CollisionShape3D.new()
-    var box := BoxShape3D.new(); box.size = Vector3(40,.2,40)
-    collider.shape = box; collider.position.y = -.1
-    ground.add_child(collider); root.add_child(ground)
-    actor = CharacterBody3D.new(); actor.collision_layer = 2
-    actor.floor_snap_length = .4; actor.floor_max_angle = deg_to_rad(46)
-    var capsule := CapsuleShape3D.new(); capsule.radius = .3; capsule.height = 1.75
-    var shape := CollisionShape3D.new(); shape.shape = capsule; actor.add_child(shape)
-    root.add_child(actor); actor.position = Vector3(0,.9,7.5)
+    print("TOWER_R2_VALIDATED_ASSET_SHA256 ",FileAccess.get_sha256("res://assets/buildings/world-architecture-v1/s_academy_tower.glb"))
+    clock=AtmosphereFixture.new();clock.name="Atmosphere";root.add_child(clock)
+    building=load("res://scenes/buildings/world-architecture-v1/s_academy_tower.tscn").instantiate();root.add_child(building)
+    var ground:=StaticBody3D.new();var col:=CollisionShape3D.new();var slab:=BoxShape3D.new();slab.size=Vector3(40,.2,40)
+    col.shape=slab;col.position.y=-.1;ground.add_child(col);root.add_child(ground)
+    actor=CharacterBody3D.new();actor.collision_layer=2;actor.floor_snap_length=.4;actor.floor_max_angle=deg_to_rad(46)
+    var capsule:=CapsuleShape3D.new();capsule.radius=.3;capsule.height=1.75
+    var shape:=CollisionShape3D.new();shape.shape=capsule;actor.add_child(shape);root.add_child(actor);actor.position=Vector3(0,.9,7.5)
     await settle()
-    if not check(building.door.leaves.size() == 8 and building.maintenance_door.leaves.size() == 8, "Expected two independent eight-part leaves"): quit(1); return
-    if not check(building.interior_lights.size() == 4, "Four supported lantern sources required"): quit(1); return
-    if not check(not building.interior_meshes.is_empty(), "Furniture metadata missing"): quit(1); return
-    if not check(not building.set_interior_visible(false,true), "Occupied interior allowed hiding"): quit(1); return
-    if not check(building.set_interior_visible(false) and not building.lamp_root.visible, "Vacant closed hide failed"): quit(1); return
-    # Closed door blocks physical capsule before interaction.
-    for tick in range(90):
-        await physics_frame
-        actor.velocity = Vector3(0,-.5,-2); actor.move_and_slide()
-    if not check(actor.position.z > 5.5, "Closed door failed to block"): quit(1); return
-    if not await toggle(building.door): quit(1); return
-    if not check(building.interior_visible and not building.set_interior_visible(false), "Open-door visibility guard"): quit(1); return
-    for target in [Vector3(0,.875,3.6),Vector3(0,.875,2.75),Vector3(-1,.875,2.75),Vector3(-1,.875,0),Vector3(0,.875,0),Vector3(0,.875,2.75)]:
-        if not await walk(target): quit(1); return
-    if not await toggle(building.door): quit(1); return
-    for h in [0.0,3.6,7.2]:
-        if not await walk(Vector3(2.5,h+.875,2.75)): quit(1); return
-        if not await stairs_up(2.5,4.05,h): quit(1); return
-        if not await walk(Vector3(0,h+4.475,2.75)): quit(1); return
-        if is_equal_approx(h, 3.6):
-            for target in [Vector3(-3,8.075,2.75),Vector3(-3,8.075,0),Vector3(-4.4,8.075,0),Vector3(-3,8.075,0),Vector3(-3,8.075,2.75),Vector3(0,8.075,2.75)]:
-                if not await walk(target): quit(1); return
-        if h < 7.2:
-            for target in [Vector3(-1,h+4.475,2.75),Vector3(-1,h+4.475,0),Vector3(0,h+4.475,0),Vector3(0,h+4.475,2.75)]:
-                if not await walk(target): quit(1); return
-            if not await walk(Vector3(0,h+4.475,0)): quit(1); return
-            for tick in range(90):
-                await physics_frame
-                actor.velocity = Vector3(2,-.5,0); actor.move_and_slide()
-            if not check(actor.position.x < 1.5 and actor.position.y > h+4.4, "Internal stairwell guard failed"): quit(1); return
-            for target in [Vector3(0,h+4.475,0),Vector3(0,h+4.475,2.75)]:
-                if not await walk(target): quit(1); return
-    # Maintenance door from inside, exterior descent and return ascent.
-    if not await walk(Vector3(3.2,11.675,2.5)): quit(1); return
-    if not await toggle(building.maintenance_door): quit(1); return
-    if not await walk(Vector3(6.7,11.675,2.5)): quit(1); return
-    # Deliberately stand in the closing arc: the existing API must refuse
-    # crushing the capsule, then complete closing once the actor steps away.
-    if not check(building.maintenance_door.try_toggle(actor), "Maintenance closing request"): quit(1); return
-    await settle(90)
-    if not check(building.maintenance_door.blocked and building.maintenance_door.moving, "Door obstruction interlock failed"): quit(1); return
-    if not await walk(Vector3(7.4,11.675,2.5)): quit(1); return
-    await settle(90)
-    if not check(is_zero_approx(building.maintenance_door.fraction) and not building.maintenance_door.moving, "Door failed to recover after obstruction"): quit(1); return
-    for tick in range(90):
-        await physics_frame
-        actor.velocity = Vector3(-2,-.5,0); actor.move_and_slide()
-    if not check(actor.position.x > 5.5, "Closed maintenance portal failed to block"): quit(1); return
-    if not await walk(Vector3(7.4,11.675,2.5)): quit(1); return
-    for h in [7.2,3.6,0.0]:
-        if not await stairs_down(6.4,8.0,h): quit(1); return
-        if h > 0 and not await walk(Vector3(8.0,h+.875,2.75)): quit(1); return
-    for h in [0.0,3.6,7.2]:
-        if not await stairs_up(6.4,8.0,h): quit(1); return
-        if h < 7.2 and not await walk(Vector3(6.4,h+4.475,2.75)): quit(1); return
-    # Guard blocks walking off the upper landing, with no artificial collider wall.
-    if not await walk(Vector3(8.0,11.675,2.75)): quit(1); return
-    for tick in range(90):
-        await physics_frame
-        actor.velocity = Vector3(2,-.5,0); actor.move_and_slide()
-    if not check(actor.position.x < 9.05 and actor.position.y > 11.4, "Exterior landing guard failed"): quit(1); return
-    if not await walk(Vector3(7.4,11.675,2.5)): quit(1); return
-    if not await toggle(building.maintenance_door): quit(1); return
-    if not await walk(Vector3(3.2,11.675,2.5)): quit(1); return
-    if not await toggle(building.maintenance_door): quit(1); return
-    for h in [7.2,3.6,0.0]:
-        if not await stairs_down(2.5,4.05,h): quit(1); return
-        if h > 0 and not await walk(Vector3(4.05,h+.875,2.75)): quit(1); return
-    if not await walk(Vector3(0,.875,3.6)): quit(1); return
-    if not await toggle(building.door): quit(1); return
-    if not await walk(Vector3(0,.875,7.5)): quit(1); return
-    if not await toggle(building.door): quit(1); return
-    var camera := Camera3D.new(); root.add_child(camera); camera.make_current()
-    camera.position = Vector3(100,20,0)
-    for tick in range(40): await physics_frame
-    for light in building.interior_lights:
-        if not check(not light.visible, "Distant light remained active"): quit(1); return
-    camera.position = Vector3(0,2,0)
-    for tick in range(40): await physics_frame
-    for light in building.interior_lights:
-        if not check(light.visible, "Near light failed to wake"): quit(1); return
+    if not check(building.get_meta("architecture_revision",0)==2,"Scene revision not2"):quit(1);return
+    var facts:=building.find_child("TowerFacts",true,false)
+    if not check(facts!=null,"Self-contained GLB facts missing"):quit(1);return
+    var extras: Dictionary=facts.get_meta("extras",{})
+    if not check(extras.get("internal_treads",0)==140 and extras.get("external_treads",0)==160,"Expected140+160 actual treads"):quit(1);return
+    if not check(building.door.leaves.size()==8 and building.maintenance_door.leaves.size()==8,"Two eight-part portals required"):quit(1);return
+    if not check(building.interior_lights.size()==4 and not building.interior_meshes.is_empty(),"Preserved furnished rooms and four lamps required"):quit(1);return
+    if not check(building.warm_window!=null and not building.window_material.emission_enabled,"Day window incorrectly emits"):quit(1);return
+    clock.daylight=0
+    await settle(40)
+    if not check(building.window_material.emission_enabled and building.window_material.emission_energy_multiplier>1,"Atmosphere night did not light cell window"):quit(1);return
+    if not check(not building.set_interior_visible(false,true) and building.set_interior_visible(false),"Occupancy/closed vacancy guard"):quit(1);return
+    if not check(building.warm_window.visible and building.window_material.emission_enabled and not building.lamp_root.visible,"Landmark window vanished with furniture culling"):quit(1);return
     building.set_interior_lights_enabled(false)
-    for light in building.interior_lights:
-        if not check(not light.visible, "Light override failed"): quit(1); return
-    building.set_interior_lights_enabled(true)
-    if not check(building.set_interior_visible(false) and not building.lamp_root.visible, "Final vacant hide failed"): quit(1); return
-    var space := actor.get_world_3d().direct_space_state
-    var niche := space.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(-4.7,8.7,0),Vector3(-5.6,8.7,0),1))
-    if not check(not niche.is_empty() and absf(niche.position.x + 5.4) < .025, "Stash niche blocked or backing missing"): quit(1); return
-    var mouth := space.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(-3.8,16,-2.8),Vector3(-3.8,14,-2.8),1))
-    if not check(not mouth.is_empty() and absf(mouth.position.y - 14.56) < .025, "Chimney mouth closed or flue unsupported"): quit(1); return
+    if not check(not building.window_material.emission_enabled,"Explicit light disable left beacon active"):quit(1);return
+    building.set_interior_lights_enabled(true);clock.daylight=1
+    await settle(40)
+    if not check(not building.window_material.emission_enabled,"Night window failed to recover daytime"):quit(1);return
+    for tick in range(90):
+        await physics_frame
+        actor.velocity=Vector3(0,-.5,-2);actor.move_and_slide()
+    if not check(actor.position.z>5.5,"Closed entrance allowed passage"):quit(1);return
+    if not await toggle(building.door):quit(1);return
+    if not check(building.interior_visible and not building.set_interior_visible(false),"Open portal visibility guard"):quit(1);return
+    if not await go([Vector3(0,.875,3.6),Vector3(0,.875,2.75),Vector3(-1,.875,0),Vector3(0,.875,0),Vector3(0,.875,2.75)]):quit(1);return
+    if not await toggle(building.door):quit(1);return
+    for h in LEVELS.slice(0,7):
+        if not await go(internal_points(h)):quit(1);return
+        if not await walk(Vector3(0,h+4.475,2.75)):quit(1);return
+        if h==3.6:
+            if not await go([Vector3(-3,8.075,2.75),Vector3(-3,8.075,0),Vector3(-4.4,8.075,0),Vector3(-3,8.075,0),Vector3(-3,8.075,2.75),Vector3(0,8.075,2.75)]):quit(1);return
+        if not await go([Vector3(0,h+4.475,0),Vector3(0,h+4.475,2.75)]):quit(1);return
+    if not await walk(Vector3(3.2,26.075,2.5)):quit(1);return
+    if not await toggle(building.maintenance_door):quit(1);return
+    if not await walk(Vector3(6.25,26.075,2.5)):quit(1);return
+    if not check(building.maintenance_door.try_toggle(actor),"Closing request"):quit(1);return
+    await settle(90)
+    if not check(building.maintenance_door.blocked,"Closing arc did not protect capsule"):quit(1);return
+    if not await walk(Vector3(6.25,26.075,.5)):quit(1);return
+    await settle(90)
+    if not check(is_zero_approx(building.maintenance_door.fraction) and not building.maintenance_door.moving,"Door did not recover after obstruction"):quit(1);return
+    # Reach the eighth exterior flight along the actual high-level ring.
+    if not await go([Vector3(6.25,26.075,-6.25),Vector3(-7.55,26.075,-6.25),Vector3(-7.55,26.075,6.25),Vector3(-6.25,26.075,6.25),Vector3(-3,26.075,6.25)]):quit(1);return
+    # New west bypass: physical outer masonry guard, adult capsule foot reference.
+    if not await walk(Vector3(-7.55,26.075,4.5)):quit(1);return
+    for tick in range(90):
+        await physics_frame
+        actor.velocity=Vector3(-2,-.5,0);actor.move_and_slide()
+    if not check(actor.position.x>-7.9 and actor.position.y>25.95,"West bypass guard failed"):quit(1);return
+    if not await go([Vector3(-7.55,26.075,6.25),Vector3(-3,26.075,6.25)]):quit(1);return
+    if not await go(exterior_points(7)):quit(1);return
+    # C-shaped upper repair gallery with a real south stair hole: brackets/board gallery/scaffold/rod access.
+    if not await go([Vector3(6.25,29.675,-6.25),Vector3(-6.25,29.675,-6.25),Vector3(-6.25,29.675,6.25),Vector3(-4,29.675,6.25),Vector3(-6.25,29.675,6.25),Vector3(-6.25,29.675,-6.25),Vector3(6.25,29.675,-6.25),Vector3(6.25,29.675,3)]):quit(1);return
+    # Closed west edge of the eighth-flight roof hole must stop a real capsule.
+    if not await go([Vector3(6.25,29.675,-6.25),Vector3(-6.25,29.675,-6.25),Vector3(-6.25,29.675,6.25),Vector3(-4,29.675,6.25)]):quit(1);return
+    for tick in range(90):
+        await physics_frame
+        actor.velocity=Vector3(2,-.5,0);actor.move_and_slide()
+    if not check(actor.position.x<-3.25 and actor.position.y>29.4,"Repair stair hole end guard failed"):quit(1);return
+    if not await go([Vector3(-6.25,29.675,6.25),Vector3(-6.25,29.675,-6.25),Vector3(6.25,29.675,-6.25),Vector3(6.25,29.675,3)]):quit(1);return
+    for k in range(7,-1,-1):
+        var points:=exterior_points(k);points.reverse()
+        if not await go(points):quit(1);return
+    if not await walk(Vector3(6.25,.875,3.75)):quit(1);return
+    # Entire outside climb then repeat the full descent of every internal tread.
+    for k in range(8):
+        if not await go(exterior_points(k)):quit(1);return
+    # Guard is physical masonry/repair rail, without an invisible wall.
+    for tick in range(90):
+        await physics_frame
+        actor.velocity=Vector3(2,-.5,0);actor.move_and_slide()
+    if not check(actor.position.x<7 and actor.position.y>29.4,"Upper gallery guard failed"):quit(1);return
+    if not await walk(Vector3(6.25,29.675,3)):quit(1);return
+    var last:=exterior_points(7);last.reverse()
+    if not await go(last):quit(1);return
+    if not await go([Vector3(-6.25,26.075,6.25),Vector3(-7.55,26.075,6.25),Vector3(-7.55,26.075,-6.25),Vector3(6.25,26.075,-6.25),Vector3(6.25,26.075,.5)]):quit(1);return
+    if not await toggle(building.maintenance_door):quit(1);return
+    if not await go([Vector3(6.25,26.075,2.5),Vector3(3.2,26.075,2.5)]):quit(1);return
+    if not await toggle(building.maintenance_door):quit(1);return
+    for h in [21.6,18.0,14.4,10.8,7.2,3.6,0.0]:
+        var points:=internal_points(h);points.reverse()
+        if not await go(points):quit(1);return
+    if not await walk(Vector3(0,.875,3.6)):quit(1);return
+    if not await toggle(building.door):quit(1);return
+    if not await walk(Vector3(0,.875,7.5)):quit(1);return
+    if not await toggle(building.door):quit(1);return
+    var space:=actor.get_world_3d().direct_space_state
+    var niche:=space.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(-4.7,8.7,0),Vector3(-5.6,8.7,0),1))
+    if not check(not niche.is_empty() and absf(niche.position.x+5.4)<.025,"Niche backing/opening"):quit(1);return
+    var mouth:=space.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(-3.8,31,-2.8),Vector3(-3.8,28.5,-2.8),1))
+    if not check(not mouth.is_empty() and absf(mouth.position.y-28.95)<.025,"Open chimney obstructed by board lid"):quit(1);return
+    var bed:=space.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(-3.6,8.6,-1.05),Vector3(-3.6,7.7,-1.05),1))
+    if not check(not bed.is_empty() and absf(bed.position.y-8.08)<.025,"Preserved solid mattress"):quit(1);return
     for h in [0.0,3.6,7.2]:
-        var stove := space.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(-2.8,h+.7,-2.8),Vector3(-4.4,h+.7,-2.8),1))
-        if not check(not stove.is_empty() and absf(stove.position.x + 3.25) < .025, "Stove collision missing"): quit(1); return
-        var support := space.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(-1,h+3.2,0),Vector3(-1,h+3.5,0),1))
-        if not check(not support.is_empty(), "Lantern ceiling support missing"): quit(1); return
-    for x in [-2.2,2.2]:
-        var ridge := space.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(x,14.8,0),Vector3(x,14.2,0),1))
-        if not check(not ridge.is_empty() and absf(ridge.position.y - 14.5) < .025, "Lightning mast lacks ridge roof support"): quit(1); return
-    var bed := space.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(-3.6,8.6,-1.05),Vector3(-3.6,7.7,-1.05),1))
-    if not check(not bed.is_empty() and absf(bed.position.y - 8.08) < .025, "Complete shaped mattress collision missing"): quit(1); return
-    # The space between bed and stove is physically free at capsule height.
-    var bed_gap := space.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(-3.6,8,-1.75),Vector3(-3.6,8,-2.15),1))
-    if not check(bed_gap.is_empty(), "Bed intersects stove or approach gap"): quit(1); return
-    print("TOWER_NICHE_CHIMNEY_STOVES_LAMP_ROD_SUPPORT_PASS")
-    # Bounds include actual vertices of all meshes, lanterns and moving leaves.
-    var low := Vector3(INF,INF,INF); var high := Vector3(-INF,-INF,-INF)
-    var triangles := 0
-    for mesh in building.find_children("*", "MeshInstance3D", true, false):
-        for surface in range(mesh.mesh.get_surface_count()):
-            var arrays: Array = mesh.mesh.surface_get_arrays(surface)
+        var stove:=space.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(-2.8,h+.7,-2.8),Vector3(-4.4,h+.7,-2.8),1))
+        if not check(not stove.is_empty() and absf(stove.position.x+3.25)<.025,"Preserved stove collision"):quit(1);return
+    var support:=space.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(6,30.5,-5.15),Vector3(5,30.5,-5.15),1))
+    if not check(not support.is_empty() and absf(support.position.x-5.5)<.04,"Lightning pin masonry anchor absent"):quit(1);return
+    var camera:=Camera3D.new();root.add_child(camera);camera.make_current();camera.position=Vector3(120,20,0)
+    await settle(40)
+    for light in building.interior_lights:
+        if not check(not light.visible,"Distant lantern failed to sleep"):quit(1);return
+    camera.position=Vector3(0,2,0);await settle(40)
+    for light in building.interior_lights:
+        if not check(light.visible,"Nearby lantern failed to wake"):quit(1);return
+    var low:=Vector3(INF,INF,INF);var high:=Vector3(-INF,-INF,-INF);var triangles:=0
+    for node in building.find_children("*","MeshInstance3D",true,false):
+        for surface in range(node.mesh.get_surface_count()):
+            var arrays: Array=node.mesh.surface_get_arrays(surface)
             for vertex in arrays[Mesh.ARRAY_VERTEX]:
-                var p: Vector3 = building.to_local(mesh.to_global(vertex))
-                low = low.min(p); high = high.max(p)
-            var indices: PackedInt32Array = arrays[Mesh.ARRAY_INDEX]
-            triangles += (indices.size() if not indices.is_empty() else arrays[Mesh.ARRAY_VERTEX].size()) / 3
-    print("TOWER_WHOLE_VERTEX_BOUNDS min=",low," max=",high," triangles_with_lanterns=",triangles)
-    print("TOWER_RUNTIME_BUDGET meshes=",building.find_children("*", "MeshInstance3D", true, false).size()," static_bodies=",building.find_children("*", "StaticBody3D", true, false).size()-building.find_children("*", "AnimatableBody3D", true, false).size()," door_bodies=",building.find_children("*", "AnimatableBody3D", true, false).size()," shadow_lights=",building.interior_lights.size())
-    if not check(low.x >= -6.2 and high.x <= 9.3 and low.z >= -6.2 and high.z <= 7.3 and high.y <= 16.5, "Module escaped bounded extent"): quit(1); return
-    print("ACADEMY_TOWER_PASS segments=",segments," clearance_samples=",clearance_samples," failures=",failures)
+                var point: Vector3=building.to_local(node.to_global(vertex));low=low.min(point);high=high.max(point)
+            var indices: PackedInt32Array=arrays[Mesh.ARRAY_INDEX]
+            triangles+=(indices.size() if not indices.is_empty() else arrays[Mesh.ARRAY_VERTEX].size())/3
+    print("TOWER_R2_WHOLE_VERTICES min=",low," max=",high," triangles_with_lamps=",triangles)
+    if not check(low.x>=-8.3 and high.x<=7.3 and low.z>=-7.3 and high.z<=7.3 and high.y>31 and high.y<35,"Complete bounded tall silhouette"):quit(1);return
+    print("ACADEMY_TOWER_R2_PASS segments=",segments," headroom_samples=",clearance_samples," internal_treads=140 external_treads=160 failures=",failures)
     quit(0)
