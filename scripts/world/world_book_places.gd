@@ -316,6 +316,15 @@ func build_stairs(stairs: Array) -> void:
 				var rise := _slab_high(all, n) - top
 				var pitch := atan2(rise, depth - 0.02)
 				var slab := basis * Basis(Vector3.RIGHT, pitch)
+				# a dressed cheek along each open side, on the slope of the flight (owner 14 Oct: the
+				# treads' blocks showed as a sawtooth along the flights' sides): it covers the steps'
+				# profile down into the bank of earth the flight stands in (world_snow_lots FILL_TOP)
+				for sx in [-1.0, 1.0]:
+					var side: Vector3 = basis * Vector3(sx * (width * 0.5 - 0.06), 0, 0)
+					var beyond: Vector3 = basis * Vector3(sx * (width * 0.5 + 0.4), 0, 0)
+					if ground(at.x + beyond.x, at.y + beyond.z) > top - 0.15:
+						continue
+					_tilted_block(node, Vector3(at.x + side.x, top + rise * 0.5 + CHEEK.y * 0.5 - CHEEK.z, at.y + side.z), Vector3(CHEEK.x, CHEEK.y, (depth - 0.02) / cos(pitch) + 0.06), slab, "tread", false)
 				if rise > 0.02:
 					_stair_collider(node, Vector3(at.x, top + rise * 0.5 - 0.03, at.y), Vector3(width, 0.06, (depth - 0.02) / cos(pitch) + 0.04), slab)
 				else:
@@ -347,11 +356,26 @@ func build_stairs(stairs: Array) -> void:
 				rails.append([Vector3(0, 0, depth * 0.5 - 0.05), Vector3(width, 1.0, 0.1)])
 			for r in rails:
 				var off: Vector3 = basis * (r[0] as Vector3)
-				_stair_block(node, Vector3(at.x + off.x, top + 0.5, at.y + off.z), r[1], yaw, "wood")
+				if not tread:
+					_stair_block(node, Vector3(at.x + off.x, top + 0.5, at.y + off.z), r[1], yaw, "wood")
+					continue
+				# on a flight (Codex 106ecf5: a stepped run of blocks read as blockout): the guard keeps
+				# its collision, unseen; seen are a handrail on the slope, joining the next tread's, and
+				# a post on every third tread
+				_stair_collider(node, Vector3(at.x + off.x, top + 0.5, at.y + off.z), r[1], basis)
+				var rise := _slab_high(all, n) - top
+				var tilt := basis * Basis(Vector3.RIGHT, atan2(rise, depth - 0.02))
+				var rail_size: Vector3 = r[1]
+				var along_x: bool = rail_size.x > rail_size.z
+				_tilted_block(node, Vector3(at.x + off.x, top + rise * 0.5 + 0.95, at.y + off.z), Vector3(rail_size.x, 0.08, 0.08) if along_x else Vector3(0.08, 0.08, depth / cos(atan2(rise, depth - 0.02)) + 0.02), tilt, "wood", false)
+				if n % 3 == 0:
+					_stair_block(node, Vector3(at.x + off.x, top + 0.48, at.y + off.z), Vector3(0.08, 0.96, 0.08), yaw, "wood", false)
 	print("BOOK_STAIRS flights=%d boxes=%d" % [stairs.size(), boxes])
 
 
 const STAIR_RISE := 0.18
+## A flight's cheek: width, height, depth under the walking line.
+const CHEEK := Vector3(0.18, 0.5, 0.36)
 const RAIL_DROP := 0.5
 const STAIR_RUN_ENTRY := 0.3
 

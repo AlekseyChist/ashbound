@@ -78,10 +78,27 @@ func build(book: Node3D, ground: Callable, layout: Dictionary, streets: Array) -
 			var length := a.distance_to(b) + 0.05
 			book._stair_block(node, Vector3(mid.x - HALF, (top + bottom) * 0.5, mid.y - HALF), Vector3(width, top - bottom, length), yaw, "masonry")
 			blocks += 1
-			# a merlon on every other block
+			# the wall's construction read (Codex 106ecf5: a plain brown slab): a lighter dressed coping
+			# a little wider than the wall, a base course where it meets the ground, a buttress on the
+			# outer face every fourth block and dressed merlons on every other one
+			book._stair_block(node, Vector3(mid.x - HALF, top - 0.12, mid.y - HALF), Vector3(width + 0.24, 0.24, length + 0.02), yaw, "tread", false)
+			book._stair_block(node, Vector3(mid.x - HALF, lo + 0.2, mid.y - HALF), Vector3(width + 0.3, 0.9, length + 0.02), yaw, "masonry", false)
 			if i % 2 == 0:
-				book._stair_block(node, Vector3(mid.x - HALF, top + MERLON.y * 0.5, mid.y - HALF), Vector3(width, MERLON.y, MERLON.x), yaw, "masonry")
+				book._stair_block(node, Vector3(mid.x - HALF, top + MERLON.y * 0.5, mid.y - HALF), Vector3(width, MERLON.y, MERLON.x), yaw, "tread")
+			if i % 4 == 1:
+				var dir := (b - a).normalized()
+				var out := Vector2(-dir.y, dir.x)
+				if out.dot(mid - _centre(width)) < 0.0:
+					out = -out
+				var at: Vector2 = mid + out * (width * 0.5 + 0.3)
+				var bh := maxf(top - 1.2 - (lo - 0.3), 0.5)
+				book._stair_block(node, Vector3(at.x - HALF, lo - 0.3 + bh * 0.5, at.y - HALF), Vector3(0.6, bh, 0.9), yaw, "masonry", false)
 	print("SNOW_WALLS blocks=%d skipped=%d %s" % [blocks, skipped.size(), str(skipped.map(func(s): return "%s:%s" % [s[0], s[1]]))])
+
+
+## The middle of what a wall encloses: the lower city, or the Academy shelf (its 2.0 m wall).
+func _centre(width: float) -> Vector2:
+	return Vector2(1068, 292) if width == 2.0 else Vector2(985, 330)
 
 
 func _along(pts: PackedVector2Array, lengths: PackedFloat32Array, t: float) -> Vector2:

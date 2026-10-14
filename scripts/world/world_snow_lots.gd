@@ -16,6 +16,9 @@ const HALF := 1000.0
 const GRID := 5.0
 const FINE := 1.25
 const FLAT := 2.0
+## The slum's shacks keep a narrower level yard (Codex 106ecf5: their 2 m yards on the steep slope rose
+## as earth humps along the lane); the floor clamp keeps the ground under their floors, plinths fill.
+const FLAT_SHACK := 1.0
 const APRON := 3.0
 const SHACK_FRONT := 1.0
 const BLEND := 3.0
@@ -58,6 +61,19 @@ const STOOP_LEVEL := 4
 const LANDING := 1.2
 const STOOP_RUN := 0.35
 const STOOP_WIDTH := 1.6
+## A door stair's dressed cheek on each open side, on its slope (owner 14 Oct: the steps' blocks showed
+## a sawtooth along the slum's lane): width, height, depth under the walking line.
+const STOOP_CHEEK := Vector3(0.16, 0.45, 0.33)
+## A snow flight stands in a bank of earth (owner 14 Oct: the flights' bodies rose as tall stepped
+## stone walls over the falling slope): at a tread's side the ground lies FILL_TOP under its top and
+## falls away at FILL_SLOPE (a 29 deg bank), fading into the slope over its last 3 of FILL_REACH m - never under a bridge deck, nor
+## inside a plot's level ground. The bank's cells are drawn in the fine lattice.
+const FILL_TOP := 0.3
+const FILL_SLOPE := 0.55
+const FILL_REACH := 12.0
+const FILL_FINE := 5.0
+const FILL_DECK := 6.0
+const FILL_CAP := 1.0
 
 var lots: Array[Dictionary] = []
 var refined := {}
@@ -77,6 +93,9 @@ var stoop_paths := {}
 var _profiles: Array = []
 var _street_b := {}
 var _cache := {}
+## The bank: [centre (world frame), half extent, top] per tread, and their buckets.
+var _fill: Array = []
+var _fill_b := {}
 
 
 func setup(layout: Dictionary) -> void:
@@ -169,6 +188,33 @@ func setup(layout: Dictionary) -> void:
 			var at := Vector2(float(st[0]) - HALF, float(st[1]) - HALF)
 			_add_keep(Rect2(at, Vector2.ZERO).grow(reach + KEEP), [at, at, reach])
 			_treads.append([at, reach, float(st[2])])
+		var decks: Array = []
+		for st in flight.steps:
+			if st.size() > 6 and int(st[6]) == 4:
+				decks.append(Vector2(float(st[0]) - HALF, float(st[1]) - HALF))
+		for st in flight.steps:
+			var at := Vector2(float(st[0]) - HALF, float(st[1]) - HALF)
+			var near_deck := false
+			for d: Vector2 in decks:
+				near_deck = near_deck or at.distance_to(d) < FILL_DECK
+			if near_deck:
+				continue
+			var half := maxf(float(st[4]), float(st[5])) * 0.5
+			var i := _fill.size()
+			_fill.append([at, half, float(st[2])])
+			var box := Rect2(at, Vector2.ZERO).grow(half + FILL_REACH)
+			for bx in range(floori(box.position.x / BUCKET), floori(box.end.x / BUCKET) + 1):
+				for bz in range(floori(box.position.y / BUCKET), floori(box.end.y / BUCKET) + 1):
+					var key := Vector2i(bx, bz)
+					if not _fill_b.has(key):
+						_fill_b[key] = []
+					_fill_b[key].append(i)
+			var r := half + FILL_FINE + GRID * 0.72
+			for cx in range(floori((at.x - r + HALF) / GRID), floori((at.x + r + HALF) / GRID) + 1):
+				for cz in range(floori((at.y - r + HALF) / GRID), floori((at.y + r + HALF) / GRID) + 1):
+					var centre := Vector2((cx + 0.5) * GRID - HALF, (cz + 0.5) * GRID - HALF)
+					if centre.distance_to(at) < r:
+						refined[Vector2i(cx, cz)] = true
 		var steps: Array = flight.steps
 		if steps.size() >= 2:
 			for pair in [[steps[0], steps[1]], [steps[steps.size() - 1], steps[steps.size() - 2]]]:
@@ -368,16 +414,17 @@ func _dist(lot: Dictionary, p: Vector2) -> float:
 	var d: Vector2 = p - lot.c
 	var u := d.dot(lot.s)
 	var v := d.dot(lot.f)
+	var flat: float = FLAT_SHACK if lot.shack else FLAT
 	var front: float = SHACK_FRONT if lot.shack else FLAT + APRON
-	var du := maxf(absf(u) - (lot.w * 0.5 + FLAT), 0.0)
-	var dv := maxf(maxf(-lot.d * 0.5 - FLAT - v, v - lot.d * 0.5 - front), 0.0)
+	var du := maxf(absf(u) - (lot.w * 0.5 + flat), 0.0)
+	var dv := maxf(maxf(-lot.d * 0.5 - flat - v, v - lot.d * 0.5 - front), 0.0)
 	return Vector2(du, dv).length()
 
 
 ## The ground at a world-frame point given the ground there without the plots.
 func height(p: Vector2, base: float) -> float:
 	var key := Vector2i(floori(p.x / BUCKET), floori(p.y / BUCKET))
-	if not _buckets.has(key) and not _street_b.has(key):
+	if not _buckets.has(key) and not _street_b.has(key) and not _fill_b.has(key):
 		return base
 	var h := INF
 	var core := INF
@@ -399,6 +446,23 @@ func height(p: Vector2, base: float) -> float:
 		keep = minf(keep, smoothstep(r[2], r[2] + KEEP, p.distance_to(q)))
 	var g := base if h == INF else lerpf(base, h, keep)
 	var graded := h != INF
+	# the flights' bank, under the streets (they ride over it) and out of the plots' level ground
+	# - and never over a lower tread nearby by more than FILL_CAP per metre from its edge (at a turn of
+	# a flight the upper run's bank buried the lower run's treads)
+	var bank := -INF
+	var cap := INF
+	for i in _fill_b.get(key, []):
+		var t: Array = _fill[i]
+		var out := maxf(p.distance_to(t[0]) - float(t[1]), 0.0)
+		if out < FILL_REACH:
+			cap = minf(cap, float(t[2]) - FILL_TOP + out * FILL_CAP)
+			var b := float(t[2]) - FILL_TOP - out * FILL_SLOPE
+			if b > g:
+				bank = maxf(bank, lerpf(b, g, smoothstep(FILL_REACH - 3.0, FILL_REACH, out)))
+	bank = minf(bank, cap)
+	if bank > g:
+		g = lerpf(g, bank, smoothstep(0.0, BLEND, core) if core != INF else 1.0)
+		graded = true
 	# the streets over that, up to the stairs they meet, yielding to a plot only within a lattice cell
 	# of its walls (Codex 6ef4e04: yielding to the whole yard left a berm in the slum's lane that
 	# pushed the hero onto vs3's plinth; under the flights' kept ground the academy street reached
@@ -469,7 +533,9 @@ func _steps(book: Node3D, node: Node3D, ground: Callable, start: Vector2, dir: V
 		var top := minf(maxf(high, walk - STOOP_RISE), walk)
 		var before := walk
 		walk = top
-		if low >= top - 0.05:
+		# ground within reach of the walking level - and, after a block, no more than a riser under it
+		# (Codex 106ecf5: vs13's foot ended 0.287 m over the ground just past its last block)
+		if low >= top - 0.05 and (built == 0 or before - low <= STOOP_RISE + 0.02):
 			idle += 1
 			# done once its steps meet the ground for STOOP_LEVEL steps (Codex 6ef4e04: after two, vs13's
 			# bank fell on 0.68 m past the stair's foot)
@@ -488,6 +554,13 @@ func _steps(book: Node3D, node: Node3D, ground: Callable, start: Vector2, dir: V
 			var pitch := atan2(before - top, STOOP_RUN)
 			var turn := Basis(Vector3.UP, deg_to_rad(yaw)) * Basis(Vector3.RIGHT, pitch)
 			book._stair_collider(node, Vector3(p.x, (before + top) * 0.5 - 0.03, p.y), Vector3(width, 0.06, STOOP_RUN / cos(pitch) + 0.04), turn)
+			book._stair_block(node, Vector3(p.x, top - 0.05, p.y), Vector3(width + 0.04, 0.1, STOOP_RUN + 0.02), yaw, "tread", false)
+			for sx in [-1.0, 1.0]:
+				var beyond: Vector2 = p + across * (sx * (width * 0.5 + 0.4))
+				if float(ground.call(beyond.x, beyond.y)) > top - 0.15:
+					continue
+				var side: Vector2 = p + across * (sx * (width * 0.5 - 0.05))
+				book._tilted_block(node, Vector3(side.x, (before + top) * 0.5 + STOOP_CHEEK.y * 0.5 - STOOP_CHEEK.z, side.y), Vector3(STOOP_CHEEK.x, STOOP_CHEEK.y, STOOP_RUN / cos(pitch) + 0.06), turn, "tread", false)
 	return [built, false, end]
 
 
