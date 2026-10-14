@@ -29,7 +29,7 @@ LIME=surface('DH lime','plaster_grey_04_diff_1k.jpg',2)
 WOOD=surface('DH timber','fine_grained_wood_col_1k.jpg',.65)
 CLOTH=C.mat('DH shade',(.36,.30,.20,1),.98)
 LINEN=C.mat('DH bedding',(.27,.24,.18,1),.98)
-IRON=C.mat('DH iron',(.30,.30,.32,1),.5)
+IRON=C.mat('DH iron',(.16,.16,.17,1),.45,.6)
 coll=[]
 def box(n,p,s,m,solid=True):
     o=C.box(n,p,s,m,.015)
@@ -38,6 +38,17 @@ def box(n,p,s,m,solid=True):
     if n.startswith(('halberd shaft','halberd blade','halberd hook','halberd spike')):
         o['part_role']='interior_furniture'
     if solid:coll.append((n,p,s))
+    return o
+def plate(n,x,y,z,outline,t,m):
+    # flat iron piece: outline [(dx,dz),...] counter-clockwise around (x,z), thickness t along y
+    v=[(x+a,y-t/2,z+b) for a,b in outline]+[(x+a,y+t/2,z+b) for a,b in outline]
+    k=len(outline)
+    f=[tuple(range(k-1,-1,-1)),tuple(range(k,2*k))]
+    for i in range(k):
+        j=(i+1)%k
+        f.append((i,j,k+j,k+i))
+    o=C.mesh(n,v,f,m)
+    o['part_role']='interior_furniture'
     return o
 # Shell: outer faces exactly x +-6.5, y +-3.5; wall centre lines x +-6.3, y +-3.3 (0.4 thick).
 box('foundation',(0,0,-.15),(13,7,.3),STONE)
@@ -116,10 +127,10 @@ box('rack rail',(4.3,2.9,1.30),(3.2,.10,.10),WOOD,False)
 box('rack rail',(4.3,2.9,.80),(3.2,.10,.10),WOOD,False)
 # Four static halberds stand on the rack (props only).
 for x in (3.25,3.95,4.65,5.35):
-    box('halberd shaft',(x,2.79,1.17),(.05,.05,2.3),WOOD,False)
-    box('halberd blade',(x+.13,2.79,2.13),(.22,.02,.20),IRON,False)
-    box('halberd hook',(x-.08,2.79,2.16),(.10,.02,.05),IRON,False)
-    box('halberd spike',(x,2.79,2.43),(.03,.03,.22),IRON,False)
+    box('halberd shaft',(x,2.825,1.15),(.05,.05,2.3),WOOD,False)
+    plate('halberd blade',x,2.825,2.13,[(.02,-.13),(.11,-.16),(.20,-.12),(.25,-.03),(.26,.03),(.21,.11),(.12,.15),(.02,.12)],.02,IRON)
+    plate('halberd hook',x,2.825,2.17,[(-.02,-.03),(-.10,-.05),(-.17,-.01),(-.10,.0),(-.02,.03)],.02,IRON)
+    plate('halberd spike',x,2.825,2.30,[(-.022,0),(.022,0),(.012,.18),(0,.26),(-.012,.18)],.03,IRON)
 # Door: EntryPortal, front hinge at the opening edge, open -100 deg.
 door_parts=[]
 portal=bpy.data.objects.new('EntryPortal',None);C.ASSET.objects.link(portal)
