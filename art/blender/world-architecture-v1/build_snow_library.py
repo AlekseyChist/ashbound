@@ -35,8 +35,8 @@ def box(n,p,s,m,solid=True,bevel=.015):
     o=C.box(n,p,s,m,bevel)
     if solid:coll.append((n,p,s))
     return o
-def prop(n,p,s,m=WOOD,solid=True):
-    o=box(n,p,s,m,solid);o['part_role']='interior_furniture';furniture.append(o);return o
+def prop(n,p,s,m=WOOD,solid=True,bevel=.015):
+    o=box(n,p,s,m,solid,bevel);o['part_role']='interior_furniture';furniture.append(o);return o
 box('lower foundation',(0,0,-3.35),(10,7,.3),STONE)
 # Ceiling slab stops around both flights and their turning landing.
 box('upper west slab',(-1.5,0,-.14),(7,7,.28),WOOD)
@@ -120,8 +120,8 @@ for z in (0,-3.2):
             for k in range(12):
                 x=-4.08+k*.23
                 prop('shelved pages',(x,y,z+h+.17),(.12,.25,.24),BOOK,False)
-                prop('book spine',(x,y-.14,z+h+.17),(.15,.025,.28),COVER,False)
-                for dx in (-.075,.075):prop('book cover',(x+dx,y,z+h+.17),(.018,.29,.28),COVER,False)
+                prop('book spine',(x,y-.14,z+h+.17),(.15,.025,.28),COVER,False,0)
+                for dx in (-.075,.075):prop('book cover',(x+dx,y,z+h+.17),(.018,.29,.28),COVER,False,0)
 hinge=bpy.data.objects.new('SL_entry_hinge',None);C.ASSET.objects.link(hinge);hinge.location=(-.76,-3.3,0);hinge['open_angle_degrees']=-100.0
 door_parts=[]
 for k in range(6):door_parts.append(box('Door plank',(-.635+k*.254,-3.3,1.22),(.248,.08,2.44),WOOD,False))
