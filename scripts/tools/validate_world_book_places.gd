@@ -410,15 +410,16 @@ func run() -> void:
 
 	# The snow city's streets (the book's plan): each walked end to end and back by the capsule with
 	# the hero's step-up, on the terrain, plinths and door stairs alone (no buildings loaded here).
-	# A street's end at a stair flight stops 2.5 m short of it (the flight is its own route, walked
-	# above); the capsule starts on the first surface under it.
+	# Each street whole, its ends at the stairs included; the capsule starts on the first surface
+	# under it.
 	var treads: Array = []
 	for flight in layout.get("book_stairs", []):
 		if str(flight.id).begins_with("snow"):
 			for st in flight.steps:
 				treads.append([Vector2(float(st[0]), float(st[1])), maxf(float(st[4]), float(st[5])) * 0.5 + 0.5])
 	for street in w.snow_lots.streets:
-		var pts: PackedVector2Array = _off_stairs(street[0], treads)
+		# whole, ends at the stairs included (the street-stair joins are part of the route)
+		var pts: PackedVector2Array = street[0]
 		if pts.size() < 2:
 			continue
 		for leg in [pts, _reversed(pts)]:

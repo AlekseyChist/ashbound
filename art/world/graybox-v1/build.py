@@ -883,9 +883,9 @@ _snow_pad_mask=np.zeros(heights.shape,bool)
 for pad in BOOK_PADS:
     if pad['id'].startswith('snow'):_snow_pad_mask|=poly_distance(pad['poly'])<=0.0
 for _sid,_nodes,_w,_bl in SNOW_ROUTES:
-    # a route starts on the ground of its street (the book's gate level 276, the ground 276.2)
-    _x0,_z0,_h0=_nodes[0]
-    _nodes=[(_x0,_z0,max(_h0,round(float(sample_grid(_x0,_z0)),2)))]+list(_nodes[1:])
+    # a route starts at the book's level of its street; where the ground stands higher there, the
+    # flight's cut below lowers it (Codex 6ef4e04: started on the bank at 280.36, stair C's foot
+    # stood 4-6 m over the lower street at 274-276)
     _st=stair_route(_nodes,_w,_bl)
     BOOK_STAIRS.append({'id':_sid,'steps':_st})
     for sx,sz,top,_yaw,dep,wid,_r in _st:

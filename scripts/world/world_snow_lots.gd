@@ -49,10 +49,12 @@ const STREET_SMOOTH := 3
 const STREET_BLEND := 2.0
 const STREET_PIN := 3.0
 const JUNCTION := 1.5
+const END_PAD := 3.0
 const STOOP_MAX := 24
 ## A straight stoop must meet the ground within this many steps, or the stair turns along the facade
 ## after a LANDING m deep landing at the door.
 const STOOP_OUT := 4
+const STOOP_LEVEL := 4
 const LANDING := 1.2
 const STOOP_RUN := 0.35
 const STOOP_WIDTH := 1.6
@@ -64,6 +66,8 @@ var _keep := {}
 var holes := {}
 var _collars: Array = []
 var _treads: Array = []
+## Each snow flight's two ends: [the point past its end tread, the outward direction, its top].
+var _ends: Array = []
 ## The book's streets (plan lines of kind street): [points (map frame), width].
 var streets: Array = []
 ## Each door stair's walking line, code -> points (world frame): the door, (a landing,) the stair's end.
@@ -165,6 +169,13 @@ func setup(layout: Dictionary) -> void:
 			var at := Vector2(float(st[0]) - HALF, float(st[1]) - HALF)
 			_add_keep(Rect2(at, Vector2.ZERO).grow(reach + KEEP), [at, at, reach])
 			_treads.append([at, reach, float(st[2])])
+		var steps: Array = flight.steps
+		if steps.size() >= 2:
+			for pair in [[steps[0], steps[1]], [steps[steps.size() - 1], steps[steps.size() - 2]]]:
+				var end := Vector2(float(pair[0][0]) - HALF, float(pair[0][1]) - HALF)
+				var inner := Vector2(float(pair[1][0]) - HALF, float(pair[1][1]) - HALF)
+				var half := maxf(float(pair[0][4]), float(pair[0][5])) * 0.5
+				_ends.append([end + (end - inner).normalized() * half, (end - inner).normalized(), float(pair[0][2])])
 	print("SNOW_LOTS lots=%d refined_cells=%d keep_buckets=%d" % [lots.size(), refined.size(), _keep.size()])
 
 
@@ -211,11 +222,18 @@ func grade_streets(ground: Callable) -> void:
 		var n := int(ceil(run / STREET_STEP)) + 1
 		for i in n:
 			var q := _along(pts, cum, minf(i * STREET_STEP, run))
-			var over_stair := false
+			# over a stair flight the street meets its treads: the nearest tread's top (Codex 6ef4e04:
+			# graded on the well's ground, the academy street reached stair C's top 3.4 m low and the
+			# middle street lay 0.83 m under stair A's top)
+			var tread_top := NAN
+			var near := INF
 			for t in _treads:
-				over_stair = over_stair or q.distance_to(t[0]) < float(t[1])
-			raw.append(float(ground.call(q.x, q.y)))
-			valid.append(not over_stair)
+				var dt: float = q.distance_to(t[0])
+				if dt < float(t[1]) and dt < near:
+					near = dt
+					tread_top = float(t[2])
+			raw.append(float(ground.call(q.x, q.y)) if is_nan(tread_top) else tread_top)
+			valid.append(true)
 		for i in n:
 			if valid[i]:
 				continue
@@ -332,6 +350,14 @@ func skips(cell_x: int, cell_z: int) -> bool:
 ## Inside the walls grown by one lattice cell: every 1.25 m triangle under the floor has all three
 ## corners lowered (Codex 0208cfd: with only the corners inside the walls lowered, the triangles rose
 ## back to the floor's level 0.65 m inside them).
+## Distance from a building's walls (0 inside).
+func _wall_dist(lot: Dictionary, p: Vector2) -> float:
+	var d: Vector2 = p - lot.c
+	var du := maxf(absf(d.dot(lot.s)) - lot.w * 0.5, 0.0)
+	var dv := maxf(absf(d.dot(lot.f)) - lot.d * 0.5, 0.0)
+	return Vector2(du, dv).length()
+
+
 func _inside_walls(lot: Dictionary, p: Vector2) -> bool:
 	var d: Vector2 = p - lot.c
 	return absf(d.dot(lot.s)) < lot.w * 0.5 + FINE and absf(d.dot(lot.f)) < lot.d * 0.5 + FINE
@@ -366,25 +392,46 @@ func height(p: Vector2, base: float) -> float:
 		# floors shared the terrain's plane and flickered gravel through the boards)
 		if d == 0.0 and _inside_walls(lot, p):
 			h = minf(h, lot.level - FLOOR_GAP)
-	var g := base if h == INF else h
-	var graded := h != INF
-	for si in _street_b.get(key, []):
-		var at: Array = _street_at(si, p)
-		var edge: float = float(_profiles[si][3]) + 0.3
-		if float(at[0]) < edge + STREET_BLEND:
-			# a plot's level ground (walls + FLAT, its yard) keeps its level; the street fades out over
-			# the metre before it
-			var w := (1.0 - smoothstep(edge, edge + STREET_BLEND, float(at[0]))) * smoothstep(0.0, 1.0, core)
-			g = lerpf(g, float(at[1]), w)
-			graded = true
-	if not graded:
-		return base
-	h = g
+	# the plots fade out at roads and stair flights (their ground kept)
 	var keep := 1.0
 	for r in _keep.get(key, []):
 		var q := Geometry2D.get_closest_point_to_segment(p, r[0], r[1])
 		keep = minf(keep, smoothstep(r[2], r[2] + KEEP, p.distance_to(q)))
-	return lerpf(base, h, keep)
+	var g := base if h == INF else lerpf(base, h, keep)
+	var graded := h != INF
+	# the streets over that, up to the stairs they meet, yielding to a plot only within a lattice cell
+	# of its walls (Codex 6ef4e04: yielding to the whole yard left a berm in the slum's lane that
+	# pushed the hero onto vs3's plinth; under the flights' kept ground the academy street reached
+	# stair C's top 3.4 m low and the middle street lay 0.83 m under stair A's top)
+	for si in _street_b.get(key, []):
+		var at: Array = _street_at(si, p)
+		var edge: float = float(_profiles[si][3]) + 0.3
+		if float(at[0]) < edge + STREET_BLEND:
+			var walls := INF
+			for i in _buckets.get(key, []):
+				walls = minf(walls, _wall_dist(lots[i], p))
+			var w := (1.0 - smoothstep(edge, edge + STREET_BLEND, float(at[0]))) * smoothstep(FINE, FINE + 1.0, walls)
+			g = lerpf(g, float(at[1]), w)
+			graded = true
+	# past each end of a snow flight, a pad at its end tread's top - only beyond the end
+	for e in _ends:
+		var off: Vector2 = p - e[0]
+		if off.length() < END_PAD + STREET_BLEND and off.dot(e[1]) > -0.2:
+			g = lerpf(g, float(e[2]), 1.0 - smoothstep(END_PAD, END_PAD + STREET_BLEND, off.length()))
+			graded = true
+	if not graded:
+		return base
+	# never over a stair tread (the stairs stay on top: Codex 6ef4e04 had three of C's buried) ...
+	for t in _treads:
+		if p.distance_to(t[0]) < float(t[1]) - 0.5:
+			g = minf(g, float(t[2]) - 0.02)
+	# ... nor over a floor within a cell of its walls
+	for i in _buckets.get(key, []):
+		var lot := lots[i]
+		var walls := _wall_dist(lot, p)
+		if walls < FINE:
+			g = minf(g, lot.level - (FLOOR_GAP if walls == 0.0 else 0.0))
+	return g
 
 
 ## The same at a point of the 1.25 m lattice, computed once (the mesh and world_ground share them).
@@ -424,7 +471,9 @@ func _steps(book: Node3D, node: Node3D, ground: Callable, start: Vector2, dir: V
 		walk = top
 		if low >= top - 0.05:
 			idle += 1
-			if built > 0 and idle >= 2:
+			# done once its steps meet the ground for STOOP_LEVEL steps (Codex 6ef4e04: after two, vs13's
+			# bank fell on 0.68 m past the stair's foot)
+			if built > 0 and idle >= STOOP_LEVEL:
 				return [built, true, end]
 			if built == 0 and idle >= 3:
 				return [0, true, end]
