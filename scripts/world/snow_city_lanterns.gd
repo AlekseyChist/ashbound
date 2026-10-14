@@ -2,6 +2,8 @@ extends "res://scripts/world/forest_city_lanterns.gd"
 ## Reuse accepted post/lantern geometry. Streets and terrain remain book-owned.
 const PLAN := "res://assets/world/snow-city-v1/lanterns.json"
 const MAX_ACTIVE := 8
+# Half1.2m stair + half0.2m post + radius0.3m hero +0.1m margin.
+const STOOP_CLEARANCE := 1.1
 var world: Node3D
 var timber: Material
 var enabled := true
@@ -39,6 +41,10 @@ func _build_after_physics() -> void:
     var space := get_world_3d().direct_space_state
     for spec in data.posts:
         var at := Vector2(float(spec.at[0]),float(spec.at[1]))
+        var conflicts := stoop_conflicts(at,world.snow_lots.stoop_paths)
+        if not conflicts.is_empty():
+            unresolved.append({"label":spec.label,"reason":"post overlaps stoop walking clearance","lots":conflicts})
+            continue
         var level: float = world.world_ground(at.x-1000,at.y-1000) if spec.level == null else float(spec.level)
         var desired := Vector3(at.x-1000,level,at.y-1000)
         var query := PhysicsRayQueryParameters3D.create(world.world_root.to_global(desired+Vector3.UP*.4),world.world_root.to_global(desired-Vector3.UP*.4),1)
@@ -74,3 +80,17 @@ func _apply(lit: bool) -> void:
     nearby.sort_custom(func(a: Dictionary,b: Dictionary) -> bool: return a.distance < b.distance)
     for i in mini(MAX_ACTIVE,nearby.size()):
         lights[nearby[i].index].visible = true
+
+# Paths and posts use authored world/map frames, independent of scene-root translation.
+static func stoop_conflicts(map_at: Vector2, paths: Dictionary) -> Array[String]:
+    var conflicts: Array[String] = []
+    var point := map_at-Vector2(1000,1000)
+    for key in paths:
+        var path: Array = paths[key]
+        if path.size() < 3:continue
+        for index in range(path.size()-1):
+            var nearest := Geometry2D.get_closest_point_to_segment(point,path[index],path[index+1])
+            if point.distance_to(nearest) < STOOP_CLEARANCE:
+                conflicts.append(str(key))
+                break
+    return conflicts
