@@ -17,7 +17,7 @@ def surface(name,file,scale):
     return m
 STONE=surface('SA stone','stone_wall_02_diff_1k.jpg',2)
 WOOD=surface('SA timber','fine_grained_wood_col_1k.jpg',.65)
-PLASTER=surface('SA lime','plaster_grey_04_diff_1k.jpg',2)
+PLASTER=surface('SA lime','plaster_grey_04_diff_1k.jpg',3)
 def slate_paint():
     # Match the accepted S-H recipe: painted surface multiplied by its base tint.
     color=(.10,.135,.15)
@@ -33,12 +33,12 @@ def slate_paint():
     m.node_tree.links.new(tex.outputs['Color'],m.node_tree.nodes['Principled BSDF'].inputs['Base Color'])
     return m
 SLATE=slate_paint()
-LINEN=C.mat('SA bedding',(.37,.36,.29,1),.98)
+LINEN=C.mat('SA bedding',(.35,.31,.23,1),.98)
 BOOK=C.mat('SA book covers',(.20,.16,.11,1),.98)
 IRON=C.mat('SA iron',(.09,.10,.11,1),.83)
 coll=[];furniture=[]
 def box(n,p,s,m,solid=True):
-    o=C.box(n,p,s,m,.015)
+    o=C.box(n,p,s,m,0 if m==PLASTER else .015)
     if solid:coll.append((n,p,s))
     return o
 box('foundation',(0,0,-.15),(11,6,.3),STONE)
@@ -51,6 +51,12 @@ def wall(n,y,holes):
 wall('front',-2.8,[(-.65,.65,0,2.5),(-4,-3,1,2.3),(3,4,1,2.3)])
 wall('rear',2.8,[(-4,-3,1,2.3),(3,4,1,2.3)])
 for x in (-5.3,5.3):box('side wall',(x,0,1.6),(.4,5.2,3.2),PLASTER)
+# S-H stone belt: actual .42 m masonry above the foundation, continuous corners.
+# The front pieces end at the existing clear 1.30 m doorway.
+for a,b in [(-5.62,-.65),(.65,5.62)]:
+    box('front stone belt',((a+b)/2,-3,.21),(b-a,.12,.42),STONE)
+box('rear stone belt',(0,3,.21),(11.24,.12,.42),STONE)
+for x in (-5.56,5.56):box('side stone belt',(x,0,.21),(.12,6,.42),STONE)
 for y in (-3.025,3.025):
     for x in (-3.5,3.5):
         for dx in (-.54,.54):box('window jamb',(x+dx,y,1.65),(.12,.16,1.42),WOOD,False)
@@ -71,6 +77,32 @@ for side in (-1,1):
     vertices=[(xx,y,z) for xx in (x-.2,x+.2) for y,z in profile]
     faces=[(4,3,2,1,0),(5,6,7,8,9)]+[(i,(i+1)%5,(i+1)%5+5,i+5) for i in range(5)]
     C.mesh('closed masonry gable',vertices,faces,PLASTER)
+# Real timber framework on both outer x=+/-5.5 gable faces. Corner posts
+# bear on the stone belt; their wall plate carries king post, ties and rakes.
+for side in (-1,1):
+    x=side*5.5
+    for y in (-2.86,2.86):
+        box('gable bearing post',(x,y,1.81),(.18,.18,2.78),WOOD,False)
+    box('gable wall plate',(x,0,3.2),(.18,5.9,.18),WOOD,False)
+    box('gable king post',(x,0,4.81),(.18,.17,3.22),WOOD,False)
+    tie_z=4.34
+    tie_half=(6.5-tie_z)*3.5/3.3
+    box('gable tie',(x,0,tie_z),(.18,2*tie_half,.15),WOOD,False)
+    for sign in (-1,1):
+        C.beam('gable rake',(x,sign*3,gable_eave),(x,0,6.5),.18,.18,WOOD)
+        y=sign*1.45
+        top=6.5-abs(y)*3.3/3.5
+        box('gable upright',(x,y,(3.2+top)/2),(.16,.12,top-3.2),WOOD,False)
+# Small front canopy (Blender -Y / Godot +Z): slate slopes away from
+# a wall ledger onto a beam and two grounded posts outside the capsule lane.
+for x in (-1.02,1.02):
+    box('canopy post',(x,-4.05,1.35),(.14,.14,2.7),WOOD)
+box('canopy front beam',(0,-4.05,2.76),(2.18,.16,.12),WOOD)
+box('canopy wall ledger',(0,-3.04,3.07),(2.18,.16,.14),WOOD,False)
+for x in (-1.02,1.02):
+    C.beam('canopy rafter',(x,-3.04,3.1),(x,-4.2,2.76),.12,.12,WOOD)
+canopy=box('canopy slate',(0,-3.63,2.99),(2.4,1.4,.10),SLATE,False)
+canopy.rotation_euler.x=math.atan2(.34,1.16)
 for a,b in [(-6,3.85),(4.75,6)]:box('ridge cap',((a+b)/2,0,6.56),(b-a,.2,.15),SLATE,False)
 for side in (-1,1):
     for row in range(10):
@@ -150,7 +182,10 @@ asset.write_bytes(struct.pack('<III',0x46546c67,2,20+len(encoded)+len(remaining)
 triangles=0
 for o in visual:
     o.data.calc_loop_triangles();triangles+=len(o.data.loop_triangles)
-stats={'state':'WIP furnished; canonical runtime and roof QA pending','triangles':triangles,'meshes':len(visual),'wall_footprint':[11,6],'floors':1,'ridge':6.5,'stair_rises':0,'sha256':hashlib.sha256(asset.read_bytes()).hexdigest()}
+points=[o.matrix_world@v.co for o in visual for v in o.data.vertices]
+lo=[min(p[i] for p in points) for i in range(3)]
+hi=[max(p[i] for p in points) for i in range(3)]
+stats={'state':'bounded PR185 correction; isolated QA and owner review separate','triangles':triangles,'meshes':len(visual),'wall_footprint':[11,6],'bounds_blender':{'min':lo,'max':hi},'bounds_godot':{'min':[lo[0],lo[2],-hi[1]],'max':[hi[0],hi[2],-lo[1]]},'canopy_post_clear_width':1.9,'canopy_roof_min_height':2.99-.7*math.sin(math.atan2(.34,1.16))-.05*math.cos(math.atan2(.34,1.16)),'floors':1,'ridge':6.5,'stair_rises':0,'sha256':hashlib.sha256(asset.read_bytes()).hexdigest()}
 (QA/'stats.json').write_text(json.dumps(stats,indent=2),encoding='utf-8')
 bpy.ops.wm.save_as_mainfile(filepath=str(QA/'s_infirmary.blend'))
 print('SNOW_INFIRMARY',json.dumps(stats))
