@@ -36,6 +36,9 @@ const PLINTH_LEDGE := 0.25
 const YARD_CLEAR := 0.2
 const YARD_STEP := 0.25
 const YARD_DOOR := 2.5
+## A yard's paving slabs and their joints.
+const PAVE := 0.9
+const JOINT := 0.06
 ## A street's uphill bank higher than LANE_WALL_MIN over the street becomes a stone wall over the whole
 ## bank (its STREET_BLEND band past the edge), its top on the ground at the bank's top, sloping with
 ## the street (Codex 27c3f38 010/028/029/032: the slum's lane ran in a trench of 50 deg earth cuts).
@@ -809,6 +812,69 @@ func _wall_strip(book: Node3D, node: Node3D, front: PackedVector3Array, back: Pa
 	node.add_child(mesh)
 
 
+## A yard's paving: PAVE m slabs with JOINT joints over the rect (u, v round the lot's centre along
+## its s, f), outside the walls, their tops at `top`, as one mesh.
+func _paving(book: Node3D, node: Node3D, lot: Dictionary, u0: float, u1: float, v0: float, v1: float, top: float) -> void:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var count := 0
+	var nu := maxi(1, int(round((u1 - u0) / PAVE)))
+	var nv := maxi(1, int(round((v1 - v0) / PAVE)))
+	var su := (u1 - u0) / nu
+	var sv := (v1 - v0) / nv
+	for i in nu:
+		for j in nv:
+			var cu := u0 + su * (i + 0.5)
+			var cv := v0 + sv * (j + 0.5)
+			if absf(cu) < lot.w * 0.5 and absf(cv) < lot.d * 0.5:
+				continue
+			var hu := (su - JOINT) * 0.5
+			var hv := (sv - JOINT) * 0.5
+			var c: Vector2 = lot.c + lot.s * cu + lot.f * cv
+			var corners: Array = []
+			for k in [Vector2(-1, -1), Vector2(1, -1), Vector2(1, 1), Vector2(-1, 1)]:
+				var q: Vector2 = c + lot.s * (k.x * hu) + lot.f * (k.y * hv)
+				corners.append(q)
+			var t: Array = corners.map(func(q): return Vector3(q.x, top, q.y))
+			var b: Array = corners.map(func(q): return Vector3(q.x, top - 0.06, q.y))
+			_box_faces(st, t, b)
+			count += 1
+	if count == 0:
+		return
+	var mesh := MeshInstance3D.new()
+	mesh.mesh = st.commit()
+	mesh.material_override = book._material("tread")
+	mesh.visibility_range_end = 300.0
+	node.add_child(mesh)
+
+
+## The six faces of a box from its four top and four bottom corners (same order), normals outward,
+## clockwise seen from outside (Godot's front faces).
+func _box_faces(st: SurfaceTool, t: Array, b: Array) -> void:
+	var mid: Vector3 = Vector3.ZERO
+	for v in t + b:
+		mid += v
+	mid /= 8.0
+	var faces: Array = [[t[0], t[1], t[2], t[3]], [b[0], b[3], b[2], b[1]]]
+	for k in 4:
+		var j := (k + 1) % 4
+		faces.append([b[k], b[j], t[j], t[k]])
+	for f in faces:
+		var a: Vector3 = f[0]
+		var bb: Vector3 = f[1]
+		var c: Vector3 = f[2]
+		var d: Vector3 = f[3]
+		var normal := (bb - a).cross(d - a).normalized()
+		if normal.dot((a + bb + c + d) * 0.25 - mid) < 0.0:
+			var tmp := bb
+			bb = d
+			d = tmp
+			normal = -normal
+		for v in [a, c, bb, a, d, c]:
+			st.set_normal(normal)
+			st.add_vertex(v)
+
+
 ## A house's plinth past its walls on each side [left, right, back, front]: PLINTH_LEDGE; a shack's
 ## its yard at the sides and back (FLAT_SHACK), each side cut back by YARD_STEP until it stays
 ## YARD_CLEAR clear of every street's edge.
@@ -892,6 +958,9 @@ func build_plinths(book: Node3D, ground: Callable) -> void:
 		if lot.shack:
 			# the yard's dressed edge
 			book._stair_block(node, Vector3(mid.x, top - 0.05, mid.y), Vector3(u1 - u0 + 0.06, 0.12, v1 - v0 + 0.06), yaw, "tread", false)
+			# paved: dressed slabs with open joints, one mesh a yard (Codex 925dd80 031: the platform's top
+			# read as a flat grey-green face)
+			_paving(book, node, lot, u0, u1, v0, v1, top + 0.02)
 		count += 1
 	# Stone steps down from a door whose front falls away. Straight out where the ground is met within
 	# STOOP_OUT; otherwise a landing at the door and a stair down along the facade, towards the lower
