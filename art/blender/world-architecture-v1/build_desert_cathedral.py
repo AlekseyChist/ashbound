@@ -111,14 +111,15 @@ for x in (-5,5):
         box('pier',(x,y,5.5),(1.0,1.0,11),STONE)
     box('arcade beam',(x,0,11.3),(1.0,14.8,.6),STONE)
 # Roof (only the western part survives to x=4; north-east is open to the sky).
-roof_slope('nave roof',-5.6,0,-8.4,4.0,13.0,18.0,.3,ROOF)
-roof_slope('nave roof',5.6,0,-8.4,4.0,13.0,18.0,.3,ROOF)
-roof_slope('aisle roof',-14.4,-5.4,-8.4,8.4,9.0,11.6,.25,ROOF)   # whole west aisle
-roof_slope('aisle roof',14.4,5.4,-8.4,0.0,9.0,11.6,.25,ROOF)     # east aisle, south half only
+# Codex 293: the north sanctuary stays roofed (the concept's protected bay) - the nave roof runs whole,
+# north to the wall; the lost roof is the east aisle's, its broken rafters left over it.
+roof_slope('nave roof',-5.6,0,-8.4,8.4,13.0,18.0,.3,ROOF)
+roof_slope('nave roof',5.6,0,-8.4,8.4,13.0,18.0,.3,ROOF)
+roof_slope('aisle roof',-14.4,-5.4,-8.4,8.4,9.0,11.6,.25,ROOF)   # whole west aisle; the east aisle open
 for x in (-5,5):
-    box('clerestory',(x,-2.2,12.3),(1.0,12.4,1.4),STONE)
-for x in (-3,0,3):
-    C.beam('broken rafter',(x,4.0,15.0),(x,6.5,13.2),.25,.25,WOOD)
+    box('clerestory',(x,0,12.3),(1.0,16.8,1.4),STONE)
+for y in (-5.5,-1,3.5):
+    C.beam('broken rafter',(5.6,y,11.6),(9.5,y,10.0),.25,.25,WOOD)
 # North sanctuary (y 4.5..7.4, central nave).
 box('sanctuary dais',(0,6.0,.25),(9.6,2.8,.4),STONE)
 box('dais step',(0,4.45,.1),(4.0,.3,.2),STONE)
