@@ -9,6 +9,7 @@ const Headwaters = preload("res://scripts/world/world_graybox_headwaters.gd")
 const Landmarks = preload("res://scripts/world/world_graybox_landmarks.gd")
 const BookPlaces = preload("res://scripts/world/world_book_places.gd")
 const SnowLots = preload("res://scripts/world/world_snow_lots.gd")
+const SnowWalls = preload("res://scripts/world/world_snow_walls.gd")
 ## TAVERN-01B (D-089): the forest inn — a one-storey log hall with beds on the loft — replaces
 ## the grey landmark at the forest_inn site, door towards the trail.
 const InnBuilding = preload("res://scripts/world/village_building.gd")
@@ -1044,6 +1045,8 @@ func _build_water_and_sites() -> void:
 	book.build(self, world_layout.get("book_places", []))
 	book.build_stairs(world_layout.get("book_stairs", []))
 	snow_lots.build_plinths(book, world_ground)
+	# the snow city's walls and gates from the book's plan (world_snow_walls.gd)
+	SnowWalls.new().build(book, world_ground, world_layout, snow_lots.streets)
 
 
 func open_debug_map() -> void:
