@@ -691,30 +691,95 @@ func build_lane_walls(book: Node3D, ground: Callable) -> void:
 				while j < n and samples[j] != null:
 					j += 1
 				if j - i >= LANE_WALL_RUN:
-					# the top at each joint: the higher of the two samples it joins, so the coping runs
-					# continuous along the street (no step from block to block)
-					var joints := PackedFloat32Array()
+					# one continuous body per run (Codex 62bbf35 029: tilted boxes opened black joints and
+					# stepped tops): the joints' points shared along the street - the face at the street's
+					# edge, the top on the bank's top ground, the back at the bank's far side - and whole
+					# end faces; the coping a continuous strip on its front edge. Collision per block.
+					var front := PackedVector3Array()
+					var back := PackedVector3Array()
+					var tops := PackedFloat32Array()
+					var lows := PackedFloat32Array()
 					for k in range(i, j + 1):
-						var a: float = float(samples[maxi(k - 1, i)][4])
-						var b: float = float(samples[mini(k, j - 1)][4])
-						joints.append(maxf(a, b))
+						var t := minf(k * STREET_STEP, run)
+						var q := _along(pts, cum, t)
+						var dir := (_along(pts, cum, minf(t + 0.5, run)) - _along(pts, cum, maxf(t - 0.5, 0.0))).normalized()
+						var across: Vector2 = Vector2(-dir.y, dir.x) * sx
+						var top: float = maxf(float(samples[maxi(k - 1, i)][4]), float(samples[mini(k, j - 1)][4]))
+						var f2: Vector2 = q + across * edge
+						var b2: Vector2 = q + across * (edge + STREET_BLEND)
+						front.append(Vector3(f2.x, 0, f2.y))
+						back.append(Vector3(b2.x, 0, b2.y))
+						tops.append(top)
+						lows.append(float(_street_at(si, q)[1]) - 1.5)
+					_wall_strip(book, node, front, back, tops, lows, "masonry")
+					# the coping: 0.34 deep on the front edge, 0.12 over the top
+					var lip_b := PackedVector3Array()
+					var lip_t := PackedFloat32Array()
+					var lip_l := PackedFloat32Array()
+					for k in front.size():
+						lip_b.append(front[k] + (back[k] - front[k]).normalized() * 0.34)
+						lip_t.append(tops[k] + 0.08)
+						lip_l.append(tops[k] - 0.04)
+					var lip_f := PackedVector3Array()
+					for k in front.size():
+						lip_f.append(front[k] - (back[k] - front[k]).normalized() * 0.03)
+					_wall_strip(book, node, lip_f, lip_b, lip_t, lip_l, "tread")
 					for k in range(i, j):
-						var a: Array = samples[k]
-						var t0: float = joints[k - i]
-						var t1: float = joints[k - i + 1]
+						var a2: Array = samples[k]
+						var t0: float = tops[k - i]
+						var t1: float = tops[k - i + 1]
 						var top_y := (t0 + t1) * 0.5
-						var bottom_y := minf(float(a[3]), minf(t0, t1)) - 1.5
-						var dir: Vector2 = a[1]
-						var yaw := atan2(dir.x, dir.y)
-						var turn := Basis(Vector3.UP, yaw) * Basis(Vector3.RIGHT, -atan((t1 - t0) / STREET_STEP))
-						var c: Vector2 = a[0]
-						var h := top_y - bottom_y
-						book._tilted_block(node, Vector3(c.x, bottom_y + h * 0.5, c.y), Vector3(STREET_BLEND, h, STREET_STEP + 0.04), turn, "masonry", true)
-						var lip: Vector2 = c - (a[2] as Vector2) * (STREET_BLEND * 0.5 - 0.17)
-						book._tilted_block(node, Vector3(lip.x, top_y + 0.04, lip.y), Vector3(0.34, 0.12, STREET_STEP + 0.06), turn, "tread", false)
+						var bottom_y := minf(float(a2[3]), minf(t0, t1)) - 1.5
+						var dir2: Vector2 = a2[1]
+						var turn := Basis(Vector3.UP, atan2(dir2.x, dir2.y)) * Basis(Vector3.RIGHT, -atan((t1 - t0) / STREET_STEP))
+						var c: Vector2 = a2[0]
+						book._stair_collider(node, Vector3(c.x, (top_y + bottom_y) * 0.5, c.y), Vector3(STREET_BLEND, top_y - bottom_y, STREET_STEP + 0.02), turn)
 						count += 1
 				i = j
 	print("SNOW_LANE_WALLS blocks=%d" % count)
+
+
+## A continuous prism along a polyline: at each point k its front and back points (y unused), the
+## top and bottom heights; faces front, top, back, bottom and the two ends, normals outward.
+func _wall_strip(book: Node3D, node: Node3D, front: PackedVector3Array, back: PackedVector3Array, tops: PackedFloat32Array, lows: PackedFloat32Array, colour: String) -> void:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var n := front.size()
+	# outward: away from the middle of the segment the face belongs to
+	var quad := func(a: Vector3, b: Vector3, c: Vector3, d: Vector3, inside: Vector3) -> void:
+		var normal := (b - a).cross(d - a).normalized()
+		if normal.dot((a + b + c + d) * 0.25 - inside) < 0.0:
+			var tmp := b
+			b = d
+			d = tmp
+			normal = -normal
+		# Godot's front faces wind clockwise seen from outside
+		for v in [a, c, b, a, d, c]:
+			st.set_normal(normal)
+			st.add_vertex(v)
+	for k in n - 1:
+		var ft0 := front[k] + Vector3(0, tops[k], 0)
+		var ft1 := front[k + 1] + Vector3(0, tops[k + 1], 0)
+		var fb0 := front[k] + Vector3(0, lows[k], 0)
+		var fb1 := front[k + 1] + Vector3(0, lows[k + 1], 0)
+		var bt0 := back[k] + Vector3(0, tops[k], 0)
+		var bt1 := back[k + 1] + Vector3(0, tops[k + 1], 0)
+		var bb0 := back[k] + Vector3(0, lows[k], 0)
+		var bb1 := back[k + 1] + Vector3(0, lows[k + 1], 0)
+		var mid := (ft0 + ft1 + fb0 + fb1 + bt0 + bt1 + bb0 + bb1) / 8.0
+		quad.call(fb0, fb1, ft1, ft0, mid)
+		quad.call(ft0, ft1, bt1, bt0, mid)
+		quad.call(bb0, bt0, bt1, bb1, mid)
+		quad.call(fb0, bb0, bb1, fb1, mid)
+		if k == 0:
+			quad.call(fb0, bb0, bt0, ft0, mid)
+		if k == n - 2:
+			quad.call(fb1, bb1, bt1, ft1, mid)
+	var mesh := MeshInstance3D.new()
+	mesh.mesh = st.commit()
+	mesh.material_override = book._material(colour)
+	mesh.visibility_range_end = 300.0
+	node.add_child(mesh)
 
 
 ## A house's plinth past its walls on each side [left, right, back, front]: PLINTH_LEDGE; a shack's
