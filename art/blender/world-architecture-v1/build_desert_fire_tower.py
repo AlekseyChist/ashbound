@@ -32,6 +32,19 @@ def box(n,p,s,m,solid=True):
         o['part_role']='interior_furniture'
     if solid:coll.append((n,p,s))
     return o
+def lancet(n,cx,cy,z,axis,sign,w,h,depth,m,lift=0.0):
+    # a pointed (Gothic) window shape on a wall face: base width w at height z, straight sides up to z+h,
+    # a pointed head 0.5 m over that; a flat solid `depth` thick standing out of the face by `lift`
+    pts=[(-w/2,0),(w/2,0),(w/2,h),(w/4,h+.36),(0,h+.5),(-w/4,h+.36),(-w/2,h)]
+    def at(u,v,d):
+        return (cx+u,cy+sign*d,z+v) if axis=='y' else (cx+sign*d,cy+u,z+v)
+    k=len(pts)
+    v=[at(u,vv,lift) for u,vv in pts]+[at(u,vv,lift+depth) for u,vv in pts]
+    f=[tuple(range(k)),tuple(range(2*k-1,k-1,-1))]
+    for i in range(k):
+        j=(i+1)%k
+        f.append((i,j,k+j,k+i))
+    return C.mesh(n,v,f,m)
 # Tower shaft: outer faces x +-2.8, y +-2.8; wall thickness 0.6 (inner faces +-2.2), height 0..21.
 box('foundation',(0,0,-.2),(7,7,.4),STONE)
 box('wall',(-2.5,0,10.5),(.6,5.6,21),STONE)
@@ -65,14 +78,9 @@ for k in range(4):
     box('stair wall',(-1.3,-.15,zk+2.6),(.12,2.9,5.2),STONE)
 # Windows: dark pointed niches on three tiers of every face.
 for z in (6.5,11.8,17.0):
-    box('window',(0,-2.83,z),(.6,.06,1.6),DARK,False)
-    box('window head',(0,-2.83,z+.95),(.4,.06,.3),DARK,False)
-    box('window',(0,2.83,z),(.6,.06,1.6),DARK,False)
-    box('window head',(0,2.83,z+.95),(.4,.06,.3),DARK,False)
-    box('window',(-2.83,0,z),(.06,.6,1.6),DARK,False)
-    box('window head',(-2.83,0,z+.95),(.06,.4,.3),DARK,False)
-    box('window',(2.83,0,z),(.06,.6,1.6),DARK,False)
-    box('window head',(2.83,0,z+.95),(.06,.4,.3),DARK,False)
+    for axis,sign,cx,cy in (('y',-1,0,-2.8),('y',1,0,2.8),('x',-1,-2.8,0),('x',1,2.8,0)):
+        lancet('window reveal',cx,cy,z-.85,axis,sign,.84,1.6,.06,STONE,0.0)
+        lancet('window',cx,cy,z-.75,axis,sign,.6,1.45,.04,DARK,.06)
 # Parapet with merlons around the roof platform.
 box('parapet',(0,-2.65,21.4),(5.6,.3,.8),STONE)
 box('parapet',(0,2.65,21.4),(5.6,.3,.8),STONE)
@@ -85,8 +93,8 @@ for k in range(-2,3):
         box('merlon',(x,y,22.0),(.3,.45,.4),STONE)
 # Brazier: plinth outside the stair opening; four iron posts; bowl and flame.
 box('brazier plinth',(1.0,.6,21.4),(1.4,1.4,.8),STONE)
-for dx in (-.55,.55):
-    for dy in (-.55,.55):
+for dx in (-.42,.42):
+    for dy in (-.42,.42):
         box('brazier post',(1.0+dx,.6+dy,22.3),(.08,.08,1.0),IRON)
 def ring_solid(n,x,y,z,rings,m,role=True):
     k=8
@@ -105,8 +113,8 @@ def ring_solid(n,x,y,z,rings,m,role=True):
     o=C.mesh(n,v,f,m)
     if role:o['part_role']='interior_furniture'
     return o
-ring_solid('brazier bowl',1.0,.6,21.85,[(0,.35,.35),(.25,.6,.6),(.45,.68,.68)],IRON,False)
-ring_solid('flame',1.0,.6,22.25,[(0,.45,.45),(.35,.32,.32),(.75,.12,.12),(.95,.02,.02)],FIRE,False)
+ring_solid('brazier bowl',1.0,.6,21.8,[(0,.35,.35),(.25,.6,.6),(.45,.68,.68)],IRON,False)
+ring_solid('flame',1.0,.6,22.2,[(0,.45,.45),(.35,.32,.32),(.75,.12,.12),(.95,.02,.02)],FIRE,False)
 # Order banners on the south face.
 for x in (-1.6,1.6):
     box('banner',(x,-2.86,13.5),(.9,.04,4.0),CLOTH,False)
@@ -156,4 +164,4 @@ visual=[o for o in C.ASSET.objects if o.type=='MESH' and '-colonly' not in o.nam
 triangles=0
 for o in visual:o.data.calc_loop_triangles();triangles+=len(o.data.loop_triangles)
 points=[o.matrix_world@Vector(v) for o in visual for v in o.bound_box]
-(QA/'stats.json').write_text(json.dumps({'state':'built; Codex export and Godot review pending','walls':[7,7],'maximum_height':23.2,'rooms':['tier 0','tier 1','tier 2','tier 3','roof platform'],'triangles':triangles,'meshes':len(visual),'bbox':[[min(p[i] for p in points) for i in range(3)],[max(p[i] for p in points) for i in range(3)]],'entry_hinge':'EntryPortal_entry_hinge at (-0.6,-2.5,0), open -100 deg','stairs':'per tier 2x14 risers 0.1875, flights x -2.2..-1.3 north and x -1.3..-0.4 south','sha256':hashlib.sha256(asset.read_bytes()).hexdigest()},indent=2),encoding='utf-8')
+(QA/'stats.json').write_text(json.dumps({'state':'built; Codex export and Godot review pending','walls':[7,7],'maximum_height':23.2,'rooms':['tier 0','tier 1','tier 2','tier 3','roof platform'],'height_note':'measured 23.2 m to the merlons; the concept\'s 25 m was provisional','triangles':triangles,'meshes':len(visual),'bbox':[[min(p[i] for p in points) for i in range(3)],[max(p[i] for p in points) for i in range(3)]],'entry_hinge':'EntryPortal_entry_hinge at (-0.6,-2.5,0), open -100 deg','stairs':'per tier 2x14 risers 0.1875, flights x -2.2..-1.3 north and x -1.3..-0.4 south','sha256':hashlib.sha256(asset.read_bytes()).hexdigest()},indent=2),encoding='utf-8')
