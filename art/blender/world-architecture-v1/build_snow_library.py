@@ -80,8 +80,13 @@ def ramp(n,x,y0,y1,z0,z1):
 ramp('upper ramp',2.7,-1.75,1.05,-1.6,0)
 ramp('lower ramp',4.05,-1.75,1.05,-1.6,-3.2)
 # Stairwell guard leaves the upper arrival at y1.05 connected to rear aisle.
-box('stair opening rail',(1.98,-.9,.95),(.08,3.9,.08),WOOD,False)
-for y in (-2.8,-.9,1.05):box('stair opening post',(1.98,y,.47),(.08,.08,.94),WOOD,False)
+box('stair opening rail',(1.98,-.9,.95),(.08,3.9,.08),WOOD)
+for y in (-2.8,-.9,1.05):box('stair opening post',(1.98,y,.47),(.08,.08,.94),WOOD)
+box('stair opening front rail',(3.3,-2.94,.95),(2.64,.08,.08),WOOD)
+for x in (1.98,3.3,4.62):box('stair opening front post',(x,-2.94,.47),(.08,.08,.94),WOOD)
+# Only the upper-flight entrance remains open at the rear of the stairwell.
+box('stair opening rear rail',(3.99,1.3,.95),(1.26,.08,.08),WOOD)
+for x in (3.36,4.62):box('stair opening rear post',(x,1.3,.47),(.08,.08,.94),WOOD)
 box('upper ceiling',(0,0,3.14),(10,7,.12),WOOD)
 for x in (-4.7,0,4.7):box('cross tie',(x,0,2.97),(.18,6.3,.18),WOOD)
 # Steep snow roof, closed gables and generous eaves.
