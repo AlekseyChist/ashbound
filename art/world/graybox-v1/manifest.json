@@ -8,9 +8,9 @@
   ],
   "source": "docs/design/world-exploration-v1/world-exploration.json",
   "files": {
-    "assets/world/graybox-v1/colors.bin": "265ff074dc629d03eedabb682b28103e2a8bbcfdd285979d6bac37a01f3dd19e",
-    "assets/world/graybox-v1/heights.bin": "c8f8c2f04e4065038ca8826a249f12fafce9b6f7d9ae17dbe2e541c56415c820",
-    "assets/world/graybox-v1/layout.json": "d0610ec5f100d281d29f10cac33faf30f2716819c2d6b0bd141a27c59640a352",
+    "assets/world/graybox-v1/colors.bin": "6a28df8bd7de42aa4974fe0df9fe2f0e457e9201d7ff32c3613cd21353a97b16",
+    "assets/world/graybox-v1/heights.bin": "7c61ca0f08008bdfc80be2105115ec9a523e27d1899125b4664588ee392d687f",
+    "assets/world/graybox-v1/layout.json": "f12fba4f11b3b45b3162ecb8aab4ced68067036f1dc863b6ba6a7b1fbf37f5bc",
     "assets/world/graybox-v1/roads.png": "e9ce3d0503039a9b7a7e39f399006aee4e270bc1315c94a4ae94b598e66a3a85",
     "assets/characters/world-graybox-v1/walk.png": "2d4ca6894099fc7a2b7e3f8f38348aca487cf521ab2bf27b65c62dab8d1ed2cc",
     "assets/characters/world-graybox-v1/traveler_frames.tres": "d8fc8c16974423890674d720923d211ebb4951f6a2f738004dc8bcaa6401adba"

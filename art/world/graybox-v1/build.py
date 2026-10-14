@@ -490,8 +490,10 @@ def settle_river(r):
 WALL_REACH=30.0
 road_cells=None
 def recut(settled):
-    for rid,(pts,widths) in settled.items():
-        planned=river_widths(next(r for r in D['rivers'] if r['id']==rid),'depth_widths_m')
+    for rid,val in settled.items():
+        # (points, widths) of a whole river, or of a stretch from its point `start` on (WORLD-BUILD-01D)
+        pts,widths=val[0],val[1];start=val[2] if len(val)>2 else 0
+        planned=river_widths(next(r for r in D['rivers'] if r['id']==rid),'depth_widths_m')[start:]
         for a,b,w,pw in zip(pts,pts[1:],widths,planned):
             depth=float(river_depth_for(pw));half=max(w*.5,3.0)-.5;reach=half+WALL_REACH
             ax,az,bx,bz=a[0]+HALF,a[2]+HALF,b[0]+HALF,b[2]+HALF
@@ -729,6 +731,36 @@ for rid,(pts,widths) in settled.items():
             if head_z is not None and pts[i][2]+HALF<=head_z+2.0:continue
             lo,hi=max(0,i-5),min(len(pts),i+6)
             pts[i][1]=min(ys[i],sum(ys[lo:hi])/(hi-lo))
+
+# WORLD-BUILD-01D (D-118, the book's waterfalls W2-W5, PDF141 list of falls): each is a span of its
+# river's steepest stretch (about 30 m) that now falls in ledges - a drop, then a level pool to the
+# next - instead of the even 45 % chute the settling left. The ledges only cut down from the chute
+# (never raise the water over its banks); the ground under the span is cut to the new water, so each
+# pool has its basin. The total drop and the river outside the span are unchanged.
+FALLS=[('W2','west',263,561,30.0,3),('W3','main',858,513,30.0,3),('W4','east',1558,861,30.0,3),('W5','east',1412,640,30.0,3)]
+FALL_LIP=0.22   # the share of each ledge's length its drop takes
+falls_spans={}
+for fid,rid,fx,fz,span,steps in FALLS:
+    pts,widths=settled[rid]
+    d=[math.hypot(p[0]+HALF-fx,p[2]+HALF-fz) for p in pts];k=int(np.argmin(d))
+    along=[0.0]
+    for a,b in zip(pts,pts[1:]):along.append(along[-1]+math.hypot(b[0]-a[0],b[2]-a[2]))
+    i0=k
+    while i0>0 and along[k]-along[i0]<span*.5:i0-=1
+    i1=k
+    while i1<len(pts)-1 and along[i1]-along[k]<span*.5:i1+=1
+    top,bottom=pts[i0][1],pts[i1][1];drop=top-bottom;length=along[i1]-along[i0]
+    ledge=length/steps
+    for i in range(i0,i1+1):
+        s_=along[i]-along[i0];j=min(int(s_/ledge),steps-1);u=s_-j*ledge
+        t=min(max(u/(ledge*FALL_LIP),0.0),1.0);t=t*t*(3-2*t)
+        pts[i][1]=min(pts[i][1],top-drop*(j+t)/steps)
+    falls_spans[fid]=(rid,i0,i1)
+    print('FALL',fid,rid,'points',i0,i1,'drop %.1f m over %.0f m in %d ledges'%(drop,length,steps))
+# the ground under the falls' spans cut to their new water (recut for those segments only)
+for fid,(rid,i0,i1) in falls_spans.items():
+    pts,widths=settled[rid]
+    recut({rid:(pts[i0:i1+1],widths[i0:i1+1],i0)})
 
 # WORLD-BUILD-01B: under the W1 cascade the ground follows its water at the stream's depth (the
 # valley shaping had cut a 4-5 m trough under the pinned falls): a shallow cascade on its ledges.
