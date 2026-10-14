@@ -256,14 +256,16 @@ func build_stairs(stairs: Array) -> void:
 			var tread := depth < 0.6
 			_stair_block(node, Vector3(at.x, top - height * 0.5, at.y), Vector3(width, height, depth), yaw, "rock", not tread)
 			if tread:
-				# Walking surface (as the L-H stair): a slab through the treads' centres, 33 deg - the hero
-				# walks it without stepping; the stone block under it collides only below the slab.
-				var body_top := top - STAIR_RISE * 0.5 - 0.08
+				# Walking surface: a 32 deg slab from each tread's back edge at the step above to its front
+				# edge on the tread itself - so a flight meets its landings flush at both ends (Codex
+				# 95e5a47: through the treads' centres it stopped 0.165 m short of the terrace landing and
+				# the real hero could not step onto it). The stone block collides only below the slab.
+				var body_top := top - 0.1
 				var body_h := maxf(body_top - (low - SINK), 0.1)
 				_stair_collider(node, Vector3(at.x, body_top - body_h * 0.5, at.y), Vector3(width, body_h, depth), basis)
 				var pitch := atan2(STAIR_RISE, depth - 0.02)
 				var slab := basis * Basis(Vector3.RIGHT, pitch)
-				_stair_collider(node, Vector3(at.x, top, at.y), Vector3(width, 0.06, (depth - 0.02) / cos(pitch) + 0.02), slab)
+				_stair_collider(node, Vector3(at.x, top + STAIR_RISE * 0.5 - 0.03, at.y), Vector3(width, 0.06, (depth - 0.02) / cos(pitch) + 0.04), slab)
 			# rails: 1 m over the tread, solid
 			var rails: Array = []
 			if rail == -1 or rail == 3:

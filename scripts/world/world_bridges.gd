@@ -73,7 +73,22 @@ func deck_profile(run: PackedVector3Array, core: PackedByteArray, on_land: Packe
 		# At most RAMP_GRADE, never longer than a third of the bridge.
 		var length := clampf(absf(deck_top - toe) / RAMP_GRADE, 1.0, total / 3.0)
 		var t := smoothstep(0.0, length, from_start if near_start else from_end)
-		result.append(Vector3(run[i].x, lerpf(toe, deck_top, t), run[i].z))
+		var y := lerpf(toe, deck_top, t)
+		# The S-curve leaves its toe level while a bank keeps rising under it: the ramp never dips
+		# under the ground (Codex 14 Oct, the W1 footbridge: grass showed through the west boards).
+		if t < 1.0:
+			# across the deck too (up to 2 m either side of the axis: the bank also slopes sideways)
+			var a := run[maxi(i - 1, 0)]
+			var b := run[mini(i + 1, run.size() - 1)]
+			# - eased in over the first 3 m from the toe, so the ramp starts flush with the road
+			var side := Vector2(-(b.z - a.z), b.x - a.x).normalized() * 2.0
+			var centre: float = world.world_ground(run[i].x, run[i].z) + RAMP_TOE
+			var across := centre
+			for k in [-1.0, 1.0]:
+				across = maxf(across, world.world_ground(run[i].x + side.x * k, run[i].z + side.y * k) + RAMP_TOE)
+			var ease := clampf(minf(from_start, from_end) / 3.0, 0.0, 1.0)
+			y = maxf(y, lerpf(centre, across, ease))
+		result.append(Vector3(run[i].x, y, run[i].z))
 		on_land[i] = 1 if t < 1.0 else 0
 	return result
 

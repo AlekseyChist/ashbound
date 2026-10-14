@@ -764,13 +764,13 @@ for r in D['rivers']:
 for pad in BOOK_PADS:
     if pad.get('late'):lay_pad(pad)
 # The W1 footbridge's ramps (Codex 14 Oct: a triangle of ground cut through the boards in the west
-# approach - on the 5 m grid the ground bulges at the ramp's knee): within 18 m of the crossing the
+# approach - on the 5 m grid the ground bulges at the ramp's knee): within 28 m of the crossing the
 # ground stays 0.3 m under the deck, across the trail's width.
 for r in roads:
     if r['id']!='w1_footbridge':continue
     gp=r['geometry_points']
     for a,b in zip(gp,gp[1:]):
-        if min(abs(a[0]-322),abs(b[0]-322))>18.0:continue
+        if min(abs(a[0]-322),abs(b[0]-322))>28.0:continue   # the ramps reach ~22 m from the crossing
         # 6 m: the trail runs along a grid row; the rows 5 m to either side must come down too or their
         # triangles rise over the boards' edges (Codex 5b143f4 frame 012)
         reach=6.0
