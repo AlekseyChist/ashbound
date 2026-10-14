@@ -53,6 +53,20 @@ func build(world_node: Node3D) -> void:
     if not source is Dictionary or not source.get("buildings") is Array:
         push_error("Snow city accepted plot data missing/invalid")
         return
+    # Ground clearance is authored below these levels. Sampling world_ground
+    # here would move the houses down with the terrain and erase that clearance.
+    var levels: Dictionary = {}
+    var layout = world.get("world_layout")
+    if not layout is Dictionary:
+        push_error("Snow city authored floor levels missing")
+        return
+    for lot in layout.get("snow_lots", []):
+        var code := str(lot.code)
+        var level := float(lot.level)
+        if levels.has(code) or not is_finite(level):
+            push_error("Snow city duplicate/invalid floor level: " + code)
+            return
+        levels[code] = level
     for plot in source.buildings:
         var code := str(plot.code)
         if not MODULES.has(code):
@@ -63,13 +77,16 @@ func build(world_node: Node3D) -> void:
         if not walls.is_equal_approx(spec.walls):
             unresolved.append({"code":code,"reason":"wall footprint mismatch","plot":plot})
             continue
+        if not levels.has(code):
+            unresolved.append({"code":code,"reason":"authored floor level unavailable","plot":plot})
+            continue
         var packed := load(spec.scene) as PackedScene
         if packed == null:
             unresolved.append({"code":code,"reason":"scene unavailable","plot":plot})
             continue
         var x := float(plot.x)-1000.0
         var z := float(plot.z)-1000.0
-        var floor_y: float = world.world_ground(x,z)
+        var floor_y: float = levels[code]
         var model := packed.instantiate() as Node3D
         model.name = code
         model.position = Vector3(x,floor_y,z)

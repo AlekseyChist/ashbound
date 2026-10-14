@@ -46,11 +46,20 @@ func run() -> void:
     var shape := CollisionShape3D.new()
     var capsule := CapsuleShape3D.new();capsule.radius=.3;capsule.height=1.75;shape.shape=capsule
     actor.add_child(shape);root.add_child(actor)
+    # Compare the placement against the independent serialized design, not the
+    # builder's cached floor field or a potentially lowered terrain sample.
+    var design = JSON.parse_string(FileAccess.get_file_as_string("res://assets/world/graybox-v1/layout.json"))
+    if not design is Dictionary or not design.get("snow_lots") is Array:
+        fail("Serialized authored floor levels missing");return
+    var expected_levels: Dictionary = {}
+    for lot in design.snow_lots:expected_levels[str(lot.code)] = float(lot.level)
     for item in city.placed:
         var plot: Dictionary=item.plot
         var model: Node3D=item.node
         if not Vector2(model.position.x+1000,model.position.z+1000).is_equal_approx(Vector2(plot.x,plot.z)) or not is_equal_approx(model.rotation.y,-deg_to_rad(plot.yaw)) or model.scale!=Vector3.ONE:
             fail("Plot moved/rotated incorrectly/stretched: "+item.code);return
+        if not expected_levels.has(item.code) or absf(model.position.y-float(expected_levels[item.code]))>.001:
+            fail("Building floor followed terrain instead of authored level: "+item.code);return
     for portal in city.get_doors():
         actor.global_position=portal.to_global(portal.entry+Vector3(0,.875,1.6))
         await physics_frame
