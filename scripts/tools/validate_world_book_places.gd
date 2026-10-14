@@ -297,6 +297,19 @@ func run() -> void:
 						blocked += 1
 			print("SNOW_LOT %s cut blocked=%d" % [lot.code, blocked])
 			require(blocked == 0, "%s: the lower hall's cut is filled at %d points" % [lot.code, blocked])
+			# the sunken yard behind it: its floor at the lower hall's, clear above
+			if w.snow_lots.AREAWAYS.has(lot.code):
+				var aw: Array = w.snow_lots.AREAWAYS[lot.code]
+				var floor_y: float = lot.level - float(w.snow_lots.LOWER[lot.code])
+				var off_floor := 0
+				for i in 5:
+					for j in 5:
+						var p: Vector2 = lot.c + lot.s * lerpf(-float(aw[0]) * 0.5 + 0.2, float(aw[0]) * 0.5 - 0.2, i / 4.0) - lot.f * (lot.d * 0.5 + lerpf(0.2, float(aw[1]) - 0.2, j / 4.0))
+						var y = _lot_ray(space, origin, p, lot.level)
+						if y == null or absf(float(y) - floor_y) > 0.05:
+							off_floor += 1
+				print("SNOW_LOT %s yard off_floor=%d" % [lot.code, off_floor])
+				require(off_floor == 0, "%s: the sunken yard behind the lower door is not clear to its floor at %d points" % [lot.code, off_floor])
 		var above := -INF
 		var below := -INF
 		var miss := 0

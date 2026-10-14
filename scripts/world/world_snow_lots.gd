@@ -28,6 +28,11 @@ const PLINTH_LEDGE := 0.25
 ## terrain under the cells the walls touch; a paved collar at the floor's level fills the rest of those
 ## cells and holds the cut as a retaining wall CUT m deep.
 const CUTS := {"Бб": 3.5}
+## Behind the cut: a sunken yard at the lower hall's floor (LOWER m down) from the lower door in the
+## back wall to the rock - the library's lab door (S-L LabPortal) opens into it, not into the collar.
+## [width, length] in metres.
+const AREAWAYS := {"Бб": [3.0, 3.5]}
+const LOWER := {"Бб": 3.2}
 ## A door whose front falls more than STOOP_DROP gets stone steps of <= STOOP_RISE.
 const STOOP_DROP := 0.3
 const STOOP_RISE := 0.2
@@ -40,6 +45,7 @@ var _buckets := {}
 var _keep := {}
 var holes := {}
 var _collars: Array = []
+var _treads: Array = []
 var _cache := {}
 
 
@@ -91,13 +97,20 @@ func setup(layout: Dictionary) -> void:
 		if absf(lot.f.x) > 0.001:
 			walls = Rect2(lot.c - Vector2.ONE * maxf(lot.w, lot.d) * 0.5, Vector2.ONE * maxf(lot.w, lot.d))
 			push_warning("SNOW_LOTS %s is turned; its cut is squared" % lot.code)
-		var c0 := Vector2i(floori((walls.position.x + HALF) / GRID), floori((walls.position.y + HALF) / GRID))
-		var c1 := Vector2i(floori((walls.end.x + HALF - 0.01) / GRID), floori((walls.end.y + HALF - 0.01) / GRID))
+		var voids: Array[Rect2] = [walls]
+		if AREAWAYS.has(lot.code):
+			var aw: Array = AREAWAYS[lot.code]
+			voids.append(Rect2(lot.c.x - float(aw[0]) * 0.5, walls.position.y - float(aw[1]), float(aw[0]), float(aw[1])))
+		var span: Rect2 = voids[0]
+		for v in voids:
+			span = span.merge(v)
+		var c0 := Vector2i(floori((span.position.x + HALF) / GRID), floori((span.position.y + HALF) / GRID))
+		var c1 := Vector2i(floori((span.end.x + HALF - 0.01) / GRID), floori((span.end.y + HALF - 0.01) / GRID))
 		for cx in range(c0.x, c1.x + 1):
 			for cz in range(c0.y, c1.y + 1):
 				holes[Vector2i(cx, cz)] = true
 		var hole := Rect2(Vector2(c0.x * GRID - HALF, c0.y * GRID - HALF), Vector2((c1.x - c0.x + 1) * GRID, (c1.y - c0.y + 1) * GRID))
-		_collars.append([lot, hole, walls])
+		_collars.append([lot, hole, voids])
 	for road in layout.get("roads", []):
 		var pts: Array = road.world_points
 		var half := float(road.get("width_m", 3.0)) * 0.5
@@ -113,6 +126,7 @@ func setup(layout: Dictionary) -> void:
 			var reach := maxf(float(st[4]), float(st[5])) * 0.5 + 0.5
 			var at := Vector2(float(st[0]) - HALF, float(st[1]) - HALF)
 			_add_keep(Rect2(at, Vector2.ZERO).grow(reach + KEEP), [at, at, reach])
+			_treads.append([at, reach, float(st[2])])
 	print("SNOW_LOTS lots=%d refined_cells=%d keep_buckets=%d" % [lots.size(), refined.size(), _keep.size()])
 
 
@@ -227,22 +241,64 @@ func build_plinths(book: Node3D, ground: Callable) -> void:
 			var bottom := minf(g, top) - 0.4
 			book._stair_block(node, Vector3(p.x, (top + bottom) * 0.5, p.y), Vector3(STOOP_WIDTH, top - bottom, STOOP_RUN), yaw, "masonry")
 			steps += 1
-	# the cuts' collars: the hole's cells less the walls, four paved blocks at the floor's level
+	# the cuts' collars: the hole's cells less the walls and the sunken yard, paved blocks at the
+	# floor's level (along the back edge raised to the rock's ground where that stands higher, so no gap
+	# shows)
 	var collars := 0
 	for item in _collars:
 		var lot: Dictionary = item[0]
 		var hole: Rect2 = item[1]
-		var walls: Rect2 = item[2]
-		var top: float = lot.level
+		var voids: Array = item[2]
 		var depth: float = CUTS[lot.code]
-		for r: Rect2 in [
-			Rect2(hole.position.x, hole.position.y, walls.position.x - hole.position.x, hole.size.y),
-			Rect2(walls.end.x, hole.position.y, hole.end.x - walls.end.x, hole.size.y),
-			Rect2(walls.position.x, hole.position.y, walls.size.x, walls.position.y - hole.position.y),
-			Rect2(walls.position.x, walls.end.y, walls.size.x, hole.end.y - walls.end.y)]:
-			if r.size.x < 0.05 or r.size.y < 0.05:
-				continue
-			var c: Vector2 = r.get_center()
-			book._stair_block(node, Vector3(c.x, top - depth * 0.5, c.y), Vector3(r.size.x, depth, r.size.y), 0.0, "masonry")
+		var xs: Array[float] = [hole.position.x, hole.end.x]
+		var zs: Array[float] = [hole.position.y, hole.end.y]
+		for v: Rect2 in voids:
+			xs.append_array([clampf(v.position.x, hole.position.x, hole.end.x), clampf(v.end.x, hole.position.x, hole.end.x)])
+			zs.append_array([clampf(v.position.y, hole.position.y, hole.end.y), clampf(v.end.y, hole.position.y, hole.end.y)])
+		# a stair flight brushing the hole: the collar is cut round its treads and goes under them
+		var near: Array = []
+		var zone := Rect2()
+		for t in _treads:
+			var box := Rect2(t[0], Vector2.ZERO).grow(t[1])
+			if box.intersects(hole):
+				zone = box.intersection(hole) if near.is_empty() else zone.merge(box.intersection(hole))
+				near.append(t)
+		if not near.is_empty():
+			xs.append_array([zone.position.x, zone.end.x])
+			zs.append_array([zone.position.y, zone.end.y])
+		xs.sort()
+		zs.sort()
+		for i in xs.size() - 1:
+			for j in zs.size() - 1:
+				var r := Rect2(xs[i], zs[j], xs[i + 1] - xs[i], zs[j + 1] - zs[j])
+				if r.size.x < 0.05 or r.size.y < 0.05:
+					continue
+				var inside := false
+				for v: Rect2 in voids:
+					inside = inside or v.has_point(r.get_center())
+				if inside:
+					continue
+				var top: float = lot.level
+				for k in 9:
+					for edge in [Vector2(lerpf(r.position.x, r.end.x, k / 8.0), r.position.y), Vector2(lerpf(r.position.x, r.end.x, k / 8.0), r.end.y),
+							Vector2(r.position.x, lerpf(r.position.y, r.end.y, k / 8.0)), Vector2(r.end.x, lerpf(r.position.y, r.end.y, k / 8.0))]:
+						var p: Vector2 = edge
+						# only the back edge, against the rock (a stair flight comes up past a side)
+						if absf(p.y - hole.position.y) < 0.01:
+							top = maxf(top, minf(float(ground.call(p.x, p.y)), lot.level + 3.0))
+				for t in near:
+					var q := Vector2(clampf(t[0].x, r.position.x, r.end.x), clampf(t[0].y, r.position.y, r.end.y))
+					if q.distance_to(t[0]) < float(t[1]):
+						top = minf(top, float(t[2]) - 0.05)
+				var bottom: float = lot.level - depth
+				var c: Vector2 = r.get_center()
+				book._stair_block(node, Vector3(c.x, (top + bottom) * 0.5, c.y), Vector3(r.size.x, top - bottom, r.size.y), 0.0, "masonry")
+				collars += 1
+		# the sunken yard's floor
+		if AREAWAYS.has(lot.code):
+			var yard: Rect2 = voids[1]
+			var floor_y: float = lot.level - float(LOWER[lot.code])
+			var c: Vector2 = yard.get_center()
+			book._stair_block(node, Vector3(c.x, floor_y - 0.2, c.y), Vector3(yard.size.x, 0.4, yard.size.y), 0.0, "masonry")
 			collars += 1
 	print("SNOW_PLINTHS count=%d stoop_steps=%d cut_collars=%d" % [count, steps, collars])
