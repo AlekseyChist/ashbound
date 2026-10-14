@@ -20,7 +20,7 @@ LIME=surface('DP lime','plaster_grey_04_diff_1k.jpg',2)
 WOOD=surface('DP timber','fine_grained_wood_col_1k.jpg',.65)
 CLOTH=C.mat('DP shade',(.34,.28,.18,1),.98)
 WATER=C.mat('DP basin water',(.075,.18,.20,1),.18)
-TILE=C.mat('DP fired roof clay',(.17,.095,.055,1),.98)
+LINEN=C.mat('DP muted bedding',(.25,.22,.16,1),.98)
 IRON=C.mat('DP stove iron',(.09,.10,.11,1),.9)
 coll=[]
 def box(n,p,s,m,solid=True):
@@ -32,13 +32,13 @@ def box(n,p,s,m,solid=True):
 box('foundation',(0,0,-.15),(12,7,.3),STONE)
 box('entry porch',(0,-4.3,-.12),(3,1.6,.24),STONE)
 for y in (-3.3,3.3):
-    for x in (-3.35,3.35):box('portal wall',(x,y,1.70),(5.3,.4,3.4),LIME)
-    box('portal lintel',(0,y,2.9),(1.4,.4,1),LIME)
+    for x in (-3.35,3.35):box('portal wall',(x,y,1.75),(5.3,.4,3.5),LIME)
+    box('portal lintel',(0,y,2.95),(1.4,.4,1.1),LIME)
 for x in (-5.8,5.8):
-    for a,b in [(-3.1,-1.9),(-.9,.9),(1.9,3.1)]:box('side pier',(x,(a+b)/2,1.55),(.4,b-a,3.1),LIME)
+    for a,b in [(-3.1,-1.9),(-.9,.9),(1.9,3.1)]:box('side pier',(x,(a+b)/2,1.75),(.4,b-a,3.5),LIME)
     for y in (-1.4,1.4):
         box('window sill wall',(x,y,.6),(.4,1,1.2),LIME)
-        box('window header',(x,y,2.725),(.4,1,.75),LIME)
+        box('window header',(x,y,2.925),(.4,1,1.15),LIME)
         for dy in (-.54,.54):box('window jamb',(x,y+dy,1.775),(.48,.08,1.23),WOOD)
         for z in (1.17,2.38):box('window rail',(x,y,z),(.48,1.15,.08),WOOD)
 for x in (-1.1,1.1):
@@ -51,32 +51,23 @@ def cut_flue(rect):
 FACES=[(0,1,3,2),(4,6,7,5),(0,4,5,1),(2,3,7,6),(0,2,6,4),(1,5,7,3)]
 def roof_piece(name,rect,top,thickness,material):
     x0,x1,y0,y1=rect
-    vertices=[(x,y,top-abs(y)*1.8/4.1+dz) for x in (x0,x1) for y in (y0,y1) for dz in (-thickness,0)]
+    vertices=[(x,y,top-y*.015+dz) for x in (x0,x1) for y in (y0,y1) for dz in (-thickness,0)]
     return C.mesh(name,vertices,FACES,material)
 for x0,x1,y0,y1 in cut_flue((-6,6,-3.5,3.5)):
     box('ceiling',((x0+x1)/2,(y0+y1)/2,3.12),(x1-x0,y1-y0,.16),WOOD)
-for side in (-1,1):
-    for rect in cut_flue((-6.6,6.6,min(0,side*4.1),max(0,side*4.1))):
-        roof_piece('roof',rect,4.92,.14,WOOD)
-        roof_piece('roof-colonly',rect,4.92,.14,WOOD).hide_render=True
-for x in (-5.8,5.8):
-    edge=4.78-3.3*1.8/4.1
-    outline=[(-3.3,3.1),(-3.3,edge),(0,4.78),(3.3,edge),(3.3,3.1)]
-    vertices=[(x+dx,y,z) for dx in (-.2,.2) for y,z in outline]
-    C.mesh('gable',vertices,[tuple(range(5)),tuple(range(5,10))]+[(i,(i+1)%5,(i+1)%5+5,i+5) for i in range(5)],LIME)
-for side in (-1,1):
-    for row in range(10):
-        low=row*4.1/10;high=min(4.1,(row+1)*4.1/10+.08)
-        y0,y1=sorted([side*low,side*high])
-        for column in range(27):
-            x=-6.35+column*.49
-            x0,x1=max(-6.6,x-.24),min(6.6,x+.24)
-            if x1<=x0:continue
-            for rect in cut_flue((x0,x1,y0,y1)):
-                roof_piece('roof clay plate',rect,4.975+row*.004,.04,TILE)
+for rect in cut_flue((-6.6,6.6,-4.1,4.1)):
+    roof_piece('flat lime roof',rect,3.6,.15,LIME)
+    roof_piece('flat roof-colonly',rect,3.6,.15,LIME).hide_render=True
+for x in (-5.9,5.9):box('side parapet',(x,0,3.74),(.2,7,.48),LIME)
+box('front parapet',(0,-3.4,3.74),(11.6,.2,.48),LIME)
+for a,b in [(-5.8,-5.4),(-5.1,5.1),(5.4,5.8)]:
+    box('rear parapet',((a+b)/2,3.4,3.74),(b-a,.2,.48),LIME)
+# Open stone channels pass through the rear parapet; discharge stays outside both doors.
+for x in (-5.25,5.25):
+    roof_piece('drain base',(x-.15,x+.15,3.23,4.1),3.6,.06,STONE)
+    for dx in (-.14,.14):roof_piece('drain cheek',(x+dx-.03,x+dx+.03,3.23,4.1),3.72,.12,STONE)
 for rect in [(4.3,4.55,-3,-2),(5.05,5.3,-3,-2),(4.55,5.05,-3,-2.75),(4.55,5.05,-2.25,-2)]:
-    roof_piece('stove flashing',rect,5.025,.025,IRON)
-box('roof ridge',(0,0,4.96),(13.2,.22,.08),TILE,False)
+    roof_piece('stove flashing',rect,3.63,.025,IRON)
 for x in (-1.42,1.42):
     box('canopy footing',(x,-4.98,.10),(.24,.24,.2),STONE)
     box('canopy post',(x,-4.98,1.4),(.14,.14,2.4),WOOD)
@@ -87,7 +78,7 @@ for y in (-2.25,-.75,.75,2.25):
     box('bed frame',(-4.4,y,.38),(2.1,.9,.14),WOOD)
     for dx in (-.92,.92):
         for dy in (-.33,.33):box('bed leg',(-4.4+dx,y+dy,.155),(.1,.1,.31),WOOD,False)
-    box('bedding',(-4.4,y,.50),(1.95,.82,.10),CLOTH,False)
+    box('bedding',(-4.4,y,.50),(1.95,.82,.10),LINEN,False)
 box('kitchen worktop',(5,.1,.9),(.7,2.1,.16),WOOD)
 for y in (-.8,1):box('worktop support',(5,y,.41),(.6,.14,.82),WOOD)
 box('cook hearth',(4.8,-2.5,.06),(1.3,1.3,.12),STONE)
@@ -96,10 +87,10 @@ box('stove hatch',(4.21,-2.5,.66),(.08,.44,.4),IRON,False)
 box('stove hood',(4.8,-2.5,1.29),(1.2,1.2,.18),STONE)
 box('cook plate',(4.8,-2.5,1.405),(1.1,1.1,.05),IRON,False)
 box('flue lower',(4.8,-2.5,2.495),(.5,.5,2.41),STONE)
-for dx in (-.2,.2):box('flue upper',(4.8+dx,-2.5,4.23),(.1,.5,1.06),STONE)
-for dy in (-.2,.2):box('flue upper',(4.8,-2.5+dy,4.23),(.3,.1,1.06),STONE)
-for dx in (-.25,.25):box('flue coping',(4.8+dx,-2.5,4.82),(.2,.7,.12),STONE)
-for dy in (-.25,.25):box('flue coping',(4.8,-2.5+dy,4.82),(.3,.2,.12),STONE)
+for dx in (-.2,.2):box('flue upper',(4.8+dx,-2.5,4.29),(.1,.5,1.18),STONE)
+for dy in (-.2,.2):box('flue upper',(4.8,-2.5+dy,4.29),(.3,.1,1.18),STONE)
+for dx in (-.25,.25):box('flue coping',(4.8+dx,-2.5,4.94),(.2,.7,.12),STONE)
+for dy in (-.25,.25):box('flue coping',(4.8,-2.5+dy,4.94),(.3,.2,.12),STONE)
 for dx in (-.3,.3):box('ceiling collar',(4.8+dx,-2.5,3.12),(.1,.7,.16),STONE)
 for dy in (-.3,.3):box('ceiling collar',(4.8,-2.5+dy,3.12),(.5,.1,.16),STONE)
 box('washbasin pedestal',(4.8,2.55,.4),(.6,.6,.8),STONE)
@@ -160,4 +151,4 @@ visual=[o for o in C.ASSET.objects if o.type=='MESH' and '-colonly' not in o.nam
 triangles=0
 for o in visual:o.data.calc_loop_triangles();triangles+=len(o.data.loop_triangles)
 points=[o.matrix_world@Vector(v) for o in visual for v in o.bound_box]
-(QA/'stats.json').write_text(json.dumps({'state':'built; peer and campaign/mobile QA pending','walls':[12,7],'ridge':5,'triangles':triangles,'meshes':len(visual),'bbox':[[min(p[i] for p in points) for i in range(3)],[max(p[i] for p in points) for i in range(3)]],'sha256':hashlib.sha256(asset.read_bytes()).hexdigest()},indent=2),encoding='utf-8')
+(QA/'stats.json').write_text(json.dumps({'state':'built; peer and campaign/mobile QA pending','walls':[12,7],'maximum_height':5,'triangles':triangles,'meshes':len(visual),'bbox':[[min(p[i] for p in points) for i in range(3)],[max(p[i] for p in points) for i in range(3)]],'sha256':hashlib.sha256(asset.read_bytes()).hexdigest()},indent=2),encoding='utf-8')

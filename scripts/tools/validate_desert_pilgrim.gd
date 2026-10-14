@@ -28,6 +28,14 @@ func run():
     var mouth=space.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(4.8,6,2.5),Vector3(4.8,3,2.5),1))
     if mouth.is_empty() or absf(mouth.position.y-3.7)>.02:
         push_error("Cooking flue blocked by roofing");quit(1);return
+    var front_roof=space.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(-4,6,3),Vector3(-4,3,3),1))
+    var rear_roof=space.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(-4,6,-3),Vector3(-4,3,-3),1))
+    if front_roof.is_empty() or rear_roof.is_empty() or front_roof.position.y-rear_roof.position.y<.08:
+        push_error("Roof drainage slope missing");quit(1);return
+    for x in [-5.25,5.25]:
+        var outlet=space.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(x,3.75,-3),Vector3(x,3.75,-4.1),1))
+        if not outlet.is_empty():
+            push_error("Parapet blocks roof outlet");quit(1);return
     if house.door.leaves.size()!=5 or house.service_door.leaves.size()!=5:
         push_error("Portal leaf groups not independent");quit(1);return
     if house.interior_meshes.is_empty() or house.set_interior_visible(false,true):
