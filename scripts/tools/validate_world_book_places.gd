@@ -285,6 +285,7 @@ func run() -> void:
 	var lots: Array = w.snow_lots.lots
 	require(lots.size() == 41, "Expected 41 snow plots, got %d" % lots.size())
 	var worst_read := 0.0
+	var side_stairs: Array[String] = []
 	for lot in lots:
 		if w.snow_lots.CUTS.has(lot.code):
 			# the library's cut: inside the walls no terrain/plinth above its lower hall (3.2 m down)
@@ -356,9 +357,107 @@ func run() -> void:
 		print("SNOW_LOT %s level=%.2f above=%.2f below=%.2f miss=%d door_step=%.2f door_climb=%.2f" % [lot.code, lot.level, above, below, miss, door, climb])
 		require(miss == 0 and above <= 0.03, "%s: ground over the floor (%.2f m) or no ground" % [lot.code, above])
 		require(below <= 0.35, "%s: hangs %.2f m over the ground under its walls" % [lot.code, below])
-		require(door <= 0.25, "%s: its door front climbs %.2f m in a step (or a gap at the threshold)" % [lot.code, door])
-		require(climb <= 0.42, "%s: its door front climbs %.2f m in 0.5 m - too steep to walk" % [lot.code, climb])
+		# a door with a stair along its facade is walked down that stair below instead
+		var turned: bool = w.snow_lots.stoop_paths.has(lot.code) and w.snow_lots.stoop_paths[lot.code].size() == 3
+		if turned:
+			side_stairs.append(lot.code)
+		else:
+			require(door <= 0.25, "%s: its door front climbs %.2f m in a step (or a gap at the threshold)" % [lot.code, door])
+			require(climb <= 0.42, "%s: its door front climbs %.2f m in 0.5 m - too steep to walk" % [lot.code, climb])
 	print("SNOW_LOTS_GROUND_READ worst=%.3f" % worst_read)
+
+	# The door stairs along a facade (the slum): from the door down to the stair's end and back, by
+	# the capsule with the hero's step-up.
+	for code in side_stairs:
+		var path: PackedVector2Array = w.snow_lots.stoop_paths[code]
+		for leg in [path, _reversed(path)]:
+			var a: Vector2 = leg[0]
+			actor.velocity = Vector3.ZERO
+			var down := PhysicsRayQueryParameters3D.create(origin + Vector3(a.x, 400, a.y), origin + Vector3(a.x, -50, a.y))
+			down.exclude = [actor.get_rid()]
+			var hit := space.intersect_ray(down)
+			actor.position = Vector3(a.x, ((hit.position.y - origin.y) if not hit.is_empty() else w.world_ground(a.x, a.y)) + 1.2, a.y)
+			for i in 20:
+				await physics_frame
+				actor.velocity = Vector3(0, 0.0 if actor.is_on_floor() else actor.velocity.y - 22.0 / 60.0, 0)
+				actor.move_and_slide()
+			var walked := true
+			for k in range(1, leg.size()):
+				var target: Vector2 = leg[k]
+				var reached := false
+				for tick in 900:
+					await physics_frame
+					var off := Vector2(target.x - actor.position.x, target.y - actor.position.z)
+					if off.length() < 0.35:
+						reached = true
+						break
+					var hv := Vector3(off.x, 0, off.y).normalized() * 2.0
+					actor.velocity = Vector3(hv.x, 0.0 if actor.is_on_floor() else actor.velocity.y - 22.0 / 60.0, hv.z)
+					_step_up(actor, 1.0 / 60.0)
+					actor.move_and_slide()
+				if not reached:
+					walked = false
+					var against := ""
+					for c in actor.get_slide_collision_count():
+						var col := actor.get_slide_collision(c)
+						var body := col.get_collider() as Node
+						var size = ((body.get_child(0) as CollisionShape3D).shape as BoxShape3D).size if body.get_child_count() > 0 and (body.get_child(0) is CollisionShape3D) and ((body.get_child(0) as CollisionShape3D).shape is BoxShape3D) else "-"
+						against += " %s %s n=%s at=%s" % [str(body.get_path()).get_slice("/", 5), size, col.get_normal(), col.get_position() - origin + Vector3(1000, 0, 1000)]
+					print("SNOW_DOOR_STAIR %s stuck before %s at %s against%s" % [code, target + Vector2(1000, 1000), actor.position + Vector3(1000, 0, 1000), against])
+					break
+			require(walked, "%s: its door stair along the facade is not walkable" % code)
+	print("SNOW_DOOR_STAIRS along_facade=%s" % [side_stairs])
+
+	# The snow city's streets (the book's plan): each walked end to end and back by the capsule with
+	# the hero's step-up, on the terrain, plinths and door stairs alone (no buildings loaded here).
+	# A street's end at a stair flight stops 2.5 m short of it (the flight is its own route, walked
+	# above); the capsule starts on the first surface under it.
+	var treads: Array = []
+	for flight in layout.get("book_stairs", []):
+		if str(flight.id).begins_with("snow"):
+			for st in flight.steps:
+				treads.append([Vector2(float(st[0]), float(st[1])), maxf(float(st[4]), float(st[5])) * 0.5 + 0.5])
+	for street in w.snow_lots.streets:
+		var pts: PackedVector2Array = _off_stairs(street[0], treads)
+		if pts.size() < 2:
+			continue
+		for leg in [pts, _reversed(pts)]:
+			var from: Vector2 = leg[0] - Vector2(1000, 1000)
+			actor.velocity = Vector3.ZERO
+			var down := PhysicsRayQueryParameters3D.create(origin + Vector3(from.x, 400, from.y), origin + Vector3(from.x, -50, from.y))
+			down.exclude = [actor.get_rid()]
+			var hit := space.intersect_ray(down)
+			var floor_y: float = (hit.position.y - origin.y) if not hit.is_empty() else w.world_ground(from.x, from.y)
+			actor.position = Vector3(from.x, floor_y + 1.2, from.y)
+			for i in 20:
+				await physics_frame
+				actor.velocity = Vector3(0, 0.0 if actor.is_on_floor() else actor.velocity.y - 22.0 / 60.0, 0)
+				actor.move_and_slide()
+			var walked := true
+			for k in range(1, leg.size()):
+				var target: Vector2 = leg[k] - Vector2(1000, 1000)
+				var reached := false
+				for tick in 1800:
+					await physics_frame
+					var off := Vector2(target.x - actor.position.x, target.y - actor.position.z)
+					if off.length() < 0.5:
+						reached = true
+						break
+					var hv := Vector3(off.x, 0, off.y).normalized() * 3.0
+					actor.velocity = Vector3(hv.x, 0.0 if actor.is_on_floor() else actor.velocity.y - 22.0 / 60.0, hv.z)
+					_step_up(actor, 1.0 / 60.0)
+					actor.move_and_slide()
+				if not reached:
+					walked = false
+					var against := ""
+					for c in actor.get_slide_collision_count():
+						var col := actor.get_slide_collision(c)
+						against += " %s n=%s" % [str((col.get_collider() as Node).get_path()).get_slice("/", 5) + "/" + str((col.get_collider() as Node).get_path()).get_slice("/", 6), col.get_normal()]
+					print("SNOW_STREET_WALK %s stuck before %s at %s against%s" % [leg[0], leg[k], actor.position + Vector3(1000, 0, 1000), against])
+					break
+			require(walked, "Snow street from %s not walkable" % leg[0])
+	print("SNOW_STREETS streets=%d" % w.snow_lots.streets.size())
+
 	require(worst_read <= 0.02, "world_ground misreads the snow plots' terrain by %.3f m" % worst_read)
 
 	print("WORLD_BOOK_PLACES_CHECKS checks=%d failures=%d" % [checks, failures.size()])
@@ -398,3 +497,28 @@ func _on_plinth(space: PhysicsDirectSpaceState3D, origin: Vector3, p: Vector2, l
 			return true
 		skip.append(hit.rid)
 	return false
+
+
+func _reversed(pts: PackedVector2Array) -> PackedVector2Array:
+	var out := PackedVector2Array()
+	for i in range(pts.size() - 1, -1, -1):
+		out.append(pts[i])
+	return out
+
+
+## A street's ends moved 2.5 m along it, away from any stair tread within 2 m.
+func _off_stairs(pts: PackedVector2Array, treads: Array) -> PackedVector2Array:
+	var out := pts.duplicate()
+	for end in [out.size() - 1, 0]:
+		var near := false
+		for t in treads:
+			near = near or (t[0] as Vector2).distance_to(out[end]) < float(t[1])
+		if not near:
+			continue
+		var inner: Vector2 = out[1] if end == 0 else out[out.size() - 2]
+		var along: float = out[end].distance_to(inner)
+		if along <= 3.0:
+			out.remove_at(end)
+		else:
+			out[end] = out[end].move_toward(inner, 2.5)
+	return out

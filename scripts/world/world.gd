@@ -219,6 +219,7 @@ func _build_world() -> void:
 	snow_lots = SnowLots.new()
 	snow_lots.setup(world_layout)
 	world_heights = _flatten_inn(_raise_west_rim(pad.apply(original_heights, world_width, GRID)))
+	snow_lots.grade_streets(func(x: float, z: float) -> float: return _grid_height(world_heights, x, z))
 	world_root = Node3D.new()
 	world_root.name = "WorldMap"
 	world_root.position = Vector3(HALF - VILLAGE_ORIGIN_MAP.x, -BASE_HEIGHT, HALF - VILLAGE_ORIGIN_MAP.y)
@@ -635,6 +636,13 @@ func _apply_road_mask() -> void:
 			var b := _map_of(points[i + 1])
 			if ring.has_point(a) or ring.has_point(b):
 				_stamp_segment(a, b, width, ring)
+	# WORLD-BUILD-01C: the snow city's streets from the book's plan, trodden into the ground like the
+	# forest city's yards.
+	var whole := Rect2(0, 0, road_mask.get_width(), road_mask.get_height())
+	for street in snow_lots.streets:
+		var pts: PackedVector2Array = street[0]
+		for i in range(pts.size() - 1):
+			_stamp_segment(pts[i], pts[i + 1], float(street[1]), whole)
 	var material: ShaderMaterial = terrain.material
 	material.set_shader_parameter("use_road_mask", true)
 	material.set_shader_parameter("road_mask", ImageTexture.create_from_image(road_mask))

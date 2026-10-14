@@ -334,8 +334,11 @@ func build_stairs(stairs: Array) -> void:
 					var entry := atan2(drop, STAIR_RUN_ENTRY)
 					var edge: Vector3 = basis * Vector3(0, 0, depth * 0.5 + STAIR_RUN_ENTRY * 0.5)
 					_stair_collider(node, Vector3(at.x + edge.x, top - drop * 0.5 - 0.03, at.y + edge.z), Vector3(width, 0.06, STAIR_RUN_ENTRY / cos(entry) + 0.04), basis * Basis(Vector3.RIGHT, entry))
-			# rails: 1 m over the tread, solid
+			# rails: 1 m over the tread, solid - only where it stands 0.5 m or more over the ground (a
+			# flight's first landing at ground level had rails across the street running past it)
 			var rails: Array = []
+			if top - low < RAIL_DROP:
+				rail = 0
 			if rail == -1 or rail == 3:
 				rails.append([Vector3(-width * 0.5 + 0.05, 0, 0), Vector3(0.1, 1.0, depth)])
 			if rail == 1 or rail == 3:
@@ -349,6 +352,7 @@ func build_stairs(stairs: Array) -> void:
 
 
 const STAIR_RISE := 0.18
+const RAIL_DROP := 0.5
 const STAIR_RUN_ENTRY := 0.3
 
 

@@ -37,7 +37,23 @@ const AREAWAYS := {"Бб": [3.0, 3.5]}
 const LOWER := {"Бб": 3.2}
 ## A door whose front falls away gets stone steps of STOOP_RISE down to the ground (at most STOOP_MAX).
 const STOOP_RISE := 0.18
-const STOOP_MAX := 16
+## The academy street, book 1056/307 -> 1100/286, and its route through the moved mine gate.
+const MINE_STREET_FROM := Vector2(1056, 307)
+const MINE_STREET_BOOK_END := Vector2(1100, 286)
+const MINE_STREET_ROUTE := [Vector2(1056, 307), Vector2(1062, 296), Vector2(1083, 296), Vector2(1083, 303), Vector2(1082, 306.8), Vector2(1081, 331.4)]
+const MINE_GATE := Vector2(1082, 306.8)
+## A street is graded along a smoothed profile of its ground (window +-STREET_SMOOTH m), level
+## across; over its width + 0.3 m it rules the plots' ground, fading out over STREET_BLEND m.
+const STREET_STEP := 1.0
+const STREET_SMOOTH := 3
+const STREET_BLEND := 2.0
+const STREET_PIN := 3.0
+const JUNCTION := 1.5
+const STOOP_MAX := 24
+## A straight stoop must meet the ground within this many steps, or the stair turns along the facade
+## after a LANDING m deep landing at the door.
+const STOOP_OUT := 4
+const LANDING := 1.2
 const STOOP_RUN := 0.35
 const STOOP_WIDTH := 1.6
 
@@ -48,6 +64,14 @@ var _keep := {}
 var holes := {}
 var _collars: Array = []
 var _treads: Array = []
+## The book's streets (plan lines of kind street): [points (map frame), width].
+var streets: Array = []
+## Each door stair's walking line, code -> points (world frame): the door, (a landing,) the stair's end.
+var stoop_paths := {}
+## Graded streets: [points (world frame), cumulative distance at each point, the profile every
+## STREET_STEP m, half width]; and their buckets.
+var _profiles: Array = []
+var _street_b := {}
 var _cache := {}
 
 
@@ -60,6 +84,18 @@ func setup(layout: Dictionary) -> void:
 	var plan = JSON.parse_string(FileAccess.get_file_as_string(PLAN))
 	if not plan is Dictionary:
 		return
+	for line in plan.get("lines", []):
+		if str(line.kind) == "street":
+			var pts := PackedVector2Array()
+			for q in line.pts:
+				pts.append(Vector2(float(q[0]), float(q[1])))
+			# D-121 deviation agreed with Codex (bridge 183/184): the academy street's book end - the
+			# mine gate at 1089/290 and 1100/286 outside it - lies 30 m up the cliff behind the shelf,
+			# off the real mine road (mine_approach passes 45 m south). The gate moves into the shelf's
+			# south-east wall at 1082/306.8 and the street runs on to the mine road at 1081/331.4.
+			if pts[0].distance_to(MINE_STREET_FROM) < 1.0 and pts[pts.size() - 1].distance_to(MINE_STREET_BOOK_END) < 1.0:
+				pts = PackedVector2Array(MINE_STREET_ROUTE)
+			streets.append([pts, float(line.width)])
 	for b in plan.get("buildings", []):
 		var code := str(b.code)
 		if not levels.has(code):
@@ -144,6 +180,147 @@ func _add_keep(box: Rect2, segment: Array) -> void:
 			_keep[key].append(segment)
 
 
+## The plot's authored level (its floor), NAN if the plan has no such plot - Codex's builder sets
+## each module's floor here (the ground under it lies FLOOR_GAP lower).
+func level_of(code: String) -> float:
+	for lot in lots:
+		if lot.code == code:
+			return lot.level
+	return NAN
+
+
+## Grades the streets; `ground` takes world-frame x, z (the world's grid before the plots).
+func grade_streets(ground: Callable) -> void:
+	# Grade each street (Codex 0208cfd / the lane walk: between the slum's plots of different levels
+	# the lane folded into a 55 deg crease; by the foot of stair C the street crossed a 46 deg bank).
+	for street in streets:
+		var map_pts: PackedVector2Array = street[0]
+		var pts := PackedVector2Array()
+		var cum := PackedFloat32Array()
+		var run := 0.0
+		for k in map_pts.size():
+			var q: Vector2 = map_pts[k] - Vector2(HALF, HALF)
+			if k > 0:
+				run += q.distance_to(pts[k - 1])
+			pts.append(q)
+			cum.append(run)
+		# the ground along it, but not over a stair flight's treads (the middle terrace's street crosses
+		# stair A's well): those samples are bridged between their neighbours
+		var raw := PackedFloat32Array()
+		var valid: Array[bool] = []
+		var n := int(ceil(run / STREET_STEP)) + 1
+		for i in n:
+			var q := _along(pts, cum, minf(i * STREET_STEP, run))
+			var over_stair := false
+			for t in _treads:
+				over_stair = over_stair or q.distance_to(t[0]) < float(t[1])
+			raw.append(float(ground.call(q.x, q.y)))
+			valid.append(not over_stair)
+		for i in n:
+			if valid[i]:
+				continue
+			var a := i - 1
+			while a >= 0 and not valid[a]:
+				a -= 1
+			var b := i + 1
+			while b < n and not valid[b]:
+				b += 1
+			if a >= 0 and b < n:
+				raw[i] = lerpf(raw[a], raw[b], float(i - a) / float(b - a))
+			elif a >= 0:
+				raw[i] = raw[a]
+			elif b < n:
+				raw[i] = raw[b]
+		var smooth := PackedFloat32Array()
+		for i in n:
+			var sum := 0.0
+			var count := 0
+			for j in range(maxi(0, i - STREET_SMOOTH), mini(n, i + STREET_SMOOTH + 1)):
+				sum += raw[j]
+				count += 1
+			smooth.append(sum / count)
+		var half := float(street[1]) * 0.5
+		var index := _profiles.size()
+		_profiles.append([pts, cum, smooth, half])
+		var reach := half + 0.3 + STREET_BLEND
+		for i in n:
+			var q := _along(pts, cum, minf(i * STREET_STEP, run))
+			for bx in range(floori((q.x - reach) / BUCKET), floori((q.x + reach) / BUCKET) + 1):
+				for bz in range(floori((q.y - reach) / BUCKET), floori((q.y + reach) / BUCKET) + 1):
+					var key := Vector2i(bx, bz)
+					if not _street_b.has(key):
+						_street_b[key] = []
+					if not _street_b[key].has(index):
+						_street_b[key].append(index)
+			for cx in range(floori((q.x - reach - GRID + HALF) / GRID), floori((q.x + reach + GRID + HALF) / GRID) + 1):
+				for cz in range(floori((q.y - reach - GRID + HALF) / GRID), floori((q.y + reach + GRID + HALF) / GRID) + 1):
+					refined[Vector2i(cx, cz)] = true
+	# Where streets meet, one height: a street running through the junction keeps its own and the
+	# streets ending there come to it; where streets only end there, they meet at their mean. Each
+	# ending street eases to it over its last STREET_PIN m (Codex 0208cfd: graded alone, the streets'
+	# profiles disagreed at shared points).
+	var ends: Array = []
+	for si in _profiles.size():
+		var pts: PackedVector2Array = _profiles[si][0]
+		ends.append([si, 0, pts[0]])
+		ends.append([si, 1, pts[pts.size() - 1]])
+	var targets: Array = []
+	for e in ends:
+		var through := NAN
+		var sum := 0.0
+		var count := 0
+		for sj in _profiles.size():
+			var at: Array = _street_at(sj, e[2])
+			if float(at[0]) > JUNCTION:
+				continue
+			var pts: PackedVector2Array = _profiles[sj][0]
+			var at_end: bool = pts[0].distance_to(e[2]) < JUNCTION or pts[pts.size() - 1].distance_to(e[2]) < JUNCTION
+			if not at_end and is_nan(through):
+				through = float(at[1])
+			sum += float(at[1])
+			count += 1
+		targets.append(through if not is_nan(through) else sum / maxi(count, 1))
+	for k in ends.size():
+		var si: int = ends[k][0]
+		var smooth: PackedFloat32Array = _profiles[si][2]
+		var n := smooth.size()
+		var last := n - 1 if ends[k][1] == 1 else 0
+		var delta: float = targets[k] - smooth[last]
+		for i in n:
+			var to_end := float(absi(i - last)) * STREET_STEP
+			if to_end < STREET_PIN:
+				smooth[i] += delta * (1.0 - to_end / STREET_PIN)
+		_profiles[si][2] = smooth
+
+
+func _along(pts: PackedVector2Array, cum: PackedFloat32Array, t: float) -> Vector2:
+	for k in range(1, pts.size()):
+		if t <= cum[k] or k == pts.size() - 1:
+			var span := maxf(cum[k] - cum[k - 1], 0.001)
+			return pts[k - 1].lerp(pts[k], clampf((t - cum[k - 1]) / span, 0.0, 1.0))
+	return pts[0]
+
+
+## [distance across the street, its graded level] at a world-frame point.
+func _street_at(index: int, p: Vector2) -> Array:
+	var prof: Array = _profiles[index]
+	var pts: PackedVector2Array = prof[0]
+	var cum: PackedFloat32Array = prof[1]
+	var smooth: PackedFloat32Array = prof[2]
+	var best := INF
+	var t := 0.0
+	for k in range(1, pts.size()):
+		var q := Geometry2D.get_closest_point_to_segment(p, pts[k - 1], pts[k])
+		var d := p.distance_to(q)
+		if d < best:
+			best = d
+			t = cum[k - 1] + pts[k - 1].distance_to(q)
+	var f := t / STREET_STEP
+	var i := clampi(floori(f), 0, smooth.size() - 1)
+	var j := mini(i + 1, smooth.size() - 1)
+	return [best, lerpf(smooth[i], smooth[j], f - i)]
+
+
 func refines(cell_x: int, cell_z: int) -> bool:
 	return refined.has(Vector2i(cell_x, cell_z))
 
@@ -152,9 +329,12 @@ func skips(cell_x: int, cell_z: int) -> bool:
 	return holes.has(Vector2i(cell_x, cell_z))
 
 
+## Inside the walls grown by one lattice cell: every 1.25 m triangle under the floor has all three
+## corners lowered (Codex 0208cfd: with only the corners inside the walls lowered, the triangles rose
+## back to the floor's level 0.65 m inside them).
 func _inside_walls(lot: Dictionary, p: Vector2) -> bool:
 	var d: Vector2 = p - lot.c
-	return absf(d.dot(lot.s)) < lot.w * 0.5 and absf(d.dot(lot.f)) < lot.d * 0.5
+	return absf(d.dot(lot.s)) < lot.w * 0.5 + FINE and absf(d.dot(lot.f)) < lot.d * 0.5 + FINE
 
 
 ## Distance from a lot's level ground (walls + FLAT, its yard in front), 0 inside.
@@ -171,12 +351,14 @@ func _dist(lot: Dictionary, p: Vector2) -> float:
 ## The ground at a world-frame point given the ground there without the plots.
 func height(p: Vector2, base: float) -> float:
 	var key := Vector2i(floori(p.x / BUCKET), floori(p.y / BUCKET))
-	if not _buckets.has(key):
+	if not _buckets.has(key) and not _street_b.has(key):
 		return base
 	var h := INF
-	for i in _buckets[key]:
+	var core := INF
+	for i in _buckets.get(key, []):
 		var lot := lots[i]
 		var d := _dist(lot, p)
+		core = minf(core, d)
 		if d >= BLEND:
 			continue
 		h = minf(h, lerpf(lot.level, base, smoothstep(0.0, BLEND, d)))
@@ -184,8 +366,20 @@ func height(p: Vector2, base: float) -> float:
 		# floors shared the terrain's plane and flickered gravel through the boards)
 		if d == 0.0 and _inside_walls(lot, p):
 			h = minf(h, lot.level - FLOOR_GAP)
-	if h == INF:
+	var g := base if h == INF else h
+	var graded := h != INF
+	for si in _street_b.get(key, []):
+		var at: Array = _street_at(si, p)
+		var edge: float = float(_profiles[si][3]) + 0.3
+		if float(at[0]) < edge + STREET_BLEND:
+			# a plot's level ground (walls + FLAT, its yard) keeps its level; the street fades out over
+			# the metre before it
+			var w := (1.0 - smoothstep(edge, edge + STREET_BLEND, float(at[0]))) * smoothstep(0.0, 1.0, core)
+			g = lerpf(g, float(at[1]), w)
+			graded = true
+	if not graded:
 		return base
+	h = g
 	var keep := 1.0
 	for r in _keep.get(key, []):
 		var q := Geometry2D.get_closest_point_to_segment(p, r[0], r[1])
@@ -199,6 +393,53 @@ func lattice(ix: int, iz: int, base: Callable) -> float:
 	if not _cache.has(key):
 		_cache[key] = base.call(ix * FINE, iz * FINE)
 	return _cache[key]
+
+
+## Steps of STOOP_RUN from `start` along `dir` (the stair `width` wide across it): on each the
+## walking surface is the highest ground along the stair's middle, but never more than a riser under
+## the step before; where the ground under it falls away, a stone block at it. Returns [steps built,
+## met the ground again (done), the point past the last step]. `place` false only measures.
+func _steps(book: Node3D, node: Node3D, ground: Callable, start: Vector2, dir: Vector2, across: Vector2, width: float, walk0: float, slots: int, place: bool) -> Array:
+	var walk := walk0
+	var idle := 0
+	var built := 0
+	var yaw := rad_to_deg(atan2(dir.x, dir.y))
+	var end: Vector2 = start
+	for k in range(1, slots + 1):
+		var p: Vector2 = start + dir * (STOOP_RUN * (k - 0.5))
+		end = p + dir * (STOOP_RUN * 0.5)
+		var high := -INF
+		var low := INF
+		var foot := INF
+		for a in [-0.5, -0.17, 0.17, 0.5]:
+			for q in [-0.5, -0.25, 0.0, 0.25, 0.5]:
+				var e: Vector2 = p + dir * (STOOP_RUN * a) + across * (width * q)
+				var h := float(ground.call(e.x, e.y))
+				foot = minf(foot, h)
+				if absf(q) < 0.3:
+					high = maxf(high, h)
+					low = minf(low, h)
+		var top := minf(maxf(high, walk - STOOP_RISE), walk)
+		var before := walk
+		walk = top
+		if low >= top - 0.05:
+			idle += 1
+			if built > 0 and idle >= 2:
+				return [built, true, end]
+			if built == 0 and idle >= 3:
+				return [0, true, end]
+			continue
+		idle = 0
+		built += 1
+		if place:
+			var bottom := foot - 0.4
+			book._stair_block(node, Vector3(p.x, (top + bottom) * 0.5, p.y), Vector3(width, top - bottom, STOOP_RUN + 0.03), yaw, "masonry")
+			# its walking surface: a slab from the step before down to this one, as the flights'
+			# treads have (the capsule caught the short risers' edges on the slum's door stairs)
+			var pitch := atan2(before - top, STOOP_RUN)
+			var turn := Basis(Vector3.UP, deg_to_rad(yaw)) * Basis(Vector3.RIGHT, pitch)
+			book._stair_collider(node, Vector3(p.x, (before + top) * 0.5 - 0.03, p.y), Vector3(width, 0.06, STOOP_RUN / cos(pitch) + 0.04), turn)
+	return [built, false, end]
 
 
 ## A stone plinth under every house whose ground falls away below its floor (the uphill neighbour of a
@@ -228,47 +469,43 @@ func build_plinths(book: Node3D, ground: Callable) -> void:
 		var yaw := rad_to_deg(atan2(lot.f.x, lot.f.y))
 		book._stair_block(node, Vector3(lot.c.x, (top + bottom) * 0.5, lot.c.y), Vector3(hw * 2.0, top - bottom, hd * 2.0), yaw, "masonry")
 		count += 1
-	# Stone steps down from a door whose front falls away (the slum's lane runs down past it).
+	# Stone steps down from a door whose front falls away. Straight out where the ground is met within
+	# STOOP_OUT; otherwise a landing at the door and a stair down along the facade, towards the lower
+	# side (Codex 0208cfd: straight stairs ran 5-6 m into the slum's lane and closed it - the lane
+	# walk stopped at vs12's). Each stair's walking line is kept in stoop_paths (its own test).
 	var steps := 0
 	for lot in lots:
 		if CUTS.has(lot.code):
 			continue
 		var out: float = lot.d * 0.5 + PLINTH_LEDGE
+		var door: Vector2 = lot.c + lot.f * (lot.d * 0.5 + 0.3)
+		var level: float = lot.level - 0.02
+		var straight := _steps(book, node, ground, lot.c + lot.f * out, lot.f, lot.s, STOOP_WIDTH, level, STOOP_OUT, false)
+		if straight[1]:
+			if straight[0] > 0:
+				var placed := _steps(book, node, ground, lot.c + lot.f * out, lot.f, lot.s, STOOP_WIDTH, level, STOOP_OUT, true)
+				steps += int(placed[0])
+				stoop_paths[lot.code] = PackedVector2Array([door, placed[2]])
+			continue
+		# the landing before the door, then along the facade
+		var landing: Vector2 = lot.c + lot.f * (out + LANDING * 0.5)
 		var yaw := rad_to_deg(atan2(lot.f.x, lot.f.y))
-		# Out from the door slot by slot, the walking surface S: on each slot the highest ground along
-		# the path's middle, but never more than one riser under the slot before - where the ground
-		# under S falls away, a stone step at S (Codex d086d7a, the actual hero at vs12: the shack's
-		# 1 m level front, then the lane 2.1 m down within the next 0.7 m). The block's foot is the
-		# lowest ground over the step's whole width (the lane also falls sideways).
-		var walk: float = lot.level - 0.02
-		var idle := 0
-		var built := 0
-		for k in range(1, STOOP_MAX + 1):
-			var p: Vector2 = lot.c + lot.f * (out + STOOP_RUN * (k - 0.5))
-			var high := -INF
-			var low := INF
-			var foot := INF
-			for a in [-0.5, -0.17, 0.17, 0.5]:
-				for q in [-STOOP_WIDTH * 0.5, -0.4, 0.0, 0.4, STOOP_WIDTH * 0.5]:
-					var e: Vector2 = p + lot.f * (STOOP_RUN * a) + lot.s * q
-					var h := float(ground.call(e.x, e.y))
-					foot = minf(foot, h)
-					if absf(q) < 0.5:
-						high = maxf(high, h)
-						low = minf(low, h)
-			var top := minf(maxf(high, walk - STOOP_RISE), walk)
-			walk = top
-			if low >= top - 0.05:
-				idle += 1
-				# done once its steps have met the ground again (a level front first is walked)
-				if built > 0 and idle >= 2:
-					break
-				continue
-			idle = 0
-			built += 1
-			var bottom := foot - 0.4
-			book._stair_block(node, Vector3(p.x, (top + bottom) * 0.5, p.y), Vector3(STOOP_WIDTH, top - bottom, STOOP_RUN + 0.03), yaw, "masonry")
+		var low := INF
+		for a in [-0.5, 0.0, 0.5]:
+			for q in [-0.5, 0.0, 0.5]:
+				var e: Vector2 = landing + lot.f * (LANDING * a) + lot.s * (STOOP_WIDTH * q)
+				low = minf(low, float(ground.call(e.x, e.y)))
+		if low < level - 0.05:
+			book._stair_block(node, Vector3(landing.x, (level + low - 0.4) * 0.5, landing.y), Vector3(STOOP_WIDTH, level - low + 0.4, LANDING), yaw, "masonry")
 			steps += 1
+		var probe := 3.0
+		var left := float(ground.call((landing - lot.s * probe).x, (landing - lot.s * probe).y))
+		var right := float(ground.call((landing + lot.s * probe).x, (landing + lot.s * probe).y))
+		var side: Vector2 = lot.s if right < left else -lot.s
+		var start: Vector2 = landing + side * (STOOP_WIDTH * 0.5)
+		var flight := _steps(book, node, ground, start, side, lot.f, LANDING, level, STOOP_MAX, true)
+		steps += int(flight[0])
+		stoop_paths[lot.code] = PackedVector2Array([door, landing, flight[2]])
 	# the cuts' collars: the hole's cells less the walls and the sunken yard, paved blocks at the
 	# floor's level (along the back edge raised to the rock's ground where that stands higher, so no gap
 	# shows)
