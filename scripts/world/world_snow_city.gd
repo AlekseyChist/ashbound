@@ -11,6 +11,9 @@ const MODULES := {
     "Лч": {"scene":"res://scenes/buildings/world-architecture-v1/s_infirmary.tscn","walls":Vector2(11,6)},
     "Ал": {"scene":"res://scenes/buildings/world-architecture-v1/s_alchemist.tscn","walls":Vector2(9,6)},
 }
+const MAX_SHADOW_LIGHTS := 3
+const SHADOW_DISTANCE := 45.0
+var interior_lights: Array[OmniLight3D] = []
 var world: Node3D
 var placed: Array[Dictionary] = []
 var unresolved: Array[Dictionary] = []
@@ -51,6 +54,9 @@ func build(world_node: Node3D) -> void:
         model.set_meta("snow_book_plot",plot.duplicate(true))
         add_child(model)
         placed.append({"code":code,"plot":plot,"node":model,"floor":floor_y})
+        for light in model.find_children("*","OmniLight3D",true,false):
+            light.shadow_enabled = false
+            interior_lights.append(light)
         for portal in model.find_children("*","Node3D",true,false):
             if portal.get_script() == Door:
                 doors.append(portal)
@@ -76,8 +82,23 @@ func clear_door_highlights() -> void:
             portal.set_highlight(false)
 func set_lighting_enabled(enabled: bool) -> void:
     lighting_enabled = enabled
+    if not enabled:
+        for light in interior_lights:
+            if is_instance_valid(light):light.shadow_enabled = false
     for item in placed:
         item.node.set_interior_lights_enabled(enabled)
+# Modules own illumination and interior guards; the city budgets shadow maps.
+func _update_shadow_budget(observer: Vector3) -> void:
+    var candidates: Array[Dictionary] = []
+    for light in interior_lights:
+        if not is_instance_valid(light):continue
+        light.shadow_enabled = false
+        var distance := observer.distance_squared_to(light.global_position)
+        if lighting_enabled and light.is_visible_in_tree() and distance < SHADOW_DISTANCE * SHADOW_DISTANCE:
+            candidates.append({"light":light,"distance":distance})
+    candidates.sort_custom(func(a: Dictionary,b: Dictionary) -> bool: return a.distance < b.distance)
+    for i in range(mini(MAX_SHADOW_LIGHTS,candidates.size())):
+        candidates[i].light.shadow_enabled = true
 func _process(delta: float) -> void:
     _elapsed += delta
     if _elapsed < .5 or world == null or world.get("player") == null:
@@ -94,3 +115,5 @@ func _process(delta: float) -> void:
         var occupied: bool = absf(point.x) < float(plot.w)*.5+.3 and absf(point.z) < float(plot.d)*.5+.3 and point.y > lower and point.y < 11
         var near: bool = Vector2(point.x,point.z).length() < 32
         model.set_interior_visible(near,occupied)
+    var camera := get_viewport().get_camera_3d()
+    _update_shadow_budget(actor.global_position if camera == null else camera.global_position)

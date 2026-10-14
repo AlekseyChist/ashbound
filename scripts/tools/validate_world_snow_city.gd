@@ -48,6 +48,27 @@ func run() -> void:
     for item in city.placed:
         if item.node.lights_enabled:fail("Lighting override lost");return
     city.set_lighting_enabled(true)
+    var visited_shadow_lamps: Dictionary = {}
+    for location in [city.placed[0].node.global_position,city.placed[3].node.global_position]:
+        for item in city.placed:item.node.set_interior_visible(true)
+        city._update_shadow_budget(location)
+        var count := 0
+        var eligible := 0
+        for light in city.interior_lights:
+            if light.is_visible_in_tree() and light.global_position.distance_to(location)<city.SHADOW_DISTANCE:eligible += 1
+            if light.shadow_enabled:
+                count += 1
+                visited_shadow_lamps[light.get_instance_id()] = true
+                if light.global_position.distance_to(location)>=city.SHADOW_DISTANCE:fail("Far lamp allocated shadows");return
+        if count!=mini(city.MAX_SHADOW_LIGHTS,eligible) or count==0:fail("Near shadow allocation missing or over budget");return
+    if visited_shadow_lamps.size()<=city.MAX_SHADOW_LIGHTS:fail("Observer movement did not reassign shadows");return
+    city._update_shadow_budget(Vector3(10000,10000,10000))
+    for light in city.interior_lights:
+        if light.shadow_enabled:fail("Distant city kept shadow maps");return
+    city.set_lighting_enabled(false)
+    for light in city.interior_lights:
+        if light.shadow_enabled:fail("Disabled lighting kept shadow maps");return
+    city.set_lighting_enabled(true)
     var copy := city.get_doors();copy.clear()
     if city.get_doors().size()!=7:fail("Caller mutated registry");return
     print("SNOW_CITY_CONTRACT_PASS mapped=6 unresolved=35 doors=7 frame=world_root fixture=",isolated," whole_city_ready=false")
