@@ -35,7 +35,20 @@ def slate_paint():
 SLATE=slate_paint()
 LINEN=C.mat('SA bedding',(.37,.36,.29,1),.98)
 BOOK=C.mat('SA book covers',(.20,.16,.11,1),.98)
-IRON=C.mat('SA iron',(.09,.10,.11,1),.83)
+def dark_metal(name,color):
+    m=C.mat(name,(*color,1),.98);m['uv_metres']=.15
+    im=bpy.data.images.new(name+' patina',width=64,height=64)
+    pixels=[]
+    for y in range(64):
+        for x in range(64):
+            value=.045+.009*math.sin(x*.7+y*.4)
+            pixels.extend([value,value,value,1])
+    im.pixels.foreach_set(pixels);im.pack()
+    tex=m.node_tree.nodes.new('ShaderNodeTexImage');tex.image=im
+    m.node_tree.links.new(tex.outputs['Color'],m.node_tree.nodes['Principled BSDF'].inputs['Base Color'])
+    return m
+IRON=dark_metal('SA black cast iron',(.055,.060,.065))
+LEAD=dark_metal('SA weathered lead',(.09,.10,.11))
 coll=[];furniture=[]
 def box(n,p,s,m,solid=True):
     o=C.box(n,p,s,m,0 if m==PLASTER else .015)
@@ -91,16 +104,21 @@ box('ridge cap',(0,0,5.56),(9,.2,.15),SLATE,False)
 box('stove hearth',(-3,-.9,.06),(1.05,1.05,.12),STONE)
 box('warming stove',(-3,-.9,.75),(.9,.9,1.26),STONE)
 box('stove hatch',(-2.5,-.9,.65),(.08,.4,.38),IRON,False)
+for y in (-1.12,-.68):box('cast iron hatch jamb',(-2.445,y,.65),(.05,.045,.47),IRON,False)
+for z in (.425,.875):box('cast iron hatch rail',(-2.445,-.9,z),(.05,.485,.045),IRON,False)
+for z in (.54,.77):box('hatch hinge',(-2.41,-1.10,z),(.055,.065,.045),IRON,False)
+box('hatch latch base',(-2.43,-.74,.65),(.08,.055,.06),IRON,False)
+box('hatch latch handle',(-2.385,-.74,.69),(.035,.035,.14),IRON,False)
 box('stove cornice',(-3,-.9,1.5),(1,1,.16),STONE)
 box('continuous flue',(-3,-.9,3.6),(.6,.6,4.2),STONE)
 for dx in (-.25,.25):box('chimney wall',(-3+dx,-.9,6.05),(.1,.6,.7),STONE)
 for dy in (-.25,.25):box('chimney wall',(-3,-.9+dy,6.05),(.4,.1,.7),STONE)
 for dx in (-.30,.30):box('chimney rim',(-3+dx,-.9,6.46),(.16,.76,.12),STONE)
 for dy in (-.30,.30):box('chimney rim',(-3,-.9+dy,6.46),(.44,.16,.12),STONE)
-for y in (-1.36,-.44):
-    flash=box('chimney flashing',(-3,y,5.5-abs(y)*SLOPE+.1),(1.12,.24,.035),IRON,False);flash.rotation_euler.x=math.atan(SLOPE)
-for x in (-3.46,-2.54):
-    flash=box('chimney side flashing',(x,-.9,5.5-.9*SLOPE+.1),(.22,.92*math.sqrt(1+SLOPE*SLOPE),.035),IRON,False);flash.rotation_euler.x=math.atan(SLOPE)
+for y in (-1.275,-.525):
+    flash=box('chimney flashing',(-3,y,5.5-abs(y)*SLOPE+.1),(1.0,.20,.035),LEAD,False);flash.rotation_euler.x=math.atan(SLOPE)
+for x in (-3.375,-2.625):
+    flash=box('chimney side flashing',(x,-.9,5.5-.9*SLOPE+.1),(.20,.95*math.sqrt(1+SLOPE*SLOPE),.035),LEAD,False);flash.rotation_euler.x=math.atan(SLOPE)
 LINEN=C.mat('S warm bedding',(.35,.31,.23,1),.98)
 def prop(n,p,s,m=WOOD):
     o=box(n,p,s,m);o['part_role']='interior_furniture';furniture.append(o)
