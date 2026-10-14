@@ -11,7 +11,7 @@ sys.path.insert(0, str(ROOT/'art/blender'))
 import buildings_common as C
 C.reset()
 OUT = ROOT/'assets/buildings/world-architecture-v1'; OUT.mkdir(parents=True,exist_ok=True)
-QA = ROOT/'local/qa/snow-academy-tower/r2'; QA.mkdir(parents=True,exist_ok=True)
+QA = ROOT/'local/qa/snow-academy-tower/r3'; QA.mkdir(parents=True,exist_ok=True)
 
 def surface(name,filename,metres):
     m=C.mat(name,(1,1,1,1),.96); m['uv_metres']=metres
@@ -101,16 +101,23 @@ box('Eldren lamp fixing cleat',(-3,0,10.545),(.20,.20,.03),WOOD)
 # All exterior walls are old masonry, not residential half-timber.
 for h in LEVELS:
     top=h+3.6 if h<SERVICE else 27.8
-    front=[(-3.8,-2.8,h+1.15,h+2.5)] if h<10.8 else [(-.35,.35,h+1.4,min(top,h+2.5))]
+    wide=h<10.8
+    mids={'south':-3.3 if wide else 0,'north':-.7 if wide else 0,'west':-2.2 if wide else 0,'east':3.5 if wide else 0}
+    # A window behind this level's outer flight moves to the flight's low end (Codex 176/2: the
+    # stair crossed the north opening at 3.6; the narrow service lights sat behind theirs too).
+    side={0:('east',-2.2),1:('north',2.2),2:('west',2.2),3:('south',-2.2)}.get(round(h/3.6)%4)
+    if side and abs(mids[side[0]])<=3:mids[side[0]]=side[1]
+    half=.5 if wide else .35;lo=h+1.15 if wide else h+1.4;hi=h+2.5 if wide else min(top,h+2.5)
+    front=[(mids['south']-half,mids['south']+half,lo,hi)]
     if h==0:front.append((-.8,.8,0,2.5))
-    rear=[(-1.2,-.2,h+1.15,h+2.5)] if h<10.8 else [(-.35,.35,h+1.4,min(top,h+2.5))]
-    west=[(-2.7,-1.7,h+1.15,h+2.5)] if h<10.8 else [(-.35,.35,h+1.4,min(top,h+2.5))]
+    rear=[(mids['north']-half,mids['north']+half,lo,hi)]
+    west=[(mids['west']-half,mids['west']+half,lo,hi)]
     if h==7.2:west.append((-.6,.6,8.2,9.2))
-    east=[(3.,4.,h+1.15,h+2.5)] if h<10.8 else [(-.35,.35,h+1.4,min(top,h+2.5))]
+    east=[(mids['east']-half,mids['east']+half,lo,hi)]
     if h==SERVICE:east=[(-2.9,-1.3,SERVICE,SERVICE+2.5)]
     for n,axis,fixed,a,b,holes in [('south','x',-5.3,-5.5,5.5,front),('north','x',5.3,-5.5,5.5,rear),('west','y',-5.3,-5.1,5.1,west),('east','y',5.3,-5.1,5.1,east)]:wall(n+' old masonry',axis,fixed,a,b,h,top,holes)
     # Narrow service lights and deep lower windows have masonry frames.
-    for fixed,mid,axis in [(-5.3,-3.3 if h<10.8 else 0,'x'),(5.3,-.7 if h<10.8 else 0,'x'),(-5.3,-2.2 if h<10.8 else 0,'y'),(5.3,3.5 if h<10.8 else 0,'y')]:
+    for fixed,mid,axis in [(-5.3,mids['south'],'x'),(5.3,mids['north'],'x'),(-5.3,mids['west'],'y'),(5.3,mids['east'],'y')]:
         if fixed==5.3 and axis=='y' and h==SERVICE:continue
         w=1.0 if h<10.8 else .7;lo=h+1.15 if h<10.8 else h+1.4;hi=h+2.5
         for u in (mid-w/2-.055,mid+w/2+.055):
@@ -175,9 +182,18 @@ def stone_guard(n,a,b,h0,h1=None,width=.14):
 def repair_guard(n,a,b,h):
     beam(n+' repair handrail',(*a,h+1.05),(*b,h+1.05),.08,.09,WOOD,True)
     beam(n+' repair midrail',(*a,h+.45),(*b,h+.45),.07,.08,WOOD,True)
-    length=math.dist(a,b);count=max(1,math.ceil(length/.7))
+    length=math.dist(a,b);count=max(1,math.ceil(length/1.4))
+    pts=[]
     for k in range(count+1):
-        t=k/count;box(n+' repair baluster',(a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,h+.525),(.07,.07,1.05),WOOD,True)
+        t=k/count;pts.append((a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t))
+    for k,(x,y) in enumerate(pts):
+        box(n+' repair baluster',(x,y,h+.525),(.07,.07,1.05),WOOD,True)
+        box(n+' scaffold pole top',(x,y,h+1.20),(.08,.08,.30),WOOD)
+        box(n+' rope lashing',(x,y,h+1.05),(.13,.13,.06),WOOD)
+    for k in range(count):
+        x0,y0=pts[k];x1,y1=pts[k+1]
+        if k%2:beam(n+' repair brace',(x1,y1,h+.10),(x0,y0,h+1.0),.06,.06,WOOD)
+        else:beam(n+' repair brace',(x0,y0,h+.10),(x1,y1,h+1.0),.06,.06,WOOD)
 def internal_stairs(h):
     for k in range(10):
         box('old internal first step',(2.5,-2+(k+.5)*.3,h+(k+1)*.18-.06),(1.35,.3,.12),STONE)
@@ -195,11 +211,11 @@ def internal_stairs(h):
     for x in (2.0,4.6):box('turn masonry support',(x,2.05,h+.85),(.30,.30,1.7),STONE,True)
 for h in LEVELS[:-1]:internal_stairs(h)
 # Medieval cantilevers: wedges keyed .25m into the wall, never a freestanding cage.
-def corbel(n,face,u,h,reach=7.0):
+def corbel(n,face,u,h,reach=7.0,solid=True):
     v=[(5.25,u-.18,h-.9),(5.25,u+.18,h-.9),(5.25,u-.18,h-.24),(5.25,u+.18,h-.24),(reach,u-.18,h-.24),(reach,u+.18,h-.24)]
     angle=face*math.pi/2
     verts=[(x*math.cos(angle)-y*math.sin(angle),x*math.sin(angle)+y*math.cos(angle),z) for x,y,z in v]
-    mesh(n,verts,[tuple(reversed(f)) for f in [(0,1,3,2),(0,2,4),(1,5,3),(2,3,5,4),(0,4,5,1)]],STONE,True)
+    mesh(n,verts,[tuple(reversed(f)) for f in [(0,1,3,2),(0,2,4),(1,5,3),(2,3,5,4),(0,4,5,1)]],STONE,solid)
 FACES=[((6.25,-3),(6.25,3)),((3,6.25),(-3,6.25)),((-6.25,3),(-6.25,-3)),((-3,-6.25),(3,-6.25))]
 CORNERS=[(6.25,6.25),(-6.25,6.25),(-6.25,-6.25),(6.25,-6.25)]
 def outer_flight(k):
@@ -250,6 +266,12 @@ def ring(h,repair=False):
         for u in (-4.5,-1.5,1.5,4.5):
             if (f==3 or (f==2 and not repair)) and abs(u)<3:continue # Real eighth-flight opening, no consoles across it.
             corbel('gallery masonry corbel',f,u,h,reach=8.05 if f==2 and not repair else 7.0)
+    if not repair:
+        # Machicolation rhythm: lighter corbels between the bearing ones (visual only).
+        for f in range(4):
+            for u in (-3.0,0.0,3.0):
+                if (f==3 or f==2) and abs(u)<3:continue
+                corbel('gallery machicolation corbel',f,u,h,reach=8.05 if f==2 else 7.0,solid=False)
     for a,b in [((-7,-7),(7,-7)),((7,-7),(7,7)),((7,7),(-7,7)),((-7,7),(-7,-7))]:
         if a[1]==-7 and b[1]==-7:
             if repair:
@@ -442,7 +464,7 @@ for m in j['materials']:
     if tint:m['pbrMetallicRoughness']['baseColorFactor']=[*tint,1]
 encoded=json.dumps(j,separators=(',',':')).encode();encoded+=b' '*((-len(encoded))%4);remaining=data[20+size:]
 asset.write_bytes(struct.pack('<III',0x46546c67,2,20+len(encoded)+len(remaining))+struct.pack('<II',len(encoded),0x4e4f534a)+encoded+remaining)
-stats={'author':'Codex direct revision2; no worker launches','wall_footprint':[11,11],'floor_heights':LEVELS,'service_level':SERVICE,'repair_level':REPAIR,'broken_stone_top':31.8,'design_height':33.2,'all_vertex_bounds_godot':[list(lo),list(hi)],'triangles':triangles,'visual_meshes':len(visual),'collision_meshes':sum(1 for o in C.ASSET.objects if o.type=='MESH' and '-colonly' in o.name),'internal_treads':140,'external_treads':160,'rise':.18,'run':.30,'width':1.35,'bytes':asset.stat().st_size,'sha256':hashlib.sha256(asset.read_bytes()).hexdigest(),'state':'revision2 built; QA pending'}
+stats={'author':'Codex revision2 base; local Qwen art revisions18f06e8/7ebb12f/5e8205c via Claude; Codex export and QA','wall_footprint':[11,11],'floor_heights':LEVELS,'service_level':SERVICE,'repair_level':REPAIR,'broken_stone_top':31.8,'design_height':33.2,'all_vertex_bounds_godot':[list(lo),list(hi)],'triangles':triangles,'visual_meshes':len(visual),'collision_meshes':sum(1 for o in C.ASSET.objects if o.type=='MESH' and '-colonly' in o.name),'internal_treads':140,'external_treads':160,'rise':.18,'run':.30,'width':1.35,'bytes':asset.stat().st_size,'sha256':hashlib.sha256(asset.read_bytes()).hexdigest(),'state':'art revision3 built; QA pending'}
 (QA/'stats.json').write_text(json.dumps(stats,indent=2),encoding='utf-8')
 bpy.ops.wm.save_as_mainfile(filepath=str(QA/'s_academy_tower.blend'))
 print('ACADEMY_TOWER_BUILD',json.dumps(stats))

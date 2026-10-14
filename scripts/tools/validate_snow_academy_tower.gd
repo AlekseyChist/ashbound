@@ -65,6 +65,25 @@ func toggle(portal: Node3D) -> bool:
     if not check(portal.try_toggle(actor),"Portal interaction "+str(actor.position)):return false
     await settle(90)
     return check(not portal.moving and not portal.blocked,"Unobstructed door failed to settle")
+# The seven relocated windows must have open upper panes through both the wall
+# and the exterior flight. Sample each side of the central mullion; the lower
+# part may legitimately look onto the flight's solid guard.
+func check_relocated_windows() -> bool:
+    var space:=building.get_world_3d().direct_space_state
+    var clear:=true
+    var samples:=0
+    for spec in [[3.6,Vector3(2.2,0,-5.3),Vector3(0,0,-1)], [7.2,Vector3(-5.3,0,-2.2),Vector3(-1,0,0)], [10.8,Vector3(-2.2,0,5.3),Vector3(0,0,1)], [14.4,Vector3(5.3,0,2.2),Vector3(1,0,0)], [18.0,Vector3(2.2,0,-5.3),Vector3(0,0,-1)], [21.6,Vector3(-5.3,0,-2.2),Vector3(-1,0,0)], [25.2,Vector3(-2.2,0,5.3),Vector3(0,0,1)]]:
+        var normal:Vector3=spec[2]
+        var side:=normal.cross(Vector3.UP)
+        for offset in [-.20,.20]:
+            for eye in [1.95,2.15]:
+                var target:Vector3=spec[1]+Vector3.UP*(float(spec[0])+eye)+side*offset
+                var hit:=space.intersect_ray(PhysicsRayQueryParameters3D.create(target-normal*.5,target+normal*2.3,1))
+                samples+=1
+                if not check(hit.is_empty(),"Relocated window blocked at floor "+str(spec[0])+" offset="+str(offset)+" height="+str(eye)):
+                    clear=false
+    print("TOWER_RELOCATED_WINDOWS samples=",samples," clear=",clear)
+    return clear
 func run() -> void:
     print("TOWER_R2_VALIDATED_ASSET_SHA256 ",FileAccess.get_sha256("res://assets/buildings/world-architecture-v1/s_academy_tower.glb"))
     clock=AtmosphereFixture.new();clock.name="Atmosphere";root.add_child(clock)
@@ -75,6 +94,7 @@ func run() -> void:
     var capsule:=CapsuleShape3D.new();capsule.radius=.3;capsule.height=1.75
     var shape:=CollisionShape3D.new();shape.shape=capsule;actor.add_child(shape);root.add_child(actor);actor.position=Vector3(0,.9,7.5)
     await settle()
+    if not check_relocated_windows():quit(1);return
     if not check(building.get_meta("architecture_revision",0)==2,"Scene revision not2"):quit(1);return
     var facts:=building.find_child("TowerFacts",true,false)
     if not check(facts!=null,"Self-contained GLB facts missing"):quit(1);return
