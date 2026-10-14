@@ -116,6 +116,8 @@ for y in (-0.9,1.3):
             box('timber stack',(2.4,y+dy,.77+k*.15),(1.9,.26,.08),WOOD,False)
         for dx in (-.7,.7):
             box('timber stack spacer',(2.4+dx,y,.72+k*.15),(.08,1.2,.04),WOOD,False)
+    # the stack keeps one obstacle over its whole volume (Codex 282: the boards came without one)
+    coll.append(('timber stack',(2.4,y,(.70+1.26)/2),(1.9,1.2,1.26-.70)))
 # Scales by the door, right side.
 box('scale table',(1.6,-2.0,.78),(1.0,.6,.12),WOOD)
 # its four legs to the floor (Codex 279: the top stood on nothing)
