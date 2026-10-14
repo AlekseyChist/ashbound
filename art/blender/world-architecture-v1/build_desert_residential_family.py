@@ -119,11 +119,7 @@ def build(identity, w, d, poor):
             size = (width * .8, .016, .035) if face != 'left' else (.016, width * .8, .035)
             box('plaster lip', lip, size, plaster, bevel=.004)
 
-        for x, z, width, height in [(-2.2, .55, .7, .5), (1.75, 1.6, .55, .4), (-1.5, 2.2, .45, .3)]:
-            peel('front', x, z, width, height)
-        for y, z, width, height in [(-.8, .9, .8, .6), (1.2, 2.0, .5, .35)]:
-            peel('left', y, z, width, height)
-        peel('back', 1.6, .75, .7, .45)
+        # (no exposed brick patches: as boxes they read as stuck-on tiles - Codex fdf444a)
         # Reed shade mat over the roof instead of an empty terrace.
         for x in (-w/2+.6, -.2):
             for y in (-d/2+.8, d/2-.8):
