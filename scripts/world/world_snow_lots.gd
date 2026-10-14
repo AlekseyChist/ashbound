@@ -12,6 +12,11 @@ extends RefCounted
 ## The plots are the book's (not moved). World frame = map - 1000, as world.world_ground.
 
 const PLAN := "res://assets/world/snow-city-v1/plan.json"
+## WORLD-BUILD-01E (D-118, Codex contract 218): the desert city's 43 plots on the same ground - its
+## levels from the ground under each plot (the bowl is flat to 0.6 m; the stores outside the east gate
+## stand on 1-1.5 m), set in grade_streets. Its codes overlap the snow city's (s1/s2/s10/s11): a lot's
+## `key` is its code in the snow city, "desert:" + code in the desert.
+const DESERT_PLAN := "res://assets/world/desert-city-v1/plan.json"
 const HALF := 1000.0
 const GRID := 5.0
 const FINE := 1.25
@@ -118,34 +123,10 @@ func setup(layout: Dictionary) -> void:
 	var levels := {}
 	for lot in layout.get("snow_lots", []):
 		levels[str(lot.code)] = float(lot.level)
-	if levels.is_empty() or not FileAccess.file_exists(PLAN):
+	if levels.is_empty():
 		return
-	var plan = JSON.parse_string(FileAccess.get_file_as_string(PLAN))
-	if not plan is Dictionary:
-		return
-	for line in plan.get("lines", []):
-		if str(line.kind) == "street":
-			var pts := PackedVector2Array()
-			for q in line.pts:
-				pts.append(Vector2(float(q[0]), float(q[1])))
-			# D-121 deviation agreed with Codex (bridge 183/184): the academy street's book end - the
-			# mine gate at 1089/290 and 1100/286 outside it - lies 30 m up the cliff behind the shelf,
-			# off the real mine road (mine_approach passes 45 m south). The gate moves into the shelf's
-			# south-east wall at 1082/306.8 and the street runs on to the mine road at 1081/331.4.
-			if pts[0].distance_to(MINE_STREET_FROM) < 1.0 and pts[pts.size() - 1].distance_to(MINE_STREET_BOOK_END) < 1.0:
-				pts = PackedVector2Array(MINE_STREET_ROUTE)
-			streets.append([pts, float(line.width)])
-	for b in plan.get("buildings", []):
-		var code := str(b.code)
-		if not levels.has(code):
-			continue
-		var yaw := deg_to_rad(float(b.yaw))
-		var f := Vector2(-sin(yaw), cos(yaw))
-		var lot := {
-			"code": code, "c": Vector2(float(b.x) - HALF, float(b.z) - HALF), "f": f, "s": Vector2(f.y, -f.x),
-			"w": float(b.w), "d": float(b.d), "level": levels[code], "shack": str(b.kind) == "shack",
-		}
-		lots.append(lot)
+	_read_plan(PLAN, "snow", levels)
+	_read_plan(DESERT_PLAN, "desert", {})
 	var area := Rect2()
 	for i in lots.size():
 		var lot := lots[i]
@@ -241,6 +222,39 @@ func setup(layout: Dictionary) -> void:
 	print("SNOW_LOTS lots=%d refined_cells=%d keep_buckets=%d" % [lots.size(), refined.size(), _keep.size()])
 
 
+## One city's plan: its streets and its plots (levels given, or NAN until grade_streets).
+func _read_plan(path: String, city: String, levels: Dictionary) -> void:
+	if not FileAccess.file_exists(path):
+		return
+	var plan = JSON.parse_string(FileAccess.get_file_as_string(path))
+	if not plan is Dictionary:
+		return
+	for line in plan.get("lines", []):
+		if str(line.kind) == "street":
+			var pts := PackedVector2Array()
+			for q in line.pts:
+				pts.append(Vector2(float(q[0]), float(q[1])))
+			# D-121 deviation agreed with Codex (bridge 183/184): the academy street's book end - the
+			# mine gate at 1089/290 and 1100/286 outside it - lies 30 m up the cliff behind the shelf,
+			# off the real mine road (mine_approach passes 45 m south). The gate moves into the shelf's
+			# south-east wall at 1082/306.8 and the street runs on to the mine road at 1081/331.4.
+			if city == "snow" and pts[0].distance_to(MINE_STREET_FROM) < 1.0 and pts[pts.size() - 1].distance_to(MINE_STREET_BOOK_END) < 1.0:
+				pts = PackedVector2Array(MINE_STREET_ROUTE)
+			streets.append([pts, float(line.width)])
+	for b in plan.get("buildings", []):
+		var code := str(b.code)
+		if city == "snow" and not levels.has(code):
+			continue
+		var yaw := deg_to_rad(float(b.yaw))
+		var f := Vector2(-sin(yaw), cos(yaw))
+		var lot := {
+			"code": code, "key": code if city == "snow" else city + ":" + code, "city": city,
+			"c": Vector2(float(b.x) - HALF, float(b.z) - HALF), "f": f, "s": Vector2(f.y, -f.x),
+			"w": float(b.w), "d": float(b.d), "level": float(levels.get(code, NAN)), "shack": str(b.kind) == "shack",
+		}
+		lots.append(lot)
+
+
 ## Roads and stair treads near the plots, as segments [a, b, half width], by the lots' buckets.
 func _add_keep(box: Rect2, segment: Array) -> void:
 	for bx in range(floori(box.position.x / BUCKET), floori(box.end.x / BUCKET) + 1):
@@ -255,15 +269,25 @@ func _add_keep(box: Rect2, segment: Array) -> void:
 
 ## The plot's authored level (its floor), NAN if the plan has no such plot - Codex's builder sets
 ## each module's floor here (the ground under it lies FLOOR_GAP lower).
-func level_of(code: String) -> float:
+func level_of(code: String, city := "snow") -> float:
 	for lot in lots:
-		if lot.code == code:
+		if lot.code == code and lot.city == city:
 			return lot.level
 	return NAN
 
 
 ## Grades the streets; `ground` takes world-frame x, z (the world's grid before the plots).
 func grade_streets(ground: Callable) -> void:
+	# the desert's plots: each at the mean of its ground (walls and their corners), to 5 cm
+	for lot in lots:
+		if not is_nan(float(lot.level)):
+			continue
+		var sum := 0.0
+		for u in [-0.5, 0.0, 0.5]:
+			for v in [-0.5, 0.0, 0.5]:
+				var q: Vector2 = lot.c + lot.s * (lot.w * u) + lot.f * (lot.d * v)
+				sum += float(ground.call(q.x, q.y))
+		lot.level = snappedf(sum / 9.0, 0.05)
 	# Grade each street (Codex 0208cfd / the lane walk: between the slum's plots of different levels
 	# the lane folded into a 55 deg crease; by the foot of stair C the street crossed a 46 deg bank).
 	for street in streets:
@@ -885,7 +909,7 @@ func build_plinths(book: Node3D, ground: Callable) -> void:
 			if straight[0] > 0:
 				var placed := _steps(book, node, ground, lot.c + lot.f * out, lot.f, lot.s, STOOP_WIDTH, level, STOOP_OUT, true)
 				steps += int(placed[0])
-				stoop_paths[lot.code] = PackedVector2Array([door, placed[2]])
+				stoop_paths[lot.key] = PackedVector2Array([door, placed[2]])
 			continue
 		# the landing before the door, then along the facade
 		var landing: Vector2 = lot.c + lot.f * (out + LANDING * 0.5)
@@ -905,7 +929,7 @@ func build_plinths(book: Node3D, ground: Callable) -> void:
 		var start: Vector2 = landing + side * (STOOP_WIDTH * 0.5)
 		var flight := _steps(book, node, ground, start, side, lot.f, LANDING, level, STOOP_MAX, true)
 		steps += int(flight[0])
-		stoop_paths[lot.code] = PackedVector2Array([door, landing, flight[2]])
+		stoop_paths[lot.key] = PackedVector2Array([door, landing, flight[2]])
 	# the cuts' collars: the hole's cells less the walls and the sunken yard, paved blocks at the
 	# floor's level (along the back edge raised to the rock's ground where that stands higher, so no gap
 	# shows)

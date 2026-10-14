@@ -283,7 +283,11 @@ func run() -> void:
 	var space: PhysicsDirectSpaceState3D = w.get_world_3d().direct_space_state
 	var origin: Vector3 = w.world_root.global_position
 	var lots: Array = w.snow_lots.lots
-	require(lots.size() == 41, "Expected 41 snow plots, got %d" % lots.size())
+	# the snow city's 41 plots and the desert city's 43 (WORLD-BUILD-01E), the same checks for both
+	var in_snow := lots.filter(func(l): return l.city == "snow").size()
+	var in_desert := lots.filter(func(l): return l.city == "desert").size()
+	require(in_snow == 41, "Expected 41 snow plots, got %d" % in_snow)
+	require(in_desert == 43, "Expected 43 desert plots, got %d" % in_desert)
 	var worst_read := 0.0
 	var side_stairs: Array[String] = []
 	for lot in lots:
@@ -296,8 +300,8 @@ func run() -> void:
 					var y = _lot_ray(space, origin, p, lot.level)
 					if y != null and y > lot.level - 3.3:
 						blocked += 1
-			print("SNOW_LOT %s cut blocked=%d" % [lot.code, blocked])
-			require(blocked == 0, "%s: the lower hall's cut is filled at %d points" % [lot.code, blocked])
+			print("SNOW_LOT %s cut blocked=%d" % [lot.key, blocked])
+			require(blocked == 0, "%s: the lower hall's cut is filled at %d points" % [lot.key, blocked])
 			# the sunken yard behind it: its floor at the lower hall's, clear above
 			if w.snow_lots.AREAWAYS.has(lot.code):
 				var aw: Array = w.snow_lots.AREAWAYS[lot.code]
@@ -309,8 +313,8 @@ func run() -> void:
 						var y = _lot_ray(space, origin, p, lot.level)
 						if y == null or absf(float(y) - floor_y) > 0.05:
 							off_floor += 1
-				print("SNOW_LOT %s yard off_floor=%d" % [lot.code, off_floor])
-				require(off_floor == 0, "%s: the sunken yard behind the lower door is not clear to its floor at %d points" % [lot.code, off_floor])
+				print("SNOW_LOT %s yard off_floor=%d" % [lot.key, off_floor])
+				require(off_floor == 0, "%s: the sunken yard behind the lower door is not clear to its floor at %d points" % [lot.key, off_floor])
 		var above := -INF
 		var below := -INF
 		var miss := 0
@@ -354,16 +358,16 @@ func run() -> void:
 			if maxf(step / 0.25, rise / 0.42) < maxf(door / 0.25, climb / 0.42):
 				door = step
 				climb = rise
-		print("SNOW_LOT %s level=%.2f above=%.2f below=%.2f miss=%d door_step=%.2f door_climb=%.2f" % [lot.code, lot.level, above, below, miss, door, climb])
-		require(miss == 0 and above <= 0.03, "%s: ground over the floor (%.2f m) or no ground" % [lot.code, above])
-		require(below <= 0.35, "%s: hangs %.2f m over the ground under its walls" % [lot.code, below])
+		print("SNOW_LOT %s level=%.2f above=%.2f below=%.2f miss=%d door_step=%.2f door_climb=%.2f" % [lot.key, lot.level, above, below, miss, door, climb])
+		require(miss == 0 and above <= 0.03, "%s: ground over the floor (%.2f m) or no ground" % [lot.key, above])
+		require(below <= 0.35, "%s: hangs %.2f m over the ground under its walls" % [lot.key, below])
 		# a door with a stair along its facade is walked down that stair below instead
-		var turned: bool = w.snow_lots.stoop_paths.has(lot.code) and w.snow_lots.stoop_paths[lot.code].size() == 3
+		var turned: bool = w.snow_lots.stoop_paths.has(lot.key) and w.snow_lots.stoop_paths[lot.key].size() == 3
 		if turned:
-			side_stairs.append(lot.code)
+			side_stairs.append(lot.key)
 		else:
-			require(door <= 0.25, "%s: its door front climbs %.2f m in a step (or a gap at the threshold)" % [lot.code, door])
-			require(climb <= 0.42, "%s: its door front climbs %.2f m in 0.5 m - too steep to walk" % [lot.code, climb])
+			require(door <= 0.25, "%s: its door front climbs %.2f m in a step (or a gap at the threshold)" % [lot.key, door])
+			require(climb <= 0.42, "%s: its door front climbs %.2f m in 0.5 m - too steep to walk" % [lot.key, climb])
 	print("SNOW_LOTS_GROUND_READ worst=%.3f" % worst_read)
 
 	# The door stairs along a facade (the slum): from the door down to the stair's end and back, by
