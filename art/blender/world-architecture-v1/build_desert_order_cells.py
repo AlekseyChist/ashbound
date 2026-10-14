@@ -1,4 +1,4 @@
-"""Desert plot Sh: cells and novice school, 14x7 m. Source-only WIP."""
+"""Desert plot Sh: cells and novice school, 14x7 m; canonical GLB source."""
 import sys,json,hashlib,math,struct
 from pathlib import Path
 import bpy,bmesh
@@ -29,7 +29,7 @@ def box(n,p,s,m,solid=True):
     return o
 # Shell: outer walls 14x7 (faces at x +-7, y +-3.5; inner faces +-6.6 / +-3.1), floor z=0, roof top ~3.6.
 box('foundation',(0,0,-.15),(14,7,.3),STONE)
-box('entry porch',(0,-4.3,-.12),(3.4,1.6,.24),STONE)
+box('entry porch',(0,-4.1,-.12),(3.4,1.2,.24),STONE)
 # Outer walls inside the 14x7 envelope: centre lines x +-6.8, y +-3.3, 0.4 thick (Codex 2fceb2a:
 # centred on +-7/+-3.5 they reached 14.4x7.4).
 # Front wall with 1.6 m door opening centred x=0.
@@ -86,17 +86,22 @@ for x in (-3.0,3.0):
     for dx in (-.14,.14):roof_piece('drain cheek',x+dx-.03,x+dx+.03,3.1,3.8,3.72,.12,STONE)
 # Supported timber shade at entry (front, max 1.2 m projection).
 for x in (-1.4,1.4):
-    box('canopy footing',(x,-4.65,.10),(.24,.24,.2),STONE)
-    box('canopy post',(x,-4.65,1.4),(.14,.14,2.4),WOOD)
-    C.beam('canopy rafter',(x,-3.5,2.95),(x,-4.7,2.62),.12,.12,WOOD)
-C.mesh('entry shade',[(-1.6,-3.5,2.96),(1.6,-3.5,2.96),(1.6,-4.7,2.62),(-1.6,-4.7,2.62)],[(0,1,2,3)],CLOTH)
+    box('canopy footing',(x,-4.55,.10),(.24,.24,.2),STONE)
+    box('canopy post',(x,-4.55,1.4),(.14,.14,2.4),WOOD)
+    C.beam('canopy rafter',(x,-3.5,2.95),(x,-4.62,2.62),.12,.12,WOOD)
+C.mesh('entry shade',[(-1.6,-3.5,2.96),(1.6,-3.5,2.96),(1.6,-4.64,2.62),(-1.6,-4.64,2.62)],[(0,1,2,3)],CLOTH)
 # Classroom furniture: two desk rows + benches, shelf, lectern.
-for y in (-2.6,-1.6):
+# A 0.75m aisle between the 0.7m desktops admits an adult capsule.
+for y in (-2.35,-.9):
     box('desk',(-5.6,y,.78),(1.6,.7,.14),WOOD)
     for dx in (-.7,.7):box('desk leg',(-5.6+dx,y,.36),(.1,.1,.72),WOOD,False)
     box('bench',(-3.9,y,.42),(1.2,.5,.10),WOOD)
     for dx in (-.5,.5):box('bench leg',(-3.9+dx,y,.18),(.08,.08,.36),WOOD,False)
-box('shelf',(-6.35,1.6,1.2),(0.4,2.4,2.0),WOOD)
+# Preserve the source footprint, but model the shelf as supported boards rather
+# than an opaque solid block. Its aisle and wall clearance stay unchanged.
+box('shelf back',(-6.52,1.6,1.0),(.06,2.4,2.0),WOOD)
+for y in (.45,2.75):box('shelf side',(-6.35,y,1.0),(.4,.1,2.0),WOOD)
+for z in (.06,.68,1.30,1.94):box('shelf board',(-6.35,1.6,z),(.4,2.4,.12),WOOD)
 box('lectern',(-3.1,1.6,.95),(.5,.5,.14),WOOD)
 box('lectern post',(-3.1,1.6,.47),(.12,.12,.94),WOOD,False)
 # Cells: bed, writing desk, storage chest each.
@@ -121,7 +126,10 @@ visual=[o for o in C.ASSET.objects if o.type=='MESH' and '-colonly' not in o.nam
 for o in visual:
     scale=o.data.materials[0].get('uv_metres',0)
     if not scale:continue
-    bm=bmesh.new();bm.from_mesh(o.data);uv=bm.loops.layers.uv.verify()
+    bm=bmesh.new();bm.from_mesh(o.data);bm.normal_update()
+    # New from_pydata meshes default to Float2 in Blender 5.2; joining to boxes
+    # would retain a separate empty UVMap, which glTF then exports as TEXCOORD_0.
+    uv=bm.loops.layers.uv.get('UVMap') or bm.loops.layers.uv.new('UVMap')
     for face in bm.faces:
         axis=max(range(3),key=lambda i:abs(face.normal[i]))
         for loop in face.loops:
