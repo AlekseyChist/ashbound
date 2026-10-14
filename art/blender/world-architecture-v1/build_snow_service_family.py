@@ -263,6 +263,26 @@ def build(slug,w,d,kind):
         table('shop counter',-1.80,-1.30,1.65,.75,.90)
         table('craft workbench',-1.70,1.15,1.90,.85,.85)
         bench('craft stool',-.65,1.15,.40)
+        # A hanging trade sign on an iron bracket, right of the door, readable along the street.
+        box('sign bracket arm',(1.4,-d/2-.33,2.55),(.04,.66,.04),iron)
+        C.beam('sign bracket brace',(1.4,-d/2,2.15),(1.4,-d/2-.45,2.53),.03,.03,iron)
+        for y in (-d/2-.25,-d/2-.61):box('sign chain',(1.4,y,2.43),(.02,.02,.22),iron)
+        box('trade sign board',(1.4,-d/2-.43,2.10),(.05,.52,.44),wood)
+        for xs in (1.4-.035,1.4+.035):
+            if kind=='shoemaker':
+                box('sign boot shaft',(xs,-d/2-.40,2.17),(.02,.11,.22),leather)
+                box('sign boot foot',(xs,-d/2-.46,2.03),(.02,.26,.08),leather)
+            elif kind=='saddler':
+                box('sign saddle seat',(xs,-d/2-.43,2.06),(.02,.30,.06),leather)
+                for dy in (-.15,.15):box('sign saddle horn',(xs,-d/2-.43+dy,2.14),(.02,.06,.14),leather)
+            else:
+                for k in (-1,0,1):
+                    box('sign candle',(xs,-d/2-.43+k*.13,2.06),(.02,.06,.20+.04*(k+1)),wax)
+                    box('sign wick',(xs,-d/2-.43+k*.13,2.06+(.20+.04*(k+1))/2+.02),(.02,.015,.04),iron)
+        # Wall stock on the west wall: what this shop makes.
+        for z in (1.55,1.95):
+            box('stock shelf',(-2.98,0,z),(.30,1.40,.05),wood,False,True)
+            for dy in (-.55,.55):box('stock shelf bracket',(-3.06,dy,z-.09),(.14,.05,.14),wood,False,True)
         # Whole goods are built to adult-world dimensions and stand on their surfaces.
         def foot(n,x,y,z,m,boot):
             # Adult whole last/boot foot: curved heel, instep, ball and tapered toe.
@@ -303,6 +323,20 @@ def build(slug,w,d,kind):
                 x=-2.35+i*.18
                 lathe('tapered candle',(x,-1.30,.90),[(.042,0),(.027,.32+(i%3)*.07),(.010,.35+(i%3)*.07)],wax,'candle',10)
                 box('candle wick',(x,-1.30,1.262+(i%3)*.07),(.012,.012,.025),iron,False,True,'candle')
+        # Wall stock on the west wall: what this shop makes.
+        if kind=='shoemaker':
+            for y in (-.35,.35):foot('stock boot',-2.98,y,1.975,leather,True)
+            for y in (-.45,0,.45):foot('stock last',-2.98,y,1.575,endgrain,False)
+        elif kind=='saddler':
+            for y in (-.45,0,.45):
+                points=[(-2.98,y+.13*math.cos(i*math.tau/12),1.72+.13*math.sin(i*math.tau/12)) for i in range(12)]
+                for i in range(12):tag(C.beam('stock strap ring',points[i],points[(i+1)%12],.03,.02,leather),'harness')
+            for dy in (-.3,.3):box('stock stirrup',(-2.98,dy,2.08),(.04,.14,.16),iron,False,True)
+        else:
+            box('candle drying rod',(-2.95,0,2.60),(.04,1.30,.04),iron,False,True)
+            for y in (-.48,-.16,.16,.48):
+                for i in range(5):box('hanging candle',(-2.95+(i-2)*.035,y+((i%2)-.5)*.03,2.40),(.03,.03,.34),wax,False,True)
+            for i in range(8):lathe('stock candle',(-2.98,-.56+i*.16,1.575),[(.03,0),(.022,.26),(.008,.28)],wax,'candle',8)
 
     visual=[o for o in C.ASSET.objects if o.type=='MESH']
     # Continuous world-space UV on zero-bevel limewash, including split wall piers.
