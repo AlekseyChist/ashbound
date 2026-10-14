@@ -70,6 +70,11 @@ void fragment() {
 	float foam = river ? max(smoothstep(3.6, 3.0, edge) * 0.3, rapids * 0.5) * smoothstep(0.5, 0.85, churn) : 0.0;
 	// Water in front of the ground behind it along the view ray (metres).
 	float raw = texture(depth_texture, SCREEN_UV).r;
+	// The Compatibility (OpenGL) renderer keeps depth in 0..1, not NDC (Codex 13 Oct: under it the
+	// water's thickness came out negative and every river vanished, the bed showed dry).
+#if CURRENT_RENDERER == RENDERER_COMPATIBILITY
+	raw = raw * 2.0 - 1.0;
+#endif
 	vec4 behind = INV_PROJECTION_MATRIX * vec4(SCREEN_UV * 2.0 - 1.0, raw, 1.0);
 	float thickness = -behind.z / behind.w + VERTEX.z;
 	float line = (1.0 - smoothstep(0.0, shore_foam, thickness)) * smoothstep(0.3, 0.7, noise(p * 4.0 + drift1 * 2.0) + 0.35);

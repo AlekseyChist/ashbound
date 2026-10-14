@@ -29,7 +29,7 @@ func build(scene: Node3D) -> void:
 	_build_massif()
 	_dress_ridge()
 	_build_walls()
-	print("WORLD_EDGES cliffs=%d boulders=%d" % [cliff_count, boulder_count])
+	print("WORLD_EDGES cliffs=%d boulders=%d seat=%d ms" % [cliff_count, boulder_count, seat_usec / 1000])
 
 
 ## Map metres of the nearest point on the north, west or east edge, and how far outside it is.
@@ -177,14 +177,9 @@ func _dress_ridge() -> void:
 				var scale := rng.randf_range(2.5, 4.5)
 				var yaw := atan2(inward.x, inward.y) + rng.randf_range(-0.35, 0.35)
 				var at := _add(batches, cliffs[kind], "cliff%d" % kind, face, scale, yaw, -0.6 * scale, CLIFF_VISIBLE)
-				# Solid: the hero and the camera stay outside the rock (80 % of its bounds).
-				var box := BoxShape3D.new()
-				var bounds: AABB = cliffs[kind].get_aabb()
-				box.size = bounds.size * scale * 0.8
-				var shape := CollisionShape3D.new()
-				shape.shape = box
-				shape.transform = Transform3D(Basis(Vector3.UP, yaw), at + Basis(Vector3.UP, yaw) * (bounds.get_center() * scale))
-				solid.add_child(shape)
+				# Solid by its own shape (owner 29 Sep: the hero walked through the rocks - a box at 80 %
+				# of the bounds left their bulges hollow, and the upper row had no collision at all).
+				_solid_rock(solid, cliffs[kind], scale, yaw, at)
 				cliff_count += 1
 			# A second row higher up the ridge covers its face with rock.
 			var up := along + inward * rng.randf_range(20.0, 30.0)
@@ -192,7 +187,8 @@ func _dress_ridge() -> void:
 				var kind2 := rng.randi_range(0, cliffs.size() - 1)
 				var scale2 := rng.randf_range(3.0, 5.0)
 				var yaw2 := atan2(inward.x, inward.y) + rng.randf_range(-0.5, 0.5)
-				_add(batches, cliffs[kind2], "cliff%d" % kind2, up, scale2, yaw2, -0.8 * scale2, CLIFF_VISIBLE)
+				var at2 := _add(batches, cliffs[kind2], "cliff%d" % kind2, up, scale2, yaw2, -0.8 * scale2, CLIFF_VISIBLE)
+				_solid_rock(solid, cliffs[kind2], scale2, yaw2, at2)
 				cliff_count += 1
 			t += CLIFF_STEP * rng.randf_range(0.8, 1.2)
 		t = 20.0
@@ -239,15 +235,54 @@ func _add(batches: Dictionary, mesh: Mesh, label: String, map: Vector2, scale: f
 			"centre": Vector3(c.x - world.HALF, world.world_ground(c.x - world.HALF, c.y - world.HALF), c.y - world.HALF)}
 	var entry: Dictionary = batches[key]
 	var p := Vector3(map.x - world.HALF, 0.0, map.y - world.HALF)
-	# On the lowest ground under its footprint, so no underside hangs over a slope.
-	var reach: float = mesh.get_aabb().size.length() * 0.35 * scale
-	var low: float = world.world_ground(p.x, p.z)
-	for k in 8:
-		var o := Vector2.from_angle(TAU * k / 8.0) * reach
-		low = minf(low, world.world_ground(p.x + o.x, p.z + o.y))
-	p.y = low + sink
+	# Owner 29 Sep (Forest hamlet): rocks hung in the air - the ground was sampled on a ring, but a
+	# rock's underside is ragged. Every vertex of its lower part now reaches the ground under it
+	# (turned and scaled as placed), then it goes a little deeper (0.15 m per unit of scale).
+	var basis := Basis(Vector3.UP, yaw).scaled(Vector3.ONE * scale)
+	var top := INF
+	var t0 := Time.get_ticks_usec()
+	for v in _underside(mesh):
+		var w: Vector3 = basis * v
+		top = minf(top, world.world_ground(p.x + w.x, p.z + w.z) - w.y)
+	p.y = top - 0.15 * scale
+	seat_usec += Time.get_ticks_usec() - t0
 	entry.transforms.append(Transform3D(Basis(Vector3.UP, yaw).scaled(Vector3.ONE * scale), p - entry.centre))
 	return p
+
+
+## A rock's collision: the convex hull of its mesh (simplified, cached per mesh), scaled and turned
+## as the rock is placed.
+var _hulls := {}
+func _solid_rock(solid: StaticBody3D, mesh: Mesh, scale: float, yaw: float, at: Vector3) -> void:
+	if not _hulls.has(mesh):
+		_hulls[mesh] = (mesh.create_convex_shape(true, true) as ConvexPolygonShape3D).points
+	var points := PackedVector3Array()
+	for v in _hulls[mesh]:
+		points.append(v * scale)
+	var hull := ConvexPolygonShape3D.new()
+	hull.points = points
+	var shape := CollisionShape3D.new()
+	shape.shape = hull
+	shape.transform = Transform3D(Basis(Vector3.UP, yaw), at)
+	solid.add_child(shape)
+
+
+## The underside of a rock mesh: every distinct vertex of its lower quarter (each must reach the
+## ground - a sample left hanging edges on steep slopes), cached per mesh.
+var seat_usec := 0
+var _undersides := {}
+func _underside(mesh: Mesh) -> PackedVector3Array:
+	if _undersides.has(mesh):
+		return _undersides[mesh]
+	var box := mesh.get_aabb()
+	var cut := box.position.y + box.size.y * 0.25
+	var seen := {}
+	for v in mesh.get_faces():
+		if v.y < cut:
+			seen[v.snapped(Vector3.ONE * 0.001)] = true
+	var out := PackedVector3Array(seen.keys())
+	_undersides[mesh] = out
+	return out
 
 
 func _near_sea(map: Vector2) -> bool:

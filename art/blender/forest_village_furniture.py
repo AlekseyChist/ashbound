@@ -337,9 +337,72 @@ def _hay(spec, mats, x, y, z, item="hay"):
     _tag(bale, spec, item)
 
 
+def _ledger(spec, mats, x, y, z, yaw_deg=0.0, open_=False, item="ledger"):
+    """A bound ledger: a dark leather cover and a block of pages; open, two pages on the cover."""
+    root = _new_root(item, spec, x, y, z)
+    root.rotation_euler[2] = math.radians(yaw_deg)
+    if open_:
+        cover = C.box(item + "_cover", (0, 0, 0.008), (0.46, 0.32, 0.016), mats["roof"], bevel=0.0)
+        _tag(cover, spec, item)
+        _parent_local(cover, root)
+        for sx in (-1, 1):
+            page = C.box(item + "_pages", (sx * 0.112, 0, 0.026), (0.21, 0.29, 0.02), mats["cloth"], bevel=0.004)
+            _tag(page, spec, item)
+            _parent_local(page, root)
+    else:
+        cover = C.box(item + "_cover", (0, 0, 0.03), (0.24, 0.32, 0.06), mats["roof"], bevel=0.006)
+        _tag(cover, spec, item)
+        _parent_local(cover, root)
+        pages = C.box(item + "_pages", (0.012, 0, 0.03), (0.22, 0.3, 0.046), mats["cloth"], bevel=0.0)
+        _tag(pages, spec, item)
+        _parent_local(pages, root)
+
+
+def _ledger_row(spec, mats, x0, x1, y, z, item):
+    """Ledgers standing on a shelf plank, spines out (-y), a few leaning at the end."""
+    x = x0
+    k = 0
+    while x < x1 - 0.05:
+        t = 0.05 + 0.02 * (k % 3)
+        h = 0.30 + 0.03 * ((k * 7) % 3)
+        book = C.box(item + "_book%d" % k, (x + t / 2, y, z + h / 2), (t, 0.24, h),
+                     mats["roof"] if k % 4 != 2 else mats["oak"], bevel=0.004)
+        _tag(book, spec, item)
+        x += t + 0.006
+        k += 1
+
+
+def _counting(spec, mats):
+    """FOREST-CITY-02 (book D-118, Codex 13 Oct): H01 as Gisbert's counting house - the clerk's desk
+    by the front window with an open ledger and an ink pot, a visitor's chair, a record shelf of
+    ledgers on the back wall where the bed was, two strapped chests; hearth, ladder, pegs and bucket
+    as in the village house. The village kit's own pieces only."""
+    f = spec["floor"]
+    _hearth(spec, mats, -1.6, 2.65)
+    _table(spec, mats, 1.55, -2.1, 1.4, 0.85, 0.78, "desk")
+    _chair(spec, mats, 1.55, -1.15, -1, "clerk_chair")
+    _chair(spec, mats, 1.55, -3.0, 1, "visitor_chair")
+    _ledger(spec, mats, 1.45, -2.05, f + 0.81, 8.0, True, "open_ledger")
+    _ledger(spec, mats, 2.0, -2.25, f + 0.81, -12.0, False, "closed_ledger")
+    _vessel(spec, mats, 'ink_pot', 1.0, -1.9, f + 0.81, 0.035, 0.06)
+    _shelf(spec, mats, 1.55, 3.4, 1.8, 0.4, 3, "record_shelf")
+    for level, z in ((0, 0.5), (1, 1.2)):
+        _ledger_row(spec, mats, 0.72, 2.38, 3.4, f + z + 0.025, "shelf_ledgers%d" % level)
+    _crate(spec, mats, 1.1, 3.4, 0.36, "shelf_crate", z_offset=1.9 + 0.025)
+    _vessel(spec, mats, 'shelf_jar', 2.0, 3.4, f + 1.925, 0.1, 0.22)
+    _chest(spec, mats, 2.05, 0.65)
+    _chest(spec, mats, 2.1, 2.05, item="tax_chest")
+    pegs = C.box("coatpegs", (-2.7, -2.7, f + 1.6), (0.4, 0.08, 0.5), mats["oak"], bevel=0.0)
+    _tag(pegs, spec, "coatpegs")
+    _vessel(spec, mats, 'bucket', -2.4, -3.3, f, .18, .35)
+    _ladder(spec, mats, -2.1, -1.05, 0.35, 2.95, 0.6, "attic_ladder")
+
+
 def build_furniture(spec, mats):
     fid = spec["id"]
-    if fid == "H01":
+    if fid == "H01" and spec.get("furnish") == "counting":
+        _counting(spec, mats)
+    elif fid == "H01":
         _hearth(spec, mats, -1.6, 2.65)
         _bed(spec, mats, 1.55, 2.25, 1.2, 2.1)
         _chest(spec, mats, 2.05, 0.65)
@@ -491,6 +554,46 @@ def build_furniture(spec, mats):
         for i, (bx, by) in enumerate([(-2.5, -5.0), (-2.5, -2.2), (-2.5, 0.6), (1.6, -5.0), (1.6, -2.2)]):
             _bed(spec, mats, bx, by, 1.0, 2.0, "loft_bed%d" % i, loft)
         _chest(spec, mats, -2.5, 3.0, 1.0, 0.6, 0.6, "loft_chest")
+    elif fid == "R01":
+        # FOREST-CITY-01 town hall, 12 x 24 m before the turn: x -6..6 (door at +x), y -12..12.
+        floor = spec["floor"]
+        _hearth(spec, mats, 0.0, 10.9, "hall_hearth", 1.6)
+        # The long council table down the middle, benches either side; the elder's seat at its head.
+        for i, ty in enumerate([-4.2, 2.2]):
+            _table(spec, mats, 0.0, ty, 1.3, 5.8, 0.8, "council_table%d" % i)
+            _bench(spec, mats, -1.05, ty, 0.4, 5.6, 0.46, "council_bench_l%d" % i)
+            _bench(spec, mats, 1.05, ty, 0.4, 5.6, 0.46, "council_bench_r%d" % i)
+        _chest(spec, mats, 0.0, -9.2, 1.4, 0.9, 1.2, "elder_seat")
+        _table(spec, mats, 0.0, -10.6, 3.0, 1.2, 0.35, "dais")
+        # Benches along the long walls, clear of the door (x +6, y -1.5..1.5).
+        for i, by in enumerate([-8.5, -4.5, 4.5, 8.5]):
+            _bench(spec, mats, -5.4, by, 0.45, 2.6, 0.46, "wall_bench_l%d" % i)
+        for i, by in enumerate([-8.5, -4.5, 4.5]):
+            _bench(spec, mats, 5.4, by, 0.45, 2.6, 0.46, "wall_bench_r%d" % i)
+        for i, (bx, by) in enumerate([(-5.2, 10.8), (4.9, 10.8), (5.3, 10.1)]):
+            _barrel(spec, mats, bx, by, 0.36, 0.95, "hall_barrel%d" % i)
+        for i, (vx, vy) in enumerate([(0.2, -5.0), (-0.3, -3.1), (0.1, 1.6), (-0.2, 3.4)]):
+            _vessel(spec, mats, "hall_cup%d" % i, vx, vy, floor + 0.83, 0.06, 0.13)
+        _crate(spec, mats, -5.1, -11.0, 0.6, "hall_chest_crate")
+    elif fid == "K01":
+        # FOREST-CITY-01 barracks, 10 x 20 m before the turn: x -5..5 (door at +x, y 2.5), y -10..10.
+        floor = spec["floor"]
+        _hearth(spec, mats, 0.0, 9.0, "barracks_hearth", 1.2)
+        # Bunks along the far wall and the near wall away from the door.
+        for i, by in enumerate([-8.3, -5.8, -3.3, -0.8, 1.7, 4.2]):
+            _bed(spec, mats, -3.9, by, 1.0, 2.0, "bunk_l%d" % i)
+        for i, by in enumerate([-8.3, -5.8, -3.3]):
+            _bed(spec, mats, 3.9, by, 1.0, 2.0, "bunk_r%d" % i)
+            _chest(spec, mats, 3.9, by + 1.25, 0.8, 0.4, 0.45, "bunk_chest%d" % i)
+        _table(spec, mats, 0.0, -2.0, 1.1, 3.0, 0.78, "mess_table")
+        _bench(spec, mats, -0.85, -2.0, 0.35, 2.9, 0.45, "mess_bench_l")
+        _bench(spec, mats, 0.85, -2.0, 0.35, 2.9, 0.45, "mess_bench_r")
+        # Weapon racks by the hearth end, barrels of water and ale.
+        _shelf(spec, mats, -4.4, 7.0, 0.45, 2.6, 3, "weapon_rack")
+        for i, (bx, by) in enumerate([(3.9, 8.8), (4.3, 7.9), (3.5, 9.3)]):
+            _barrel(spec, mats, bx, by, 0.34, 0.9, "barracks_barrel%d" % i)
+        for i, (cx_, cy_) in enumerate([(2.2, 9.2), (1.6, 9.4)]):
+            _crate(spec, mats, cx_, cy_, 0.55, "barracks_crate%d" % i)
     elif fid in ("T03A", "T03B"):  # T03B: the same inn in stone (INN-STONE-01)
         # Forest inn v3, 13 x 21 m: x -6.5..6.5, y -10.5 (front door) .. 10.5 (rear).
         floor = spec["floor"]

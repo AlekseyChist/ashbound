@@ -15,6 +15,8 @@ const CHUNK := 40.0
 const VISIBLE_END := 230.0
 ## On a phone the detailed trees reach 80 m (S23 in the forest: 42 FPS at 110 m and draw distance 300).
 var NEAR_END := 80.0 if OS.has_feature("mobile") else 110.0
+## LOD-CAP-01: however far the Draw distance, the detailed trees end by here (the cones take over).
+var NEAR_CAP := 110.0 if OS.has_feature("mobile") else 300.0
 const NEAR_KINDS := ["pine_tall", "spruce", "pine_young"]
 ## Height of a cone tree at scale 1 (the detailed kinds are scaled to match it).
 const CONE_HEIGHT := 10.6
@@ -41,9 +43,17 @@ func build(scene: Node3D) -> void:
 	mesh = _spruce_mesh()
 	for kind in NEAR_KINDS:
 		near_parts.append(_kind_parts(kind))
+	# FOREST-CITY-02: no tree in a forest city house's yard or on its trodden path (Codex 13 Oct:
+	# spruce branches over the tannery's approach); the city is built before the forest.
+	var keep_off: Array[Vector3] = []
+	var city: Node = world.get("forest_city")
+	if city != null:
+		keep_off = city.yards
 	var chunks: Dictionary = {}
 	for i in range(0, data.size() - RECORD_FLOATS + 1, RECORD_FLOATS):
 		var map := Vector2(data[i], data[i + 1])
+		if _kept_off(map - Vector2(world.HALF, world.HALF), keep_off):
+			continue
 		var key := Vector2i(floori(map.x / CHUNK), floori(map.y / CHUNK))
 		if not chunks.has(key):
 			chunks[key] = []
@@ -51,6 +61,15 @@ func build(scene: Node3D) -> void:
 	for key: Vector2i in chunks:
 		_build_chunk(key, chunks[key], data)
 	print("WORLD_FAR_FOREST trees=%d chunks=%d" % [tree_count, chunk_count])
+
+
+## Whether a tree at `p` (world_root frame) stands in one of the circles (x, z, radius), its crown
+## (TRUNK_RADIUS + 1.5 m) included.
+func _kept_off(p: Vector2, circles: Array[Vector3]) -> bool:
+	for c in circles:
+		if p.distance_to(Vector2(c.x, c.y)) < c.z + TRUNK_RADIUS + 1.5:
+			return true
+	return false
 
 
 func _build_chunk(key: Vector2i, records: Array, data: PackedFloat32Array) -> void:
@@ -90,6 +109,7 @@ func _build_chunk(key: Vector2i, records: Array, data: PackedFloat32Array) -> vo
 	batch.visibility_range_end = VISIBLE_END
 	batch.visibility_range_end_margin = 10.0
 	batch.set_meta("base_visibility_begin", NEAR_END)
+	batch.set_meta("begin_cap", NEAR_CAP)
 	batch.set_meta("base_visibility_end", VISIBLE_END)
 	batch.add_to_group(&"draw_distance_scaled")
 	batch.add_child(body)
@@ -130,6 +150,7 @@ func _add_near(batch: MultiMeshInstance3D, records: Array, data: PackedFloat32Ar
 			near.visibility_range_end = NEAR_END
 			near.visibility_range_end_margin = 5.0
 			near.set_meta("base_visibility_end", NEAR_END)
+			near.set_meta("end_cap", NEAR_CAP)
 			near.add_to_group(&"draw_distance_scaled")
 			var source: MultiMeshInstance3D = wind.get(part[0])
 			if part[2] and source != null:
