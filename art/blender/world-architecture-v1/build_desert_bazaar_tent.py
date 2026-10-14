@@ -33,6 +33,24 @@ def box(n,p,s,m,solid=True):
         o['part_role']='interior_furniture'
     if solid:coll.append((n,p,s))
     return o
+def ring_solid(n,x,y,z,rings,m,role=True):
+    # a closed solid of octagonal rings [(dz, half_x, half_y), ...] from bottom to top around (x,y,z)
+    k=8
+    v=[]
+    for dz,hx,hy in rings:
+        for i in range(k):
+            a=math.pi*2*i/k+math.pi/8
+            v.append((x+hx*math.cos(a),y+hy*math.sin(a),z+dz))
+    f=[tuple(range(k-1,-1,-1))]
+    for r in range(len(rings)-1):
+        for i in range(k):
+            j=(i+1)%k
+            f.append((r*k+i,r*k+j,(r+1)*k+j,(r+1)*k+i))
+    t=(len(rings)-1)*k
+    f.append(tuple(range(t,t+k)))
+    o=C.mesh(n,v,f,m)
+    if role:o['part_role']='interior_furniture'
+    return o
 # Base slab 5x4.
 box('base',(0,0,-.08),(5,4,.16),STONE)
 # Posts 0.12x0.12 timber: front row y=-1.9 (h 2.6), rear row y=1.9 (h 2.24).
@@ -62,12 +80,12 @@ for x in (-1.95,.95):
 # Wares: baskets on the counter, carpet rolls by the rear drape, jars right,
 # crates left, trader stool.
 for x in (-1.6,-.9,-.2,.5):
-    box('basket',(x,-1.4,1.06),(.4,.35,.2),WOOL if x<-1 else CLAY,False)
+    ring_solid('basket',x,-1.4,.96,[(0,.15,.13),(.2,.2,.17),(.21,.18,.15)],WOOL if x<-1 else CLAY)
 for x in (-1.8,-1.2,-.6):
     r=C.beam('carpet roll',(x,1.6,.0),(x,1.6,1.4),.22,.22,WOOL)
     r['part_role']='interior_furniture'
 for x,y in ((1.5,1.2),(1.9,1.4),(1.7,.8)):
-    box('jar',(x,y,.3),(.32,.32,.6),CLAY,False)
+    ring_solid('jar',x,y,(.3)-0.300,[(0.000,0.099,0.099),(0.180,0.160,0.160),(0.372,0.147,0.147),(0.480,0.080,0.080),(0.552,0.072,0.072),(0.600,0.093,0.093)],CLAY)
 box('crate',(-1.9,.6,.3),(.6,.6,.6),WOOD)
 box('crate',(-1.9,.6,.85),(.5,.5,.5),WOOD)
 box('stool',(.5,-.6,.25),(.35,.35,.5),WOOD)
