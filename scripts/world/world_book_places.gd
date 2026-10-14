@@ -271,11 +271,14 @@ func build_stairs(stairs: Array) -> void:
 				low = minf(low, ground(at.x + p.x, at.y + p.z))
 			if rail == 4:
 				# a rope-bridge deck (the snow city's meltwater channel): planks on two stringers, rails
-				# both sides, a pair of posts down to the ground every other plank row
-				_stair_block(node, Vector3(at.x, top - 0.08, at.y), Vector3(width, 0.16, depth), yaw, "timber")
+				# both sides, a pair of posts down to the ground every other plank row. Each piece is
+				# tilted along the line through its neighbours, so the pieces meet without a ledge (Codex
+				# be13087: 0.11 m between flat pieces stopped the hero on stairs B).
+				var tilt := basis * Basis(Vector3.RIGHT, -atan(_deck_slope(all, n)))
+				_tilted_block(node, Vector3(at.x, top - 0.08, at.y), Vector3(width, 0.16, depth + 0.04), tilt, "timber", true)
 				for sx in [-1.0, 1.0]:
 					var off: Vector3 = basis * Vector3(sx * (width * 0.5 - 0.05), 0, 0)
-					_stair_block(node, Vector3(at.x + off.x, top + 0.5, at.y + off.z), Vector3(0.08, 1.0, depth), yaw, "timber")
+					_tilted_block(node, Vector3(at.x + off.x, top + 0.5, at.y + off.z), Vector3(0.08, 1.0, depth), tilt, "timber", true)
 					var g: float = ground(at.x + off.x, at.y + off.z)
 					if top - g > 0.4 and int(round(at.x * 3.0 + at.y * 7.0)) % 2 == 0:
 						var post_h := top - 0.16 - (g - SINK)
@@ -294,15 +297,30 @@ func build_stairs(stairs: Array) -> void:
 				var body_top := top - 0.1
 				var body_h := maxf(body_top - (low - SINK), 0.1)
 				_stair_collider(node, Vector3(at.x, body_top - body_h * 0.5, at.y), Vector3(width, body_h, depth), basis)
-				var pitch := atan2(STAIR_RISE, depth - 0.02)
+				# The slab rises from this tread's level at its low (+z) edge to the level of the record on
+				# its high side - the next tread, or a landing at its own level (then flat: Codex be13087,
+				# the last tread of a flight stood 0.18 m proud of the terrace).
+				var rise := _slab_high(all, n) - top
+				var pitch := atan2(rise, depth - 0.02)
 				var slab := basis * Basis(Vector3.RIGHT, pitch)
-				_stair_collider(node, Vector3(at.x, top + STAIR_RISE * 0.5 - 0.03, at.y), Vector3(width, 0.06, (depth - 0.02) / cos(pitch) + 0.04), slab)
-				# A flight's first raised tread over a landing or the ground (Codex be13087, the actual hero
-				# on snow stairs A/B/C: the slab began a full riser over the landing, a vertical edge at
-				# every entry): the same slope carried down one riser onto the plane below its low edge.
-				if not _tread_below(all, n):
-					var out: Vector3 = slab * Vector3(0, 0, (depth - 0.02) * 0.5 / cos(pitch) + STAIR_RUN_ENTRY * 0.5 / cos(pitch))
-					_stair_collider(node, Vector3(at.x + out.x, top + STAIR_RISE * 0.5 - 0.03 + out.y, at.y + out.z), Vector3(width, 0.06, STAIR_RUN_ENTRY / cos(pitch) + 0.04), slab)
+				if rise > 0.02:
+					_stair_collider(node, Vector3(at.x, top + rise * 0.5 - 0.03, at.y), Vector3(width, 0.06, (depth - 0.02) / cos(pitch) + 0.04), slab)
+				else:
+					# flat at its landing's level: it starts 3 cm in from its low edge and 2 mm down, under
+					# the end of the slope coming up to it (that end overshoots 2 cm; the flat slab's edge
+					# above it stopped the capsule with a 47 deg contact)
+					var inward: Vector3 = basis * Vector3(0, 0, -0.015)
+					_stair_collider(node, Vector3(at.x + inward.x, top - 0.032, at.y + inward.z), Vector3(width, 0.06, depth - 0.03), basis)
+				# Below its low edge: a landing, a deck or the ground (no lower tread whose slab already
+				# reaches this tread) - the slope carried down onto that plane (Codex be13087: the actual
+				# hero stopped at the entries of snow stairs A/B/C).
+				var below := _side(all, n, 1.0)
+				var covered := below >= 0 and float(all[below][4]) < 0.6 and _rail(all[below]) != 4 and absf(_slab_high(all, below) - top) < 0.03
+				var drop := STAIR_RISE if below < 0 else top - float(all[below][2])
+				if not covered and drop > 0.02 and drop < 0.4:
+					var entry := atan2(drop, STAIR_RUN_ENTRY)
+					var edge: Vector3 = basis * Vector3(0, 0, depth * 0.5 + STAIR_RUN_ENTRY * 0.5)
+					_stair_collider(node, Vector3(at.x + edge.x, top - drop * 0.5 - 0.03, at.y + edge.z), Vector3(width, 0.06, STAIR_RUN_ENTRY / cos(entry) + 0.04), basis * Basis(Vector3.RIGHT, entry))
 			# rails: 1 m over the tread, solid
 			var rails: Array = []
 			if rail == -1 or rail == 3:
@@ -321,17 +339,63 @@ const STAIR_RISE := 0.18
 const STAIR_RUN_ENTRY := 0.3
 
 
-## Whether the record next to tread n on its low side (one riser down) is itself a tread - its slab
-## then carries on; a landing, a deck or the ground below it gets an entry slope.
-func _tread_below(all: Array, n: int) -> bool:
-	var top := float(all[n][2])
+## The record next to n (n - 1 or n + 1) on the given side of n's own z axis (+1: the low side of a
+## tread), or -1.
+func _side(all: Array, n: int, sign: float) -> int:
+	var st: Array = all[n]
+	var basis := Basis(Vector3.UP, deg_to_rad(float(st[3])))
 	for k in [n - 1, n + 1]:
 		if k < 0 or k >= all.size():
 			continue
-		var other: Array = all[k]
-		if absf(top - float(other[2]) - STAIR_RISE) < 0.06 and float(other[4]) < 0.6 and int(other[6] if other.size() > 6 else 0) != 4:
-			return true
-	return false
+		var d := Vector3(float(all[k][0]) - float(st[0]), 0, float(all[k][1]) - float(st[1]))
+		if (basis.inverse() * d).z * sign > 0.0:
+			return k
+	return -1
+
+
+func _rail(st: Array) -> int:
+	return int(st[6]) if st.size() > 6 else 0
+
+
+## The level a tread's slab rises to at its high edge: the next record's, within one riser; else flat.
+func _slab_high(all: Array, n: int) -> float:
+	var top := float(all[n][2])
+	var k := _side(all, n, -1.0)
+	if k >= 0 and float(all[k][2]) > top + 0.02 and float(all[k][2]) < top + 0.3:
+		return float(all[k][2])
+	return top
+
+
+## A deck piece's slope along its own z: through its neighbours' levels.
+func _deck_slope(all: Array, n: int) -> float:
+	var st: Array = all[n]
+	var basis := Basis(Vector3.UP, deg_to_rad(float(st[3])))
+	var pts: Array = []
+	for k in [n - 1, n, n + 1]:
+		if k < 0 or k >= all.size():
+			continue
+		var d := Vector3(float(all[k][0]) - float(st[0]), 0, float(all[k][1]) - float(st[1]))
+		pts.append(Vector2((basis.inverse() * d).z, float(all[k][2])))
+	if pts.size() < 2:
+		return 0.0
+	var a: Vector2 = pts[0]
+	var b: Vector2 = pts[pts.size() - 1]
+	return 0.0 if absf(b.x - a.x) < 0.01 else clampf((b.y - a.y) / (b.x - a.x), -0.2, 0.2)
+
+
+## A box turned by a full basis (a tilted deck plank row), solid or not.
+func _tilted_block(parent: Node3D, centre: Vector3, size: Vector3, turn: Basis, colour: String, solid: bool) -> void:
+	var mesh := MeshInstance3D.new()
+	var box := BoxMesh.new()
+	box.size = size
+	mesh.mesh = box
+	mesh.material_override = _material(colour)
+	mesh.transform = Transform3D(turn, centre)
+	mesh.visibility_range_end = 300.0
+	parent.add_child(mesh)
+	boxes += 1
+	if solid:
+		_stair_collider(parent, centre, size, turn)
 
 func _stair_collider(parent: Node3D, centre: Vector3, size: Vector3, basis: Basis) -> void:
 	var body := StaticBody3D.new()
