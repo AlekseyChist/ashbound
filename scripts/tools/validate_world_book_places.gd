@@ -328,21 +328,36 @@ func run() -> void:
 				below = maxf(below, lot.level - y)
 				if not _on_plinth(space, origin, p, lot.level):
 					worst_read = maxf(worst_read, absf(float(w.world_ground(p.x, p.y)) - y))
-		var door := 0.0
+		# ... and over any 0.5 m no more than 0.42 m (about 40 deg: steps of 0.18 in 0.35 pass, a 54 deg
+		# bank does not - the vs12 lane). One walkable line is the door's path: the middle or 0.6 m to
+		# either side (an uphill door's bank may rise steeper beside the path).
+		var door := INF
+		var climb := INF
 		for q in [-0.6, 0.0, 0.6]:
 			var prev = null
-			for k in 15:
+			var ys: Array[float] = []
+			var step := 0.0
+			for k in 36:
 				var p: Vector2 = lot.c + lot.f * (lot.d * 0.5 + 0.05 + k * 0.1) + lot.s * q
 				var y = _lot_ray(space, origin, p, lot.level)
 				if y == null:
-					door = INF
+					step = INF
 					break
-				door = maxf(door, absf(lot.level - y) * 5.0 if prev == null else absf(y - prev))
+				# the threshold within 0.06 (the ground under the floor lies 0.05 lower, see FLOOR_GAP)
+				step = maxf(step, absf(lot.level - y) * 4.0 if prev == null else absf(y - prev))
 				prev = y
-		print("SNOW_LOT %s level=%.2f above=%.2f below=%.2f miss=%d door_step=%.2f" % [lot.code, lot.level, above, below, miss, door])
+				ys.append(float(y))
+			var rise := 0.0
+			for k in range(5, ys.size()):
+				rise = maxf(rise, absf(ys[k] - ys[k - 5]))
+			if maxf(step / 0.25, rise / 0.42) < maxf(door / 0.25, climb / 0.42):
+				door = step
+				climb = rise
+		print("SNOW_LOT %s level=%.2f above=%.2f below=%.2f miss=%d door_step=%.2f door_climb=%.2f" % [lot.code, lot.level, above, below, miss, door, climb])
 		require(miss == 0 and above <= 0.03, "%s: ground over the floor (%.2f m) or no ground" % [lot.code, above])
 		require(below <= 0.35, "%s: hangs %.2f m over the ground under its walls" % [lot.code, below])
 		require(door <= 0.25, "%s: its door front climbs %.2f m in a step (or a gap at the threshold)" % [lot.code, door])
+		require(climb <= 0.42, "%s: its door front climbs %.2f m in 0.5 m - too steep to walk" % [lot.code, climb])
 	print("SNOW_LOTS_GROUND_READ worst=%.3f" % worst_read)
 	require(worst_read <= 0.02, "world_ground misreads the snow plots' terrain by %.3f m" % worst_read)
 

@@ -94,20 +94,30 @@ func ground(x: float, z: float) -> float:
 
 
 const MASONRY := "res://assets/environment/village-house-materials-v1/stone_wall_02_%s_1k.jpg"
+const WOOD := "res://assets/environment/village-house-materials-v1/fine_grained_wood_%s_1k.jpg"
+## Codex a406d48 native: the flights' flat pale treads and flat brown rails and decks read as grey
+## blocks - the treads take the same stone, lighter and finer; the rails and decks the village houses'
+## timber. [texture, tint, uv scale] in world space.
+const TEXTURED := {
+	"masonry": [MASONRY, Color(0.78, 0.77, 0.72), 0.45],
+	"tread": [MASONRY, Color(0.95, 0.93, 0.88), 0.9],
+	"wood": [WOOD, Color(0.62, 0.52, 0.42), 0.8],
+}
 
 func _material(colour: String) -> StandardMaterial3D:
-	if colour == "masonry" and not _materials.has(colour):
+	if TEXTURED.has(colour) and not _materials.has(colour):
 		# The stairs' supporting bodies (Codex 14 Oct: tall flat grey planes): the village houses' CC0
 		# stone wall, projected in world space so neighbouring blocks run on as one masonry wall.
+		var spec: Array = TEXTURED[colour]
 		var m := StandardMaterial3D.new()
-		m.albedo_texture = load(MASONRY % "diff")
+		m.albedo_texture = load(spec[0] % ("col" if spec[0] == WOOD else "diff"))
 		m.normal_enabled = true
-		m.normal_texture = load(MASONRY % "nor_gl")
-		m.roughness_texture = load(MASONRY % "rough")
-		m.albedo_color = Color(0.78, 0.77, 0.72)
+		m.normal_texture = load(spec[0] % "nor_gl")
+		m.roughness_texture = load(spec[0] % "rough")
+		m.albedo_color = spec[1]
 		m.uv1_triplanar = true
 		m.uv1_world_triplanar = true
-		m.uv1_scale = Vector3.ONE * 0.45
+		m.uv1_scale = Vector3.ONE * float(spec[2])
 		_materials[colour] = m
 	if not _materials.has(colour):
 		var m := StandardMaterial3D.new()
@@ -275,20 +285,23 @@ func build_stairs(stairs: Array) -> void:
 				# tilted along the line through its neighbours, so the pieces meet without a ledge (Codex
 				# be13087: 0.11 m between flat pieces stopped the hero on stairs B).
 				var tilt := basis * Basis(Vector3.RIGHT, -atan(_deck_slope(all, n)))
-				_tilted_block(node, Vector3(at.x, top - 0.08, at.y), Vector3(width, 0.16, depth + 0.04), tilt, "timber", true)
+				_tilted_block(node, Vector3(at.x, top - 0.08, at.y), Vector3(width, 0.16, depth + 0.04), tilt, "wood", true)
 				for sx in [-1.0, 1.0]:
 					var off: Vector3 = basis * Vector3(sx * (width * 0.5 - 0.05), 0, 0)
-					_tilted_block(node, Vector3(at.x + off.x, top + 0.5, at.y + off.z), Vector3(0.08, 1.0, depth), tilt, "timber", true)
+					_tilted_block(node, Vector3(at.x + off.x, top + 0.5, at.y + off.z), Vector3(0.08, 1.0, depth), tilt, "wood", true)
 					var g: float = ground(at.x + off.x, at.y + off.z)
 					if top - g > 0.4 and int(round(at.x * 3.0 + at.y * 7.0)) % 2 == 0:
 						var post_h := top - 0.16 - (g - SINK)
-						_stair_block(node, Vector3(at.x + off.x, g - SINK + post_h * 0.5, at.y + off.z), Vector3(0.18, post_h, 0.18), yaw, "timber", false)
+						_stair_block(node, Vector3(at.x + off.x, g - SINK + post_h * 0.5, at.y + off.z), Vector3(0.18, post_h, 0.18), yaw, "wood", false)
 				continue
 			var height := maxf(top - (low - SINK), 0.3)
 			var tread := depth < 0.6
 			_stair_block(node, Vector3(at.x, top - height * 0.5, at.y), Vector3(width, height, depth), yaw, "masonry", not tread)
 			# a dressed-stone tread over the masonry body: its nosing reads the steps from the side
-			_stair_block(node, Vector3(at.x, top - 0.06, at.y), Vector3(width + 0.06, 0.12, depth + 0.02), yaw, "rock", false)
+			# 4/8 mm over the body's top and alternating, so no two faces share a plane (Codex a406d48:
+			# stripes on the top treads of B and C, where a tread and its landing lie at one level)
+			var lift := 0.004 * (1 + n % 2)
+			_stair_block(node, Vector3(at.x, top - 0.06 + lift, at.y), Vector3(width + 0.06, 0.12, depth + 0.02), yaw, "tread", false)
 			if tread:
 				# Walking surface: a 32 deg slab from each tread's back edge at the step above to its front
 				# edge on the tread itself - so a flight meets its landings flush at both ends (Codex
@@ -331,7 +344,7 @@ func build_stairs(stairs: Array) -> void:
 				rails.append([Vector3(0, 0, depth * 0.5 - 0.05), Vector3(width, 1.0, 0.1)])
 			for r in rails:
 				var off: Vector3 = basis * (r[0] as Vector3)
-				_stair_block(node, Vector3(at.x + off.x, top + 0.5, at.y + off.z), r[1], yaw, "timber")
+				_stair_block(node, Vector3(at.x + off.x, top + 0.5, at.y + off.z), r[1], yaw, "wood")
 	print("BOOK_STAIRS flights=%d boxes=%d" % [stairs.size(), boxes])
 
 

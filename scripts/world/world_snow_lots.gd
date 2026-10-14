@@ -24,6 +24,8 @@ const BUCKET := 20.0
 ## Plinth: under a house the ground falls more than this below its floor -> a stone plinth.
 const PLINTH_HANG := 0.12
 const PLINTH_LEDGE := 0.25
+## The ground under a building's walls lies this far under its floor (no shared plane).
+const FLOOR_GAP := 0.05
 ## The library's lower hall (S-L: its floor 3.2 m under the entrance) needs the ground dug out: no
 ## terrain under the cells the walls touch; a paved collar at the floor's level fills the rest of those
 ## cells and holds the cut as a retaining wall CUT m deep.
@@ -33,9 +35,9 @@ const CUTS := {"Бб": 3.5}
 ## [width, length] in metres.
 const AREAWAYS := {"Бб": [3.0, 3.5]}
 const LOWER := {"Бб": 3.2}
-## A door whose front falls more than STOOP_DROP gets stone steps of <= STOOP_RISE.
-const STOOP_DROP := 0.3
-const STOOP_RISE := 0.2
+## A door whose front falls away gets stone steps of STOOP_RISE down to the ground (at most STOOP_MAX).
+const STOOP_RISE := 0.18
+const STOOP_MAX := 16
 const STOOP_RUN := 0.35
 const STOOP_WIDTH := 1.6
 
@@ -150,6 +152,11 @@ func skips(cell_x: int, cell_z: int) -> bool:
 	return holes.has(Vector2i(cell_x, cell_z))
 
 
+func _inside_walls(lot: Dictionary, p: Vector2) -> bool:
+	var d: Vector2 = p - lot.c
+	return absf(d.dot(lot.s)) < lot.w * 0.5 and absf(d.dot(lot.f)) < lot.d * 0.5
+
+
 ## Distance from a lot's level ground (walls + FLAT, its yard in front), 0 inside.
 func _dist(lot: Dictionary, p: Vector2) -> float:
 	var d: Vector2 = p - lot.c
@@ -173,6 +180,10 @@ func height(p: Vector2, base: float) -> float:
 		if d >= BLEND:
 			continue
 		h = minf(h, lerpf(lot.level, base, smoothstep(0.0, BLEND, d)))
+		# under a building's own floor the ground lies FLOOR_GAP lower (Codex d086d7a native: the
+		# floors shared the terrain's plane and flickered gravel through the boards)
+		if d == 0.0 and _inside_walls(lot, p):
+			h = minf(h, lot.level - FLOOR_GAP)
 	if h == INF:
 		return base
 	var keep := 1.0
@@ -223,23 +234,40 @@ func build_plinths(book: Node3D, ground: Callable) -> void:
 		if CUTS.has(lot.code):
 			continue
 		var out: float = lot.d * 0.5 + PLINTH_LEDGE
-		var low := INF
-		for t in [0.3, 0.7, 1.1]:
-			for q in [-0.8, 0.0, 0.8]:
-				var p: Vector2 = lot.c + lot.f * (out + t) + lot.s * q
-				low = minf(low, float(ground.call(p.x, p.y)))
-		var drop: float = lot.level - low
-		if drop <= STOOP_DROP:
-			continue
-		var n := ceili(drop / STOOP_RISE)
-		var rise := drop / n
 		var yaw := rad_to_deg(atan2(lot.f.x, lot.f.y))
-		for k in range(1, n):
-			var top: float = lot.level - 0.02 - rise * k
+		# Out from the door slot by slot, the walking surface S: on each slot the highest ground along
+		# the path's middle, but never more than one riser under the slot before - where the ground
+		# under S falls away, a stone step at S (Codex d086d7a, the actual hero at vs12: the shack's
+		# 1 m level front, then the lane 2.1 m down within the next 0.7 m). The block's foot is the
+		# lowest ground over the step's whole width (the lane also falls sideways).
+		var walk: float = lot.level - 0.02
+		var idle := 0
+		var built := 0
+		for k in range(1, STOOP_MAX + 1):
 			var p: Vector2 = lot.c + lot.f * (out + STOOP_RUN * (k - 0.5))
-			var g := float(ground.call(p.x, p.y))
-			var bottom := minf(g, top) - 0.4
-			book._stair_block(node, Vector3(p.x, (top + bottom) * 0.5, p.y), Vector3(STOOP_WIDTH, top - bottom, STOOP_RUN), yaw, "masonry")
+			var high := -INF
+			var low := INF
+			var foot := INF
+			for a in [-0.5, -0.17, 0.17, 0.5]:
+				for q in [-STOOP_WIDTH * 0.5, -0.4, 0.0, 0.4, STOOP_WIDTH * 0.5]:
+					var e: Vector2 = p + lot.f * (STOOP_RUN * a) + lot.s * q
+					var h := float(ground.call(e.x, e.y))
+					foot = minf(foot, h)
+					if absf(q) < 0.5:
+						high = maxf(high, h)
+						low = minf(low, h)
+			var top := minf(maxf(high, walk - STOOP_RISE), walk)
+			walk = top
+			if low >= top - 0.05:
+				idle += 1
+				# done once its steps have met the ground again (a level front first is walked)
+				if built > 0 and idle >= 2:
+					break
+				continue
+			idle = 0
+			built += 1
+			var bottom := foot - 0.4
+			book._stair_block(node, Vector3(p.x, (top + bottom) * 0.5, p.y), Vector3(STOOP_WIDTH, top - bottom, STOOP_RUN + 0.03), yaw, "masonry")
 			steps += 1
 	# the cuts' collars: the hole's cells less the walls and the sunken yard, paved blocks at the
 	# floor's level (along the back edge raised to the rock's ground where that stands higher, so no gap
