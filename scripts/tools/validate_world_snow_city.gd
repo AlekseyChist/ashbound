@@ -37,9 +37,9 @@ func run() -> void:
         if child.get_script() == City:city_count += 1
     if city_count!=1:fail("Snow city integration spawned duplicate/missing builders");return
     await physics_frame
-    if city.placed.size()!=6 or city.unresolved.size()!=35:
-        fail("Current six exact modules or explicit unfinished35 plots lost");return
-    if city.get_doors().size()!=7:
+    if city.placed.size()!=29 or city.unresolved.size()!=12:
+        fail("Current29 exact modules or explicit unfinished12 plots lost");return
+    if city.get_doors().size()!=30:
         fail("Building door or library lower portal missing");return
     var actor := CharacterBody3D.new()
     actor.collision_layer=2
@@ -82,8 +82,8 @@ func run() -> void:
         if light.shadow_enabled:fail("Disabled lighting kept shadow maps");return
     city.set_lighting_enabled(true)
     var copy := city.get_doors();copy.clear()
-    if city.get_doors().size()!=7:fail("Caller mutated registry");return
-    print("SNOW_CITY_CONTRACT_PASS mapped=6 unresolved=35 doors=7 frame=world_root fixture=",isolated," whole_city_ready=false")
+    if city.get_doors().size()!=30:fail("Caller mutated registry");return
+    print("SNOW_CITY_CONTRACT_PASS mapped=29 unresolved=12 doors=30 frame=world_root fixture=",isolated," whole_city_ready=false")
     # This interface test never establishes support, street clearance or whole-route acceptance.
     print("SNOW_CITY_PHYSICAL_PLACEMENT_ROUTES_WEATHER_MOBILE=UNVERIFIED")
     quit()
