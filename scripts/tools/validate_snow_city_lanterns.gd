@@ -43,6 +43,15 @@ func run() -> void:
         expect(blocked_approaches(Vector2(post.at[0],post.at[1]),buildings).is_empty(),"clear entry/sign corridor "+str(post.label))
     for old in [[996.209609467,329.713093492,"л1"],[954.491765913,326.221180697,"Б11"],[995.994593078,415.575290658,"вс3"],[1000.393750187,422.417857036,"вс4"]]:
         expect(str(old[2]) in blocked_approaches(Vector2(old[0],old[1]),buildings),"regression catches original tight approach "+str(old[2]))
+    # On the authored narrow lane, uphill motion slides to this shoulder.
+    # Preserve a capsule-wide corridor around the measured real-hero passage.
+    var passage_a:=Vector2(991.343567,408.7864)
+    var passage_b:=Vector2(990.0,404.0)
+    var old_pole:=Vector2(990.9945930782675,408.5752906583803)
+    expect(old_pole.distance_to(Geometry2D.get_closest_point_to_segment(old_pole,passage_a,passage_b))<.5,"regression catches uphill lane pole")
+    for post in plan.posts:
+        var at:=Vector2(float(post.at[0]),float(post.at[1]))
+        expect(at.distance_to(Geometry2D.get_closest_point_to_segment(at,passage_a,passage_b))>=.5,"clear uphill lane "+str(post.label))
     for missing in [false,true]:
         var w=World.new();root.add_child(w)
         w.world_root=Node3D.new();w.add_child(w.world_root)
