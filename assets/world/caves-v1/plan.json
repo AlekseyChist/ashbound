@@ -1,0 +1,482 @@
+{
+ "id": "caves_v1",
+ "source": "WORLD-PLAN-01 book, plan_caves.py (PDF141, accepted D-118); cards.py mouths",
+ "frame": "chambers and links in local metres of the book scheme; origin = chamber E centre on its floor; local +x = into the hill (against the mouth facing), local +z = the scheme y (right-hand, y up); map = x east, z south; world = map - 1000",
+ "contract": {
+  "scene": "a separate interior scene per cave (Codex 300, option B)",
+  "floor": "every chamber and link walkable at its floor level, ramps between levels no steeper than 30 deg",
+  "headroom": "chambers >= 2.5 m, links >= 2.2 m",
+  "exits": "an Exit_<id> empty on the floor at each exit chamber, +x local pointing out",
+  "closed": "no void or sky visible inside"
+ },
+ "caves": [
+  {
+   "id": "forest_cave",
+   "site": "forest_cave",
+   "title": "Лесная пещера (CAVE-01, SQ-START-07)",
+   "status": "ранняя пещера, без древних следов",
+   "chambers": [
+    {
+     "id": "E",
+     "x": 0.0,
+     "z": 0.0,
+     "rx": 6.0,
+     "rz": 5.0,
+     "floor": 0.0,
+     "label": "вход: площадка для телеги"
+    },
+    {
+     "id": "A",
+     "x": 30.0,
+     "z": 0.0,
+     "rx": 9.0,
+     "rz": 6.0,
+     "floor": 0.0,
+     "label": "сырой зал с корнями, летучие мыши"
+    },
+    {
+     "id": "B",
+     "x": 65.0,
+     "z": -15.0,
+     "rx": 6.0,
+     "rz": 4.0,
+     "floor": 0.0,
+     "label": "тайник: бочонки соли без клейм"
+    },
+    {
+     "id": "C",
+     "x": 75.0,
+     "z": 22.0,
+     "rx": 13.0,
+     "rz": 9.0,
+     "floor": -1.0,
+     "label": "дальний зал — медведь-шатун"
+    },
+    {
+     "id": "X",
+     "x": 110.0,
+     "z": 30.0,
+     "rx": 5.0,
+     "rz": 4.0,
+     "floor": 0.0,
+     "label": "второй выход к склону"
+    }
+   ],
+   "links": [
+    {
+     "a": "E",
+     "b": "A",
+     "width": 3.0,
+     "kind": "ход"
+    },
+    {
+     "a": "A",
+     "b": "B",
+     "width": 1.2,
+     "kind": "узкий лаз"
+    },
+    {
+     "a": "A",
+     "b": "C",
+     "width": 2.5,
+     "kind": "ход"
+    },
+    {
+     "a": "C",
+     "b": "X",
+     "width": 1.6,
+     "kind": "ход наружу"
+    }
+   ],
+   "exits": [
+    {
+     "id": "forest_cave:E",
+     "chamber": "E",
+     "map": [
+      115.0,
+      1170.0
+     ],
+     "facing": [
+      -0.5547,
+      0.8321
+     ],
+     "kind": "mouth",
+     "state": "open"
+    },
+    {
+     "id": "forest_cave:X",
+     "chamber": "X",
+     "map": [
+      200.98,
+      1095.12
+     ],
+     "facing": [
+      0.7262,
+      -0.6875
+     ],
+     "kind": "second exit to the slope",
+     "state": "open"
+    }
+   ],
+   "notes": [
+    "От медведя можно уйти бегством через второй выход.",
+    "Телега доходит только до площадки у входа — бочонки носят на себе."
+   ]
+  },
+  {
+   "id": "foothill_cave",
+   "site": "foothill_cave",
+   "title": "Пещера предгорий — контрабандный ход (SQ-ROAD-02, MQ-22)",
+   "status": "ранняя пещера, без древних следов",
+   "chambers": [
+    {
+     "id": "E",
+     "x": 0.0,
+     "z": 0.0,
+     "rx": 5.0,
+     "rz": 4.0,
+     "floor": 0.0,
+     "label": "вход у тропы из Посёлка у скал"
+    },
+    {
+     "id": "A",
+     "x": 25.0,
+     "z": -5.0,
+     "rx": 8.0,
+     "rz": 5.0,
+     "floor": 0.0,
+     "label": "сухой склад контрабандистов"
+    },
+    {
+     "id": "R",
+     "x": 60.0,
+     "z": 10.0,
+     "rx": 12.0,
+     "rz": 6.0,
+     "floor": -1.5,
+     "label": "подземная речка — брод по камням (связь с W2)"
+    },
+    {
+     "id": "U",
+     "x": 95.0,
+     "z": -20.0,
+     "rx": 7.0,
+     "rz": 5.0,
+     "floor": 4.0,
+     "label": "сухие уступы, подъём"
+    },
+    {
+     "id": "X",
+     "x": 125.0,
+     "z": -45.0,
+     "rx": 5.0,
+     "rz": 4.0,
+     "floor": 8.0,
+     "label": "выход на склон над седловиной"
+    },
+    {
+     "id": "M",
+     "x": 130.0,
+     "z": 20.0,
+     "rx": 5.0,
+     "rz": 4.0,
+     "floor": -1.0,
+     "label": "старый ход к вентиляции шахты (акт IV)"
+    }
+   ],
+   "links": [
+    {
+     "a": "E",
+     "b": "A",
+     "width": 2.5,
+     "kind": "ход"
+    },
+    {
+     "a": "A",
+     "b": "R",
+     "width": 1.4,
+     "kind": "лаз"
+    },
+    {
+     "a": "R",
+     "b": "U",
+     "width": 2.0,
+     "kind": "ход"
+    },
+    {
+     "a": "U",
+     "b": "X",
+     "width": 1.6,
+     "kind": "подъём"
+    },
+    {
+     "a": "R",
+     "b": "M",
+     "width": 1.4,
+     "kind": "завален до акта IV"
+    }
+   ],
+   "exits": [
+    {
+     "id": "foothill_cave:E",
+     "chamber": "E",
+     "map": [
+      310.0,
+      525.0
+     ],
+     "facing": [
+      -0.999,
+      0.0454
+     ],
+     "kind": "mouth",
+     "state": "open"
+    },
+    {
+     "id": "foothill_cave:X",
+     "chamber": "X",
+     "map": [
+      600.0,
+      438.0
+     ],
+     "facing": [
+      1.0,
+      0.0
+     ],
+     "kind": "exit on the slope over the saddle (the book: ~600/438)",
+     "state": "open"
+    },
+    {
+     "id": "foothill_cave:M",
+     "chamber": "M",
+     "map": null,
+     "facing": null,
+     "kind": "old way to the mine ventilation",
+     "state": "sealed until act IV (MQ-22)"
+    }
+   ],
+   "notes": [
+    "Обходит заставу на Западной седловине.",
+    "Ответвление к шахте открывается только в акте IV (третий вход MQ-22)."
+   ]
+  },
+  {
+   "id": "spring_cave",
+   "site": "spring_cave",
+   "title": "Пещера Источника — горячие недра (SQ-DES-06, CAVE-GEO-01)",
+   "status": "горячие недра; знак Предков глубоко — зацепка акта IV",
+   "chambers": [
+    {
+     "id": "E",
+     "x": 0.0,
+     "z": 0.0,
+     "rx": 6.0,
+     "rz": 4.0,
+     "floor": 0.0,
+     "label": "устье с горячим ручьём"
+    },
+    {
+     "id": "S",
+     "x": 30.0,
+     "z": -5.0,
+     "rx": 10.0,
+     "rz": 7.0,
+     "floor": 0.0,
+     "label": "паровая камера"
+    },
+    {
+     "id": "G",
+     "x": 70.0,
+     "z": 5.0,
+     "rx": 14.0,
+     "rz": 10.0,
+     "floor": -2.0,
+     "label": "зал гейзеров: ритм 3 импульса"
+    },
+    {
+     "id": "L",
+     "x": 90.0,
+     "z": -20.0,
+     "rx": 5.0,
+     "rz": 3.0,
+     "floor": 1.5,
+     "label": "сухой уступ — послушник"
+    },
+    {
+     "id": "D",
+     "x": 115.0,
+     "z": 25.0,
+     "rx": 8.0,
+     "rz": 6.0,
+     "floor": -3.0,
+     "label": "трещина с жаром (лава глубже, вне маршрута)"
+    },
+    {
+     "id": "W",
+     "x": 130.0,
+     "z": -10.0,
+     "rx": 5.0,
+     "rz": 4.0,
+     "floor": -3.0,
+     "label": "стена Предков со знаком огня"
+    }
+   ],
+   "links": [
+    {
+     "a": "E",
+     "b": "S",
+     "width": 3.0,
+     "kind": "ход"
+    },
+    {
+     "a": "S",
+     "b": "G",
+     "width": 2.5,
+     "kind": "ход"
+    },
+    {
+     "a": "G",
+     "b": "L",
+     "width": 1.4,
+     "kind": "карниз"
+    },
+    {
+     "a": "G",
+     "b": "D",
+     "width": 2.0,
+     "kind": "ход"
+    },
+    {
+     "a": "D",
+     "b": "W",
+     "width": 1.4,
+     "kind": "лаз"
+    }
+   ],
+   "exits": [
+    {
+     "id": "spring_cave:E",
+     "chamber": "E",
+     "map": [
+      1373.0,
+      552.0
+     ],
+     "facing": [
+      0.8866,
+      0.4626
+     ],
+     "kind": "mouth",
+     "state": "open"
+    }
+   ],
+   "notes": [
+    "Безопасный путь — по ритму гейзеров; питьевой воды в пещере нет.",
+    "Лава и горячая вода — вне пешего маршрута, без соседства с водозабором."
+   ]
+  },
+  {
+   "id": "grot",
+   "site": "lowland_cave",
+   "title": "Грот у берега — тайный склад Изольды (SQ-SEA-02, SQ-LOW-09)",
+   "status": "морская пещера, без древних следов",
+   "chambers": [
+    {
+     "id": "E",
+     "x": 0.0,
+     "z": 0.0,
+     "rx": 5.0,
+     "rz": 4.0,
+     "floor": 0.0,
+     "label": "сухопутный вход с тропы из низин"
+    },
+    {
+     "id": "A",
+     "x": 30.0,
+     "z": 5.0,
+     "rx": 9.0,
+     "rz": 6.0,
+     "floor": 0.0,
+     "label": "склад: сундуки соли и серебра"
+    },
+    {
+     "id": "T",
+     "x": 70.0,
+     "z": 25.0,
+     "rx": 12.0,
+     "rz": 7.0,
+     "floor": -3.0,
+     "label": "приливный ход (в прилив — по пояс)"
+    },
+    {
+     "id": "P",
+     "x": 105.0,
+     "z": 35.0,
+     "rx": 7.0,
+     "rz": 4.0,
+     "floor": -5.0,
+     "label": "причал для лодок без огней"
+    },
+    {
+     "id": "S",
+     "x": 130.0,
+     "z": 45.0,
+     "rx": 6.0,
+     "rz": 4.0,
+     "floor": -5.0,
+     "label": "выход к морю"
+    }
+   ],
+   "links": [
+    {
+     "a": "E",
+     "b": "A",
+     "width": 2.5,
+     "kind": "ход"
+    },
+    {
+     "a": "A",
+     "b": "T",
+     "width": 2.0,
+     "kind": "спуск"
+    },
+    {
+     "a": "T",
+     "b": "P",
+     "width": 3.0,
+     "kind": "приливный ход"
+    },
+    {
+     "a": "P",
+     "b": "S",
+     "width": 4.0,
+     "kind": "вода"
+    }
+   ],
+   "exits": [
+    {
+     "id": "grot:E",
+     "chamber": "E",
+     "map": [
+      640.0,
+      1770.0
+     ],
+     "facing": [
+      -0.359,
+      -0.9333
+     ],
+     "kind": "mouth",
+     "state": "open"
+    }
+   ],
+   "notes": [
+    "Запасная гавань «Исхода» (EV-END-C).",
+    "Герой не плавает (D-104): к причалу — только в отлив или по настилу."
+   ]
+  }
+ ],
+ "deviations": [
+  "grot: its sea exit S is not a walking exit (the hero does not swim, D-104) - the mouth E is its one way in and out",
+  "spring_cave: one way in and out (the scheme has no second exit)",
+  "foothill_cave: X at the book text 600/438 rather than the scheme offset; M sealed until act IV",
+  "archive (ruins cellar): with the ruins place, not here"
+ ]
+}

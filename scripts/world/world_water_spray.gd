@@ -7,8 +7,14 @@ const NEAREST := 6
 const STEEP := 0.6
 const SPACING := 10.0
 
+## WORLD-BUILD-01D (the book's W5, the Steam Rapids below the Spring Cave - a hot stream): steam over
+## its falls, slow rising wisps (map 1412/640, its east river within W5_REACH).
+const W5 := Vector2(1412 - 1000, 640 - 1000)
+const W5_REACH := 18.0
+
 var world: Node3D
 var _rapids: Array[Vector3] = []
+var _steam: Array[CPUParticles3D] = []
 var _pool: Array[CPUParticles3D] = []
 var _tick := 0.0
 
@@ -37,7 +43,21 @@ func configure(scene: Node3D) -> void:
 		var spray := _emitter()
 		world.world_root.add_child(spray)
 		_pool.append(spray)
-	print("WORLD_WATER_SPRAY rapids=%d" % _rapids.size())
+	# the W5 steam: an emitter over each of its pools (every 10 m of the east river by the falls)
+	for river in world.world_layout.rivers:
+		if str(river.id) != "east":
+			continue
+		var last := Vector3.INF
+		for p in river.world_points:
+			var at := Vector3(float(p[0]), float(p[1]) + 0.3, float(p[2]))
+			if Vector2(at.x, at.z).distance_to(W5) > W5_REACH or at.distance_to(last) < SPACING:
+				continue
+			last = at
+			var steam := _steam_emitter()
+			steam.position = at
+			world.world_root.add_child(steam)
+			_steam.append(steam)
+	print("WORLD_WATER_SPRAY rapids=%d steam=%d" % [_rapids.size(), _steam.size()])
 
 
 func _emitter() -> CPUParticles3D:
@@ -76,6 +96,27 @@ func _emitter() -> CPUParticles3D:
 	return spray
 
 
+## Steam: few large soft wisps rising slowly and spreading, warm white.
+func _steam_emitter() -> CPUParticles3D:
+	var steam := _emitter()
+	steam.amount = 28
+	steam.lifetime = 4.0
+	steam.emission_sphere_radius = 3.0
+	steam.spread = 20.0
+	steam.initial_velocity_min = 0.3
+	steam.initial_velocity_max = 0.7
+	steam.gravity = Vector3(0, 0.25, 0)
+	steam.scale_amount_min = 3.0
+	steam.scale_amount_max = 6.0
+	var fade := Gradient.new()
+	fade.set_color(0, Color(1, 1, 1, 0.0))
+	fade.add_point(0.25, Color(1, 1, 1, 0.5))
+	fade.set_color(fade.get_point_count() - 1, Color(1, 1, 1, 0.0))
+	steam.color_ramp = fade
+	steam.emitting = false
+	return steam
+
+
 ## A soft round dot (owner: the spray was square pixels).
 static func _soft_dot() -> Texture2D:
 	var ramp := Gradient.new()
@@ -103,6 +144,8 @@ func _process(delta: float) -> void:
 		if d < REACH:
 			near.append([d, at])
 	near.sort_custom(func(a, b): return a[0] < b[0])
+	for steam in _steam:
+		steam.emitting = steam.position.distance_to(hero) < REACH * 1.5
 	for n in _pool.size():
 		var spray := _pool[n]
 		if n < near.size():
