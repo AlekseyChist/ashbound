@@ -915,6 +915,53 @@ for (ax,az,ah),(bx,bz,bh) in zip(MELT,MELT[1:]):
         if pad['id'].startswith('snow'):
             pd=poly_distance(pad['poly'])[sl];inpad|=pd<=0.0
     heights[sl]=np.where((dist<=reach)&~inpad,np.minimum(heights[sl],bed+np.maximum(dist-1.5,0)*1.0),heights[sl])
+# WORLD-BUILD-01C (Codex's ground survey of the 41 snow plots on 1831cfb: 18 hung or were buried, up
+# to 6 m across a plot and 3.4 m at its door): a level lot under every building of the book's snow
+# sheet - its walls + 3.5 m, the dry apron in front of its door included - at the ground in front of the
+# door (the back cuts into the slope behind its retaining wall); on the middle terrace and the Academy
+# shelf a lot takes the terrace's level. A 3 m blend outside; roads, river channels and the stair
+# flights keep their ground. The plots themselves are the book's (not moved).
+SNOW_LOTS=[]
+_snow_plan=json.loads((ROOT/'assets/world/snow-city-v1/plan.json').read_text(encoding='utf8')) if (ROOT/'assets/world/snow-city-v1/plan.json').exists() else {'buildings':[]}
+_stair_keep=np.zeros(heights.shape,bool)
+for _f in BOOK_STAIRS:
+    if not _f['id'].startswith('snow'):continue
+    for sx,sz,_t,_y,dep,wid,_r in _f['steps']:
+        reach=max(dep,wid)*.5+3.0
+        i0,i1=max(0,int((sz-reach)/STEP)),min(WIDTH-1,int((sz+reach)/STEP)+1)
+        j0,j1=max(0,int((sx-reach)/STEP)),min(WIDTH-1,int((sx+reach)/STEP)+1)
+        _stair_keep[i0:i1+1,j0:j1+1]|=np.hypot(x[i0:i1+1,j0:j1+1]-sx,z[i0:i1+1,j0:j1+1]-sz)<=reach
+def _terrace_level(px,pz):
+    for pad in BOOK_PADS:
+        if pad['id'] in ('snow_middle_terrace','snow_academy_shelf'):
+            poly=pad['poly'];inside=False
+            for (ax_,az_),(bx_,bz_) in zip(poly,poly[1:]+poly[:1]):
+                if (az_>pz)!=(bz_>pz) and px<(bx_-ax_)*(pz-az_)/(bz_-az_)+ax_:inside=not inside
+            if inside:return float(pad['level'])
+    return None
+for b in _snow_plan['buildings']:
+    bx_,bz_,w_,d_=float(b['x']),float(b['z']),float(b['w']),float(b['d'])
+    yr=math.radians(float(b['yaw']))
+    fx,fz=-math.sin(yr),math.cos(yr)          # the door's side (the plan's yaw: the front looks at 'face')
+    sxv,szv=fz,-fx                            # across the front
+    # walls + 3.5 m: on the 5 m grid a lot must hold the grid nodes round the house, or their
+    # triangles pull a 6 m house's corners up and down the slope
+    hw,hd=w_*.5+3.5,d_*.5+3.5
+    door=(bx_+fx*(d_*.5+1.25),bz_+fz*(d_*.5+1.25))
+    lvl=_terrace_level(bx_,bz_)
+    if lvl is None:lvl=round(float(sample_grid(*door)),2)
+    # the lot: walls + 1 m, the apron 2.5 m in front
+    corners=[(bx_+sxv*u*hw+fx*v,bz_+szv*u*hw+fz*v) for u,v in ((-1,-hd),(1,-hd),(1,hd),(-1,hd))]
+    SNOW_LOTS.append({'code':b['code'],'level':lvl,'poly':[[round(c[0],2),round(c[1],2)] for c in corners]})
+# two passes: the blends first, then every lot's own ground exactly (neighbouring lots 2 m apart would
+# otherwise pull each other's edges)
+_keep=road_cells|channel|_stair_keep
+_dists=[poly_distance([tuple(c) for c in lot['poly']]) for lot in SNOW_LOTS]
+for lot,d_lot in zip(SNOW_LOTS,_dists):
+    wgt=1-smooth(d_lot/3.0)
+    heights=np.where(_keep|(wgt<=0)|(d_lot<=0),heights,heights*(1-wgt)+lot['level']*wgt)
+for lot,d_lot in zip(SNOW_LOTS,_dists):
+    heights=np.where(_keep|(d_lot>0.0),heights,lot['level'])
 # The W1 sill (Codex 14 Oct: along the straight cut the ground lay 3 m under the 220 m mirror outside
 # the outflow, the water's edge hung over the slope): a stone sill along the whole chord, its crest
 # 0.6 m over the mirror, 4 m wide; the outflow's 12 m channel stays open.
@@ -1015,6 +1062,7 @@ layout={'version':'0.21.2-headwaters','width':WIDTH,'spacing':STEP,'extent_m':20
         'gates':D['gates'],'peaks':D['peaks'],'source_ridge':ridge,
         'book_pads':BOOK_PADS,
         'book_stairs':BOOK_STAIRS,
+        'snow_lots':SNOW_LOTS,
         'book_places':[{**b,'arrival':book_arrival(b),'spawn':[book_arrival(b)[0]-HALF,sample(*book_arrival(b))+.12,book_arrival(b)[1]-HALF]} for b in BOOK_PLACES],
         'limits':'Graybox hypothesis. No vegetation, swimming, NPC, campaign or streaming.'}
 (OUT/'layout.json').write_text(json.dumps(layout,ensure_ascii=False,separators=(',',':'))+'\n',encoding='utf8',newline='\n')
