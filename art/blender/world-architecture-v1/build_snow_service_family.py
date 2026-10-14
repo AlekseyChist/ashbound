@@ -200,7 +200,10 @@ def build(slug,w,d,kind):
     C.beam('ridge cap',(0,-ey-.08,ridge+.12),(0,ey+.08,ridge+.12),.18,.16,wood if poor or shed else slate)
     if heated:
         chimney_top=zroof(cx-.32)+.65
-        box('stove',(cx,cy,.68),(1.05,1.05,1.36),clay,True)
+        # Textured limewash body plus a stone brick plinth at the stove base.
+        stove_lime=surface('S stove limewash','plaster_grey_04_diff_1k.jpg',(.60,.54,.45),.9)
+        box('stove',(cx,cy,.68),(1.05,1.05,1.36),stove_lime,True)
+        box('stove brick plinth',(cx,cy,.09),(1.11,1.11,.18),stone)
         hatch_side=1 if warm else -1
         hatch_y=cy+hatch_side*.55
         box('stove hatch',(cx,hatch_y,.53),(.46,.06,.40),iron)
@@ -247,7 +250,9 @@ def build(slug,w,d,kind):
         dx=2.0 if warm else w/2-.90;dy=-2.75 if warm else -d/2+.8
         for x in (dx-.45,dx+.45):box('drying rack post',(x,dy,.92),(.09,.09,1.84),wood,False,True)
         box('drying rail',(dx,dy,1.85),(1.04,.10,.10),wood,False,True)
-        box('drying cloth',(dx,dy,1.46),(.55,.04,.75),linen,False,True)
+        # Three garments draped over the rail; each hangs on both sides of it.
+        for name,m,x,width,length in [('drying shirt',linen,dx-.28,.34,.62),('drying wool cloak',wool,dx+.05,.40,.80),('drying leggings',leather,dx+.34,.16,.55)]:
+            for side in (-.06,.06):box(name,(x,dy+side,1.80-length/2),(width,.03,length),m,False,True)
         box('lamp support',(-2.0 if warm else 0,-1.8 if warm else 0,h-.10),(.22,.22,.06),wood)
         hinge=bpy.data.objects.new('S_entry_hinge',None);C.ASSET.objects.link(hinge)
         hinge.location=(-.60,-yf,0);hinge['open_angle_degrees']=-100.0
