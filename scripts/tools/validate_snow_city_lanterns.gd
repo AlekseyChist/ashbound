@@ -21,8 +21,28 @@ func count(lamps: Node3D) -> int:
         if light.visible:active+=1
         expect(not light.shadow_enabled,"street shadow maps remain disabled")
     return active
+func blocked_approaches(at: Vector2,buildings: Array) -> Array[String]:
+    var blocked: Array[String] = []
+    for plot in buildings:
+        var local := (at-Vector2(float(plot.x),float(plot.z))).rotated(-deg_to_rad(float(plot.yaw)))
+        var front := float(plot.d)*.5
+        # Adult radius .28m + pole half-width .1m + .12m clearance.
+        # Include the actual exterior approach and the three shops' hanging-sign lane.
+        var routes := [[Vector2(0,front+2.82),Vector2(0,front+.8)]]
+        if str(plot.code) in ["л1","л2","л3"]:
+            routes.append([Vector2(0,front+2.82),Vector2(1.4,front+.5)])
+            routes.append([Vector2(1.4,front+.5),Vector2(2.2,front+.5)])
+        for segment in routes:
+            var nearest := Geometry2D.get_closest_point_to_segment(local,segment[0],segment[1])
+            if local.distance_to(nearest)<.5:blocked.append(str(plot.code))
+    return blocked
 func run() -> void:
     var plan=JSON.parse_string(FileAccess.get_file_as_string(Lanterns.PLAN))
+    var buildings: Array=JSON.parse_string(FileAccess.get_file_as_string("res://assets/world/snow-city-v1/plan.json")).buildings
+    for post in plan.posts:
+        expect(blocked_approaches(Vector2(post.at[0],post.at[1]),buildings).is_empty(),"clear entry/sign corridor "+str(post.label))
+    for old in [[996.209609467,329.713093492,"л1"],[954.491765913,326.221180697,"Б11"],[995.994593078,415.575290658,"вс3"],[1000.393750187,422.417857036,"вс4"]]:
+        expect(str(old[2]) in blocked_approaches(Vector2(old[0],old[1]),buildings),"regression catches original tight approach "+str(old[2]))
     for missing in [false,true]:
         var w=World.new();root.add_child(w)
         w.world_root=Node3D.new();w.add_child(w.world_root)
