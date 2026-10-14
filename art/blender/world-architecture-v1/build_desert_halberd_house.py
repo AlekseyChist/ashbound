@@ -5,7 +5,8 @@ front wall (y -3.5..-1.0, >=1.0 m clear to the rack line at y=-1.0); sleeping
 side x -6.5..-2.0 (two adult beds + bench, all reachable from the lane and
 back through the partition door); equipment side x 2.0..6.5 (worktable,
 storage chest, supported long-pole rack along the rear wall, clear of the
-door swing). One exterior door only, front centre, no interior moving doors.
+door swing; four static halberds stand on the rack (props only). One exterior
+door only, front centre, no interior moving doors.
 """
 import sys,json,hashlib,math,struct
 from pathlib import Path
@@ -28,10 +29,13 @@ LIME=surface('DH lime','plaster_grey_04_diff_1k.jpg',2)
 WOOD=surface('DH timber','fine_grained_wood_col_1k.jpg',.65)
 CLOTH=C.mat('DH shade',(.36,.30,.20,1),.98)
 LINEN=C.mat('DH bedding',(.27,.24,.18,1),.98)
+IRON=C.mat('DH iron',(.30,.30,.32,1),.5)
 coll=[]
 def box(n,p,s,m,solid=True):
     o=C.box(n,p,s,m,.015)
     if n.startswith(('bed frame','bed leg','bedding','bench','bench leg','worktable','worktable leg','storage chest','rack post','rack rail','pole rest')):
+        o['part_role']='interior_furniture'
+    if n.startswith(('halberd shaft','halberd blade','halberd hook','halberd spike')):
         o['part_role']='interior_furniture'
     if solid:coll.append((n,p,s))
     return o
@@ -110,6 +114,12 @@ for x in (2.8,5.8):
     box('rack post',(x,2.9,.75),(.12,.12,1.5),WOOD,False)
 box('rack rail',(4.3,2.9,1.30),(3.2,.10,.10),WOOD,False)
 box('rack rail',(4.3,2.9,.80),(3.2,.10,.10),WOOD,False)
+# Four static halberds stand on the rack (props only).
+for x in (3.25,3.95,4.65,5.35):
+    box('halberd shaft',(x,2.79,1.17),(.05,.05,2.3),WOOD,False)
+    box('halberd blade',(x+.13,2.79,2.13),(.22,.02,.20),IRON,False)
+    box('halberd hook',(x-.08,2.79,2.16),(.10,.02,.05),IRON,False)
+    box('halberd spike',(x,2.79,2.43),(.03,.03,.22),IRON,False)
 # Door: EntryPortal, front hinge at the opening edge, open -100 deg.
 door_parts=[]
 portal=bpy.data.objects.new('EntryPortal',None);C.ASSET.objects.link(portal)
