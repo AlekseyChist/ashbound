@@ -2,6 +2,7 @@ extends Node3D
 ## PDF141 plots; Claude owns the source plan, terrain and world.gd connection.
 const PLAN := "res://assets/world/snow-city-v1/plan.json"
 const Door = preload("res://scripts/world/village_door.gd")
+const StreetLanterns = preload("res://scripts/world/snow_city_lanterns.gd")
 # Exact wall footprints and purpose: never stretch a different building into its lot.
 const MODULES := {
     "Ск": {"scene":"res://scenes/buildings/world-architecture-v1/s_caravan_store.tscn","walls":Vector2(14,8)},
@@ -42,6 +43,7 @@ var placed: Array[Dictionary] = []
 var unresolved: Array[Dictionary] = []
 var doors: Array[Node3D] = []
 var lighting_enabled := true
+var street_lanterns: Node3D
 var _elapsed := 0.0
 func build(world_node: Node3D) -> void:
     if world != null:
@@ -100,6 +102,10 @@ func build(world_node: Node3D) -> void:
         for portal in model.find_children("*","Node3D",true,false):
             if portal.get_script() == Door:
                 doors.append(portal)
+    street_lanterns = StreetLanterns.new()
+    add_child(street_lanterns)
+    street_lanterns.set_lighting_enabled(lighting_enabled)
+    street_lanterns.build(self)
     print("SNOW_CITY placed=%d unresolved=%d complete=false" % [placed.size(),unresolved.size()])
 func get_doors() -> Array[Node3D]:
     return doors.duplicate()
@@ -122,6 +128,8 @@ func clear_door_highlights() -> void:
             portal.set_highlight(false)
 func set_lighting_enabled(enabled: bool) -> void:
     lighting_enabled = enabled
+    if is_instance_valid(street_lanterns):
+        street_lanterns.set_lighting_enabled(enabled)
     if not enabled:
         for light in interior_lights:
             if is_instance_valid(light):light.shadow_enabled = false
