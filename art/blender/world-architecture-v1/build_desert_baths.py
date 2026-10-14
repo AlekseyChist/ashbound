@@ -24,7 +24,8 @@ LINEN=C.mat('DB muted bedding',(.25,.22,.16,1),.98)
 IRON=C.mat('DB stove iron',(.09,.10,.11,1),.9)
 coll=[]
 def box(n,p,s,m,solid=True):
-    o=C.box(n,p,s,m,.015)
+    joined_wall=n in ('front west pier','front east pier','back wall','side wall','window sill','window header','changing room wall','changing doorway lintel','entry lintel')
+    o=C.box(n,p,s,m,0 if joined_wall else .015)
     if n.startswith(('changing bench','bench support','towel shelf','shelf bracket')):o['part_role']='interior_furniture'
     if solid:coll.append((n,p,s))
     return o
