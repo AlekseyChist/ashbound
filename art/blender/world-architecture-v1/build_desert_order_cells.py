@@ -27,24 +27,26 @@ def box(n,p,s,m,solid=True):
         o['part_role']='interior_furniture'
     if solid:coll.append((n,p,s))
     return o
-# Shell: 14x7, front y=-3.5, floor z=0, ceiling 2.8, roof top ~3.6.
+# Shell: outer walls 14x7 (faces at x +-7, y +-3.5; inner faces +-6.6 / +-3.1), floor z=0, roof top ~3.6.
 box('foundation',(0,0,-.15),(14,7,.3),STONE)
 box('entry porch',(0,-4.3,-.12),(3.4,1.6,.24),STONE)
+# Outer walls inside the 14x7 envelope: centre lines x +-6.8, y +-3.3, 0.4 thick (Codex 2fceb2a:
+# centred on +-7/+-3.5 they reached 14.4x7.4).
 # Front wall with 1.6 m door opening centred x=0.
 for a,b in [(-7,-.8),(.8,7)]:
-    box('front wall',((a+b)/2,-3.5,1.75),(b-a,.4,3.5),LIME)
-box('door header',(0,-3.5,2.95),(1.6,.4,1.1),LIME)
+    box('front wall',((a+b)/2,-3.3,1.75),(b-a,.4,3.5),LIME)
+box('door header',(0,-3.3,2.95),(1.6,.4,1.1),LIME)
 # Rear wall with two narrow windows (classroom x=-4.8, hall x=0), 1.0 m wide, sill 1.2, head 2.35.
 for a,b in [(-7,-5.3),(-4.3,-.5),(.5,7)]:
-    box('rear wall',((a+b)/2,3.5,1.75),(b-a,.4,3.5),LIME)
+    box('rear wall',((a+b)/2,3.3,1.75),(b-a,.4,3.5),LIME)
 for x in (-4.8,0.0):
-    box('window sill wall',(x,3.5,.6),(1.0,.4,1.2),LIME)
-    box('window head wall',(x,3.5,2.925),(1.0,.4,1.15),LIME)
-    for dx in (-.46,.46):box('window jamb',(x+dx,3.5,1.775),(.08,.48,1.23),WOOD)
-    for z in (1.17,2.38):box('window rail',(x,3.5,z),(1.0,.48,.08),WOOD)
+    box('window sill wall',(x,3.3,.6),(1.0,.4,1.2),LIME)
+    box('window head wall',(x,3.3,2.925),(1.0,.4,1.15),LIME)
+    for dx in (-.46,.46):box('window jamb',(x+dx,3.3,1.775),(.08,.48,1.23),WOOD)
+    for z in (1.17,2.38):box('window rail',(x,3.3,z),(1.0,.48,.08),WOOD)
 # Side walls with one narrow window each (y=-1.4), sill 1.2, head 2.35.
-for x in (-7,7):
-    for a,b in [(-3.3,-1.9),(-.9,3.3)]:
+for x in (-6.8,6.8):
+    for a,b in [(-3.5,-1.9),(-.9,3.5)]:
         box('side wall',(x,(a+b)/2,1.75),(.4,b-a,3.5),LIME)
     box('window sill wall',(x,-1.4,.6),(.4,1.0,1.2),LIME)
     box('window head wall',(x,-1.4,2.925),(.4,1.0,1.15),LIME)
@@ -73,14 +75,15 @@ box('ceiling',(0,0,3.12),(14,7,.16),WOOD)
 roof_piece('flat lime roof',-7.3,7.3,-3.8,3.8,3.6,.15,LIME)
 roof_piece('flat roof-colonly',-7.3,7.3,-3.8,3.8,3.6,.15,LIME).hide_render=True
 # Parapet (eaves max 0.3 beyond walls).
-for x in (-6.9,6.9):box('side parapet',(x,0,3.74),(.2,7.4,.48),LIME)
-box('front parapet',(0,-3.7,3.74),(14,.2,.48),LIME)
-for a,b in [(-6.9,-6.5),(-6.2,6.2),(6.5,6.9)]:
-    box('rear parapet',((a+b)/2,3.7,3.74),(b-a,.2,.48),LIME)
+for x in (-6.9,6.9):box('side parapet',(x,0,3.74),(.2,7.0,.48),LIME)
+box('front parapet',(0,-3.4,3.74),(14,.2,.48),LIME)
+# the rear parapet open over the two drains (x +-3, 0.3 wide; Codex 2fceb2a: it ran on over them)
+for a,b in [(-7,-3.15),(-2.85,2.85),(3.15,7)]:
+    box('rear parapet',((a+b)/2,3.4,3.74),(b-a,.2,.48),LIME)
 # Drainage: two channels through rear parapet with outside outlets.
 for x in (-3.0,3.0):
-    roof_piece('drain base',x-.15,x+.15,3.23,3.8,3.6,.06,STONE)
-    for dx in (-.14,.14):roof_piece('drain cheek',x+dx-.03,x+dx+.03,3.23,3.8,3.72,.12,STONE)
+    roof_piece('drain base',x-.15,x+.15,3.1,3.8,3.6,.06,STONE)
+    for dx in (-.14,.14):roof_piece('drain cheek',x+dx-.03,x+dx+.03,3.1,3.8,3.72,.12,STONE)
 # Supported timber shade at entry (front, max 1.2 m projection).
 for x in (-1.4,1.4):
     box('canopy footing',(x,-4.65,.10),(.24,.24,.2),STONE)
@@ -93,26 +96,26 @@ for y in (-2.6,-1.6):
     for dx in (-.7,.7):box('desk leg',(-5.6+dx,y,.36),(.1,.1,.72),WOOD,False)
     box('bench',(-3.9,y,.42),(1.2,.5,.10),WOOD)
     for dx in (-.5,.5):box('bench leg',(-3.9+dx,y,.18),(.08,.08,.36),WOOD,False)
-box('shelf',(-6.7,1.6,1.2),(0.4,2.4,2.0),WOOD)
+box('shelf',(-6.35,1.6,1.2),(0.4,2.4,2.0),WOOD)
 box('lectern',(-3.1,1.6,.95),(.5,.5,.14),WOOD)
 box('lectern post',(-3.1,1.6,.47),(.12,.12,.94),WOOD,False)
 # Cells: bed, writing desk, storage chest each.
-for c,dy in ((-2.425,-2.95),(-.625,-.25),(1.8,2.95)):
-    box('bed frame',(5.8,c,.38),(2.0,.9,.14),WOOD)
+for c,dy in ((-2.425,-2.75),(-.625,-.25),(1.8,2.75)):
+    box('bed frame',(5.6,c,.38),(2.0,.9,.14),WOOD)
     for dx in (-.85,.85):
-        for ey in (-.32,.32):box('bed leg',(5.8+dx,c+ey,.155),(.1,.1,.31),WOOD,False)
-    box('bedding',(5.8,c,.50),(1.85,.82,.10),LINEN,False)
-    box('writing desk',(3.5,dy,.78),(1.1,.6,.12),WOOD)
-    for dx in (-.45,.45):box('desk leg',(3.5+dx,dy,.36),(.08,.08,.72),WOOD,False)
-    box('storage chest',(4.45,dy,.30),(.6,.55,.6),WOOD)
+        for ey in (-.32,.32):box('bed leg',(5.6+dx,c+ey,.155),(.1,.1,.31),WOOD,False)
+    box('bedding',(5.6,c,.50),(1.85,.82,.10),LINEN,False)
+    box('writing desk',(3.4,dy,.78),(1.1,.6,.12),WOOD)
+    for dx in (-.45,.45):box('desk leg',(3.4+dx,dy,.36),(.08,.08,.72),WOOD,False)
+    box('storage chest',(4.3,dy,.30),(.6,.55,.6),WOOD)
 # Door: EntryPortal, front hinge, open -100 deg.
 door_parts=[]
 portal=bpy.data.objects.new('EntryPortal',None);C.ASSET.objects.link(portal)
 hinge=bpy.data.objects.new('EntryPortal_entry_hinge',None);C.ASSET.objects.link(hinge)
-hinge.parent=portal;hinge.location=(-.8,-3.5,0);hinge['open_angle_degrees']=-100
+hinge.parent=portal;hinge.location=(-.8,-3.3,0);hinge['open_angle_degrees']=-100
 for k in range(5):
-    part=box('Door plank',(-.68+k*.32,-3.5,1.18),(.31,.08,2.36),WOOD,False)
-    part.parent=hinge;part.location-=Vector((-.8,-3.5,0))
+    part=box('Door plank',(-.68+k*.32,-3.3,1.18),(.31,.08,2.36),WOOD,False)
+    part.parent=hinge;part.location-=Vector((-.8,-3.3,0))
     door_parts.append(part)
 visual=[o for o in C.ASSET.objects if o.type=='MESH' and '-colonly' not in o.name]
 for o in visual:
@@ -148,4 +151,4 @@ visual=[o for o in C.ASSET.objects if o.type=='MESH' and '-colonly' not in o.nam
 triangles=0
 for o in visual:o.data.calc_loop_triangles();triangles+=len(o.data.loop_triangles)
 points=[o.matrix_world@Vector(v) for o in visual for v in o.bound_box]
-(QA/'stats.json').write_text(json.dumps({'state':'built; Codex export and Godot review pending','walls':[14,7],'maximum_height':4.0,'rooms':['hall','classroom','cell A','cell B','cell C'],'triangles':triangles,'meshes':len(visual),'bbox':[[min(p[i] for p in points) for i in range(3)],[max(p[i] for p in points) for i in range(3)]],'entry_hinge':'EntryPortal_entry_hinge at (-0.8,-3.5,0), open -100 deg','sha256':hashlib.sha256(asset.read_bytes()).hexdigest()},indent=2),encoding='utf-8')
+(QA/'stats.json').write_text(json.dumps({'state':'built; Codex export and Godot review pending','walls':[14,7],'maximum_height':4.0,'rooms':['hall','classroom','cell A','cell B','cell C'],'triangles':triangles,'meshes':len(visual),'bbox':[[min(p[i] for p in points) for i in range(3)],[max(p[i] for p in points) for i in range(3)]],'entry_hinge':'EntryPortal_entry_hinge at (-0.8,-3.3,0), open -100 deg','sha256':hashlib.sha256(asset.read_bytes()).hexdigest()},indent=2),encoding='utf-8')
