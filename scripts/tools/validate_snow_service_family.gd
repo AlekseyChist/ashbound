@@ -8,15 +8,16 @@ const SPECS = {
 # Qwen255fd37 revision: coordinator measured imported Godot vertices/indices.
 # Shop sign projects .69m from the facade; actual street clearance is still open.
 # Bounds/triangles are expectations, not values recomputed from a producer report.
+# c8c8d6d:12 additional garment boxes*44tri in six halls; saddler3pegs/candlemaker4ties*44tri.
 # Mouth heights independently measured from the shipped GLB flue collider vertices.
 # No ignored measurement files are validation inputs; JSON below is output only.
 const MEASURED = {
-    "s_porters_barracks_11x5": {"min": Vector3(-5.85,-.24,-2.9), "max": Vector3(5.85,5.0,2.9), "triangles": 8820},
-    "s_porters_barracks_10x5": {"min": Vector3(-5.35,-.24,-2.9), "max": Vector3(5.35,5.0,2.9), "triangles": 8820},
-    "s_shoemaker": {"min": Vector3(-3.85,-.24,-2.9), "max": Vector3(3.85,6.8,3.19), "triangles": 10516, "mouth_y": 5.226190567},
-    "s_saddler": {"min": Vector3(-3.85,-.24,-2.9), "max": Vector3(3.85,6.8,3.19), "triangles": 11832, "mouth_y": 5.226190567},
-    "s_candlemaker": {"min": Vector3(-3.85,-.24,-2.9), "max": Vector3(3.85,6.8,3.19), "triangles": 11508, "mouth_y": 5.226190567},
-    "s_caravan_inn": {"min": Vector3(-6.35,-.24,-3.9), "max": Vector3(6.35,6.85,3.9), "triangles": 10492, "mouth_y": 4.650875688},
+    "s_porters_barracks_11x5": {"min": Vector3(-5.85,-.24,-2.9), "max": Vector3(5.85,5.0,2.9), "triangles": 9348},
+    "s_porters_barracks_10x5": {"min": Vector3(-5.35,-.24,-2.9), "max": Vector3(5.35,5.0,2.9), "triangles": 9348},
+    "s_shoemaker": {"min": Vector3(-3.85,-.24,-2.9), "max": Vector3(3.85,6.8,3.19), "triangles": 11044, "mouth_y": 5.226190567},
+    "s_saddler": {"min": Vector3(-3.85,-.24,-2.9), "max": Vector3(3.85,6.8,3.19), "triangles": 12492, "mouth_y": 5.226190567},
+    "s_candlemaker": {"min": Vector3(-3.85,-.24,-2.9), "max": Vector3(3.85,6.8,3.19), "triangles": 12212, "mouth_y": 5.226190567},
+    "s_caravan_inn": {"min": Vector3(-6.35,-.24,-3.9), "max": Vector3(6.35,6.85,3.9), "triangles": 11020, "mouth_y": 4.650875688},
     "s_wood_store": {"min": Vector3(-3.35,-.24,-2.4), "max": Vector3(3.35,4.25,2.4), "triangles": 6484}}
 var failures: Array[String] = []
 var results: Array = []
@@ -46,6 +47,43 @@ func mesh_bounds(mesh: MeshInstance3D, relative: Node3D) -> AABB:
             var p: Vector3=relative.to_local(mesh.to_global(vertex))
             lo=lo.min(p);hi=hi.max(p)
     return AABB(lo,hi-lo)
+# Independent imported-geometry regression: distinct hanging fabrics must not share visible faces.
+# Restrict to vertical cloth faces at adult drying-rack height; beds and candle wicks are excluded.
+func cloth_overlap_area(house: Node3D) -> float:
+    var linen: Array = [];var wool: Array = []
+    for node in house.find_children("*","MeshInstance3D",true,false):
+        if node.mesh == null:continue
+        for surface in range(node.mesh.get_surface_count()):
+            var material = node.get_active_material(surface)
+            if material == null:continue
+            var is_linen: bool = material.resource_name.contains("S warm linen")
+            if not is_linen and not material.resource_name.contains("S dark wool"):continue
+            var arrays: Array = node.mesh.surface_get_arrays(surface)
+            var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+            var indices: PackedInt32Array = arrays[Mesh.ARRAY_INDEX]
+            if indices.is_empty():
+                for i in range(vertices.size()):indices.append(i)
+            for i in range(0,indices.size(),3):
+                var a: Vector3 = house.to_local(node.to_global(vertices[indices[i]]))
+                var b: Vector3 = house.to_local(node.to_global(vertices[indices[i+1]]))
+                var c: Vector3 = house.to_local(node.to_global(vertices[indices[i+2]]))
+                if minf(a.y,minf(b.y,c.y))<1.0 or maxf(a.y,maxf(b.y,c.y))>2.0:continue
+                if absf(a.z-b.z)>.0001 or absf(a.z-c.z)>.0001:continue
+                var projected = PackedVector2Array([Vector2(a.x,a.y),Vector2(b.x,b.y),Vector2(c.x,c.y)])
+                if absf((projected[1]-projected[0]).cross(projected[2]-projected[0]))<.000001:continue
+                var face={"z":a.z,"polygon":projected}
+                if is_linen:linen.append(face)
+                else:wool.append(face)
+    var area:=0.0
+    for a in linen:
+        for b in wool:
+            if absf(a.z-b.z)>.0001:continue
+            for polygon in Geometry2D.intersect_polygons(a.polygon,b.polygon):
+                var signed:=0.0
+                for i in range(polygon.size()):signed+=polygon[i].cross(polygon[(i+1)%polygon.size()])
+                area+=absf(signed)*.5
+    return area
+
 func run() -> void:
     stage=Node3D.new();root.add_child(stage)
     var ground:=StaticBody3D.new();ground.collision_layer=16
@@ -85,6 +123,8 @@ func run() -> void:
                 for surface in range(node.mesh.get_surface_count()):vertex_count+=node.mesh.surface_get_arrays(surface)[Mesh.ARRAY_VERTEX].size()
                 require(vertex_count>24,slug+" shaped whole prop vertices, not one placeholder box: "+semantic)
                 goods[semantic]=goods.get(semantic,0)+1
+        var cloth_overlap:=cloth_overlap_area(house)
+        require(cloth_overlap<.00001,slug+" hanging linen/wool coplanar overlap area="+str(cloth_overlap))
         require(measured_beds.size()==(4 if barracks or inn else 0),slug+" four actual adult guest/porter beds")
         var expected: Dictionary = MEASURED[slug]
         require(lo.distance_to(expected["min"])<.015 and hi.distance_to(expected["max"])<.015,slug+" deferred actual whole vertex bounds")
