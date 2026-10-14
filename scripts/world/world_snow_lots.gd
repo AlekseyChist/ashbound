@@ -124,6 +124,8 @@ var _street_b := {}
 var _cache := {}
 ## The bank: [centre (world frame), half extent, top] per tread, and their buckets.
 var _fill: Array = []
+## Floors that stand off the ground, "city:code" -> level (set by world.gd from world_lowland_water).
+var extra_levels := {}
 var _fill_b := {}
 
 
@@ -285,7 +287,8 @@ func level_of(code: String, city := "snow") -> float:
 	for lot in lots:
 		if lot.code == code and lot.city == city:
 			return lot.level
-	return NAN
+	# a floor not on the ground (the lowland's shacks on stilts: world_lowland_water)
+	return float(extra_levels.get(city + ":" + code, NAN))
 
 
 ## Grades the streets; `ground` takes world-frame x, z (the world's grid before the plots).

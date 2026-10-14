@@ -465,6 +465,55 @@ func run() -> void:
 					break
 			require(walked, "Snow street from %s not walkable" % leg[0])
 	print("SNOW_STREETS streets=%d" % w.snow_lots.streets.size())
+	# WORLD-BUILD-01F: the lowland's boardwalks on stilts, walked end to end and back; its 13 shacks on
+	# stilts have floors for the builder
+	require(w.lowland_water != null and w.lowland_water.stilt_levels.size() == 13, "Expected 13 lowland shacks on stilts")
+	for bw in (w.lowland_water.boardwalks if w.lowland_water != null else []):
+		var line: PackedVector2Array = bw[0]
+		var tops: PackedFloat32Array = bw[1]
+		for leg in [line, _reversed(line)]:
+			var a: Vector2 = leg[0]
+			var a_top: float = tops[0] if leg == line else tops[tops.size() - 1]
+			actor.velocity = Vector3.ZERO
+			actor.position = Vector3(a.x, a_top + 1.0, a.y)
+			for i in 20:
+				await physics_frame
+				actor.velocity = Vector3(0, 0.0 if actor.is_on_floor() else actor.velocity.y - 22.0 / 60.0, 0)
+				actor.move_and_slide()
+			var target: Vector2 = leg[leg.size() - 1]
+			var reached := false
+			# time enough for the whole boardwalk at 2 m/s, and half again
+			var length := 0.0
+			for k in range(1, leg.size()):
+				length += leg[k].distance_to(leg[k - 1])
+			for tick in int(length / 2.0 * 60.0 * 1.5) + 600:
+				await physics_frame
+				var off := Vector2(target.x - actor.position.x, target.y - actor.position.z)
+				if off.length() < 0.5:
+					reached = true
+					break
+				# along the boardwalk: aim at the next point of the leg ahead of the actor
+				var nearest := 0
+				var best := INF
+				for k in leg.size():
+					var dd := Vector2(actor.position.x, actor.position.z).distance_to(leg[k])
+					if dd < best:
+						best = dd
+						nearest = k
+				var aim: Vector2 = leg[mini(nearest + 1, leg.size() - 1)]
+				var o2 := Vector2(aim.x - actor.position.x, aim.y - actor.position.z)
+				var hv := Vector3(o2.x, 0, o2.y).normalized() * 2.0
+				actor.velocity = Vector3(hv.x, 0.0 if actor.is_on_floor() else actor.velocity.y - 22.0 / 60.0, hv.z)
+				_step_up(actor, 1.0 / 60.0)
+				actor.move_and_slide()
+			var against := ""
+			if not reached:
+				for c in actor.get_slide_collision_count():
+					var col := actor.get_slide_collision(c)
+					against += " %s n=%s at=%s" % [str((col.get_collider() as Node).get_path()).get_slice("/", 5), col.get_normal(), col.get_position() - origin + Vector3(1000, 0, 1000)]
+			print("LOWLAND_BOARDWALK reached=%s at %s%s" % [reached, actor.position + Vector3(1000, 0, 1000), against])
+			require(reached, "A lowland boardwalk is not walkable (stuck at %s)" % [actor.position + Vector3(1000, 0, 1000)])
+
 
 	require(worst_read <= 0.02, "world_ground misreads the snow plots' terrain by %.3f m" % worst_read)
 

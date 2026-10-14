@@ -10,6 +10,7 @@ const Landmarks = preload("res://scripts/world/world_graybox_landmarks.gd")
 const BookPlaces = preload("res://scripts/world/world_book_places.gd")
 const SnowLots = preload("res://scripts/world/world_snow_lots.gd")
 const SnowWalls = preload("res://scripts/world/world_snow_walls.gd")
+const LowlandWater = preload("res://scripts/world/world_lowland_water.gd")
 ## TAVERN-01B (D-089): the forest inn — a one-storey log hall with beds on the loft — replaces
 ## the grey landmark at the forest_inn site, door towards the trail.
 const InnBuilding = preload("res://scripts/world/village_building.gd")
@@ -77,6 +78,7 @@ var world_root: Node3D
 var world_terrain: Node3D
 ## WORLD-BUILD-01C: the snow city's level plots, drawn in 1.25 m terrain cells.
 var snow_lots: RefCounted
+var lowland_water: RefCounted
 var road_mask: Image
 var world_colors: PackedColorArray
 ## GRASS-WORLD-01: road and river pieces near the grass, bucketed by 32 m cells (scene frame).
@@ -1063,6 +1065,12 @@ func _build_water_and_sites() -> void:
 	SnowWalls.new().build(book, world_ground, world_layout, snow_lots.streets, SnowWalls.DESERT_PLAN)
 	# WORLD-BUILD-01F: the lowland city's ring and its citadel's walls
 	SnowWalls.new().build(book, world_ground, world_layout, snow_lots.streets, SnowWalls.LOWLAND_PLAN)
+	# WORLD-BUILD-01F: the lowland's boardwalks, shacks on stilts, piers and mole; the stilts' floors
+	# reach the builder through snow_lots.level_of(code, "lowland")
+	lowland_water = LowlandWater.new()
+	lowland_water.build(book, world_ground, world_layout)
+	for code in lowland_water.stilt_levels:
+		snow_lots.extra_levels["lowland:" + str(code)] = lowland_water.stilt_levels[code]
 
 
 func open_debug_map() -> void:
