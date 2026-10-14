@@ -1002,6 +1002,11 @@ _gz,_gx=np.gradient(heights,STEP)
 steep_rock=smooth((np.degrees(np.arctan(np.hypot(_gx,_gz)))-30.0)/12.0)[:,:,None]
 colors[:,:,:3]=colors[:,:,:3]*(1-steep_rock)+np.array([.55,.56,.54])*steep_rock
 snow=smooth((heights-280)/110)[:,:,None]
+# WORLD-BUILD-01C (the atlas: the snow city under the Academy in an endless storm; Codex 0208 native:
+# its ground read green-grey): snow cover over the city and its slopes - full within 120 m of the
+# city's middle, gone at 200 m; bare rock stays on the cliffs, the streets are trodden at run time.
+_snow_city=(1-smooth((np.hypot(x-1000,z-330)-120)/80))[:,:,None]
+snow=np.maximum(snow,_snow_city*.92*(1-steep_rock))
 colors[:,:,:3]=colors[:,:,:3]*(1-snow)+np.array([.84,.86,.83])*snow
 # ROADS-UNIFY-01: no road colour here; roads are painted from the 1 m mask (roads.png) at run time.
 if SEA:
