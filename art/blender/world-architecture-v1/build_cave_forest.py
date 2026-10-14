@@ -22,7 +22,7 @@ def P(x,zs,h):
 CHAMBERS=[('E',0.0,0.0,6.0,5.0,0.0),('A',30.0,0.0,9.0,6.0,0.0),('B',65.0,-15.0,6.0,4.0,0.0),('C',75.0,22.0,13.0,9.0,-1.0),('X',110.0,30.0,5.0,4.0,0.0)]
 LINKS=[('E','A',3.0),('A','B',1.2),('A','C',2.5),('C','X',1.6)]
 EXITS=[('forest_cave:E','E'),('forest_cave:X','X')]
-ch={c[0]:c for c in CHAMBERS}
+ch={c[0]:c[1:] for c in CHAMBERS}  # id -> (x, z of the scheme, rx, rz, floor)
 volumes=[]
 # Chambers: UV spheres, bottom 0.31H below floor, top H above floor.
 for cid,x,zs,rx,rz,floor in CHAMBERS:
@@ -63,6 +63,9 @@ for f in bm.faces:f.normal_flip()
 bm.to_mesh(base.data);bm.free()
 base.data.materials.clear();base.data.materials.append(ROCK)
 base.name='cave shell-col'
+# bpy.ops puts new objects in the scene's collection; the export takes the ASSET collection's
+for o in list(base.users_collection):o.objects.unlink(base)
+C.ASSET.objects.link(base)
 # Floors: elliptic discs per chamber.
 for cid,x,zs,rx,rz,floor in CHAMBERS:
     bpy.ops.mesh.primitive_cylinder_add(vertices=32,radius=1,depth=0.3,location=P(x,zs,floor-0.15))
@@ -89,6 +92,24 @@ for tag,cid in EXITS:
     e=bpy.data.objects.new('Exit_'+tag,None)
     e.location=loc;e.rotation_euler=rot
     C.ASSET.objects.link(e)
+# The floors made by bpy.ops are in the scene's collection too: only ASSET's.
+for o in list(C.ASSET.objects):
+    for col in list(o.users_collection):
+        if col!=C.ASSET:col.objects.unlink(o)
+# UVs for the textured rock: projected in metres on each face's dominant axis (as the accepted
+# generators do), so the stone keeps its scale on the vaults.
+for o in [o for o in C.ASSET.objects if o.type=='MESH']:
+    scale=o.data.materials[0].get('uv_metres',0) if o.data.materials else 0
+    if not scale:continue
+    bm=bmesh.new();bm.from_mesh(o.data);bm.normal_update()
+    uv=bm.loops.layers.uv.get('UVMap') or bm.loops.layers.uv.new('UVMap')
+    for face in bm.faces:
+        axis=max(range(3),key=lambda i:abs(face.normal[i]))
+        for loop in face.loops:
+            q=o.matrix_world@loop.vert.co
+            u,v=((q.y,q.z) if axis==0 else (q.x,q.z) if axis==1 else (q.x,q.y))
+            loop[uv].uv=(u/scale,v/scale)
+    bm.to_mesh(o.data);bm.free()
 # Export GLB.
 bpy.ops.object.select_all(action='DESELECT')
 for o in C.ASSET.objects:o.select_set(True)
