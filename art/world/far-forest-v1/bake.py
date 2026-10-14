@@ -121,6 +121,10 @@ for b in layout.get('book_places', []):
     ax, az = b.get('arrival', b['point'])
     for t in (0.0, 0.5):
         discs.append(((ax + (b['point'][0] - ax) * t, az + (b['point'][1] - az) * t), 8.0))
+# the W1 stair flights (layout.book_stairs): no tree on the stairs
+for flight in layout.get('book_stairs', []):
+    for st in flight['steps'][::6]:
+        discs.append(((st[0], st[1]), 4.0))
 lakes = [(l['center'][0], l['center'][1], l['radii_m'][0] + 10.0, l['radii_m'][1] + 10.0) for l in layout['lakes']]
 
 def lakeside(x, z):

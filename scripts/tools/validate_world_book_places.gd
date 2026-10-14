@@ -18,6 +18,43 @@ func require(ok: bool, detail: String) -> void:
 		failures.append(detail)
 		push_error(detail)
 
+## courtyard_player._step_up (STEP-01), the hero's own ledge climb, for the test capsule.
+const STEP_MAX := 0.4
+const STEP_LAND := 0.35
+const STEP_FLOOR_NORMAL := 0.7
+func _step_up(body: CharacterBody3D, delta: float) -> void:
+	if not body.is_on_floor() or body.velocity.y > 0.0:
+		return
+	var along := Vector3(body.velocity.x, 0.0, body.velocity.z) * delta
+	if along.length_squared() < 0.000001:
+		return
+	var probe := along.normalized() * maxf(along.length(), 0.08)
+	var hit := KinematicCollision3D.new()
+	if not body.test_move(body.global_transform, probe, hit):
+		return
+	if hit.get_position().y - body.global_position.y < 0.05 and hit.get_normal().y >= STEP_FLOOR_NORMAL:
+		return
+	var lift_by := STEP_MAX
+	var head := KinematicCollision3D.new()
+	if body.test_move(body.global_transform, Vector3.UP * STEP_MAX, head):
+		lift_by = head.get_travel().length() - 0.01
+	if lift_by < 0.02:
+		return
+	var lift := Vector3.UP * lift_by
+	var land := along.normalized() * maxf(along.length(), STEP_LAND)
+	var raised := body.global_transform.translated(lift)
+	if body.test_move(raised, land):
+		return
+	var down := KinematicCollision3D.new()
+	if not body.test_move(raised.translated(land), -lift - Vector3.UP * 0.05, down):
+		return
+	if down.get_normal().y < STEP_FLOOR_NORMAL:
+		return
+	var rise := lift_by - down.get_travel().length()
+	if rise > 0.01:
+		body.global_position.y += rise + 0.001
+
+
 func run() -> void:
 	var w = load("res://scenes/world/world.tscn").instantiate()
 	root.add_child(w)
@@ -177,6 +214,57 @@ func run() -> void:
 			actor.move_and_slide()
 		print("BOOK_W1_BRIDGE %s -> %s at=%s crossed=%s" % [leg[0], leg[1], actor.position + Vector3(1000, 0, 1000), crossed])
 		require(crossed, "The W1 footbridge is not walkable %s -> %s (stuck at %s)" % [leg[0], leg[1], actor.position + Vector3(1000, 0, 1000)])
+
+	# The W1 stair flights: even risers, every tread over its ground, built blocks; then walked down
+	# and up by the capsule stepping like the hero (courtyard_player._step_up: up to 0.4 m).
+	var stairs: Array = layout.get("book_stairs", [])
+	if stairs.is_empty():
+		print("BOOK_STAIRS none in this layout (the W1 flights wait for their route)")
+	if stairs.size() == 1:
+		var steps: Array = stairs[0].steps
+		var worst_rise := 0.0
+		var buried := 0
+		for i in steps.size():
+			var st: Array = steps[i]
+			if i > 0:
+				worst_rise = maxf(worst_rise, absf(float(st[2]) - float(steps[i - 1][2])))
+			if w.world_ground(float(st[0]) - 1000.0, float(st[1]) - 1000.0) > float(st[2]) + 0.02:
+				buried += 1
+		print("BOOK_STAIRS steps=%d worst_rise=%.3f buried=%d" % [steps.size(), worst_rise, buried])
+		require(steps.size() > 200 and worst_rise <= 0.2, "W1 stairs: %d steps, a rise of %.2f m" % [steps.size(), worst_rise])
+		require(buried == 0, "W1 stairs: %d treads under the ground" % buried)
+		var flight_node: Node = book.get_node_or_null("w1_stairs") if book != null else null
+		require(flight_node != null and flight_node.find_children("*", "MeshInstance3D", false, false).size() == steps.size(), "W1 stairs not built")
+		for leg in [["down", 0, steps.size() - 1], ["up", steps.size() - 1, 0]]:
+			var first: Array = steps[leg[1]]
+			actor.velocity = Vector3.ZERO
+			actor.position = Vector3(float(first[0]) - 1000.0, float(first[2]) + 1.0, float(first[1]) - 1000.0)
+			var order := range(leg[1], leg[2] + (1 if leg[2] > leg[1] else -1), 1 if leg[2] > leg[1] else -1)
+			var stuck := false
+			for idx in order:
+				var st: Array = steps[idx]
+				var target := Vector2(float(st[0]) - 1000.0, float(st[1]) - 1000.0)
+				var arrived := false
+				for tick in 900:
+					await physics_frame
+					var off := Vector2(target.x - actor.position.x, target.y - actor.position.z)
+					if off.length() < 0.35:
+						arrived = true
+						break
+					var hv := Vector3(off.x, 0, off.y).normalized() * 2.0
+					actor.velocity = Vector3(hv.x, 0.0 if actor.is_on_floor() else actor.velocity.y - 22.0 / 60.0, hv.z)
+					_step_up(actor, 1.0 / 60.0)
+					actor.move_and_slide()
+				if not arrived:
+					stuck = true
+					var hits := []
+					for c in actor.get_slide_collision_count():
+						var col := actor.get_slide_collision(c)
+						hits.append("%s n=%s p=%s" % [str((col.get_collider() as Node).get_parent().name) if col.get_collider() is Node else "?", str(col.get_normal()), str(col.get_position() + Vector3(1000, 0, 1000))])
+					print("BOOK_STAIRS_WALK %s stuck before step %d %s at %s floor=%s hits=%s" % [leg[0], idx, str(steps[idx]), actor.position + Vector3(1000, 0, 1000), actor.is_on_floor(), str(hits)])
+					break
+			print("BOOK_STAIRS_WALK %s done=%s at=%s" % [leg[0], not stuck, actor.position + Vector3(1000, 0, 1000)])
+			require(not stuck, "W1 stairs not walkable %s" % leg[0])
 
 	print("WORLD_BOOK_PLACES_CHECKS checks=%d failures=%d" % [checks, failures.size()])
 	quit(0 if failures.is_empty() else 1)

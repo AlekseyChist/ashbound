@@ -714,7 +714,7 @@ func _index_grass_obstacles() -> void:
 			continue
 		var radius := 30.0 if site.kind == "settlement" else 16.0
 		_grass_blocks.append(Vector3(float(site.spawn[0]) + offset.x, float(site.spawn[2]) + offset.y, radius))
-	const BOOK_CLEAR := {"ruins": 75.0, "farmsteads": 75.0, "saltworks": 22.0, "farmstead": 16.0}
+	const BOOK_CLEAR := {"ruins": 75.0, "farmsteads": 75.0, "saltworks": 22.0, "farmstead": 16.0, "viewpoint": 5.5}
 	for place in world_layout.get("book_places", []):
 		# The arrival point (world frame map - 1000) and the way to the place stay trodden.
 		var arrive: Array = place.get("arrival", place.point)
@@ -722,6 +722,11 @@ func _index_grass_obstacles() -> void:
 			_grass_blocks.append(Vector3(lerpf(float(arrive[0]), float(place.point[0]), t) - HALF + offset.x, lerpf(float(arrive[1]), float(place.point[1]), t) - HALF + offset.y, 4.0))
 		if BOOK_CLEAR.has(str(place.kind)):
 			_grass_blocks.append(Vector3(float(place.spawn[0]) + offset.x, float(place.spawn[2]) + offset.y, float(BOOK_CLEAR.get(str(place.kind), 0.0))))
+	# the W1 stair flights stay clear of grass (every fourth tread)
+	for flight in world_layout.get("book_stairs", []):
+		for i in range(0, flight.steps.size(), 4):
+			var st: Array = flight.steps[i]
+			_grass_blocks.append(Vector3(float(st[0]) - HALF + offset.x, float(st[1]) - HALF + offset.y, 2.0))
 	for site_id in INN_SITES:
 		var inn_frame := _inn_frame(site_id)
 		if not inn_frame.is_empty():
@@ -955,6 +960,7 @@ func _build_water_and_sites() -> void:
 	var book := BookPlaces.new()
 	world_root.add_child(book)
 	book.build(self, world_layout.get("book_places", []))
+	book.build_stairs(world_layout.get("book_stairs", []))
 
 
 func open_debug_map() -> void:

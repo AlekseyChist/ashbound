@@ -763,6 +763,69 @@ for r in D['rivers']:
     heights=np.where(inside,np.maximum(heights,beds),np.where(beside,np.maximum(heights,levee),heights))
 for pad in BOOK_PADS:
     if pad.get('late'):lay_pad(pad)
+# The W1 footbridge's ramps (Codex 14 Oct: a triangle of ground cut through the boards in the west
+# approach - on the 5 m grid the ground bulges at the ramp's knee): within 18 m of the crossing the
+# ground stays 0.3 m under the deck, across the trail's width.
+for r in roads:
+    if r['id']!='w1_footbridge':continue
+    gp=r['geometry_points']
+    for a,b in zip(gp,gp[1:]):
+        if min(abs(a[0]-322),abs(b[0]-322))>18.0:continue
+        reach=float(r.get('width_m',3))*.5+2.5
+        sl=(slice(max(0,int((min(a[1],b[1])-reach)/STEP)),min(WIDTH,int((max(a[1],b[1])+reach)/STEP)+2)),slice(max(0,int((min(a[0],b[0])-reach)/STEP)),min(WIDTH,int((max(a[0],b[0])+reach)/STEP)+2)))
+        xx,zz=x[sl],z[sl];dx,dz=b[0]-a[0],b[1]-a[1]
+        t=np.clip(((xx-a[0])*dx+(zz-a[1])*dz)/max(dx*dx+dz*dz,1e-9),0,1)
+        dist=np.hypot(xx-(a[0]+t*dx),zz-(a[1]+t*dz))
+        deck=a[2]+t*(b[2]-a[2])
+        heights[sl]=np.where(dist<=reach,np.minimum(heights[sl],deck-.3),heights[sl])
+# WORLD-BUILD-01B (sheet wfW1, Codex ACK160): the east stair flights from the lake shore at 360/360
+# down to the footbridge at 346/440, landing on the viewpoint's terrace on the way. Stone flights
+# 2 m wide, risers ~0.18 m, treads 0.28 m, a 1.5 m landing after every 12 risers; the corridor is
+# too short for a straight run at that pitch, so the flights zigzag inside it. Under each step the
+# ground is cut below its tread; where a step stands over lower ground the game builds its stone
+# support down to the ground.
+STAIR_RISE,STAIR_RUN,STAIR_FLIGHT,STAIR_LANDING,STAIR_WIDTH=.18,.28,12,1.5,2.0
+def stair_run(start,end,h0,h1):
+    n=max(1,int(round((h0-h1)/STAIR_RISE)));rise=(h0-h1)/n
+    flights=[STAIR_FLIGHT]*(n//STAIR_FLIGHT)+([n%STAIR_FLIGHT] if n%STAIR_FLIGHT else [])
+    ux,uz=end[0]-start[0],end[1]-start[1];A=math.hypot(ux,uz);ux,uz=ux/A,uz/A;vx,vz=-uz,ux
+    a=A/len(flights);steps=[];h=h0
+    for k,r in enumerate(flights):
+        L=r*STAIR_RUN+(STAIR_LANDING if k<len(flights)-1 else 0.0)
+        b=math.sqrt(max(L*L-a*a,0.0))
+        l0=-b*.5 if k%2==0 else b*.5
+        px,pz=start[0]+ux*a*k+vx*l0,start[1]+uz*a*k+vz*l0
+        qx,qz=start[0]+ux*a*(k+1)-vx*l0,start[1]+uz*a*(k+1)-vz*l0
+        dx,dz=qx-px,qz-pz;D=math.hypot(dx,dz) or 1.0;dx,dz=dx/D,dz/D
+        yaw=round(math.degrees(math.atan2(dx,dz)),2)
+        for i in range(r):
+            c=STAIR_RUN*(i+.5)
+            steps.append([round(px+dx*c,3),round(pz+dz*c,3),round(h-rise*(i+1),3),yaw,STAIR_RUN+.02])
+        h-=rise*r
+        if k<len(flights)-1:
+            c=r*STAIR_RUN+STAIR_LANDING*.5
+            steps.append([round(px+dx*c,3),round(pz+dz*c,3),round(h,3),yaw,STAIR_LANDING+.02])
+    return steps
+BOOK_STAIRS=[]
+# OFF until the route is agreed (Claude 162 to Codex): the corridor's upper part falls 29 m within
+# ~22 m to the viewpoint - more than 2 m flights at 0.18/0.28 with 1.5 m landings can fold into.
+W1_STAIRS=False
+_vp=next((p_ for p_ in BOOK_PADS if p_['id']=='w1_viewpoint'),None)
+if W1_STAIRS and _vp is not None:
+    _top=(360.0,360.0);_mid_in=(358.0,381.0);_mid_out=(358.0,392.5);_foot=(350.0,436.0)
+    _h_top=float(heights[int(round(_top[1]/STEP)),int(round(_top[0]/STEP))])
+    _h_foot=float(heights[int(round(_foot[1]/STEP)),int(round(_foot[0]/STEP))])
+    _steps=stair_run(_top,_mid_in,_h_top,float(_vp['level']))+stair_run(_mid_out,_foot,float(_vp['level']),_h_foot)
+    BOOK_STAIRS.append({'id':'w1_stairs','width':STAIR_WIDTH,'steps':_steps})
+    # the cut: no grid point near a tread stands over it
+    for sx,sz,top,_yaw,_dep in _steps:
+        i0,i1=max(0,int((sz-5)/STEP)),min(WIDTH-1,int((sz+5)/STEP)+1)
+        j0,j1=max(0,int((sx-5)/STEP)),min(WIDTH-1,int((sx+5)/STEP)+1)
+        win=heights[i0:i1+1,j0:j1+1];near=np.hypot(x[i0:i1+1,j0:j1+1]-sx,z[i0:i1+1,j0:j1+1]-sz)<=4.2
+        # the viewpoint's terrace keeps its level (the flights land on it and leave it)
+        _vx,_vz=x[i0:i1+1,j0:j1+1],z[i0:i1+1,j0:j1+1]
+        near&=~((_vx>=349.9)&(_vx<=360.1)&(_vz>=379.9)&(_vz<=390.1))
+        heights[i0:i1+1,j0:j1+1]=np.where(near,np.minimum(win,top-.12),win)
 # The W1 sill (Codex 14 Oct: along the straight cut the ground lay 3 m under the 220 m mirror outside
 # the outflow, the water's edge hung over the slope): a stone sill along the whole chord, its crest
 # 0.6 m over the mirror, 4 m wide; the outflow's 12 m channel stays open.
@@ -862,6 +925,7 @@ layout={'version':'0.21.2-headwaters','width':WIDTH,'spacing':STEP,'extent_m':20
         'sea':({**SEA,'world_coast':[[p[0]-HALF,float(SEA['level']),p[1]-HALF] for p in SEA['coast']]} if SEA else None),
         'gates':D['gates'],'peaks':D['peaks'],'source_ridge':ridge,
         'book_pads':BOOK_PADS,
+        'book_stairs':BOOK_STAIRS,
         'book_places':[{**b,'arrival':book_arrival(b),'spawn':[book_arrival(b)[0]-HALF,sample(*book_arrival(b))+.12,book_arrival(b)[1]-HALF]} for b in BOOK_PLACES],
         'limits':'Graybox hypothesis. No vegetation, swimming, NPC, campaign or streaming.'}
 (OUT/'layout.json').write_text(json.dumps(layout,ensure_ascii=False,separators=(',',':'))+'\n',encoding='utf8',newline='\n')

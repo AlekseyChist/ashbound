@@ -229,3 +229,47 @@ func _viewpoint(parent: Node3D, o: Vector2) -> void:
 	_box(parent, o + Vector2(-2.85, 0), Vector3(0.3, 0.9, 4.0), "rock", 0.0, 0.3)
 	for z in [-1.85, 1.85]:
 		_box(parent, o + Vector2(-1.5, z), Vector3(2.7, 0.6, 0.3), "rock", 0.0, 0.3)
+
+
+# --- the W1 stair flights (sheet wfW1, Codex ACK160): stone treads and landings from build.py's
+# book_stairs, each a block from its tread down into the ground - a solid stair where it stands over
+# lower ground, set into the cut where the slope is above it
+
+func build_stairs(stairs: Array) -> void:
+	for flight in stairs:
+		var node := Node3D.new()
+		node.name = str(flight.id)
+		add_child(node)
+		var width := float(flight.width)
+		for st in flight.steps:
+			var at := Vector2(float(st[0]) - HALF, float(st[1]) - HALF)
+			var top := float(st[2])
+			var yaw := float(st[3])
+			var depth := float(st[4])
+			var low := INF
+			var basis := Basis(Vector3.UP, deg_to_rad(yaw))
+			for k in [Vector2(-1, -1), Vector2(1, -1), Vector2(-1, 1), Vector2(1, 1)]:
+				var p: Vector3 = basis * Vector3(k.x * width * 0.5, 0, k.y * depth * 0.5)
+				low = minf(low, ground(at.x + p.x, at.y + p.z))
+			var height := maxf(top - (low - SINK), 0.3)
+			var centre := Vector3(at.x, top - height * 0.5, at.y)
+			var mesh := MeshInstance3D.new()
+			var box := BoxMesh.new()
+			box.size = Vector3(width, height, depth)
+			mesh.mesh = box
+			mesh.material_override = _material("rock")
+			mesh.position = centre
+			mesh.rotation.y = deg_to_rad(yaw)
+			mesh.visibility_range_end = 300.0
+			node.add_child(mesh)
+			var body := StaticBody3D.new()
+			var shape := CollisionShape3D.new()
+			var bs := BoxShape3D.new()
+			bs.size = box.size
+			shape.shape = bs
+			body.add_child(shape)
+			body.position = centre
+			body.rotation.y = deg_to_rad(yaw)
+			node.add_child(body)
+			boxes += 1
+	print("BOOK_STAIRS flights=%d boxes=%d" % [stairs.size(), boxes])
