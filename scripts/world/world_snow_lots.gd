@@ -27,6 +27,10 @@ const BUCKET := 20.0
 ## Plinth: under a house the ground falls more than this below its floor -> a stone plinth.
 const PLINTH_HANG := 0.12
 const PLINTH_LEDGE := 0.25
+## A shack's yard platform stays this far off a street's edge, cut back in YARD_STEP m.
+const YARD_CLEAR := 0.2
+const YARD_STEP := 0.25
+const YARD_DOOR := 2.5
 ## The ground under a building's walls lies this far under its floor (no shared plane).
 const FLOOR_GAP := 0.05
 ## The library's lower hall (S-L: its floor 3.2 m under the entrance) needs the ground dug out: no
@@ -69,9 +73,6 @@ const STOOP_LEVEL := 4
 const LANDING := 1.2
 const STOOP_RUN := 0.35
 const STOOP_WIDTH := 1.6
-## A door stair's dressed cheek on each open side, on its slope (owner 14 Oct: the steps' blocks showed
-## a sawtooth along the slum's lane): width, height, depth under the walking line.
-const STOOP_CHEEK := Vector3(0.16, 0.45, 0.33)
 ## A snow flight stands in a bank of earth (owner 14 Oct: the flights' bodies rose as tall stepped
 ## stone walls over the falling slope): at a tread's side the ground lies FILL_TOP under its top and
 ## falls away at FILL_SLOPE (a 29 deg bank), fading into the slope over its last 3 of FILL_REACH m - never under a bridge deck, nor
@@ -498,7 +499,10 @@ func height(p: Vector2, base: float) -> float:
 		core = minf(core, d)
 		if d >= BLEND:
 			continue
-		h = minf(h, lerpf(lot.level, base, smoothstep(0.0, BLEND, d)))
+		# a shack's yard is a stone platform where the slope falls under it (build_plinths): the ground
+		# is cut down to its level but never banked up to it (Codex G03, direction A)
+		var target: float = minf(lot.level, base) if lot.shack else lot.level
+		h = minf(h, lerpf(target, base, smoothstep(0.0, BLEND, d)))
 		# under a building's own floor the ground lies FLOOR_GAP lower (Codex d086d7a native: the
 		# floors shared the terrain's plane and flickered gravel through the boards)
 		if d == 0.0 and _inside_walls(lot, p):
@@ -587,10 +591,14 @@ func _steps(book: Node3D, node: Node3D, ground: Callable, start: Vector2, dir: V
 		var low := INF
 		var foot := INF
 		for a in [-0.5, -0.17, 0.17, 0.5]:
-			for q in [-0.5, -0.25, 0.0, 0.25, 0.5]:
+			for q in [-0.85, -0.5, -0.25, 0.0, 0.25, 0.5, 0.85]:
 				var e: Vector2 = p + dir * (STOOP_RUN * a) + across * (width * q)
 				var h := float(ground.call(e.x, e.y))
+				# the footing reaches the ground a little past its sides too (Codex cd261e9 014/024:
+				# stepped bases showed over the falling slope beside the stair)
 				foot = minf(foot, h)
+				if absf(q) > 0.6:
+					continue
 				if absf(q) < 0.3:
 					high = maxf(high, h)
 					low = minf(low, h)
@@ -611,7 +619,7 @@ func _steps(book: Node3D, node: Node3D, ground: Callable, start: Vector2, dir: V
 		idle = 0
 		built += 1
 		if place:
-			var bottom := foot - 0.4
+			var bottom := foot - 0.6
 			book._stair_block(node, Vector3(p.x, (top + bottom) * 0.5, p.y), Vector3(width, top - bottom, STOOP_RUN + 0.03), yaw, "masonry")
 			# its walking surface: a slab from the step before down to this one, as the flights'
 			# treads have (the capsule caught the short risers' edges on the slum's door stairs)
@@ -619,13 +627,50 @@ func _steps(book: Node3D, node: Node3D, ground: Callable, start: Vector2, dir: V
 			var turn := Basis(Vector3.UP, deg_to_rad(yaw)) * Basis(Vector3.RIGHT, pitch)
 			book._stair_collider(node, Vector3(p.x, (before + top) * 0.5 - 0.03, p.y), Vector3(width, 0.06, STOOP_RUN / cos(pitch) + 0.04), turn)
 			book._stair_block(node, Vector3(p.x, top - 0.05, p.y), Vector3(width + 0.04, 0.1, STOOP_RUN + 0.02), yaw, "tread", false)
-			for sx in [-1.0, 1.0]:
-				var beyond: Vector2 = p + across * (sx * (width * 0.5 + 0.4))
-				if float(ground.call(beyond.x, beyond.y)) > top - 0.15:
-					continue
-				var side: Vector2 = p + across * (sx * (width * 0.5 - 0.05))
-				book._tilted_block(node, Vector3(side.x, (before + top) * 0.5 + STOOP_CHEEK.y * 0.5 - STOOP_CHEEK.z, side.y), Vector3(STOOP_CHEEK.x, STOOP_CHEEK.y, STOOP_RUN / cos(pitch) + 0.06), turn, "tread", false)
 	return [built, false, end]
+
+
+## A house's plinth past its walls on each side [left, right, back, front]: PLINTH_LEDGE; a shack's
+## its yard at the sides and back (FLAT_SHACK), each side cut back by YARD_STEP until it stays
+## YARD_CLEAR clear of every street's edge.
+func _yard(lot: Dictionary) -> Array:
+	if not lot.shack:
+		return [PLINTH_LEDGE, PLINTH_LEDGE, PLINTH_LEDGE, PLINTH_LEDGE]
+	# the door's side keeps the narrow ledge: its stair comes down there and the street lies at the
+	# floor's level along the front (grade_streets)
+	var out := [FLAT_SHACK, FLAT_SHACK, FLAT_SHACK, PLINTH_LEDGE]
+	for side in 4:
+		while float(out[side]) > PLINTH_LEDGE:
+			var e: float = out[side]
+			var pts: Array = []
+			for k in 5:
+				var t := lerpf(-0.5, 0.5, k / 4.0)
+				match side:
+					0: pts.append(lot.c + lot.s * (-lot.w * 0.5 - e) + lot.f * (t * (lot.d + 2.0 * e)))
+					1: pts.append(lot.c + lot.s * (lot.w * 0.5 + e) + lot.f * (t * (lot.d + 2.0 * e)))
+					2: pts.append(lot.c + lot.f * (-lot.d * 0.5 - e) + lot.s * (t * (lot.w + 2.0 * e)))
+					3: pts.append(lot.c + lot.f * (lot.d * 0.5 + e) + lot.s * (t * (lot.w + 2.0 * e)))
+			var clear := true
+			for q: Vector2 in pts:
+				for si in _profiles.size():
+					if float(_street_at(si, q)[0]) < float(_profiles[si][3]) + YARD_CLEAR:
+						clear = false
+				# nor over another house, its sides or its door's approach (Codex: vs11's yard stood
+				# over vs2's door 1.07 m above its floor)
+				for other in lots:
+					if other.code == lot.code:
+						continue
+					var d: Vector2 = q - other.c
+					var u := absf(d.dot(other.s))
+					var v := d.dot(other.f)
+					if u < other.w * 0.5 + YARD_CLEAR and v > -other.d * 0.5 - YARD_CLEAR and v < other.d * 0.5 + YARD_DOOR:
+						clear = false
+			if clear:
+				break
+			out[side] = maxf(e - YARD_STEP, PLINTH_LEDGE)
+			if is_equal_approx(float(out[side]), PLINTH_LEDGE):
+				break
+	return out
 
 
 ## A stone plinth under every house whose ground falls away below its floor (the uphill neighbour of a
@@ -639,21 +684,28 @@ func build_plinths(book: Node3D, ground: Callable) -> void:
 	for lot in lots:
 		if CUTS.has(lot.code):
 			continue
+		var yard := _yard(lot)
+		lot["yard"] = yard
+		# the rect: -u (left), +u, -v (back), +v (front) past the walls
+		var u0: float = -lot.w * 0.5 - yard[0]
+		var u1: float = lot.w * 0.5 + yard[1]
+		var v0: float = -lot.d * 0.5 - yard[2]
+		var v1: float = lot.d * 0.5 + yard[3]
 		var low := INF
-		var hw: float = lot.w * 0.5 + PLINTH_LEDGE
-		var hd: float = lot.d * 0.5 + PLINTH_LEDGE
 		for i in 13:
 			for j in 13:
-				var u := lerpf(-hw, hw, i / 12.0)
-				var v := lerpf(-hd, hd, j / 12.0)
-				var p: Vector2 = lot.c + lot.s * u + lot.f * v
+				var p: Vector2 = lot.c + lot.s * lerpf(u0, u1, i / 12.0) + lot.f * lerpf(v0, v1, j / 12.0)
 				low = minf(low, float(ground.call(p.x, p.y)))
 		if lot.level - low <= PLINTH_HANG:
 			continue
 		var top: float = lot.level - 0.02
 		var bottom := low - 0.4
 		var yaw := rad_to_deg(atan2(lot.f.x, lot.f.y))
-		book._stair_block(node, Vector3(lot.c.x, (top + bottom) * 0.5, lot.c.y), Vector3(hw * 2.0, top - bottom, hd * 2.0), yaw, "masonry")
+		var mid: Vector2 = lot.c + lot.s * ((u0 + u1) * 0.5) + lot.f * ((v0 + v1) * 0.5)
+		book._stair_block(node, Vector3(mid.x, (top + bottom) * 0.5, mid.y), Vector3(u1 - u0, top - bottom, v1 - v0), yaw, "masonry")
+		if lot.shack:
+			# the yard's dressed edge
+			book._stair_block(node, Vector3(mid.x, top - 0.05, mid.y), Vector3(u1 - u0 + 0.06, 0.12, v1 - v0 + 0.06), yaw, "tread", false)
 		count += 1
 	# Stone steps down from a door whose front falls away. Straight out where the ground is met within
 	# STOOP_OUT; otherwise a landing at the door and a stair down along the facade, towards the lower
@@ -663,7 +715,7 @@ func build_plinths(book: Node3D, ground: Callable) -> void:
 	for lot in lots:
 		if CUTS.has(lot.code):
 			continue
-		var out: float = lot.d * 0.5 + PLINTH_LEDGE
+		var out: float = lot.d * 0.5 + float(lot.get("yard", [0, 0, 0, PLINTH_LEDGE])[3])
 		var door: Vector2 = lot.c + lot.f * (lot.d * 0.5 + 0.3)
 		var level: float = lot.level - 0.02
 		var straight := _steps(book, node, ground, lot.c + lot.f * out, lot.f, lot.s, STOOP_WIDTH, level, STOOP_OUT, false)
