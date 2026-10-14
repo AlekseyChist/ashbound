@@ -53,6 +53,14 @@ const STREET_BLEND := 2.0
 const STREET_PIN := 3.0
 const JUNCTION := 1.5
 const END_PAD := 3.0
+## Along a house's front the street lies at its floor's level (the street within PIN_REACH m of its
+## facade, PIN_SIDE m past its corners); between such fronts a straight ramp (owner 14 Oct, Codex G03:
+## graded on the slope's own ground, the slum's lane ran 3-4 m under or over the terraced yards beside
+## it and the ground between cut 50 deg banks).
+const PIN_REACH := 6.0
+const PIN_SIDE := 0.5
+## The steepest a graded street runs (tan 25 deg).
+const STREET_GRADE := 0.466
 const STOOP_MAX := 24
 ## A straight stoop must meet the ground within this many steps, or the stair turns along the facade
 ## after a LANDING m deep landing at the door.
@@ -303,6 +311,62 @@ func grade_streets(ground: Callable) -> void:
 				sum += raw[j]
 				count += 1
 			smooth.append(sum / count)
+		# the houses' fronts: their levels, and straight ramps between them
+		var pins := PackedFloat32Array()
+		pins.resize(n)
+		for i in n:
+			var q := _along(pts, cum, minf(i * STREET_STEP, run))
+			var sum := 0.0
+			var count := 0
+			for lot in lots:
+				var d: Vector2 = q - lot.c
+				var out: float = d.dot(lot.f) - lot.d * 0.5
+				if absf(d.dot(lot.s)) <= lot.w * 0.5 + PIN_SIDE and out >= 0.0 and out <= PIN_REACH:
+					sum += lot.level
+					count += 1
+			var on_tread := false
+			for t in _treads:
+				on_tread = on_tread or q.distance_to(t[0]) < float(t[1])
+			pins[i] = sum / count if count > 0 and not on_tread else NAN
+		var last := -1
+		for i in n:
+			if is_nan(pins[i]):
+				continue
+			smooth[i] = pins[i]
+			if last >= 0 and i - last > 1:
+				for j in range(last + 1, i):
+					smooth[j] = lerpf(pins[last], pins[i], float(j - last) / float(i - last))
+			last = i
+		# eased over +-2 m: no kink where a ramp meets a front, nor a step where the fronts on the two
+		# sides of a lane overlap
+		var eased := PackedFloat32Array()
+		var steepest := 0.0
+		for i in n:
+			var sum := 0.0
+			var count := 0
+			for j in range(maxi(0, i - 2), mini(n, i + 3)):
+				sum += smooth[j]
+				count += 1
+			eased.append(sum / count)
+			if i > 0:
+				steepest = maxf(steepest, absf(eased[i] - eased[i - 1]) / STREET_STEP)
+		# no steeper than STREET_GRADE: where the fronts' levels need more, they give way to the ramp
+		for pass_i in 200:
+			var moved := false
+			for i in n - 1:
+				var excess := absf(eased[i + 1] - eased[i]) - STREET_GRADE * STREET_STEP
+				if excess > 0.001:
+					var push := signf(eased[i + 1] - eased[i]) * excess * 0.5
+					eased[i] += push
+					eased[i + 1] -= push
+					moved = true
+			if not moved:
+				break
+		steepest = 0.0
+		for i in range(1, n):
+			steepest = maxf(steepest, absf(eased[i] - eased[i - 1]) / STREET_STEP)
+		smooth = eased
+		print("SNOW_STREET %d length=%.0f steepest=%.0f deg" % [_profiles.size(), run, rad_to_deg(atan(steepest))])
 		var half := float(street[1]) * 0.5
 		var index := _profiles.size()
 		_profiles.append([pts, cum, smooth, half])
