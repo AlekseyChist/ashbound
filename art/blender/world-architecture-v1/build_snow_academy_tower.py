@@ -175,9 +175,18 @@ def stone_guard(n,a,b,h0,h1=None,width=.14):
 def repair_guard(n,a,b,h):
     beam(n+' repair handrail',(*a,h+1.05),(*b,h+1.05),.08,.09,WOOD,True)
     beam(n+' repair midrail',(*a,h+.45),(*b,h+.45),.07,.08,WOOD,True)
-    length=math.dist(a,b);count=max(1,math.ceil(length/.7))
+    length=math.dist(a,b);count=max(1,math.ceil(length/1.4))
+    pts=[]
     for k in range(count+1):
-        t=k/count;box(n+' repair baluster',(a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,h+.525),(.07,.07,1.05),WOOD,True)
+        t=k/count;pts.append((a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t))
+    for k,(x,y) in enumerate(pts):
+        box(n+' repair baluster',(x,y,h+.525),(.07,.07,1.05),WOOD,True)
+        box(n+' scaffold pole top',(x,y,h+1.20),(.08,.08,.30),WOOD)
+        box(n+' rope lashing',(x,y,h+1.05),(.13,.13,.06),WOOD)
+    for k in range(count):
+        x0,y0=pts[k];x1,y1=pts[k+1]
+        if k%2:beam(n+' repair brace',(x1,y1,h+.10),(x0,y0,h+1.0),.06,.06,WOOD)
+        else:beam(n+' repair brace',(x0,y0,h+.10),(x1,y1,h+1.0),.06,.06,WOOD)
 def internal_stairs(h):
     for k in range(10):
         box('old internal first step',(2.5,-2+(k+.5)*.3,h+(k+1)*.18-.06),(1.35,.3,.12),STONE)
