@@ -251,8 +251,19 @@ def build(slug,w,d,kind):
         for x in (dx-.45,dx+.45):box('drying rack post',(x,dy,.92),(.09,.09,1.84),wood,False,True)
         box('drying rail',(dx,dy,1.85),(1.04,.10,.10),wood,False,True)
         # Three garments draped over the rail; each hangs on both sides of it.
-        for name,m,x,width,length in [('drying shirt',linen,dx-.28,.34,.62),('drying wool cloak',wool,dx+.05,.40,.80),('drying leggings',leather,dx+.34,.16,.55)]:
-            for side in (-.06,.06):box(name,(x,dy+side,1.80-length/2),(width,.03,length),m,False,True)
+        # Garments folded over the rail: a fold lying on it, halves hanging both sides from it.
+        for name,m,x,width,length in [('drying shirt',linen,dx-.28,.34,.62),('drying wool cloak',wool,dx+.05,.40,.80)]:
+            box(name+' fold',(x,dy,1.915),(width,.16,.03),m,False,True)
+            for side in (-.065,.065):box(name,(x,dy+side,1.90-length/2),(width,.03,length),m,False,True)
+        # the shirt's sleeves hang down beside its body
+        for sx in (-1,1):
+            for side in (-.065,.065):box('drying shirt sleeve',(dx-.28+sx*.22,dy+side,1.68),(.09,.03,.40),linen,False,True)
+        # the cloak widens below (two tiers)
+        for side in (-.072,.072):box('drying wool cloak hem',(dx+.05,dy+side,1.25),(.48,.03,.30),wool,False,True)
+        # the leggings: two separate legs over the rail
+        for lx in (dx+.30,dx+.39):
+            box('drying leggings fold',(lx,dy,1.915),(.07,.16,.03),leather,False,True)
+            for side in (-.065,.065):box('drying leggings leg',(lx,dy+side,1.625),(.07,.03,.55),leather,False,True)
         box('lamp support',(-2.0 if warm else 0,-1.8 if warm else 0,h-.10),(.22,.22,.06),wood)
         hinge=bpy.data.objects.new('S_entry_hinge',None);C.ASSET.objects.link(hinge)
         hinge.location=(-.60,-yf,0);hinge['open_angle_degrees']=-100.0
@@ -267,14 +278,15 @@ def build(slug,w,d,kind):
         box('sign bracket arm',(1.4,-d/2-.33,2.55),(.04,.66,.04),iron)
         C.beam('sign bracket brace',(1.4,-d/2,2.15),(1.4,-d/2-.45,2.53),.03,.03,iron)
         for y in (-d/2-.25,-d/2-.61):box('sign chain',(1.4,y,2.43),(.02,.02,.22),iron)
+        sign_paint=paint('S faded ochre sign paint',(.66,.50,.24))
         box('trade sign board',(1.4,-d/2-.43,2.10),(.05,.52,.44),wood)
         for xs in (1.4-.035,1.4+.035):
             if kind=='shoemaker':
-                box('sign boot shaft',(xs,-d/2-.40,2.17),(.02,.11,.22),leather)
-                box('sign boot foot',(xs,-d/2-.46,2.03),(.02,.26,.08),leather)
+                box('sign boot shaft',(xs,-d/2-.40,2.17),(.02,.11,.22),sign_paint)
+                box('sign boot foot',(xs,-d/2-.46,2.03),(.02,.26,.08),sign_paint)
             elif kind=='saddler':
-                box('sign saddle seat',(xs,-d/2-.43,2.06),(.02,.30,.06),leather)
-                for dy in (-.15,.15):box('sign saddle horn',(xs,-d/2-.43+dy,2.14),(.02,.06,.14),leather)
+                box('sign saddle seat',(xs,-d/2-.43,2.06),(.02,.30,.06),sign_paint)
+                for dy in (-.15,.15):box('sign saddle horn',(xs,-d/2-.43+dy,2.14),(.02,.06,.14),sign_paint)
             else:
                 for k in (-1,0,1):
                     box('sign candle',(xs,-d/2-.43+k*.13,2.06),(.02,.06,.20+.04*(k+1)),wax)
@@ -331,11 +343,13 @@ def build(slug,w,d,kind):
             for y in (-.45,0,.45):
                 points=[(-2.98,y+.13*math.cos(i*math.tau/12),1.72+.13*math.sin(i*math.tau/12)) for i in range(12)]
                 for i in range(12):tag(C.beam('stock strap ring',points[i],points[(i+1)%12],.03,.02,leather),'harness')
+                box('strap peg',(-3.06,y,1.87),(.16,.03,.03),iron,False,True)
             for dy in (-.3,.3):box('stock stirrup',(-2.98,dy,2.08),(.04,.14,.16),iron,False,True)
         else:
             box('candle drying rod',(-2.95,0,2.60),(.04,1.30,.04),iron,False,True)
             for y in (-.48,-.16,.16,.48):
                 for i in range(5):box('hanging candle',(-2.95+(i-2)*.035,y+((i%2)-.5)*.03,2.40),(.03,.03,.34),wax,False,True)
+                box('candle wick tie',(-2.95,y,2.58),(.17,.05,.03),linen,False,True)
             for i in range(8):lathe('stock candle',(-2.98,-.56+i*.16,1.575),[(.03,0),(.022,.26),(.008,.28)],wax,'candle',8)
 
     visual=[o for o in C.ASSET.objects if o.type=='MESH']
