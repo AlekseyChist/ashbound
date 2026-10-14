@@ -15,6 +15,14 @@ func run():
         var basin=load("res://scenes/buildings/world-architecture-v1/"+str(spec[0])+".tscn").instantiate()
         root.add_child(basin)
         await physics_frame
+        var bounds:AABB
+        var first=true
+        for mesh in basin.find_children("*","MeshInstance3D",true,false):
+            var volume=mesh.global_transform*mesh.get_aabb()
+            if first:bounds=volume;first=false
+            else:bounds=bounds.merge(volume)
+        if absf(bounds.size.x-float(spec[1]))>.02 or absf(bounds.size.z-5)>.02:
+            push_error("Basin exceeds approved outer contour "+str(bounds));quit(1);return
         var space=basin.get_world_3d().direct_space_state
         var labels=["Inlet","Outlet"] if str(spec[0])=="d_cooling_pond" else ["Inlet"]
         for label in labels:
