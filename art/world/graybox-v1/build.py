@@ -720,6 +720,24 @@ for r in layout['roads']:
         v=1-smooth((d-inner)/(outer-inner))
         mask[z0:z1+1,x0:x1+1]=np.maximum(mask[z0:z1+1,x0:x1+1],v)
 from PIL import Image
+# FOREST-CITY-01 (D-111): the forest city's plaza and the streets from its gates to it, painted like
+# the roads (assets/world/forest-city-v1/plan.json).
+CITY_PLAN=ROOT/'assets/world/forest-city-v1/plan.json'
+if CITY_PLAN.exists():
+    cp=json.loads(CITY_PLAN.read_text(encoding='utf8'))
+    pcx,pcz=cp['plaza']['center'];pr=float(cp['plaza']['radius'])
+    def paint_segment(a,b,half):
+        a=np.array(a,float);b=np.array(b,float);outer=half+1.0
+        x0,z0=np.floor(np.minimum(a,b)-outer).astype(int);x1,z1=np.ceil(np.maximum(a,b)+outer).astype(int)
+        pz,px=np.mgrid[z0:z1+1,x0:x1+1].astype(float)+.5
+        ab=b-a;t=np.clip(((px-a[0])*ab[0]+(pz-a[1])*ab[1])/max(ab@ab,1e-9),0,1)
+        dd=np.hypot(px-a[0]-t*ab[0],pz-a[1]-t*ab[1])
+        mask[z0:z1+1,x0:x1+1]=np.maximum(mask[z0:z1+1,x0:x1+1],1-smooth((dd-half)/(outer-half)))
+    paint_segment((pcx,pcz),(pcx+.01,pcz),pr)
+    pal=cp['palisade']
+    for g in pal['gates']:
+        t=math.radians(float(g['deg']))
+        paint_segment((pcx,pcz),(pal['center'][0]+(pal['radius']+3)*math.cos(t),pal['center'][1]+(pal['radius']+3)*math.sin(t)),2.2)
 Image.fromarray(np.round(mask*255).astype(np.uint8),'L').save(OUT/'roads.png',optimize=True)
 character=ROOT/'assets/characters/world-graybox-v1';character.mkdir(parents=True,exist_ok=True)
 # First build only: the frames in assets/ were edited later (D-094 guard poses); never overwrite them.

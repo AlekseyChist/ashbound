@@ -383,16 +383,20 @@ def build_shell(spec, mats):
         course = C.box(f"{spec['id']}_stonecourse_{face}", Vector((x, 0, floor + course_h / 2)), (.15, d, course_h), mats['stone'])
         _tag(course, spec, 'shell', face)
 
-    # Steps aligned to FRONT entry centre
+    # Steps aligned to the entry centre - on the FRONT, or on the RIGHT long side (FOREST-CITY-01: the
+    # town hall and the barracks are entered from their long side; turn_z_deg turns it to the front).
+    face_in = spec.get('entrance_face', 'front')
     if spec.get('entrance_style') == 'steps':
-        entry = next((op for op in spec['openings'] if op['face'] == 'front' and op['kind'] in ('door', 'double_door')), None)
+        entry = next((op for op in spec['openings'] if op['face'] == face_in and op['kind'] in ('door', 'double_door')), None)
         ex = entry['center'] if entry else 0
         aw = spec.get('approach_width', 1.2)
-        # Two treads at different Y, tops floor/2 and floor
+        # Two treads, tops floor/2 and floor
         for i in range(2):
             step_h = floor / 2 * (i + 1)
-            step_y = -hd - 1.1 + i * .6
-            step = C.box(f"{spec['id']}_step{i}", Vector((ex, step_y, step_h / 2)), (aw, .6, step_h), mats['stone'])
+            if face_in == 'right':
+                step = C.box(f"{spec['id']}_step{i}", Vector((hw + 1.1 - i * .6, ex, step_h / 2)), (.6, aw, step_h), mats['stone'])
+            else:
+                step = C.box(f"{spec['id']}_step{i}", Vector((ex, -hd - 1.1 + i * .6, step_h / 2)), (aw, .6, step_h), mats['stone'])
             _tag(step, spec, 'foundation')
 
     # Ramp: closed wedge, rear edge meets floor at front wall, front edge ground 0
@@ -425,9 +429,13 @@ def build_shell(spec, mats):
         slab = C.box(f"{spec['id']}_canopy", Vector((cx, cy, (z_in + z_out) / 2)), (slope_len, cd, .1), mats['roof'])
         slab.rotation_euler[1] = angle
         _tag(slab, spec, 'canopy')
-        # Posts: top matches local roof height, base ground 0
-        for px in (cp['x_start'], cp['x_end']):
-            for py in (cp['y_start'], cp['y_end']):
+        # Posts: top matches local roof height, base ground 0; a gallery (post_step) has a row of them.
+        post_ys = [cp['y_start'], cp['y_end']]
+        if cp.get('post_step'):
+            n_posts = max(1, round(cd / cp['post_step']))
+            post_ys = [cp['y_start'] + cd * k / n_posts for k in range(n_posts + 1)]
+        for px in (cp['x_end'],) if cp.get('post_step') else (cp['x_start'], cp['x_end']):
+            for py in post_ys:
                 # Determine z at this y position on the slope
                 t = (px - cp['x_start']) / cw
                 z_top = z_in + (z_out - z_in) * t
@@ -459,6 +467,13 @@ def build_shell(spec, mats):
                 # Bracket from wall to roof
                 bracket = C.beam(f"{spec['id']}_bracket{s}", Vector((bx, -hd, z_in)), Vector((bx, -hd - proj, z_out)), .08, .08, mats['oak'])
                 _tag(bracket, spec, 'canopy', 'front')
+
+    # Roof vents on the ridge (the town hall's smoke holes): a small box with its own gable cap.
+    for i, vy in enumerate(spec.get('roof_vents', [])):
+        vent = C.box(f"{spec['id']}_vent{i}", Vector((0, vy, ridge + .35)), (1.0, 1.1, .9), mats['oak'])
+        _tag(vent, spec, 'roof')
+        cap = C.box(f"{spec['id']}_vent{i}_cap", Vector((0, vy, ridge + .9)), (1.4, 1.4, .12), mats['roof'])
+        _tag(cap, spec, 'roof')
 
     # Deselect all
     bpy.ops.object.select_all(action='DESELECT')
