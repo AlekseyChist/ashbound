@@ -19,11 +19,23 @@ func run() -> void:
         world = load("res://scenes/world/world.tscn").instantiate()
     root.add_child(world)
     await physics_frame
-    var city := City.new()
+    var city: City
     var frame := world.get("world_root") as Node3D
     if frame == null:fail("World root frame missing");return
-    frame.add_child(city)
-    city.build(world)
+    # WB01 now builds this city in world.gd. Inspect that instance; a second
+    # overlapping city would hide integration defects and duplicate all physics.
+    for property in world.get_property_list():
+        if property.name == "snow_city":
+            city = world.get("snow_city") as City
+            break
+    if city == null:
+        city = City.new()
+        frame.add_child(city)
+        city.build(world)
+    var city_count := 0
+    for child in frame.get_children():
+        if child.get_script() == City:city_count += 1
+    if city_count!=1:fail("Snow city integration spawned duplicate/missing builders");return
     await physics_frame
     if city.placed.size()!=6 or city.unresolved.size()!=35:
         fail("Current six exact modules or explicit unfinished35 plots lost");return
