@@ -101,16 +101,23 @@ box('Eldren lamp fixing cleat',(-3,0,10.545),(.20,.20,.03),WOOD)
 # All exterior walls are old masonry, not residential half-timber.
 for h in LEVELS:
     top=h+3.6 if h<SERVICE else 27.8
-    front=[(-3.8,-2.8,h+1.15,h+2.5)] if h<10.8 else [(-.35,.35,h+1.4,min(top,h+2.5))]
+    wide=h<10.8
+    mids={'south':-3.3 if wide else 0,'north':-.7 if wide else 0,'west':-2.2 if wide else 0,'east':3.5 if wide else 0}
+    # A window behind this level's outer flight moves to the flight's low end (Codex 176/2: the
+    # stair crossed the north opening at 3.6; the narrow service lights sat behind theirs too).
+    side={0:('east',-2.2),1:('north',2.2),2:('west',2.2),3:('south',-2.2)}.get(round(h/3.6)%4)
+    if side and abs(mids[side[0]])<=3:mids[side[0]]=side[1]
+    half=.5 if wide else .35;lo=h+1.15 if wide else h+1.4;hi=h+2.5 if wide else min(top,h+2.5)
+    front=[(mids['south']-half,mids['south']+half,lo,hi)]
     if h==0:front.append((-.8,.8,0,2.5))
-    rear=[(-1.2,-.2,h+1.15,h+2.5)] if h<10.8 else [(-.35,.35,h+1.4,min(top,h+2.5))]
-    west=[(-2.7,-1.7,h+1.15,h+2.5)] if h<10.8 else [(-.35,.35,h+1.4,min(top,h+2.5))]
+    rear=[(mids['north']-half,mids['north']+half,lo,hi)]
+    west=[(mids['west']-half,mids['west']+half,lo,hi)]
     if h==7.2:west.append((-.6,.6,8.2,9.2))
-    east=[(3.,4.,h+1.15,h+2.5)] if h<10.8 else [(-.35,.35,h+1.4,min(top,h+2.5))]
+    east=[(mids['east']-half,mids['east']+half,lo,hi)]
     if h==SERVICE:east=[(-2.9,-1.3,SERVICE,SERVICE+2.5)]
     for n,axis,fixed,a,b,holes in [('south','x',-5.3,-5.5,5.5,front),('north','x',5.3,-5.5,5.5,rear),('west','y',-5.3,-5.1,5.1,west),('east','y',5.3,-5.1,5.1,east)]:wall(n+' old masonry',axis,fixed,a,b,h,top,holes)
     # Narrow service lights and deep lower windows have masonry frames.
-    for fixed,mid,axis in [(-5.3,-3.3 if h<10.8 else 0,'x'),(5.3,-.7 if h<10.8 else 0,'x'),(-5.3,-2.2 if h<10.8 else 0,'y'),(5.3,3.5 if h<10.8 else 0,'y')]:
+    for fixed,mid,axis in [(-5.3,mids['south'],'x'),(5.3,mids['north'],'x'),(-5.3,mids['west'],'y'),(5.3,mids['east'],'y')]:
         if fixed==5.3 and axis=='y' and h==SERVICE:continue
         w=1.0 if h<10.8 else .7;lo=h+1.15 if h<10.8 else h+1.4;hi=h+2.5
         for u in (mid-w/2-.055,mid+w/2+.055):
