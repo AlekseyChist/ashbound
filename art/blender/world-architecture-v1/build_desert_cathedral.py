@@ -75,6 +75,18 @@ def lancet(n,cx,cy,z,axis,sign,w,h,depth,m,lift=0.0):
         j=(i+1)%k
         f.append((i,j,k+j,k+i))
     return C.mesh(n,v,f,m)
+def arch_wall(n,x,ya,yb,spring,top,thick,m):
+    # the wall over a pointed arch between two piers (y ya..yb) in the plane x: from the springing line up
+    # to `top`, its underside the arch (pointed, apex 0.85 of the span's half over the springing)
+    w=yb-ya;mid=(ya+yb)/2;rise=w*.425
+    pts=[(ya,spring),(ya,top),(yb,top),(yb,spring),(yb-w*.06,spring+rise*.45),(mid+w*.22,spring+rise*.85),(mid,spring+rise),(mid-w*.22,spring+rise*.85),(ya+w*.06,spring+rise*.45)]
+    k=len(pts)
+    v=[(x-thick/2,u,z) for u,z in pts]+[(x+thick/2,u,z) for u,z in pts]
+    f=[tuple(range(k)),tuple(range(2*k-1,k-1,-1))]
+    for i in range(k):
+        j=(i+1)%k
+        f.append((i,j,k+j,k+i))
+    return C.mesh(n,v,f,m)
 box('foundation',(0,0,-.2),(30,18,.4),STONE)
 box('floor',(0,0,.05),(28.8,16.8,.1),STONE)
 # Walls (thickness 1.0; centre lines x +-13.9, y +-7.9).
@@ -84,9 +96,24 @@ box('wall',(-13.9,0,6.5),(1.0,14.8,13),STONE)                    # west, intact
 box('wall',(-7.7,-7.9,6.5),(13.4,1.0,13),STONE)
 box('wall',(7.7,-7.9,6.5),(13.4,1.0,13),STONE)
 box('portal head',(0,-7.9,8.0),(2.0,1.0,10.0),STONE)
+# the portal's Gothic frame (Codex 299): two jambs, a pointed archivolt of stones over the door, a dark
+# tympanum in the arch above the 2 x 3 m opening
+for x in (-1.2,1.2):
+    box('portal jamb',(x,-8.55,1.6),(.4,.3,3.2),STONE)
+arc=[(-1.2,3.2),(-1.05,3.75),(-.65,4.25),(0,4.6),(.65,4.25),(1.05,3.75),(1.2,3.2)]
+for (ax,az),(bx,bz) in zip(arc,arc[1:]):
+    C.beam('portal archivolt',(ax,-8.55,az),(bx,-8.55,bz),.4,.3,STONE)
+lancet('portal tympanum',0,-8.4,3.0,'y',-1,2.0,.05,.05,DARK,.06)
 # East wall — ruined, broken in stepped heights (pieces y -7.5..7.5, 3 m each).
-for y,h in ((-6,13),(-3,10.5),(0,8.5),(3,10),(6,12)):
-    box('wall',(13.9,y,h/2),(1.0,3.0,h),STONE)
+# broken unevenly: 1 m courses of differing height, the break lowest mid-wall (Codex 299: five even
+# steps read as built, not ruined), and fallen blocks on the ground outside it
+_h=[13,12.6,12.1,11.2,11.8,10.4,9.6,10.1,8.8,8.1,8.6,9.9,11.2,12.4,13.0]
+for k,h in enumerate(_h[:15]):
+    y=-7.4+k+.5
+    box('wall',(13.9,y,h/2),(1.0,1.0,h),STONE)
+# fallen inside the east aisle by the break, clear of the library (y >= 1) and the arcade
+for x,y,dz,sx,sy,sz in ((12.6,-3.0,.25,1.1,.8,.5),(12.2,-1.6,.3,.9,1.2,.6),(12.8,-.4,.2,1.0,.9,.4),(11.9,-4.4,.35,.8,.8,.7),(12.5,-2.2,.8,.7,.6,.5)):
+    box('rubble',(x,y,dz),(sx,sy,sz),STONE)
 # Buttresses outside the long walls, between windows.
 for x in (-10,-5,5,10):
     for sy in (-1,1):
@@ -108,8 +135,11 @@ lancet('window',0,-8.4,7.95,'y',-1,3.0,1.8,.04,DARK,.06)
 # Arcades: piers between naves at x +-5, longitudinal arcade beams on top.
 for x in (-5,5):
     for y in (-5,-1.5,2,5.5):
-        box('pier',(x,y,5.5),(1.0,1.0,11),STONE)
-    box('arcade beam',(x,0,11.3),(1.0,14.8,.6),STONE)
+        box('pier',(x,y,5.8),(1.0,1.0,11.6),STONE)
+    # pointed arcades between the piers (Codex 299: straight beams read as no arcade)
+    ys=[-7.4,-5,-1.5,2,5.5,7.4]
+    for ya,yb in zip(ys,ys[1:]):
+        arch_wall('arcade',x,ya+.5 if ya>-7.4 else ya,yb-.5 if yb<7.4 else yb,8.0,11.6,1.0,STONE)
 # Roof (only the western part survives to x=4; north-east is open to the sky).
 # Codex 293: the north sanctuary stays roofed (the concept's protected bay) - the nave roof runs whole,
 # north to the wall; the lost roof is the east aisle's, its broken rafters left over it.
