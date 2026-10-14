@@ -252,14 +252,17 @@ def build(slug,w,d,kind):
         box('drying rail',(dx,dy,1.85),(1.04,.10,.10),wood,False,True)
         # Three garments draped over the rail; each hangs on both sides of it.
         # Garments folded over the rail: a fold lying on it, halves hanging both sides from it.
-        for name,m,x,width,length in [('drying shirt',linen,dx-.28,.34,.62),('drying wool cloak',wool,dx+.05,.40,.80)]:
-            box(name+' fold',(x,dy,1.915),(width,.16,.03),m,False,True)
-            for side in (-.065,.065):box(name,(x,dy+side,1.90-length/2),(width,.03,length),m,False,True)
+        # Each garment hangs in its own depth layer (Codex c8c8d6d: shared planes flickered where the
+        # sleeve met the cloak and the cloak's hem met the leggings); the cloak's fold lies over the shirt's.
+        box('drying shirt fold',(dx-.28,dy,1.915),(.34,.16,.03),linen,False,True)
+        for side in (-.065,.065):box('drying shirt',(dx-.28,dy+side,1.59),(.34,.03,.62),linen,False,True)
+        box('drying wool cloak fold',(dx+.05,dy,1.95),(.40,.23,.03),wool,False,True)
+        for side in (-.100,.100):box('drying wool cloak',(dx+.05,dy+side,1.53),(.40,.03,.80),wool,False,True)
         # the shirt's sleeves hang down beside its body
         for sx in (-1,1):
             for side in (-.065,.065):box('drying shirt sleeve',(dx-.28+sx*.22,dy+side,1.68),(.09,.03,.40),linen,False,True)
         # the cloak widens below (two tiers)
-        for side in (-.072,.072):box('drying wool cloak hem',(dx+.05,dy+side,1.25),(.48,.03,.30),wool,False,True)
+        for side in (-.108,.108):box('drying wool cloak hem',(dx+.05,dy+side,1.25),(.48,.03,.30),wool,False,True)
         # the leggings: two separate legs over the rail
         for lx in (dx+.30,dx+.39):
             box('drying leggings fold',(lx,dy,1.915),(.07,.16,.03),leather,False,True)
