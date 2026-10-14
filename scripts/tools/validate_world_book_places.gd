@@ -288,6 +288,9 @@ func run() -> void:
 	var in_desert := lots.filter(func(l): return l.city == "desert").size()
 	require(in_snow == 41, "Expected 41 snow plots, got %d" % in_snow)
 	require(in_desert == 43, "Expected 43 desert plots, got %d" % in_desert)
+	# the lowland city's 50 less its 4 piers and 13 shacks on stilts (WORLD-BUILD-01F)
+	var in_lowland := lots.filter(func(l): return l.city == "lowland").size()
+	require(in_lowland == 33, "Expected 33 lowland ground plots, got %d" % in_lowland)
 	var worst_read := 0.0
 	var side_stairs: Array[String] = []
 	for lot in lots:

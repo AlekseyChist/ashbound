@@ -27,18 +27,24 @@ var skipped: Array = []
 ## mine gate and closed east gap belong to the snow plan only.
 const DESERT_PLAN := "res://assets/world/desert-city-v1/plan.json"
 const DESERT_CENTRE := Vector2(1768, 362)
+## WORLD-BUILD-01F: the lowland ring (1.8 m) and its citadel (2.2 m) on the spur.
+const LOWLAND_PLAN := "res://assets/world/lowland-city-v1/plan.json"
+const LOWLAND_CENTRE := Vector2(1060, 1580)
+const CITADEL_CENTRE := Vector2(1036, 1656)
 var _desert := false
+var _lowland := false
 
 
 func build(book: Node3D, ground: Callable, layout: Dictionary, streets: Array, plan_path := PLAN) -> void:
 	_desert = plan_path == DESERT_PLAN
+	_lowland = plan_path == LOWLAND_PLAN
 	if not FileAccess.file_exists(plan_path):
 		return
 	var plan = JSON.parse_string(FileAccess.get_file_as_string(plan_path))
 	if not plan is Dictionary:
 		return
 	var node := Node3D.new()
-	node.name = "DesertWalls" if _desert else "SnowWalls"
+	node.name = "DesertWalls" if _desert else ("LowlandWalls" if _lowland else "SnowWalls")
 	book.add_child(node)
 	var keep := _keep_out(layout, streets)
 	var lines: Array = []
@@ -49,7 +55,7 @@ func build(book: Node3D, ground: Callable, layout: Dictionary, streets: Array, p
 		for q in line.pts:
 			pts.append(Vector2(float(q[0]), float(q[1])))
 		lines.append([pts, float(line.width)])
-	if not _desert:
+	if not _desert and not _lowland:
 		lines.append([PackedVector2Array(EAST_GAP), 2.0])
 	for line in lines:
 		var pts: PackedVector2Array = line[0]
@@ -66,7 +72,7 @@ func build(book: Node3D, ground: Callable, layout: Dictionary, streets: Array, p
 			var a := _along(pts, lengths, run * i / n)
 			var b := _along(pts, lengths, run * (i + 1) / n)
 			var mid := (a + b) * 0.5
-			if not _desert and width == 2.0 and mid.distance_to(MINE_GATE) < MINE_GATE_WIDTH * 0.5:
+			if not _desert and not _lowland and width == 2.0 and mid.distance_to(MINE_GATE) < MINE_GATE_WIDTH * 0.5:
 				continue
 			var why := _blocked(mid, a.distance_to(b), width, keep)
 			if why != "":
@@ -102,13 +108,15 @@ func build(book: Node3D, ground: Callable, layout: Dictionary, streets: Array, p
 				var at: Vector2 = mid + out * (width * 0.5 + 0.3)
 				var bh := maxf(top - 1.2 - (lo - 0.3), 0.5)
 				book._stair_block(node, Vector3(at.x - HALF, lo - 0.3 + bh * 0.5, at.y - HALF), Vector3(0.6, bh, 0.9), yaw, "masonry", false)
-	print(("DESERT_WALLS" if _desert else "SNOW_WALLS") + " blocks=%d skipped=%d %s" % [blocks, skipped.size(), str(skipped.map(func(s): return "%s:%s" % [s[0], s[1]]))])
+	print(("DESERT_WALLS" if _desert else ("LOWLAND_WALLS" if _lowland else "SNOW_WALLS")) + " blocks=%d skipped=%d %s" % [blocks, skipped.size(), str(skipped.map(func(s): return "%s:%s" % [s[0], s[1]]))])
 
 
 ## The middle of what a wall encloses: the lower city, or the Academy shelf (its 2.0 m wall).
 func _centre(width: float) -> Vector2:
 	if _desert:
 		return DESERT_CENTRE
+	if _lowland:
+		return CITADEL_CENTRE if width > 2.0 else LOWLAND_CENTRE
 	return Vector2(1068, 292) if width == 2.0 else Vector2(985, 330)
 
 
@@ -140,7 +148,8 @@ func _keep_out(layout: Dictionary, streets: Array) -> Array:
 			var b := Vector2(float(wp[k + 1][0]) + HALF, float(wp[k + 1][2]) + HALF)
 			var near_snow := a.x >= 880 and a.x <= 1120 and a.y >= 240 and a.y <= 420
 			var near_desert := a.distance_to(DESERT_CENTRE) < 110.0
-			if not (near_desert if _desert else near_snow):
+			var near_lowland := a.distance_to(LOWLAND_CENTRE) < 130.0
+			if not (near_desert if _desert else (near_lowland if _lowland else near_snow)):
 				continue
 			out.append([a, b, float(road.get("width_m", 3.0)) * 0.5, str(road.id)])
 	return out

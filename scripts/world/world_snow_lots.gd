@@ -17,6 +17,9 @@ const PLAN := "res://assets/world/snow-city-v1/plan.json"
 ## stand on 1-1.5 m), set in grade_streets. Its codes overlap the snow city's (s1/s2/s10/s11): a lot's
 ## `key` is its code in the snow city, "desert:" + code in the desert.
 const DESERT_PLAN := "res://assets/world/desert-city-v1/plan.json"
+## WORLD-BUILD-01F: the lowland city (the council's fortress, D-118) the same way; its piers and its
+## shacks on stilts over the water stand on their own (no ground levelled under them).
+const LOWLAND_PLAN := "res://assets/world/lowland-city-v1/plan.json"
 const HALF := 1000.0
 const GRID := 5.0
 const FINE := 1.25
@@ -132,6 +135,7 @@ func setup(layout: Dictionary) -> void:
 		return
 	_read_plan(PLAN, "snow", levels)
 	_read_plan(DESERT_PLAN, "desert", {})
+	_read_plan(LOWLAND_PLAN, "lowland", {})
 	var area := Rect2()
 	for i in lots.size():
 		var lot := lots[i]
@@ -250,12 +254,15 @@ func _read_plan(path: String, city: String, levels: Dictionary) -> void:
 		var code := str(b.code)
 		if city == "snow" and not levels.has(code):
 			continue
+		if city == "lowland" and (str(b.kind) == "pier" or str(b.kind) == "shack"):
+			continue
 		var yaw := deg_to_rad(float(b.yaw))
 		var f := Vector2(-sin(yaw), cos(yaw))
 		var lot := {
 			"code": code, "key": code if city == "snow" else city + ":" + code, "city": city,
 			"c": Vector2(float(b.x) - HALF, float(b.z) - HALF), "f": f, "s": Vector2(f.y, -f.x),
 			"w": float(b.w), "d": float(b.d), "level": float(levels.get(code, NAN)), "shack": str(b.kind) == "shack",
+			"plinth": bool(b.get("plinth", false)),
 		}
 		lots.append(lot)
 
@@ -288,11 +295,17 @@ func grade_streets(ground: Callable) -> void:
 		if not is_nan(float(lot.level)):
 			continue
 		var sum := 0.0
+		var top := -INF
 		for u in [-0.5, 0.0, 0.5]:
 			for v in [-0.5, 0.0, 0.5]:
 				var q: Vector2 = lot.c + lot.s * (lot.w * u) + lot.f * (lot.d * v)
-				sum += float(ground.call(q.x, q.y))
-		lot.level = snappedf(sum / 9.0, 0.05)
+				var h := float(ground.call(q.x, q.y))
+				sum += h
+				top = maxf(top, h)
+		# a building the book sets on a stone plinth (the lowland citadel and port on the spur and the
+		# bank): its floor over the highest ground under it, the plinth taking up the fall and door
+		# steps down from it (Ts1's door had faced a 0.49 m climb)
+		lot.level = snappedf(top + 0.15 if lot.plinth else sum / 9.0, 0.05)
 	# Grade each street (Codex 0208cfd / the lane walk: between the slum's plots of different levels
 	# the lane folded into a 55 deg crease; by the foot of stair C the street crossed a 46 deg bank).
 	for street in streets:

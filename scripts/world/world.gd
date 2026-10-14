@@ -96,8 +96,11 @@ var inn: Node3D
 ## Every inn hall on the map (the forest inn first); their doors work like the village doors.
 var inns: Array[Node3D] = []
 const SNOW_CITY := "res://scripts/world/world_snow_city.gd"
+## WORLD-BUILD-01E: Codex's desert builder (PR #201) on the book's desert plan, when present.
+const DESERT_CITY := "res://scripts/world/world_desert_city.gd"
 ## Codex's snow city builder (when present): its doors join the inns' in the action button.
 var snow_city: Node3D
+var desert_city: Node3D
 var inn_keeper: Node3D
 var inn_talk: QuestTracker
 ## INN-REST-01: the rented bed in the inn loft and sleeping until the morning.
@@ -997,6 +1000,14 @@ func _build_water_and_sites() -> void:
 			world_root.add_child(snow_city)
 			snow_city.build(self)
 			continue
+		# WORLD-BUILD-01E: the desert city by its plan (its random grey volumes crossed the modules; the
+		# plots without a model yet stay open, levelled ground - not stand-ins)
+		if str(city.id) == "desert" and ResourceLoader.exists(DESERT_CITY):
+			desert_city = (load(DESERT_CITY) as GDScript).new()
+			desert_city.name = "DesertCity"
+			world_root.add_child(desert_city)
+			desert_city.build(self)
+			continue
 		# FOREST-CITY-01 (D-111): the forest city is built by its plan, not grey blocks.
 		if str(city.id) == "forest":
 			forest_city = preload("res://scripts/world/world_forest_city.gd").new()
@@ -1050,6 +1061,8 @@ func _build_water_and_sites() -> void:
 	SnowWalls.new().build(book, world_ground, world_layout, snow_lots.streets)
 	# WORLD-BUILD-01E: the desert city's ring of walls and its four gates
 	SnowWalls.new().build(book, world_ground, world_layout, snow_lots.streets, SnowWalls.DESERT_PLAN)
+	# WORLD-BUILD-01F: the lowland city's ring and its citadel's walls
+	SnowWalls.new().build(book, world_ground, world_layout, snow_lots.streets, SnowWalls.LOWLAND_PLAN)
 
 
 func open_debug_map() -> void:
@@ -1270,6 +1283,8 @@ func _offer_inn_door() -> void:
 			doors.append(hall.door)
 	if snow_city != null and snow_city.has_method("get_doors"):
 		doors.append_array(snow_city.get_doors())
+	if desert_city != null and desert_city.has_method("get_doors"):
+		doors.append_array(desert_city.get_doors())
 	for d in doors:
 		d.set_highlight(false)
 		if door == null or d.can_interact(player):
