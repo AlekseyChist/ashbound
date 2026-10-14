@@ -94,6 +94,8 @@ func inspect_model(identity: String, size: Vector2) -> void:
 	var first := true
 	var triangles := 0
 	var bed_found := false
+	var mat_found := false
+	var poor := identity.begins_with("d_poor")
 	for mesh in model.find_children("*", "MeshInstance3D", true, false):
 		if model.lamp_root.is_ancestor_of(mesh):
 			continue
@@ -103,6 +105,9 @@ func inspect_model(identity: String, size: Vector2) -> void:
 		if mesh.name.contains("bed_wooden_box") or mesh.name.contains("bed wooden box"):
 			bed_found = true
 			check(b.size.z >= 2.09 and b.size.x >= 1.1, identity + ": adult box bed too short/narrow")
+		if mesh.name.contains("sleeping_reed_mat") or mesh.name.contains("sleeping reed mat"):
+			mat_found = true
+			check(b.size.z >= 2.0 and b.size.x >= 1.0 and b.position.y >= -.005 and b.end.y <= .11, identity + ": sleeping mat size or floor support")
 		for surface in mesh.mesh.get_surface_count():
 			var arrays: Array = mesh.mesh.surface_get_arrays(surface)
 			triangles += arrays[Mesh.ARRAY_INDEX].size() / 3 if arrays[Mesh.ARRAY_INDEX] != null and not arrays[Mesh.ARRAY_INDEX].is_empty() else arrays[Mesh.ARRAY_VERTEX].size() / 3
@@ -111,9 +116,10 @@ func inspect_model(identity: String, size: Vector2) -> void:
 			if material != null and (material.resource_name.contains("adobe") or material.resource_name.contains("plaster")):
 				check(material.albedo_texture != null and material.vertex_color_use_as_albedo, identity + ": wall texture/weather absent")
 				check(material.albedo_color.r > material.albedo_color.b + .1, identity + ": ochre lost")
-	check(bed_found, identity + ": measured wooden bed missing")
-	check(absf(total.size.x-size.x)<.025 and absf(total.size.z-size.y)<.025, identity+": imported footprint "+str(total))
-	var top := 3.52 if identity.begins_with("d_poor") else 3.55
+	check(mat_found and not bed_found if poor else bed_found, identity + ": required sleeping mat/wooden bed missing")
+	# Accepted reliefs may extend 0.30m; retain exact structural wall rays below.
+	check(total.position.x >= -size.x/2-.305 and total.end.x <= size.x/2+.305 and total.position.z >= -size.y/2-.305 and total.end.z <= size.y/2+.305, identity+": exterior exceeds accepted 0.30m relief envelope "+str(total))
+	var top := 4.445 if poor else 3.70
 	check(absf(total.position.y+.24)<.02 and absf(total.end.y-top)<.025, identity+": vertical bounds "+str(total))
 	check(model.interior_meshes.size() >= 3, identity + ": interior groups absent")
 	var colliders := model.find_children("*", "CollisionShape3D", true, false).size()

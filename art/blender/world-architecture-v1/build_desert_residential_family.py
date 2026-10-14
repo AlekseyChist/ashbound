@@ -99,9 +99,20 @@ def build(identity, w, d, poor):
         for y in (-d/2+.17, d/2-.17):
             box('lime coping', (0, y, 3.535), (w-.68, .34, .03), stone, bevel=0)
     else:
-        # Rough repair panels are attached to adobe, with warm local texture, no new material style.
-        for x, width, z in [(-1.8, .65, .8), (1.65, .8, 1.55)]:
-            box('adobe patch', (x, -d/2+.007, z), (width, .012, .5), plaster, bevel=.01)
+        # Plaster has flaked off in patches, exposing the raw mud brick underneath.
+        mudbrick = surface('DR exposed mud brick', 'stone_wall_02_diff_1k.jpg', (.55, .38, .24), 1.2)
+        for x, z, width, height in [(-2.2, .55, .7, .5), (1.75, 1.6, .55, .4), (-1.5, 2.2, .45, .3)]:
+            box('mudbrick patch', (x, -d/2-.006, z), (width, .012, height), mudbrick, bevel=.01)
+        for y, z, width, height in [(-.8, .9, .8, .6), (1.2, 2.0, .5, .35)]:
+            box('mudbrick patch', (-w/2-.006, y, z), (.012, width, height), mudbrick, bevel=.01)
+        box('mudbrick patch', (1.6, d/2+.006, .75), (.7, .012, .45), mudbrick, bevel=.01)
+        # Reed shade mat over the roof instead of an empty terrace.
+        for x in (-w/2+.6, -.2):
+            for y in (-d/2+.8, d/2-.8):
+                box('roof shade pole', (x, y, 3.75), (.08, .08, 1.3), wood)
+        box('reed roof mat', (-w/4+.2, 0, 4.42), (w/2+.1, d-1.4, .05), straw)
+        for y in (-d/2+.8, 0, d/2-.8):
+            box('reed mat batten', (-w/4+.2, y, 4.38), (w/2+.2, .06, .06), wood)
     # Deep entrance reveal and supported reed shade inside the plot boundary.
     for x in (-.79, .79):
         box('entry reveal', (x, front+.25, 1.175), (.16, .9, 2.35), stone if not poor else plaster, True, bevel=0)
@@ -110,6 +121,25 @@ def build(identity, w, d, poor):
         box('shade bracket', (x, front+.47, 2.38), (.12, .38, .12), wood)
     for i in range(10):
         box('reed shade slat', (-.85+i*.19, front+.47, 2.51), (.13, .55, .055), wood)
+    # Desert exterior: joist ends through the walls, roof spouts, a roof ladder, a stone foot band.
+    for x in [(-w/2+.55)+i*(w-1.1)/5 for i in range(6)]:
+        box('joist end', (x, d/2+.07, 2.75), (.14, .14, .14), wood)
+        if abs(x) >= .95:
+            box('joist end', (x, -d/2-.07, 2.75), (.14, .14, .14), wood)
+    for x in (-w/2+1.0, w/2-1.0):
+        box('roof spout', (x, d/2+.16, 3.18), (.12, .32, .10), clay)
+    for dy in (-.22, .22):
+        box('roof ladder rail', (w/2+.09, d/2-1.0+dy, 1.85), (.06, .06, 3.7), wood)
+    z = .35
+    while z <= 3.35:
+        box('roof ladder rung', (w/2+.09, d/2-1.0, z), (.05, .5, .05), wood)
+        z += .3
+    if not poor:
+        box('stone foot band', (-w/2-.015, 0, .2), (.03, d, .4), stone)
+        box('stone foot band', (w/2+.015, 0, .2), (.03, d, .4), stone)
+        box('stone foot band', (0, d/2+.015, .2), (w+.06, .03, .4), stone)
+        for a, b in [(-w/2, -.87), (.87, w/2)]:
+            box('stone foot band', ((a+b)/2, -d/2-.015, .2), (b-a, .03, .4), stone)
 
     hinge = bpy.data.objects.new('DR_entry_hinge', None)
     C.ASSET.objects.link(hinge)
@@ -126,16 +156,20 @@ def build(identity, w, d, poor):
         ob.parent = hinge
         ob.matrix_world = matrix
 
-    # Adult wooden box bed and thin tick; centre aisle remains >1.3m throughout.
+    # Adult wooden box bed and thin tick; poor houses sleep on a reed mat. Aisle stays >1.3m.
     bx, by = -w/2+1.02, d/2-1.57
-    box('bed wooden box', (bx, by, .28), (1.12, 2.10, .22), wood, True, True)
-    for dx in (-.45, .45):
-        for dy in (-.91, .91):
-            box('bed feet', (bx+dx, by+dy, .085), (.12, .12, .17), wood, interior=True)
-    box('bed headboard', (bx, by+.995, .56), (1.12, .11, .65), wood, True, True)
-    box('thin straw tick', (bx, by, .425), (1.04, 2.0, .07), straw, interior=True, bevel=.025)
-    box('wool blanket', (bx, by-.27, .468), (1.05, 1.33, .016), cloth, interior=True, bevel=.007)
-    box('folded wool bolster', (bx, by+.76, .48), (.82, .22, .08), cloth, interior=True, bevel=.025)
+    if not poor:
+        box('bed wooden box', (bx, by, .28), (1.12, 2.10, .22), wood, True, True)
+        for dx in (-.45, .45):
+            for dy in (-.91, .91):
+                box('bed feet', (bx+dx, by+dy, .085), (.12, .12, .17), wood, interior=True)
+        box('bed headboard', (bx, by+.995, .56), (1.12, .11, .65), wood, True, True)
+    else:
+        box('sleeping reed mat', (bx, by, .02), (1.05, 2.05, .04), straw, interior=True, bevel=.01)
+    tick_z = .425 if not poor else .06
+    box('thin straw tick', (bx, by, tick_z), (1.04, 2.0, .07), straw, interior=True, bevel=.025)
+    box('wool blanket', (bx, by-.27, .468 if not poor else .095), (1.05, 1.33, .016), cloth, interior=True, bevel=.007)
+    box('folded wool bolster', (bx, by+.76, .48 if not poor else .10), (.82, .22, .08), cloth, interior=True, bevel=.025)
     tx, ty = w/2-1.04, .45
     box('table top', (tx, ty, .78), (.85, 1.05, .09), wood, True, True)
     for dx in (-.32, .32):
