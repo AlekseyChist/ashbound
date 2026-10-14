@@ -591,7 +591,7 @@ func _steps(book: Node3D, node: Node3D, ground: Callable, start: Vector2, dir: V
 		var low := INF
 		var foot := INF
 		for a in [-0.5, -0.17, 0.17, 0.5]:
-			for q in [-0.85, -0.5, -0.25, 0.0, 0.25, 0.5, 0.85]:
+			for q in [-1.5, -0.85, -0.5, -0.25, 0.0, 0.25, 0.5, 0.85, 1.5]:
 				var e: Vector2 = p + dir * (STOOP_RUN * a) + across * (width * q)
 				var h := float(ground.call(e.x, e.y))
 				# the footing reaches the ground a little past its sides too (Codex cd261e9 014/024:
@@ -619,7 +619,9 @@ func _steps(book: Node3D, node: Node3D, ground: Callable, start: Vector2, dir: V
 		idle = 0
 		built += 1
 		if place:
-			var bottom := foot - 0.6
+			# deep into the slope below: the stair stands on a solid wall, never on a visible edge
+			# (Codex 27c3f38 014/015: stepped undersides read as cantilevers over the falling snow)
+			var bottom := foot - 1.2
 			book._stair_block(node, Vector3(p.x, (top + bottom) * 0.5, p.y), Vector3(width, top - bottom, STOOP_RUN + 0.03), yaw, "masonry")
 			# its walking surface: a slab from the step before down to this one, as the flights'
 			# treads have (the capsule caught the short risers' edges on the slum's door stairs)
@@ -698,8 +700,15 @@ func build_plinths(book: Node3D, ground: Callable) -> void:
 				low = minf(low, float(ground.call(p.x, p.y)))
 		if lot.level - low <= PLINTH_HANG:
 			continue
+		# its foot: the lowest ground up to 1 m round it, 0.8 m under that (Codex 27c3f38 015: a high
+		# plinth's lower edge showed over the snow falling away past its corner)
+		var foot := low
+		for i in 9:
+			for j in 9:
+				var p: Vector2 = lot.c + lot.s * lerpf(u0 - 1.0, u1 + 1.0, i / 8.0) + lot.f * lerpf(v0 - 1.0, v1 + 1.0, j / 8.0)
+				foot = minf(foot, float(ground.call(p.x, p.y)))
 		var top: float = lot.level - 0.02
-		var bottom := low - 0.4
+		var bottom := foot - 0.8
 		var yaw := rad_to_deg(atan2(lot.f.x, lot.f.y))
 		var mid: Vector2 = lot.c + lot.s * ((u0 + u1) * 0.5) + lot.f * ((v0 + v1) * 0.5)
 		book._stair_block(node, Vector3(mid.x, (top + bottom) * 0.5, mid.y), Vector3(u1 - u0, top - bottom, v1 - v0), yaw, "masonry")
@@ -734,7 +743,7 @@ func build_plinths(book: Node3D, ground: Callable) -> void:
 				var e: Vector2 = landing + lot.f * (LANDING * a) + lot.s * (STOOP_WIDTH * q)
 				low = minf(low, float(ground.call(e.x, e.y)))
 		if low < level - 0.05:
-			book._stair_block(node, Vector3(landing.x, (level + low - 0.4) * 0.5, landing.y), Vector3(STOOP_WIDTH, level - low + 0.4, LANDING), yaw, "masonry")
+			book._stair_block(node, Vector3(landing.x, (level + low - 1.2) * 0.5, landing.y), Vector3(STOOP_WIDTH, level - low + 1.2, LANDING), yaw, "masonry")
 			steps += 1
 		var probe := 3.0
 		var left := float(ground.call((landing - lot.s * probe).x, (landing - lot.s * probe).y))
