@@ -1,0 +1,7 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/buildings/world-architecture-v1/d_courtyard_house.glb" id="1_house"]
+[ext_resource type="Script" path="res://scripts/buildings/courtyard_house_surface.gd" id="2_surface"]
+
+[node name="DesertCourtyardHouse" instance=ExtResource("1_house")]
+script = ExtResource("2_surface")

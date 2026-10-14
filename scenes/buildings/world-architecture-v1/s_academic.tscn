@@ -1,0 +1,5 @@
+[gd_scene load_steps=3 format=3]
+[ext_resource type="PackedScene" path="res://assets/buildings/world-architecture-v1/s_academic.glb" id="1_house"]
+[ext_resource type="Script" path="res://scripts/buildings/snow_academic.gd" id="2_runtime"]
+[node name="ConclaveAcademicHouse" instance=ExtResource("1_house")]
+script = ExtResource("2_runtime")
