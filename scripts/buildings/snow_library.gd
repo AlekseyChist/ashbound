@@ -2,6 +2,7 @@ extends Node3D
 const Door = preload("res://scripts/world/village_door.gd")
 const Lantern = preload("res://assets/props/tavern-v1/wooden_lantern_01.glb")
 var door: Node3D
+var lab_door: Node3D
 var interior_meshes: Array[MeshInstance3D] = []
 var interior_visible := true
 var lamp_root: Node3D
@@ -11,8 +12,14 @@ var light_check := 0.0
 func _ready() -> void:
     door = Door.new()
     door.name = "Door"
-    add_child(door)
-    door.configure(self, str(get_instance_id()), Vector3(0, 0, 3.3))
+    var entry := find_child("EntryPortal", true, false) as Node3D
+    var lab := find_child("LabPortal", true, false) as Node3D
+    entry.add_child(door)
+    door.configure(entry, str(get_instance_id())+":entry", Vector3(0, 0, 3.3))
+    lab_door = Door.new()
+    lab_door.name = "LabDoor"
+    lab.add_child(lab_door)
+    lab_door.configure(lab, str(get_instance_id())+":lab", Vector3(0, 0, 3.3))
     for node in find_children("*", "MeshInstance3D", true, false):
         if node.get_meta("extras", {}).get("part_role", "") == "interior_furniture":
             interior_meshes.append(node)
@@ -63,11 +70,14 @@ func set_interior_lights_enabled(enabled: bool) -> void:
     for light in interior_lights:
         light.visible = enabled and interior_visible
 func _physics_process(_delta: float) -> void:
-    if door.moving or not is_zero_approx(door.fraction):
-        set_interior_visible(true)
+    for portal in [door, lab_door]:
+        if portal.moving or not is_zero_approx(portal.fraction):
+            set_interior_visible(true)
 func set_interior_visible(enabled: bool, occupied: bool = false) -> bool:
-    if not enabled and (occupied or door == null or door.moving or not is_zero_approx(door.fraction)):
-        return false
+    if not enabled:
+        if occupied: return false
+        for portal in [door, lab_door]:
+            if portal == null or portal.moving or not is_zero_approx(portal.fraction): return false
     for mesh in interior_meshes:
         mesh.visible = enabled
     interior_visible = enabled

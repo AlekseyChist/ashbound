@@ -2,6 +2,7 @@
 import sys, json, hashlib, math, struct
 from pathlib import Path
 import bpy, bmesh
+from mathutils import Vector
 ROOT=Path(__file__).resolve().parents[3]
 sys.path.insert(0,str(ROOT/'art/blender'))
 import buildings_common as C
@@ -59,7 +60,7 @@ for h in (-3.2,0):
     holes=[(-3.9,-2.1,h+1,h+2.4)] if h==0 else []
     front=holes+([(-.8,.8,0,2.5)] if h==0 else [])
     wall('front','x',-3.3,-5,5,h,h+3.2,front)
-    wall('back','x',3.3,-5,5,h,h+3.2,holes)
+    wall('back','x',3.3,-5,5,h,h+3.2,holes if h==0 else [(-.8,.8,-3.2,-.7)])
     wall('west','y',-4.8,-3.1,3.1,h,h+3.2,[(-1,1,1,2.4)] if h==0 else [])
     wall('east','y',4.8,-3.1,3.1,h,h+3.2,[(1.6,2.6,1,2.4)] if h==0 else [])
 # Supported U-stair: two10-rise flights .16/.28, clear width1.15.
@@ -149,10 +150,14 @@ for z in (0,-3.2):
                 prop('shelved pages',(x,y,z+h+.17),(.12,.25,.24),BOOK,False)
                 prop('book spine',(x,y-.14,z+h+.17),(.15,.025,.28),COVER,False,0)
                 for dx in (-.075,.075):prop('book cover',(x+dx,y,z+h+.17),(.018,.29,.28),COVER,False,0)
-hinge=bpy.data.objects.new('SL_entry_hinge',None);C.ASSET.objects.link(hinge);hinge.location=(-.76,-3.3,0);hinge['open_angle_degrees']=-100.0
 door_parts=[]
-for k in range(6):door_parts.append(box('Door plank',(-.635+k*.254,-3.3,1.22),(.248,.08,2.44),WOOD,False))
-for z in (.45,1.95):door_parts.append(box('Door strap',(0,-3.35,z),(1.5,.02,.055),IRON,False))
+for name,angle,height in [('EntryPortal',0,0),('LabPortal',math.pi,-3.2)]:
+    portal=bpy.data.objects.new(name,None);C.ASSET.objects.link(portal);portal.rotation_euler.z=angle;portal.location.z=height
+    hinge=bpy.data.objects.new(name+'_entry_hinge',None);C.ASSET.objects.link(hinge);hinge.parent=portal;hinge.location=(-.76,-3.3,0);hinge['open_angle_degrees']=-100.0
+    parts=[box('Door plank',(-.635+k*.254,-3.3,1.22),(.248,.08,2.44),WOOD,False) for k in range(6)]
+    parts += [box('Door strap',(0,-3.35,z),(1.5,.02,.055),IRON,False) for z in (.45,1.95)]
+    for o in parts:o.parent=hinge;o.location-=Vector((-.76,-3.3,0))
+    door_parts.extend(parts)
 visual=[o for o in C.ASSET.objects if o.type=='MESH' and '-colonly' not in o.name]
 for o in visual:
     scale=float(o.data.materials[0].get('uv_metres',0))
@@ -164,8 +169,6 @@ for o in visual:
             p=o.matrix_world@loop.vert.co;u,v=((p.y,p.z) if axis==0 else (p.x,p.z) if axis==1 else (p.x,p.y));loop[uv].uv=(u/scale,v/scale)
     bm.to_mesh(o.data);bm.free()
 C._join_by_material([o for o in visual if o not in furniture and o not in door_parts]);C._join_by_material(furniture)
-for o in door_parts:
-    matrix=o.matrix_world.copy();o.parent=hinge;o.matrix_world=matrix
 for n,p,s in coll:
     o=C.box(n+'-colonly',p,s,STONE,0);o.hide_render=True
 visual=[o for o in C.ASSET.objects if o.type=='MESH' and '-colonly' not in o.name]

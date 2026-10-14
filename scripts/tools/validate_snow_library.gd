@@ -22,11 +22,14 @@ func run():
     ground.add_child(ground_col);root.add_child(ground)
     var platform=StaticBody3D.new()
     var slab=CollisionShape3D.new();var slab_shape=BoxShape3D.new();slab_shape.size=Vector3(3,.2,2);slab.shape=slab_shape;slab.position=Vector3(0,-.1,4.2);platform.add_child(slab);root.add_child(platform)
+    var lower_platform=StaticBody3D.new();var lower_col=CollisionShape3D.new();var lower_shape=BoxShape3D.new();lower_shape.size=Vector3(3,.2,3);lower_col.shape=lower_shape;lower_col.position=Vector3(0,-3.3,-4.7);lower_platform.add_child(lower_col);root.add_child(lower_platform)
     actor=CharacterBody3D.new();actor.collision_layer=2;actor.floor_snap_length=.35
     var capsule=CapsuleShape3D.new();capsule.radius=.3;capsule.height=1.75
     var shape=CollisionShape3D.new();shape.shape=capsule
     actor.add_child(shape);root.add_child(actor);actor.position=Vector3(0,.9,4.5)
     await physics_frame
+    if building.door.leaves.size()!=8 or building.lab_door.leaves.size()!=8:
+        push_error("Library portals not independent");quit(1);return
     var space=actor.get_world_3d().direct_space_state
     var mouth=space.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(1.1,8,.65),Vector3(1.1,6,.65),1))
     if mouth.is_empty() or absf(mouth.position.y-6.7)>.02:
@@ -71,9 +74,25 @@ func run():
             push_error("Lighting override ignored");quit(1);return
     building.set_interior_lights_enabled(true)
     var targets=[Vector3(0,.875,2),Vector3(0,.875,.5),Vector3(-1,.875,.5),Vector3(-1,.875,-.5),Vector3(0,.875,-.5),Vector3(0,.875,-2.4),Vector3(2.7,.875,-2.4),Vector3(2.7,.875,-1.05),Vector3(2.7,-.725,1.75),Vector3(4.05,-.725,1.75),Vector3(4.05,-2.325,-1.05),Vector3(4.05,-2.325,-2.4),Vector3(0,-2.325,-2.4),Vector3(-1,-2.325,-2.4),Vector3(-1,-2.325,2),Vector3(0,-2.325,2),Vector3(0,-2.325,-2.4),Vector3(4.05,-2.325,-2.4),Vector3(4.05,-2.325,-1.05),Vector3(4.05,-.725,1.75),Vector3(2.7,-.725,1.75),Vector3(2.7,.875,-1.05),Vector3(2.7,.875,-2.4),Vector3(0,.875,-2.4),Vector3(0,.875,1.3)]
+    var lab_tested=false
     for target in targets:
         if not await walk(target):quit(1);return
         print("S_LIBRARY_POINT ",actor.position)
+        if not lab_tested and target.distance_to(Vector3(0,-2.325,-2.4))<.01:
+            lab_tested=true
+            if not building.lab_door.try_toggle(actor):push_error("Lab portal interaction failed");quit(1);return
+            for tick in range(90):await physics_frame
+            if not await walk(Vector3(0,-2.325,-5.4)):quit(1);return
+            if not building.lab_door.try_toggle(actor):push_error("Lab portal outside close failed");quit(1);return
+            for tick in range(90):await physics_frame
+            if not is_zero_approx(building.lab_door.fraction):push_error("Lab portal did not close");quit(1);return
+            if not building.lab_door.try_toggle(actor):push_error("Lab portal outside reopen failed");quit(1);return
+            for tick in range(90):await physics_frame
+            if not await walk(Vector3(0,-2.325,-1.2)):quit(1);return
+            if not building.lab_door.try_toggle(actor):push_error("Lab portal inside close failed");quit(1);return
+            for tick in range(90):await physics_frame
+            if not is_zero_approx(building.lab_door.fraction):push_error("Lab portal inside closing blocked");quit(1);return
+            if not await walk(target):quit(1);return
     if not building.door.try_toggle(actor):
         push_error("Interior door closing failed");quit(1);return
     for tick in range(90):await physics_frame
@@ -83,5 +102,5 @@ func run():
         push_error("Interior reopening failed");quit(1);return
     for tick in range(90):await physics_frame
     if not await walk(Vector3(0,.875,4.5)):quit(1);return
-    print("S_LIBRARY_ROOMS_STAIRS_RETURN_PASS segments=",targets.size()+1)
+    print("S_LIBRARY_ROOMS_STAIRS_RETURN_PASS segments=",targets.size()+4)
     quit(0)
