@@ -32,6 +32,29 @@ def box(n,p,s,m,solid=True):
         o['part_role']='interior_furniture'
     if solid:coll.append((n,p,s))
     return o
+def ring_solid(n,x,y,z,rings,m,role=True):
+    # a closed solid of octagonal rings [(dz, half_x, half_y), ...] from bottom to top around (x,y,z)
+    k=8
+    v=[]
+    for dz,hx,hy in rings:
+        for i in range(k):
+            a=math.pi*2*i/k+math.pi/8
+            v.append((x+hx*math.cos(a),y+hy*math.sin(a),z+dz))
+    f=[tuple(range(k-1,-1,-1))]
+    for r in range(len(rings)-1):
+        for i in range(k):
+            j=(i+1)%k
+            f.append((r*k+i,r*k+j,(r+1)*k+j,(r+1)*k+i))
+    t=(len(rings)-1)*k
+    f.append(tuple(range(t,t+k)))
+    o=C.mesh(n,v,f,m)
+    if role:o['part_role']='interior_furniture'
+    return o
+def slab(n,pts,t,m):
+    # a thin solid under the quad pts (4 corners, counter-clockwise from above), thickness t downward
+    v=[(px,py,pz-t) for px,py,pz in pts]+list(pts)
+    f=[(3,2,1,0),(4,5,6,7),(0,1,5,4),(1,2,6,5),(2,3,7,6),(3,0,4,7)]
+    return C.mesh(n,v,f,m)
 # Shell: outer walls 6x5 (faces at x +-3, y +-2.5; inner faces +-2.6 / +-2.1), floor z=0, roof top ~3.6.
 box('foundation',(0,0,-.15),(6,5,.3),STONE)
 box('entry porch',(-1.2,-3.1,-.12),(2.4,1.2,.24),STONE)
@@ -46,7 +69,7 @@ box('window sill',(1.3,-2.62,.92),(2.1,.3,.06),WOOD)  # counter board outside un
 # Hinged shutter awning over the window, folded out to the street on two props.
 for x in (0.3,2.3):
     C.beam('shutter prop',(x,-2.5,2.12),(x,-3.2,2.5),.06,.06,WOOD)
-C.mesh('shutter board',[(0.25,-2.5,2.14),(2.35,-2.5,2.14),(2.35,-3.2,2.52),(0.25,-3.2,2.52)],[(0,1,2,3)],WOOD)
+slab('shutter board',[(0.25,-2.5,2.14),(2.35,-2.5,2.14),(2.35,-3.2,2.52),(0.25,-3.2,2.52)],.03,WOOD)
 # Rear and side walls solid.
 box('rear wall',(0,2.3,1.6),(6,.4,3.2),LIME)
 for x in (-2.8,2.8):box('side wall',(x,0,1.6),(.4,4.2,3.2),LIME)
@@ -71,18 +94,18 @@ for x in (-2.2,-.2):
     box('canopy footing',(x,-3.55,.10),(.24,.24,.2),STONE)
     box('canopy post',(x,-3.55,1.4),(.14,.14,2.4),WOOD)
     C.beam('canopy rafter',(x,-2.5,2.95),(x,-3.62,2.62),.12,.12,WOOD)
-C.mesh('entry shade',[(-2.4,-2.5,2.96),(0,-2.5,2.96),(0,-3.64,2.62),(-2.4,-3.64,2.62)],[(0,1,2,3)],CLOTH)
+slab('entry shade',[(-2.4,-2.5,2.96),(0,-2.5,2.96),(0,-3.64,2.62),(-2.4,-3.64,2.62)],.03,CLOTH)
 # Interior: counter under the window with jars on top.
 box('counter top',(1.3,-1.55,.92),(2.0,.55,.08),WOOD)
 box('counter front',(1.3,-1.28,.46),(2.0,.04,.88),WOOD)
 for x in (.35,2.25):box('counter leg',(x,-1.75,.44),(.07,.07,.88),WOOD,False)
-for x in (.7,1.3,1.9):box('jar',(x,-1.55,1.09),(.22,.22,.26),CLAY,False)
+for x in (.7,1.3,1.9):ring_solid('jar',x,-1.55,(1.09)-0.130,[(0.000,0.068,0.068),(0.078,0.110,0.110),(0.161,0.101,0.101),(0.208,0.055,0.055),(0.239,0.050,0.050),(0.260,0.064,0.064)],CLAY)
 # Goods shelves along the rear wall: back panel, sides, four boards; jars and cloth bolts.
 box('shelf back',(0,2.05,1.0),(4.4,.06,2.0),WOOD)
 for x in (-2.2,2.2):box('shelf side',(x,1.85,1.0),(.08,.4,2.0),WOOD)
 for z in (.06,.7,1.34,1.96):box('shelf board',(0,1.85,z),(4.4,.4,.08),WOOD)
 for z in (.7,1.34):
-    for x in (-1.6,-.8,0,.8,1.6):box('jar',(x,1.85,z+.17),(.24,.24,.26),CLAY,False)
+    for x in (-1.6,-.8,0,.8,1.6):ring_solid('jar',x,1.85,(z+.17)-0.130,[(0.000,0.074,0.074),(0.078,0.120,0.120),(0.161,0.110,0.110),(0.208,0.060,0.060),(0.239,0.054,0.054),(0.260,0.070,0.070)],CLAY)
 for x in (-1.5,-.5,.5,1.5):box('bolt',(x,1.85,1.96+.14),(.7,.25,.2),CLOTH2,False)
 # Chest near the door side.
 box('chest',(-2.1,.4,.3),(.6,.9,.6),WOOD)
