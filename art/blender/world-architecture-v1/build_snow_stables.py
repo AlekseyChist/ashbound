@@ -93,6 +93,11 @@ for side in (-1,1):
     box('eave fascia',(0,side*3.9,3.2),(13.2,.12,.18),WOOD,False)
     x=side*5.8
     C.mesh('timber gable',[(x,-3.5,3),(x,3.5,3),(x,3.5,3.50),(x,0,6.1),(x,-3.5,3.50)],[(0,1,2,3,4)],WOOD)
+    for k in range(35):
+        a=-3.5+k*.2+.006;b=min(3.5,a+.188)
+        za=3.5+2.6*(1-abs(a)/3.5);zb=3.5+2.6*(1-abs(b)/3.5)
+        vertices=[(xx,yy,zz) for xx in (x+side*.035,x+side*.075) for yy,zz in [(a,3.02),(b,3.02),(b,zb),(a,za)]]
+        C.mesh('gable boarding',vertices,[(0,1,2,3),(4,7,6,5),(0,4,5,1),(1,5,6,2),(2,6,7,3),(3,7,4,0)],WOOD)
     for sx in (-6.5,6.5):C.beam('gable rake',(sx,0,6.18),(sx,side*3.9,3.28),.12,.12,WOOD)
 box('ridge cap',(0,0,6.16),(13.2,.20,.16),SLATE,False)
 for side in (-1,1):
