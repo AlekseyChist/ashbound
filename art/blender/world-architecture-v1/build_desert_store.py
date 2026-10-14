@@ -25,13 +25,39 @@ LIME=surface('DS lime','plaster_grey_04_diff_1k.jpg',2)
 WOOD=surface('DS timber','fine_grained_wood_col_1k.jpg',.65)
 CLOTH=C.mat('DS shade',(.36,.30,.20,1),.98)
 SACK=C.mat('DS sacking',(.55,.46,.32,1),.98)
+IRON=C.mat('DS iron',(.20,.19,.18,1),.5,.5)
 coll=[]
 def box(n,p,s,m,solid=True):
     o=C.box(n,p,s,m,.015)
-    if n.startswith(('grain sack','pallet','timber stack','trestle','scale table','scale post','scale pan')):
+    if n.startswith(('grain sack','pallet','timber stack','trestle','scale table','scale post','scale beam','scale cord','scale pan')):
         o['part_role']='interior_furniture'
     if solid:coll.append((n,p,s))
     return o
+
+def ring_solid(n,x,y,z,rings,m,role=True):
+    # a closed solid of octagonal rings [(dz, half_x, half_y), ...] from bottom to top around (x,y,z)
+    k=8
+    v=[]
+    for dz,hx,hy in rings:
+        for i in range(k):
+            a=math.pi*2*i/k+math.pi/8
+            v.append((x+hx*math.cos(a),y+hy*math.sin(a),z+dz))
+    f=[tuple(range(k-1,-1,-1))]
+    for r in range(len(rings)-1):
+        for i in range(k):
+            j=(i+1)%k
+            f.append((r*k+i,r*k+j,(r+1)*k+j,(r+1)*k+i))
+    t=(len(rings)-1)*k
+    f.append(tuple(range(t,t+k)))
+    o=C.mesh(n,v,f,m)
+    if role:o['part_role']='interior_furniture'
+    return o
+
+def slab(n,pts,t,m):
+    # a thin solid under the quad pts (4 corners, counter-clockwise from above), thickness t downward
+    v=[(px,py,pz-t) for px,py,pz in pts]+list(pts)
+    f=[(3,2,1,0),(4,5,6,7),(0,1,5,4),(1,2,6,5),(2,3,7,6),(3,0,4,7)]
+    return C.mesh(n,v,f,m)
 # Shell: outer walls 8x6 (faces at x +-4, y +-3; inner faces +-3.6 / +-2.6), floor z=0, roof top ~3.6.
 box('foundation',(0,0,-.15),(8,6,.3),STONE)
 box('entry porch',(0,-3.6,-.12),(3.0,1.2,.24),STONE)
@@ -70,27 +96,36 @@ for x in (-1.3,1.3):
     box('canopy footing',(x,-4.05,.10),(.24,.24,.2),STONE)
     box('canopy post',(x,-4.05,1.4),(.14,.14,2.4),WOOD)
     C.beam('canopy rafter',(x,-3.0,2.95),(x,-4.12,2.62),.12,.12,WOOD)
-C.mesh('entry shade',[(-1.5,-3.0,2.96),(1.5,-3.0,2.96),(1.5,-4.12,2.62),(-1.5,-4.12,2.62)],[(0,1,2,3)],CLOTH)
+slab('entry shade',[(-1.5,-3.0,2.96),(1.5,-3.0,2.96),(1.5,-4.12,2.62),(-1.5,-4.12,2.62)],.03,CLOTH)
 # Interior: floor z=0, inner wall faces x +-3.6, y -2.6..2.6; aisle x -0.6..0.6 kept clear.
 # Left (-x): two pallets of grain sacks.
 for y in (-1.2,1.0):
     box('pallet',(-2.4,y,.08),(1.9,1.6,.16),WOOD)
     for dx in (-.5,.5):
-        for dy in (-.4,.4):box('grain sack',(-2.4+dx,y+dy,.42),(.9,.7,.52),SACK,False)
-    for dx in (-.25,.25):box('grain sack',(-2.4+dx,y,.92),(.85,.65,.48),SACK,False)
+        for dy in (-.4,.4):
+            ring_solid('grain sack',-2.4+dx,y+dy,.16,[(0,.36,.28),(.12,.45,.35),(.36,.43,.33),(.5,.26,.2),(.56,.08,.07)],SACK)
+            box('grain sack tie',(-2.4+dx,y+dy,.74),(.1,.1,.06),SACK,False)
+    for dx in (-.25,.25):
+        ring_solid('grain sack',-2.4+dx,y,.62,[(0,.33,.26),(.1,.42,.32),(.32,.4,.3),(.44,.24,.18),(.5,.07,.06)],SACK)
 # Right (+x): trestles and timber stacks.
 for y in (-0.9,1.3):
     for dx in (-.7,.7):box('trestle',(2.4+dx,y,.35),(.12,1.4,.7),WOOD)
     # a stack on each pair of trestles (the draft laid one stack across both pairs' inner ends)
     for k in range(4):
-        box('timber stack',(2.4,y,.76+k*.13),(1.9,1.2,.12),WOOD)
+        for dy in (-.45,-.15,.15,.45):
+            box('timber stack',(2.4,y+dy,.77+k*.15),(1.9,.26,.08),WOOD,False)
+        for dx in (-.7,.7):
+            box('timber stack spacer',(2.4+dx,y,.72+k*.15),(.08,1.2,.04),WOOD,False)
 # Scales by the door, right side.
 box('scale table',(1.6,-2.0,.78),(1.0,.6,.12),WOOD)
 # its four legs to the floor (Codex 279: the top stood on nothing)
 for dx in (-.43,.43):
     for dy in (-.23,.23):box('scale table leg',(1.6+dx,-2.0+dy,.36),(.08,.08,.72),WOOD,False)
-box('scale post',(1.6,-2.0,1.2),(.06,.06,.8),WOOD,False)
-box('scale pan',(1.6,-2.0,1.55),(.4,.4,.03),WOOD,False)
+box('scale post',(1.6,-2.0,1.25),(.06,.06,.82),WOOD)
+box('scale beam',(1.6,-2.0,1.64),(.74,.04,.04),WOOD,False)
+for dx in (-.34,.34):
+    box('scale cord',(1.6+dx,-2.0,1.45),(.01,.01,.38),WOOD,False)
+    ring_solid('scale pan',1.6+dx,-2.0,1.24,[(0,.1,.1),(.03,.15,.15)],IRON)
 # Door: EntryPortal, front hinge, open -100 deg.
 door_parts=[]
 portal=bpy.data.objects.new('EntryPortal',None);C.ASSET.objects.link(portal)
