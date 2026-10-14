@@ -28,6 +28,13 @@ func run():
     actor.add_child(shape);root.add_child(actor);actor.position=Vector3(0,.9,4.5)
     await physics_frame
     var space=actor.get_world_3d().direct_space_state
+    var mouth=space.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(1.1,8,.65),Vector3(1.1,6,.65),1))
+    if mouth.is_empty() or absf(mouth.position.y-6.7)>.02:
+        push_error("Library chimney mouth obstructed");quit(1);return
+    for height in [.7,-2.5]:
+        var stove=space.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(0,height,.65),Vector3(1.4,height,.65),1))
+        if stove.is_empty() or absf(stove.position.x-.575)>.02:
+            push_error("Library stove lacks collision");quit(1);return
     if building.interior_meshes.is_empty() or building.set_interior_visible(false,true):
         push_error("Interior metadata or occupancy guard missing");quit(1);return
     if not building.set_interior_visible(false):

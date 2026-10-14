@@ -39,7 +39,10 @@ def prop(n,p,s,m=WOOD,solid=True,bevel=.015):
     o=box(n,p,s,m,solid,bevel);o['part_role']='interior_furniture';furniture.append(o);return o
 box('lower foundation',(0,0,-3.35),(10,7,.3),STONE)
 # Ceiling slab stops around both flights and their turning landing.
-box('upper west slab',(-1.5,0,-.14),(7,7,.28),WOOD)
+def flue_slab(n,z,thickness,x0,x1,y0,y1):
+    for a,b,c,d in [(x0,.65,y0,y1),(1.55,x1,y0,y1),(.65,1.55,y0,-1.1),(.65,1.55,-.2,y1)]:
+        box(n,((a+b)/2,(c+d)/2,z),(b-a,d-c,thickness),WOOD)
+flue_slab('upper west slab',-.14,.28,-5,2,-3.5,3.5)
 box('upper stair front slab',(3.5,-3.225,-.14),(3,.55,.28),WOOD)
 box('upper stair rear slab',(3.5,2.4,-.14),(3,2.2,.28),WOOD)
 def wall(n,axis,fixed,a,b,bottom,top,holes=(),material=STONE):
@@ -87,18 +90,37 @@ for x in (1.98,3.3,4.62):box('stair opening front post',(x,-2.94,.47),(.08,.08,.
 # Only the upper-flight entrance remains open at the rear of the stairwell.
 box('stair opening rear rail',(3.99,1.3,.95),(1.26,.08,.08),WOOD)
 for x in (3.36,4.62):box('stair opening rear post',(x,1.3,.47),(.08,.08,.94),WOOD)
-box('upper ceiling',(0,0,3.14),(10,7,.12),WOOD)
+flue_slab('upper ceiling',3.14,.12,-5,5,-3.5,3.5)
 for x in (-4.7,0,4.7):box('cross tie',(x,0,2.97),(.18,6.3,.18),WOOD)
 # Steep snow roof, closed gables and generous eaves.
 eave=3.9;ridge=6.5;half=4.1
 for y in (-3.3,3.3):box('closed attic wall',(0,y,3.74),(10,.4,1.08),PLASTER,True,0)
 for side in (-1,1):
-    o=box('slate roof',(0,side*half/2,(eave+ridge)/2),(11.2,math.hypot(half,ridge-eave),.15),SLATE,False)
-    o.rotation_euler.x=-side*math.atan2(ridge-eave,half)
+    panels=[(-5.6,5.6,0,half)] if side>0 else [(-5.6,.65,-half,0),(1.55,5.6,-half,0),(.65,1.55,-half,-1.1),(.65,1.55,-.2,0)]
+    for xa,xb,ya,yb in panels:
+        yc=(ya+yb)/2;zc=ridge-abs(yc)*(ridge-eave)/half
+        o=box('slate roof',((xa+xb)/2,yc,zc),(xb-xa,(yb-ya)*math.sqrt(1+((ridge-eave)/half)**2),.15),SLATE,False)
+        o.rotation_euler.x=-side*math.atan2(ridge-eave,half)
     for x in (-5.52,5.52):C.beam('gable rake',(x,0,ridge+.08),(x,side*half,eave+.08),.12,.14,WOOD)
     box('eave fascia',(0,side*half,eave),(11.2,.12,.18),WOOD,False)
     C.mesh('closed gable',[(side*4.8,-3.5,3.2),(side*4.8,3.5,3.2),(side*4.8,3.5,4.28),(side*4.8,0,6.5),(side*4.8,-3.5,4.28)],[(0,1,2,3,4)],PLASTER)
 box('ridge cap',(0,0,ridge+.06),(11.2,.22,.15),SLATE,False)
+for floor in (-3.2,0):
+    box('stove hearth',(1.1,-.65,floor+.06),(1.3,1.3,.12),STONE)
+    box('masonry stove',(1.1,-.65,floor+.84),(1.05,1.05,1.44),STONE)
+    box('stove cornice',(1.1,-.65,floor+1.62),(1.15,1.15,.12),STONE)
+    box('stove hatch',(.54,-.65,floor+.7),(.06,.42,.40),IRON,False)
+box('continuous flue',(1.1,-.65,2.6),(.7,.7,8.2),STONE)
+for dx in (-.29,.29):box('open chimney wall',(1.1+dx,-.65,7.08),(.12,.7,.76),STONE)
+for dy in (-.29,.29):box('open chimney wall',(1.1,-.65+dy,7.08),(.46,.12,.76),STONE)
+for dx in (-.34,.34):box('chimney rim',(1.1+dx,-.65,7.5),(.18,.86,.12),STONE)
+for dy in (-.34,.34):box('chimney rim',(1.1,-.65+dy,7.5),(.50,.18,.12),STONE)
+for y in (-1.055,-.245):
+    z=ridge-abs(y)*(ridge-eave)/half
+    box('flashing end',(1.1,y,z+.08),(.9,.09,.16),IRON,False)
+for x in (.695,1.505):
+    o=box('flashing side',(x,-.65,ridge-.65*(ridge-eave)/half+.08),(.09,.9*math.sqrt(1+((ridge-eave)/half)**2),.12),IRON,False)
+    o.rotation_euler.x=math.atan2(ridge-eave,half)
 for x in (-4.75,-1.05,1.05,4.75):
     for y in (-3.53,3.53):box('facade post',(x,y,1.64),(.18,.12,3.28),WOOD,False)
 for y in (-3.53,3.53):
