@@ -100,17 +100,41 @@ def build(identity, w, d, poor):
             box('lime coping', (0, y, 3.535), (w-.68, .34, .03), stone, bevel=0)
     else:
         # Plaster has flaked off in patches, exposing the raw mud brick underneath.
-        mudbrick = surface('DR exposed mud brick', 'stone_wall_02_diff_1k.jpg', (.55, .38, .24), 1.2)
+        mudbrick = surface('DR exposed mud brick', 'stone_wall_02_diff_1k.jpg', (.55, .38, .24), .55)
+
+        def peel(face, u, z, width, height):
+            # Plaster flaked off in a ragged patch: three offset layers of exposed brick, each a
+            # little proud of the last, so the outline steps instead of a clean rectangle.
+            for k, (du, dz, sw, sh) in enumerate([(0, 0, 1, 1), (.22, -.18, .62, .7), (-.25, .2, .55, .6)]):
+                out = .006 + .004 * k
+                cu, cz, cw, ch = u + du * width, z + dz * height, width * sw, height * sh
+                if face == 'front':
+                    box('mudbrick patch', (cu, -d/2 - out, cz), (cw, .012, ch), mudbrick, bevel=.004)
+                elif face == 'left':
+                    box('mudbrick patch', (-w/2 - out, cu, cz), (.012, cw, ch), mudbrick, bevel=.004)
+                else:
+                    box('mudbrick patch', (cu, d/2 + out, cz), (cw, .012, ch), mudbrick, bevel=.004)
+            # a broken plaster lip along the patch's top edge
+            lip = (u, -d/2 - .02, z + height / 2) if face == 'front' else (-w/2 - .02, u, z + height / 2) if face == 'left' else (u, d/2 + .02, z + height / 2)
+            size = (width * .8, .016, .035) if face != 'left' else (.016, width * .8, .035)
+            box('plaster lip', lip, size, plaster, bevel=.004)
+
         for x, z, width, height in [(-2.2, .55, .7, .5), (1.75, 1.6, .55, .4), (-1.5, 2.2, .45, .3)]:
-            box('mudbrick patch', (x, -d/2-.006, z), (width, .012, height), mudbrick, bevel=.01)
+            peel('front', x, z, width, height)
         for y, z, width, height in [(-.8, .9, .8, .6), (1.2, 2.0, .5, .35)]:
-            box('mudbrick patch', (-w/2-.006, y, z), (.012, width, height), mudbrick, bevel=.01)
-        box('mudbrick patch', (1.6, d/2+.006, .75), (.7, .012, .45), mudbrick, bevel=.01)
+            peel('left', y, z, width, height)
+        peel('back', 1.6, .75, .7, .45)
         # Reed shade mat over the roof instead of an empty terrace.
         for x in (-w/2+.6, -.2):
             for y in (-d/2+.8, d/2-.8):
                 box('roof shade pole', (x, y, 3.75), (.08, .08, 1.3), wood)
-        box('reed roof mat', (-w/4+.2, 0, 4.42), (w/2+.1, d-1.4, .05), straw)
+        reed = C.mat('DR dry reed', (.40, .32, .19, 1), .99)
+        for i in range(int((d-1.4)/.075)):
+            y = -(d-1.4)/2 + .0375 + i*.075
+            L = w/2+.1 - .18*((i*7)%3)/2
+            dx = .06*(((i*5)%3)-1)
+            z = 4.40 + .01*(i%2)
+            box('reed bundle', (-w/4+.2+dx, y, z), (L, .07, .045), straw if i%3==0 else reed)
         for y in (-d/2+.8, 0, d/2-.8):
             box('reed mat batten', (-w/4+.2, y, 4.38), (w/2+.2, .06, .06), wood)
     # Deep entrance reveal and supported reed shade inside the plot boundary.
@@ -127,7 +151,7 @@ def build(identity, w, d, poor):
         if abs(x) >= .95:
             box('joist end', (x, -d/2-.07, 2.75), (.14, .14, .14), wood)
     for x in (-w/2+1.0, w/2-1.0):
-        box('roof spout', (x, d/2+.16, 3.18), (.12, .32, .10), clay)
+        box('roof spout', (x, d/2+.14, 3.18), (.12, .28, .10), clay)
     for dy in (-.22, .22):
         box('roof ladder rail', (w/2+.09, d/2-1.0+dy, 1.85), (.06, .06, 3.7), wood)
     z = .35

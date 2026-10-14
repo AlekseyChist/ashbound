@@ -119,7 +119,7 @@ func inspect_model(identity: String, size: Vector2) -> void:
 	check(mat_found and not bed_found if poor else bed_found, identity + ": required sleeping mat/wooden bed missing")
 	# Accepted reliefs may extend 0.30m; retain exact structural wall rays below.
 	check(total.position.x >= -size.x/2-.305 and total.end.x <= size.x/2+.305 and total.position.z >= -size.y/2-.305 and total.end.z <= size.y/2+.305, identity+": exterior exceeds accepted 0.30m relief envelope "+str(total))
-	var top := 4.445 if poor else 3.70
+	var top := 4.4325 if poor else 3.70
 	check(absf(total.position.y+.24)<.02 and absf(total.end.y-top)<.025, identity+": vertical bounds "+str(total))
 	check(model.interior_meshes.size() >= 3, identity + ": interior groups absent")
 	var colliders := model.find_children("*", "CollisionShape3D", true, false).size()
