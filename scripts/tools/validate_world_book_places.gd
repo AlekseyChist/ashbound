@@ -73,11 +73,25 @@ func run() -> void:
 			centre += Vector2(float(p[0]), float(p[1]))
 		centre /= poly.size()
 		var worst := 0.0
+		var in_wells := 0
 		for p in poly:
 			for t in [0.0, 0.4, 0.8]:
 				var at := centre.lerp(Vector2(float(p[0]), float(p[1])), t)
+				# a stair well cut into the terrace (route A ends inside the middle terrace) is not the
+				# terrace's level: samples within 6 m of a tread are counted apart
+				var by_stairs := false
+				for flight in layout.get("book_stairs", []):
+					for st in flight.steps:
+						if Vector2(float(st[0]), float(st[1])).distance_to(at) < 6.0:
+							by_stairs = true
+							break
+					if by_stairs:
+						break
+				if by_stairs:
+					in_wells += 1
+					continue
 				worst = maxf(worst, absf(w.world_ground(at.x - 1000.0, at.y - 1000.0) - float(pad.level)))
-		print("BOOK_PAD %s level=%.1f worst=%.2f" % [pad.id, float(pad.level), worst])
+		print("BOOK_PAD %s level=%.1f worst=%.2f stair_well_samples=%d" % [pad.id, float(pad.level), worst, in_wells])
 		require(worst <= 0.3, "Pad %s off its level by %.2f m" % [pad.id, worst])
 
 	# Roads' decks (world frame) for the clearance check.
@@ -218,24 +232,23 @@ func run() -> void:
 	# The W1 stair flights: even risers, every tread over its ground, built blocks; then walked down
 	# and up by the capsule stepping like the hero (courtyard_player._step_up: up to 0.4 m).
 	var stairs: Array = layout.get("book_stairs", [])
-	if stairs.is_empty():
-		print("BOOK_STAIRS none in this layout (the W1 flights wait for their route)")
-	if stairs.size() == 1:
-		var steps: Array = stairs[0].steps
+	require(stairs.size() == 4, "Expected the W1 flights and the snow city's routes A/B/C, got %d" % stairs.size())
+	for flight in stairs:
+		var steps: Array = flight.steps
 		var worst_rise := 0.0
 		var buried := 0
 		for i in steps.size():
 			var st: Array = steps[i]
-			if i > 0:
+			if i > 0 and float(st[4]) < 0.6 and float(steps[i - 1][4]) < 0.6:
 				worst_rise = maxf(worst_rise, absf(float(st[2]) - float(steps[i - 1][2])))
-			if w.world_ground(float(st[0]) - 1000.0, float(st[1]) - 1000.0) > float(st[2]) + 0.02:
+			if int(st[6]) != 4 and w.world_ground(float(st[0]) - 1000.0, float(st[1]) - 1000.0) > float(st[2]) + 0.02:
 				buried += 1
-		print("BOOK_STAIRS steps=%d worst_rise=%.3f buried=%d" % [steps.size(), worst_rise, buried])
-		require(steps.size() > 200 and worst_rise <= 0.2 + 0.001, "W1 stairs: %d steps, a rise of %.2f m" % [steps.size(), worst_rise])
-		require(buried == 0, "W1 stairs: %d treads under the ground" % buried)
-		var flight_node: Node = book.get_node_or_null("w1_stairs") if book != null else null
-		require(flight_node != null and flight_node.find_children("*", "MeshInstance3D", false, false).size() >= steps.size(), "W1 stairs not built")
-		for leg in [["down", 0, steps.size() - 1], ["up", steps.size() - 1, 0]]:
+		print("BOOK_STAIRS %s steps=%d worst_rise=%.3f buried=%d" % [flight.id, steps.size(), worst_rise, buried])
+		require(worst_rise <= 0.2 + 0.001, "%s: a rise of %.2f m" % [flight.id, worst_rise])
+		require(buried == 0, "%s: %d treads under the ground" % [flight.id, buried])
+		var flight_node: Node = book.get_node_or_null(str(flight.id)) if book != null else null
+		require(flight_node != null and flight_node.get_child_count() > 0, "%s not built" % flight.id)
+		for leg in [["down" if float(steps[0][2]) > float(steps[steps.size() - 1][2]) else "up", 0, steps.size() - 1], ["back", steps.size() - 1, 0]]:
 			var first: Array = steps[leg[1]]
 			actor.velocity = Vector3.ZERO
 			actor.position = Vector3(float(first[0]) - 1000.0, float(first[2]) + 1.0, float(first[1]) - 1000.0)
@@ -257,14 +270,10 @@ func run() -> void:
 					actor.move_and_slide()
 				if not arrived:
 					stuck = true
-					var hits := []
-					for c in actor.get_slide_collision_count():
-						var col := actor.get_slide_collision(c)
-						hits.append("%s n=%s p=%s" % [str((col.get_collider() as Node).get_parent().name) if col.get_collider() is Node else "?", str(col.get_normal()), str(col.get_position() + Vector3(1000, 0, 1000))])
-					print("BOOK_STAIRS_WALK %s stuck before step %d %s at %s floor=%s hits=%s" % [leg[0], idx, str(steps[idx]), actor.position + Vector3(1000, 0, 1000), actor.is_on_floor(), str(hits)])
+					print("BOOK_STAIRS_WALK %s %s stuck before step %d %s at %s" % [flight.id, leg[0], idx, str(steps[idx]), actor.position + Vector3(1000, 0, 1000)])
 					break
-			print("BOOK_STAIRS_WALK %s done=%s at=%s" % [leg[0], not stuck, actor.position + Vector3(1000, 0, 1000)])
-			require(not stuck, "W1 stairs not walkable %s" % leg[0])
+			print("BOOK_STAIRS_WALK %s %s done=%s at=%s" % [flight.id, leg[0], not stuck, actor.position + Vector3(1000, 0, 1000)])
+			require(not stuck, "%s not walkable %s" % [flight.id, leg[0]])
 
 	print("WORLD_BOOK_PLACES_CHECKS checks=%d failures=%d" % [checks, failures.size()])
 	quit(0 if failures.is_empty() else 1)

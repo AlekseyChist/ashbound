@@ -267,6 +267,18 @@ func build_stairs(stairs: Array) -> void:
 			for k in [Vector2(-1, -1), Vector2(1, -1), Vector2(-1, 1), Vector2(1, 1)]:
 				var p: Vector3 = basis * Vector3(k.x * width * 0.5, 0, k.y * depth * 0.5)
 				low = minf(low, ground(at.x + p.x, at.y + p.z))
+			if rail == 4:
+				# a rope-bridge deck (the snow city's meltwater channel): planks on two stringers, rails
+				# both sides, a pair of posts down to the ground every other plank row
+				_stair_block(node, Vector3(at.x, top - 0.08, at.y), Vector3(width, 0.16, depth), yaw, "timber")
+				for sx in [-1.0, 1.0]:
+					var off: Vector3 = basis * Vector3(sx * (width * 0.5 - 0.05), 0, 0)
+					_stair_block(node, Vector3(at.x + off.x, top + 0.5, at.y + off.z), Vector3(0.08, 1.0, depth), yaw, "timber")
+					var g: float = ground(at.x + off.x, at.y + off.z)
+					if top - g > 0.4 and int(round(at.x * 3.0 + at.y * 7.0)) % 2 == 0:
+						var post_h := top - 0.16 - (g - SINK)
+						_stair_block(node, Vector3(at.x + off.x, g - SINK + post_h * 0.5, at.y + off.z), Vector3(0.18, post_h, 0.18), yaw, "timber", false)
+				continue
 			var height := maxf(top - (low - SINK), 0.3)
 			var tread := depth < 0.6
 			_stair_block(node, Vector3(at.x, top - height * 0.5, at.y), Vector3(width, height, depth), yaw, "masonry", not tread)

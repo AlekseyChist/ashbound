@@ -844,6 +844,77 @@ if W1_STAIRS and _vp is not None:
         near=np.hypot(_vx-sx,_vz-sz)<=reach
         near&=~((_vx>=349.9)&(_vx<=360.1)&(_vz>=380.1)&(_vz<=390.1))
         heights[i0:i1+1,j0:j1+1]=np.where(near,np.minimum(win,top-.12),win)
+# WORLD-BUILD-01C (D-118, the book's snow city sheet and its profiles 16-snow-profile-A/B/C): the stair
+# routes between the terraces at the book's node levels. A: lower 274 -> landing 281 -> middle 288.
+# B: middle 288 -> 291 -> abutment 294 -> rope bridge over the meltwater channel -> abutment 295 ->
+# Academy 298. C: the porters' flights from the east gate 276 -> 283 -> 291 -> Academy 298. Rises
+# ~0.18 m, treads 0.28 m (0.25 at the least on a short leg), the rest of a leg a level landing.
+def stair_route(nodes,width=2.5,bridge_legs=()):
+    out=[]
+    for k,((ax,az,ah),(bx,bz,bh)) in enumerate(zip(nodes,nodes[1:])):
+        L=math.hypot(bx-ax,bz-az);ux,uz=(bx-ax)/L,(bz-az)/L;yaw=math.degrees(math.atan2(ux,uz))
+        if k in bridge_legs:
+            n=max(2,int(round(L/2.0)))
+            for i in range(n):
+                c=L*(i+.5)/n
+                out.append(_rec(ax+ux*c,az+uz*c,ah+(bh-ah)*(i+.5)/n,yaw,L/n+.02,width,4))   # 4: bridge deck
+            continue
+        rise=bh-ah;n=int(round(abs(rise)/STAIR_RISE))
+        if n==0:
+            out.append(_rec((ax+bx)*.5,(az+bz)*.5,ah,yaw,L+.02,width,3));continue
+        run=min(STAIR_RUN,max(.25,(L-1.0)/n));flight=n*run;flat=max(L-flight,0.0)
+        # the walking slab of a tread falls along its yaw (as on W1): a climbing leg faces back down it
+        tyaw=yaw+180.0 if rise>0 else yaw
+        # the flight in the middle of the leg, level landings before and after it
+        a0=flat*.5;h=ah;dr=rise/n
+        if a0>.05:out.append(_rec(ax+ux*a0*.5,az+uz*a0*.5,ah,yaw,a0+.02,width,3))
+        for i in range(n):
+            c=a0+run*(i+.5)
+            out.append(_rec(ax+ux*c,az+uz*c,ah+dr*(i+1),tyaw,run+.02,width,3))
+        a1=L-a0-flight
+        if a1>.05:out.append(_rec(bx-ux*a1*.5,bz-uz*a1*.5,bh,yaw,a1+.02,width,3))
+    return out
+SNOW_ROUTES=[
+    ('snow_stairs_A',[(976,304,274.0),(970,296,281.0),(970,288,281.0),(976,273,288.0)],3.0,()),
+    ('snow_stairs_B',[(1012,272,288.0),(1024,275,291.0),(1030,279,294.0),(1046,287,295.0),(1052,292,298.0)],2.5,(2,)),
+    ('snow_stairs_C',[(1034,336,276.0),(1044,326,283.0),(1050,316,291.0),(1056,307,298.0)],2.5,()),
+]
+_snow_pad_mask=np.zeros(heights.shape,bool)
+for pad in BOOK_PADS:
+    if pad['id'].startswith('snow'):_snow_pad_mask|=poly_distance(pad['poly'])<=0.0
+for _sid,_nodes,_w,_bl in SNOW_ROUTES:
+    # a route starts on the ground of its street (the book's gate level 276, the ground 276.2)
+    _x0,_z0,_h0=_nodes[0]
+    _nodes=[(_x0,_z0,max(_h0,round(float(sample_grid(_x0,_z0)),2)))]+list(_nodes[1:])
+    _st=stair_route(_nodes,_w,_bl)
+    BOOK_STAIRS.append({'id':_sid,'steps':_st})
+    for sx,sz,top,_yaw,dep,wid,_r in _st:
+        if _r==4:continue    # the bridge spans the channel: no cut under it
+        reach=max(dep,wid)*.5+4.5   # past the next grid node, or its triangle lifts between them
+        i0,i1=max(0,int((sz-reach)/STEP)),min(WIDTH-1,int((sz+reach)/STEP)+1)
+        j0,j1=max(0,int((sx-reach)/STEP)),min(WIDTH-1,int((sx+reach)/STEP)+1)
+        win=heights[i0:i1+1,j0:j1+1];near=np.hypot(x[i0:i1+1,j0:j1+1]-sx,z[i0:i1+1,j0:j1+1]-sz)<=reach
+        # inside a terrace only the flight's own well (the book ends route A 13 m into the middle
+        # terrace, behind its retaining wall); the rest of the terrace keeps its level
+        well=np.hypot(x[i0:i1+1,j0:j1+1]-sx,z[i0:i1+1,j0:j1+1]-sz)<=max(dep,wid)*.5+2.5
+        near&=~_snow_pad_mask[i0:i1+1,j0:j1+1]|well
+        heights[i0:i1+1,j0:j1+1]=np.where(near,np.minimum(win,top-.12),win)
+# The meltwater channel between the middle terrace and the Academy (the book: a cut channel, the
+# rope bridge over it, its bed 285 under the bridge): a dry stone-lined cut, 3 m bed, banks 1:1.
+MELT=[(1034,262,290.0),(1040,284,285.0),(1044,312,279.0),(1040,330,274.5)]
+for (ax,az,ah),(bx,bz,bh) in zip(MELT,MELT[1:]):
+    reach=12.0
+    sl=(slice(max(0,int((min(az,bz)-reach)/STEP)),min(WIDTH,int((max(az,bz)+reach)/STEP)+2)),slice(max(0,int((min(ax,bx)-reach)/STEP)),min(WIDTH,int((max(ax,bx)+reach)/STEP)+2)))
+    xx,zz=x[sl],z[sl];dx,dz=bx-ax,bz-az
+    t=np.clip(((xx-ax)*dx+(zz-az)*dz)/(dx*dx+dz*dz),0,1)
+    dist=np.hypot(xx-(ax+t*dx),zz-(az+t*dz))
+    bed=ah+t*(bh-ah)
+    # not into the terraces: at their edge the cut stands as a retaining wall (the book's walls)
+    inpad=np.zeros(xx.shape,bool)
+    for pad in BOOK_PADS:
+        if pad['id'].startswith('snow'):
+            pd=poly_distance(pad['poly'])[sl];inpad|=pd<=0.0
+    heights[sl]=np.where((dist<=reach)&~inpad,np.minimum(heights[sl],bed+np.maximum(dist-1.5,0)*1.0),heights[sl])
 # The W1 sill (Codex 14 Oct: along the straight cut the ground lay 3 m under the 220 m mirror outside
 # the outflow, the water's edge hung over the slope): a stone sill along the whole chord, its crest
 # 0.6 m over the mirror, 4 m wide; the outflow's 12 m channel stays open.
