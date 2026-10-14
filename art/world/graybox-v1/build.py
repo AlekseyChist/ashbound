@@ -125,7 +125,22 @@ def natural_course(rv):
 for rv in sorted(D['rivers'],key=lambda r:0 if r['id']=='main' else 1):natural_course(rv)
 
 # The city coordinates on the plan are road anchors. Small plazas sit on dry banks.
-offsets={'forest':[-35,35],'snow':[0,0],'desert':[45,-35],'lowland':[45,-45]}
+# WORLD-BUILD-01F (D-118: the lowland citadel on the spur, the road moved and a new bridge): the
+# plan's lowland point (1030/1640) - where the desert, forest and fishing-village roads met - is the
+# spur the citadel now takes. The city's point is its market inside the walls; the roads end at its
+# gates (the book's links): the desert road at the east gate, the forest road at the west gate, and
+# the fishing-village loop leaves by the south gate over the new bridge below the wall, rejoining
+# its old line south-east (sheet 23, plan_lowland.py).
+for _c in D['cities']:
+    if _c['id']=='lowland':_c['point']=[1075,1592,18]
+for _r in D['roads']:
+    if _r['id']=='desert_lowland':
+        _r['points']=[q for q in _r['points'] if q[0]>1200]+[[1128,1556,19]]
+    elif _r['id']=='lowland_forest':
+        _r['points']=[[992,1578,19]]+[q for q in _r['points'] if q[0]<1000]
+    elif _r['id']=='lowland_loop':
+        _r['points']=[q for q in _r['points'] if q[0]>1200]+[[1168,1760,6],[1150,1745,8],[1118,1700,13],[1108,1672,16],[1102,1656,18],[1074,1638,18.5],[1050,1634,18.6]]
+offsets={'forest':[-35,35],'snow':[0,0],'desert':[45,-35],'lowland':[0,0]}
 roads=[dict(r) for r in D['roads']]
 cities=[]
 for city in D['cities']:

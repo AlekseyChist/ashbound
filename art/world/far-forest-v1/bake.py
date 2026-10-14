@@ -132,6 +132,24 @@ if os.path.exists(_city_plan):
     for b in json.load(open(_city_plan, encoding='utf-8'))['buildings']:
         if b['kind'] in ('tannery', 'healer_hut', 'posad'):
             discs.append(((float(b['map'][0]), float(b['map'][1])), 16.0))
+# WORLD-BUILD-01C/E (D-118): the snow and desert cities' book plans - a glade round every plot and a
+# corridor along every street and door path, wherever the plot lies from its city's point (a tree, its
+# place drawn from the shared random stream, came up on vs3's door stair once the lowland roads moved).
+for _plan in ('assets/world/snow-city-v1/plan.json', 'assets/world/desert-city-v1/plan.json'):
+    _path = os.path.join(ROOT, _plan)
+    if not os.path.exists(_path):
+        continue
+    _p = json.load(open(_path, encoding='utf-8'))
+    for b in _p.get('buildings', []):
+        discs.append(((float(b['x']), float(b['z'])), max(float(b['w']), float(b['d'])) * 0.5 + 6.0))
+    for line in _p.get('lines', []):
+        if line['kind'] in ('street', 'path', 'stairs', 'wall'):
+            pts = [(float(q[0]), float(q[1])) for q in line['pts']]
+            r = float(line.get('width', 3.0)) * 0.5 + 3.0
+            for (ax, az), (bx, bz) in zip(pts, pts[1:]):
+                n = max(1, int(math.hypot(bx - ax, bz - az) / 2.0))
+                for i in range(n + 1):
+                    discs.append(((ax + (bx - ax) * i / n, az + (bz - az) * i / n), r))
 lakes = [(l['center'][0], l['center'][1], l['radii_m'][0] + 10.0, l['radii_m'][1] + 10.0) for l in layout['lakes']]
 
 def lakeside(x, z):

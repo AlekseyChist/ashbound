@@ -88,6 +88,8 @@ const STOOP_LEVEL := 4
 const LANDING := 1.2
 const STOOP_RUN := 0.35
 const STOOP_WIDTH := 1.6
+## A door step's collision stops this far under its visible top (the slab above carries the hero).
+const STOOP_UNDER := 0.08
 ## A snow flight stands in a bank of earth (owner 14 Oct: the flights' bodies rose as tall stepped
 ## stone walls over the falling slope): at a tread's side the ground lies FILL_TOP under its top and
 ## falls away at FILL_SLOPE (a 29 deg bank), fading into the slope over its last 3 of FILL_REACH m - never under a bridge deck, nor
@@ -618,6 +620,10 @@ func _steps(book: Node3D, node: Node3D, ground: Callable, start: Vector2, dir: V
 	var built := 0
 	var yaw := rad_to_deg(atan2(dir.x, dir.y))
 	var end: Vector2 = start
+	# the walking slabs, merged while their pitch holds: [high edge, its height, low edge, its height,
+	# pitch] - one long slab per even run (Codex/validator: the capsule caught the joints of nine
+	# separate 27 deg slabs on vs3's door stair)
+	var run_slab: Array = []
 	for k in range(1, slots + 1):
 		var p: Vector2 = start + dir * (STOOP_RUN * (k - 0.5))
 		end = p + dir * (STOOP_RUN * 0.5)
@@ -646,8 +652,10 @@ func _steps(book: Node3D, node: Node3D, ground: Callable, start: Vector2, dir: V
 			# done once its steps meet the ground for STOOP_LEVEL steps (Codex 6ef4e04: after two, vs13's
 			# bank fell on 0.68 m past the stair's foot)
 			if built > 0 and idle >= STOOP_LEVEL:
+				_flush_slab(book, node, run_slab, width, yaw)
 				return [built, true, end]
 			if built == 0 and idle >= 3:
+				_flush_slab(book, node, run_slab, width, yaw)
 				return [0, true, end]
 			continue
 		idle = 0
@@ -656,14 +664,40 @@ func _steps(book: Node3D, node: Node3D, ground: Callable, start: Vector2, dir: V
 			# deep into the slope below: the stair stands on a solid wall, never on a visible edge
 			# (Codex 27c3f38 014/015: stepped undersides read as cantilevers over the falling snow)
 			var bottom := foot - 1.2
-			book._stair_block(node, Vector3(p.x, (top + bottom) * 0.5, p.y), Vector3(width, top - bottom, STOOP_RUN + 0.03), yaw, "masonry")
+			book._stair_block(node, Vector3(p.x, (top + bottom) * 0.5, p.y), Vector3(width, top - bottom, STOOP_RUN + 0.03), yaw, "masonry", false)
+			# its collision stops STOOP_UNDER under its top: the walking slab below carries the hero (the
+			# block's edge 3 cm over the slab caught the capsule at vs3 - as the flights' treads do)
+			var body_top := top - STOOP_UNDER
+			book._stair_collider(node, Vector3(p.x, (body_top + bottom) * 0.5, p.y), Vector3(width, body_top - bottom, STOOP_RUN + 0.03), Basis(Vector3.UP, deg_to_rad(yaw)))
 			# its walking surface: a slab from the step before down to this one, as the flights'
 			# treads have (the capsule caught the short risers' edges on the slum's door stairs)
 			var pitch := atan2(before - top, STOOP_RUN)
-			var turn := Basis(Vector3.UP, deg_to_rad(yaw)) * Basis(Vector3.RIGHT, pitch)
-			book._stair_collider(node, Vector3(p.x, (before + top) * 0.5 - 0.03, p.y), Vector3(width, 0.06, STOOP_RUN / cos(pitch) + 0.04), turn)
+			var hi: Vector2 = p - dir * (STOOP_RUN * 0.5)
+			var lo: Vector2 = p + dir * (STOOP_RUN * 0.5)
+			if not run_slab.is_empty() and absf(float(run_slab[4]) - pitch) < 0.01:
+				run_slab[2] = lo
+				run_slab[3] = top
+			else:
+				_flush_slab(book, node, run_slab, width, yaw)
+				run_slab = [hi, before, lo, top, pitch]
 			book._stair_block(node, Vector3(p.x, top - 0.05, p.y), Vector3(width + 0.04, 0.1, STOOP_RUN + 0.02), yaw, "tread", false)
+	_flush_slab(book, node, run_slab, width, yaw)
 	return [built, false, end]
+
+
+## One walking slab over a run of door steps: from its high edge (height) to its low edge (height).
+func _flush_slab(book: Node3D, node: Node3D, run_slab: Array, width: float, yaw: float) -> void:
+	if run_slab.is_empty():
+		return
+	var hi: Vector2 = run_slab[0]
+	var lo: Vector2 = run_slab[2]
+	var h0: float = run_slab[1]
+	var h1: float = run_slab[3]
+	var length := hi.distance_to(lo)
+	var pitch := atan2(h0 - h1, length)
+	var mid: Vector2 = (hi + lo) * 0.5
+	var turn := Basis(Vector3.UP, deg_to_rad(yaw)) * Basis(Vector3.RIGHT, pitch)
+	book._stair_collider(node, Vector3(mid.x, (h0 + h1) * 0.5 - 0.03, mid.y), Vector3(width, 0.06, length / cos(pitch) + 0.04), turn)
 
 
 ## The lane walls (see LANE_WALL_MIN), after build_plinths (they keep off its door stairs).
