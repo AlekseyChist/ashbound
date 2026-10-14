@@ -35,6 +35,28 @@ def box(n,p,s,m,solid=True):
         o['part_role']='interior_furniture'
     if solid:coll.append((n,p,s))
     return o
+def ring_solid(n,x,y,z,rings,m,role=True):
+    # a closed solid of octagonal rings [(dz, half_x, half_y), ...] from bottom to top around (x,y,z)
+    k=8
+    v=[]
+    for dz,hx,hy in rings:
+        for i in range(k):
+            a=math.pi*2*i/k+math.pi/8
+            v.append((x+hx*math.cos(a),y+hy*math.sin(a),z+dz))
+    f=[tuple(range(k-1,-1,-1))]
+    for r in range(len(rings)-1):
+        for i in range(k):
+            j=(i+1)%k
+            f.append((r*k+i,r*k+j,(r+1)*k+j,(r+1)*k+i))
+    t=(len(rings)-1)*k
+    f.append(tuple(range(t,t+k)))
+    o=C.mesh(n,v,f,m)
+    if role:o['part_role']='interior_furniture'
+    return o
+def stave(n,a,b,w,m):
+    o=C.beam(n,a,b,w,w,m)
+    o['part_role']='interior_furniture'
+    return o
 # Shell: outer walls 8x5 (faces at x +-4, y +-2.5; inner faces +-3.6 / +-2.1), floor z=0, roof top ~3.6.
 box('foundation',(0,0,-.15),(8,5,.3),STONE)
 # Shooting line: stone threshold across the open front side at y=-2.38.
@@ -71,10 +93,17 @@ for x in (-2.4,2.4):
     box('bow rack',(x,1.95,1.1),(1.6,.1,.08),WOOD)
     box('bow rack',(x,1.95,1.6),(1.6,.1,.08),WOOD)
     for dx in (-.75,.75):box('bow rack post',(x+dx,1.95,.9),(.08,.08,1.8),WOOD)
-    for dx in (-.5,-.17,.17,.5):box('bow',(x+dx,1.85,1.0),(.04,.04,1.9),WOOD,False)
+    # bows standing against the rack: a stave bent back in three pieces and a string
+    for dx in (-.5,-.17,.17,.5):
+        bx=x+dx
+        pts=[(bx,1.86,.06),(bx,1.74,.55),(bx,1.70,1.0),(bx,1.74,1.45),(bx,1.86,1.94)]
+        for p0,p1 in zip(pts,pts[1:]):stave('bow',p0,p1,.035,WOOD)
+        stave('bow string',(bx,1.87,.08),(bx,1.87,1.92),.008,LEATHER)
 # Quivers with arrows along the middle of the rear wall.
 for x in (-.6,-.2,.2,.6):
-    box('quiver',(x,1.9,.45),(.18,.18,.9),LEATHER,False)
+    ring_solid('quiver',x,1.9,0,[(0,.07,.07),(.06,.09,.09),(.86,.1,.1),(.9,.095,.095)],LEATHER)
+    for dx,dy in ((-.04,-.03),(.04,-.03),(0,.04)):
+        box('quiver fletching',(x+dx,1.9+dy,.98),(.02,.05,.14),STRAW,False)
 # Two benches along the side walls.
 for x in (-3.2,3.2):
     box('bench',(x,.2,.24),(.4,2.2,.06),WOOD)
