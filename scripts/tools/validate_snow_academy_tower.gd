@@ -18,6 +18,21 @@ func check(ok: bool,message: String) -> bool:
         failures += 1
         push_error("ACADEMY_TOWER_R2 " + message)
     return ok
+func rendered_support(from:Vector3,to:Vector3)->bool:
+    # Repair-scaffold bearers are visual architecture in the accepted GLB.
+    # Verify their real triangles; never accept the new fixture's own mesh.
+    for mesh in building.find_children("*","MeshInstance3D",true,false):
+        if building.lamp_root.is_ancestor_of(mesh):continue
+        for surface in mesh.mesh.get_surface_count():
+            var arrays:Array=mesh.mesh.surface_get_arrays(surface)
+            var vertices:PackedVector3Array=arrays[Mesh.ARRAY_VERTEX]
+            var indices:PackedInt32Array=arrays[Mesh.ARRAY_INDEX]
+            for i in range(0,indices.size(),3):
+                var a:Vector3=mesh.to_global(vertices[indices[i]])
+                var b:Vector3=mesh.to_global(vertices[indices[i+1]])
+                var c:Vector3=mesh.to_global(vertices[indices[i+2]])
+                if Geometry3D.segment_intersects_triangle(from,to,a,b,c)!=null:return true
+    return false
 func settle(count: int = 60) -> void:
     for tick in range(count):
         await physics_frame
@@ -101,7 +116,24 @@ func run() -> void:
     var extras: Dictionary=facts.get_meta("extras",{})
     if not check(extras.get("internal_treads",0)==140 and extras.get("external_treads",0)==160,"Expected140+160 actual treads"):quit(1);return
     if not check(building.door.leaves.size()==8 and building.maintenance_door.leaves.size()==8,"Two eight-part portals required"):quit(1);return
-    if not check(building.interior_lights.size()==4 and not building.interior_meshes.is_empty(),"Preserved furnished rooms and four lamps required"):quit(1);return
+    if not check(building.interior_lights.size()==30 and not building.interior_meshes.is_empty(),"8 rooms, cell lamp, 7 turns, 8 flights and 6 repair-ring lamps required"):quit(1);return
+    var support_space=building.get_world_3d().direct_space_state
+    var cord_count:=0;var bracket_count:=0
+    for support in building.lamp_root.get_children():
+        if support is MeshInstance3D and support.name.begins_with("SupportCord"):
+            cord_count+=1
+            var top:Vector3=support.position+Vector3.UP*support.mesh.size.y*.5
+            var hit=support_space.intersect_ray(PhysicsRayQueryParameters3D.create(top-Vector3.UP*.06,top+Vector3.UP*.06,1))
+            var supported:bool=not hit.is_empty() and building.is_ancestor_of(hit.collider)
+            if not supported:supported=rendered_support(top-Vector3.UP*.06,top+Vector3.UP*.06)
+            if not check(supported,"Cord must meet actual ceiling or scaffold bearer "+str(top)):quit(1);return
+        if support is MeshInstance3D and support.name.begins_with("WallBracket"):
+            bracket_count+=1
+            var at:Vector3=support.position
+            var normal:=Vector3(signf(at.x),0,0) if support.mesh.size.x>support.mesh.size.z else Vector3(0,0,signf(at.z))
+            var hit=support_space.intersect_ray(PhysicsRayQueryParameters3D.create(at+normal*.3,at-normal*.3,1))
+            if not check(not hit.is_empty() and building.is_ancestor_of(hit.collider),"Bracket must enter actual masonry "+str(at)):quit(1);return
+    if not check(cord_count==17 and bracket_count==13,"All30 individual supports inspected"):quit(1);return
     if not check(building.warm_window!=null and not building.window_material.emission_enabled,"Day window incorrectly emits"):quit(1);return
     clock.daylight=0
     await settle(40)
@@ -198,8 +230,21 @@ func run() -> void:
     for light in building.interior_lights:
         if not check(not light.visible,"Distant lantern failed to sleep"):quit(1);return
     camera.position=Vector3(0,2,0);await settle(40)
+    var visible_lights:=0
     for light in building.interior_lights:
-        if not check(light.visible,"Nearby lantern failed to wake"):quit(1);return
+        if light.visible:visible_lights+=1
+    if not check(visible_lights==8,"Nearest8 light budget at entry"):quit(1);return
+    camera.position=Vector3(0,26.9,0);await settle(40)
+    visible_lights=0
+    for light in building.interior_lights:
+        if light.visible:
+            visible_lights+=1
+            if not check(light.global_position.y>16,"Upper route must release distant lower lamps"):quit(1);return
+    if not check(visible_lights==8,"Nearest8 light budget upstairs"):quit(1);return
+    building.set_interior_lights_enabled(false)
+    for light in building.interior_lights:
+        if not check(not light.visible,"Master off must beat nearest-light budget"):quit(1);return
+    building.set_interior_lights_enabled(true)
     var low:=Vector3(INF,INF,INF);var high:=Vector3(-INF,-INF,-INF);var triangles:=0
     for node in building.find_children("*","MeshInstance3D",true,false):
         for surface in range(node.mesh.get_surface_count()):
