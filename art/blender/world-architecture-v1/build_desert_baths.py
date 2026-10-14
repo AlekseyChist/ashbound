@@ -70,12 +70,34 @@ def duct(axis,fixed,a,b):
 duct('x',.8,-6,-1.28)
 duct('x',-.8,1.0,2.22)
 duct('x',-.8,4.46,6)
+box('waste outlet foundation',(5.84,-.8,-.82),(.32,.84,.24),STONE)
+for side in (-1,1):box('waste head pier',(5.84,-.8+side*.32,-.4),(.32,.16,.60),STONE)
+box('waste head lintel',(5.84,-.8,-.04),(.32,.84,.12),STONE)
 for name,p in [('HotInlet',(-6,.8,-.5)),('WasteOutlet',(6,-.8,-.5))]:
     marker=bpy.data.objects.new(name,None);C.ASSET.objects.link(marker);marker.location=p
     marker['clear_width']=.32;marker['sill_level']=-.62;marker['head_level']=-.38
 box('front west pier',(-5.325,-3.3,1.6),(1.35,.4,3.2),LIME)
-box('front east pier',(1.325,-3.3,1.6),(9.35,.4,3.2),LIME)
+front_cuts=[-3.35,-.30,.30,2.10,2.70,4.50,5.10,6]
+for a,b in zip(front_cuts,front_cuts[1:]):
+    aperture=a in (-.30,2.10,4.50)
+    for lo,hi in ([(0,1.3),(2.5,3.2)] if aperture else [(0,3.2)]):
+        box('front east pier',((a+b)/2,-3.3,(lo+hi)/2),(b-a,.4,hi-lo),LIME)
+for x in (0,2.4,4.8):
+    for dx in (-.30,.30):box('high window jamb',(x+dx,-3.3,1.9),(.08,.46,1.3),STONE,False)
+    for z in (1.3,2.5):box('high window lintel',(x,-3.3,z),(.76,.46,.1),STONE,False)
 box('entry lintel',(-4,-3.3,2.8),(1.3,.4,.8),LIME)
+for x in (-5.09,-2.91):
+    box('entry stone footing',(x,-3.68,-.08),(.34,.44,.16),STONE)
+    box('entry arch pier',(x,-3.68,1.1),(.18,.30,2.2),STONE)
+for k in range(12):
+    a=k*math.pi/12;b=(k+1)*math.pi/12
+    vertices=[]
+    for y in (-3.83,-3.53):
+        for radius,angle in [(1,a),(1.18,a),(1.18,b),(1,b)]:
+            vertices.append((-4+radius*math.cos(angle),y,2.2+radius*math.sin(angle)))
+    faces=[(0,1,2,3),(4,7,6,5),(0,4,5,1),(1,5,6,2),(2,6,7,3),(3,7,4,0)]
+    C.mesh('entry arch voussoir',vertices,faces,STONE)
+    collision=C.mesh('entry arch-colonly',vertices,faces,STONE);collision.hide_render=True
 box('back wall',(0,3.3,1.6),(12,.4,3.2),LIME)
 for x in (-5.8,5.8):
     for lo,hi in [(-3.1,-1.2),(1.2,3.1)]:box('side wall',(x,(lo+hi)/2,1.6),(.4,hi-lo,3.2),LIME)
@@ -99,11 +121,21 @@ box('wash water',(-5,2.55,.79),(.62,.38,.01),WATER,False)
 for x in (-5.8,5.8):
     for y in (-1.2,1.2):box('window jamb',(x,y,2.10),(.48,.10,1.3),WOOD,False)
     for z in (1.5,2.7):box('window lintel',(x,0,z),(.48,2.6,.10),WOOD,False)
-box('ceiling',(0,0,3.16),(12,7,.12),LIME)
-roof=box('flat roof',(0,0,3.4),(13,8,.24),LIME,False)
-roof.rotation_euler.x=-math.atan(.015)
-roof_collision=C.box('sloped roof-colonly',(0,0,3.4),(13,8,.24),LIME,0)
-roof_collision.rotation_euler.x=roof.rotation_euler.x;roof_collision.hide_render=True
+def vent_panels(x0,x1,y0,y1):
+    return [(x0,1.2,y0,y1),(2,x1,y0,y1),(1.2,2,y0,-.4),(1.2,2,.4,y1)]
+for a,b,c,d in vent_panels(-6,6,-3.5,3.5):
+    box('ceiling',((a+b)/2,(c+d)/2,3.16),(b-a,d-c,.12),LIME)
+for a,b,c,d in vent_panels(-6.5,6.5,-4,4):
+    at=((a+b)/2,(c+d)/2,3.4-.015*(c+d)/2)
+    size=(b-a,d-c,.24)
+    roof=C.box('flat roof',at,size,LIME,0);roof.rotation_euler.x=-math.atan(.015)
+    roof_collision=C.box('sloped roof-colonly',at,size,LIME,0)
+    roof_collision.rotation_euler.x=roof.rotation_euler.x;roof_collision.hide_render=True
+for x in (1.25,1.95):box('vent curb',(x,0,3.65),(.10,.80,1.2),STONE)
+for y in (-.35,.35):box('vent curb',(1.6,y,3.65),(.60,.10,1.2),STONE)
+for x in (1.28,1.92):
+    for y in (-.32,.32):box('vent hood post',(x,y,4.43),(.12,.12,.36),STONE)
+box('vent rain hood',(1.6,0,4.67),(1.2,1.2,.12),LIME)
 for x in (-6.35,6.35):box('roof parapet',(x,0,3.64),(.3,8,.36),LIME)
 box('front roof parapet',(0,-3.85,3.64),(12.4,.3,.36),LIME)
 for a,b in [(-6.2,-4.8),(-4.4,4.4),(4.8,6.2)]:box('rear roof parapet',((a+b)/2,3.85,3.64),(b-a,.3,.36),LIME)
@@ -152,4 +184,4 @@ visual=[o for o in C.ASSET.objects if o.type=='MESH' and '-colonly' not in o.nam
 triangles=0
 for o in visual:o.data.calc_loop_triangles();triangles+=len(o.data.loop_triangles)
 points=[o.matrix_world@Vector(v) for o in visual for v in o.bound_box]
-(QA/'stats.json').write_text(json.dumps({'state':'built; peer and campaign/mobile QA pending','walls':[12,7],'maximum_height':3.82,'triangles':triangles,'meshes':len(visual),'bbox':[[min(p[i] for p in points) for i in range(3)],[max(p[i] for p in points) for i in range(3)]],'sha256':hashlib.sha256(asset.read_bytes()).hexdigest()},indent=2),encoding='utf-8')
+(QA/'stats.json').write_text(json.dumps({'state':'built; peer and campaign/mobile QA pending','walls':[12,7],'maximum_height':max(p.z for p in points),'triangles':triangles,'meshes':len(visual),'bbox':[[min(p[i] for p in points) for i in range(3)],[max(p[i] for p in points) for i in range(3)]],'sha256':hashlib.sha256(asset.read_bytes()).hexdigest()},indent=2),encoding='utf-8')

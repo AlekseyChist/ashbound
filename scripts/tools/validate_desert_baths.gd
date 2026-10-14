@@ -27,6 +27,9 @@ func run():
     actor.add_child(shape);root.add_child(actor);actor.position=Vector3(-4,.9,4.5)
     await physics_frame
     var space=actor.get_world_3d().direct_space_state
+    for segment in [[Vector3(1.6,3,0),Vector3(1.6,4.55,0)],[Vector3(1.6,4.43,0),Vector3(2.3,4.43,0)]]:
+        if not space.intersect_ray(PhysicsRayQueryParameters3D.create(segment[0],segment[1],1)).is_empty():
+            push_error("Bath ventilation chamber or side outlet blocked");quit(1);return
     var front_roof=space.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(0,5,3),Vector3(0,3,3),1))
     var rear_roof=space.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(0,5,-3),Vector3(0,3,-3),1))
     if front_roof.is_empty() or rear_roof.is_empty() or front_roof.position.y-rear_roof.position.y<.08:
