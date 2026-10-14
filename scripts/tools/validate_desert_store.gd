@@ -34,6 +34,40 @@ func run()->void:
     var col=CollisionShape3D.new();var capsule=CapsuleShape3D.new();capsule.radius=.3;capsule.height=1.75;col.shape=capsule;actor.add_child(col);root.add_child(actor);actor.position=Vector3(0,.9,5)
     var camera=Camera3D.new();root.add_child(camera);camera.make_current();camera.position=Vector3(0,2,5)
     await settle(60)
+    var textured_triangles:=0
+    var low=Vector3(INF,INF,INF);var high=Vector3(-INF,-INF,-INF)
+    for mesh in house.find_children("*","MeshInstance3D",true,false):
+        if house.lamp_root.is_ancestor_of(mesh):continue
+        for surface in mesh.mesh.get_surface_count():
+            var positions:PackedVector3Array=mesh.mesh.surface_get_arrays(surface)[Mesh.ARRAY_VERTEX]
+            for vertex in positions:
+                var p:Vector3=house.to_local(mesh.to_global(vertex))
+                low=low.min(p);high=high.max(p)
+            var mat=mesh.get_active_material(surface) as StandardMaterial3D
+            if mat==null or mat.albedo_texture==null:continue
+            var arrays:Array=mesh.mesh.surface_get_arrays(surface)
+            var vertices:PackedVector3Array=arrays[Mesh.ARRAY_VERTEX]
+            var uv:PackedVector2Array=arrays[Mesh.ARRAY_TEX_UV]
+            var indices:PackedInt32Array=arrays[Mesh.ARRAY_INDEX]
+            check(uv.size()==vertices.size(),"textured vertices carry UV")
+            if uv.size()!=vertices.size():continue
+            var count=indices.size() if not indices.is_empty() else vertices.size()
+            for i in range(0,count,3):
+                var a=indices[i] if not indices.is_empty() else i
+                var b=indices[i+1] if not indices.is_empty() else i+1
+                var c=indices[i+2] if not indices.is_empty() else i+2
+                if (vertices[b]-vertices[a]).cross(vertices[c]-vertices[a]).length_squared()<.0000000001:continue
+                check(absf((uv[b]-uv[a]).cross(uv[c]-uv[a]))>.000000001,"textured triangle UV nondegenerate")
+                textured_triangles+=1
+    check(textured_triangles>0,"real textured model audited")
+    check(low.x>=-4.301 and high.x<=4.301 and low.z>=-3.301 and high.z<=4.201 and high.y<=4.001,"native8x6 shell plus allowed roof/porch envelope")
+    print("STORE_ENVELOPE low=",low," high=",high)
+    var space=house.get_world_3d().direct_space_state
+    var roof=space.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(0,5,0),Vector3(0,3.2,0),1))
+    check(not roof.is_empty() and house.is_ancestor_of(roof.collider),"model roof blocks above ceiling")
+    var drain=space.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(0,3.7,-2.6),Vector3(0,3.7,-3.35),1))
+    check(drain.is_empty(),"rear parapet drain remains open")
+    print("STORE_GEOMETRY textured_triangles=",textured_triangles)
     await move_to(Vector2(0,1.5),false)
     check(house.door.try_toggle(actor),"entry door toggle");await settle(60)
     for p in [Vector2(0,2),Vector2(0,0),Vector2(0,-2),Vector2(-1,-2),Vector2(-1,0),Vector2(-.6,1.5),Vector2(0,1.5),Vector2(1,1.5),Vector2(1,0),Vector2(1,-2),Vector2(0,-2),Vector2(0,0)]:await move_to(p)
@@ -41,6 +75,13 @@ func run()->void:
     for z in [.9,-1.3]:
         var hit=house.get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(.6,.9,z),Vector3(3.4,.9,z),1))
         check(not hit.is_empty(),"timber stack blocks torso at z="+str(z))
+    await move_to(Vector2(0,1.3))
+    check(house.door.try_toggle(actor),"request close in occupied swing")
+    await settle(60)
+    check(house.door.blocked and house.door.moving and house.door.fraction>0,"occupied swing stops leaf")
+    await move_to(Vector2(0,.7));await settle(90)
+    check(not house.door.moving and not house.door.blocked and is_zero_approx(house.door.fraction),"closing recovers after adult leaves")
+    check(house.door.try_toggle(actor),"reopen after swing test");await settle(60)
     check(not house.set_interior_visible(false),"open door keeps furnishings")
     await move_to(Vector2(0,5))
     check(house.door.try_toggle(actor),"exit door closes");await settle(60)
@@ -55,4 +96,5 @@ func run()->void:
     house.set_interior_lights_enabled(false);await settle(60);check(not house.lights[0].visible,"world light override")
     print("STORE_QA_DONE legs=",legs," failures=",failures.size()," whole_world_ready=false")
     quit(0 if failures.is_empty() else 1)
+
 

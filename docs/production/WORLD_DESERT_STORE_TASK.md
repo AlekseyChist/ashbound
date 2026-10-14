@@ -1,37 +1,33 @@
-# WORLD-DESERT-STORE — one store module for z1/z2/z10/z11
+# WORLD-DESERT-STORE — module for z1/z2/z10/z11
 
-Base: origin/dev 562e128. Branch codex/desert-store-runtime.
-Source producer: Claude/Qwen 4db3944; exact generator read, static preview improved.
-Blocking source defect: timber stack colliders removed (8 in 9acf, 0 in4db), returned283.
-Codex owns this runtime/scenes/independent validation; no second Qwen.
+Base dev562e128; branch codex/desert-store-runtime; draftPR200.
+Producer: Qwen/Claude exact93dc292. Codex: runtime, scene, independent QA.
+One8x6 hall; existing VillageDoor, one supported ceiling lantern;
+interior sleep guarded by occupancy/open/moving door; near/far/world light controls.
+Four lots reuse the model; actual world placement is Claude's separate work.
 
-Result: native 8x6 module with existing VillageDoor, one supported ceiling lantern,
-interior sleep guarded by occupancy/open/moving door, near/far/world light controls.
-Four plan plots reuse the module; placement is Claude's separately owned work.
-Allowed: build_desert_store.py exact handed-off source, d_store_8x6.glb,
-scenes/buildings/world-architecture-v1/d_store_8x6.tscn,
-scripts/buildings/desert_store.gd, scripts/tools/validate_desert_store.gd, this card.
-No plan, world, lore, weapon/inventory feature changes.
-All logs, fixtures, BLEND, screenshots in local/qa/desert-store only.
+Scope: exact build_desert_store.py, d_store_8x6.glb,
+d_store_8x6.tscn, desert_store.gd, validate_desert_store.gd, this card.
+No plan/world/lore/inventory changes, no second Qwen. QA/BLEND/frames local only.
 
-Checks: true model floor, closed door blocking, ordinary entry/exit, clear central
-1.2m aisle, grain/timber access, stack obstruction and roof envelope/drain/UV;
-occupancy/door visibility guards and near/far/external light state.
-Then actual PlayerRig/ordinary camera day/night, family/placement and mobile limits.
-No green code claim or commit of incomplete asset based on known missing collision.
+## Current checks
 
-Current QA: fresh isolated import0; 14 movement legs, door/floor/visibility/light
-checks complete. Two expected failures remain: both timber stack obstruction rays
-are empty on producer4db3944. Overall validator exit1, not PASS.
-QA r1 targeted an open leaf outside the central lane; r2 uses x-.6 at that entry
-approach and retains both timber expectations. No source geometry changed.
-No model committed or PR created before producer collision correction.
+- Exact source93dc restores two whole-stack obstacles; no producer code altered.
+- Fresh Blender/import exit0, logs clean.
+- Independent validator16legs/0failures/exit0: closed door, entry/exit, model floor,
+  stack obstruction, occupancy/open/moving guards and near/far/external light.
+- Occupied swing stops the leaf; after actor leaves it closes, no threshold weakening.
+- 4128 nondegenerate textured UV triangles; vertex envelope
+  x+-4.3,z-3.3..4.2,ymax3.98, within8x6 plus agreed roof/porch projections.
+- Model roof blocks above ceiling; rear parapet drain has a clear opening.
+- Actual PlayerRig/ordinary camera:20legs/day +20legs/night,42frames viewed,
+  exits0/noERROR. Hero overlay had texture UID fallback warnings;
+  isolated clean import does not certify a clean whole project.
+- Claude217 accepts runtime/physics exact9e106e7; later test-only head separately sent.
 
-Producer93dc292 restores two full-stack obstacles; fresh Blender/import exit0.
-The same independent runtime validator now passes14legs with zero failures, exit0.
-Actual PlayerRig/ordinary camera isolated module:20legs/day +20legs/night,42frames
-viewed, exits0/noERROR. Hero QA used existing imported dependency overlays and
-texture UID fallback warnings; not a clean whole-project/mobile/FPS approval.
-Draft for Claude peer review. World placement/family comparison/roof-drain-UV
-geometry audit/door-swing occupied-actor regression/mobile remain explicit work.
-Earlier 4db failures preserved in local; tested model cannot silently lose stacks.
+## Open
+
+Draft until four-lot placement, adjacent approaches, family/art comparison,
+world lighting and actual APK/S23/FPS. Phone HOLD. Whole world is not accepted.
+Previous missing-stack failures and QA-path correction retained locally;
+no logs or screenshot galleries staged.
