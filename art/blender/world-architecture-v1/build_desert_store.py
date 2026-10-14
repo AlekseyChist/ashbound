@@ -86,6 +86,9 @@ for y in (-0.9,1.3):
         box('timber stack',(2.4,y,.76+k*.13),(1.9,1.2,.12),WOOD)
 # Scales by the door, right side.
 box('scale table',(1.6,-2.0,.78),(1.0,.6,.12),WOOD)
+# its four legs to the floor (Codex 279: the top stood on nothing)
+for dx in (-.43,.43):
+    for dy in (-.23,.23):box('scale table leg',(1.6+dx,-2.0+dy,.36),(.08,.08,.72),WOOD,False)
 box('scale post',(1.6,-2.0,1.2),(.06,.06,.8),WOOD,False)
 box('scale pan',(1.6,-2.0,1.55),(.4,.4,.03),WOOD,False)
 # Door: EntryPortal, front hinge, open -100 deg.
