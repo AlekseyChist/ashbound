@@ -90,12 +90,15 @@ for x in (-1.4,1.4):
     box('canopy post',(x,-4.55,1.4),(.14,.14,2.4),WOOD)
     C.beam('canopy rafter',(x,-3.5,2.95),(x,-4.62,2.62),.12,.12,WOOD)
 C.mesh('entry shade',[(-1.6,-3.5,2.96),(1.6,-3.5,2.96),(1.6,-4.64,2.62),(-1.6,-4.64,2.62)],[(0,1,2,3)],CLOTH)
-# Sleeping side: two adult beds (2.0x0.9) along the west wall, bench between.
+# Sleeping side: two adult beds (2.0x0.9) along the west wall, bench between. The west wall's inner
+# face is x=-6.1: the frame stands 0.05 m clear of it, x -6.05..-4.05 (Codex review H01: at x=-5.4 the
+# frame, bedding and legs ran 0.30 m into the wall).
+BED_X=-5.05
 for y in (-2.2,2.2):
-    box('bed frame',(-5.4,y,.38),(2.0,.9,.14),WOOD)
+    box('bed frame',(BED_X,y,.38),(2.0,.9,.14),WOOD)
     for dx in (-.85,.85):
-        for ey in (-.32,.32):box('bed leg',(-5.4+dx,y+ey,.155),(.1,.1,.31),WOOD,False)
-    box('bedding',(-5.4,y,.50),(1.85,.82,.10),LINEN,False)
+        for ey in (-.32,.32):box('bed leg',(BED_X+dx,y+ey,.155),(.1,.1,.31),WOOD,False)
+    box('bedding',(BED_X,y,.50),(1.85,.82,.10),LINEN,False)
 box('bench',(-3.6,0,.42),(1.2,.5,.10),WOOD)
 for dx in (-.5,.5):box('bench leg',(-3.6+dx,0,.18),(.08,.08,.36),WOOD,False)
 # Equipment side: worktable + chest near the partition; long-pole rack along rear wall.
@@ -112,8 +115,10 @@ door_parts=[]
 portal=bpy.data.objects.new('EntryPortal',None);C.ASSET.objects.link(portal)
 hinge=bpy.data.objects.new('EntryPortal_entry_hinge',None);C.ASSET.objects.link(hinge)
 hinge.parent=portal;hinge.location=(-.9,-3.3,0);hinge['open_angle_degrees']=-100
+# Five planks fill the opening x -0.9..0.9 with a 25 mm working gap at both jambs: x -0.875..0.875
+# (Codex review H02: the leaf ran 55 mm into the hinge jamb and left 65 mm at the latch).
 for k in range(5):
-    part=box('Door plank',(-.78+k*.36,-3.3,1.18),(.35,.08,2.36),WOOD,False)
+    part=box('Door plank',(-.7+k*.35,-3.3,1.18),(.35,.08,2.36),WOOD,False)
     part.parent=hinge;part.location-=Vector((-.9,-3.3,0))
     door_parts.append(part)
 visual=[o for o in C.ASSET.objects if o.type=='MESH' and '-colonly' not in o.name]
