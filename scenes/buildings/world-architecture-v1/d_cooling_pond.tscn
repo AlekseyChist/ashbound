@@ -1,0 +1,5 @@
+[gd_scene load_steps=3 format=3]
+[ext_resource type="PackedScene" path="res://assets/buildings/world-architecture-v1/d_cooling_pond.glb" id="1"]
+[ext_resource type="Script" path="res://scripts/buildings/desert_water_basin.gd" id="2"]
+[node name="CoolingPond" instance=ExtResource("1")]
+script = ExtResource("2")
