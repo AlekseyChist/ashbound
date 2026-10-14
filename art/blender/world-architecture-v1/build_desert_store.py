@@ -81,8 +81,9 @@ for y in (-1.2,1.0):
 # Right (+x): trestles and timber stacks.
 for y in (-0.9,1.3):
     for dx in (-.7,.7):box('trestle',(2.4+dx,y,.35),(.12,1.4,.7),WOOD)
-for k in range(4):
-    box('timber stack',(2.4,0,.76+k*.13),(1.9,1.2,.12),WOOD)
+    # a stack on each pair of trestles (the draft laid one stack across both pairs' inner ends)
+    for k in range(4):
+        box('timber stack',(2.4,y,.76+k*.13),(1.9,1.2,.12),WOOD)
 # Scales by the door, right side.
 box('scale table',(1.6,-2.0,.78),(1.0,.6,.12),WOOD)
 box('scale post',(1.6,-2.0,1.2),(.06,.06,.8),WOOD,False)
