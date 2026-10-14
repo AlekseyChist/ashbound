@@ -37,6 +37,7 @@ const YARD_DOOR := 2.5
 ## Only in runs of LANE_WALL_RUN m or more; not across a door stair, a house or another street.
 const LANE_WALL_MIN := 0.6
 const LANE_WALL_RUN := 5
+const LANE_WALL_PROUD := 0.15
 ## The ground under a building's walls lies this far under its floor (no shared plane).
 const FLOOR_GAP := 0.05
 ## The library's lower hall (S-L: its floor 3.2 m under the entrance) needs the ground dug out: no
@@ -709,7 +710,9 @@ func build_lane_walls(book: Node3D, ground: Callable) -> void:
 						var b2: Vector2 = q + across * (edge + STREET_BLEND)
 						front.append(Vector3(f2.x, 0, f2.y))
 						back.append(Vector3(b2.x, 0, b2.y))
-						tops.append(top)
+						# 0.15 over the bank's highest ground: the top never shares the snow's plane (Codex
+						# 24159a5 031: the ground showed through it as a flat pale face)
+						tops.append(top + LANE_WALL_PROUD)
 						lows.append(float(_street_at(si, q)[1]) - 1.5)
 					_wall_strip(book, node, front, back, tops, lows, "masonry")
 					# the coping: 0.34 deep on the front edge, 0.12 over the top
