@@ -5,17 +5,18 @@ const SPECS = {
     "s_shoemaker": Vector2(7,5), "s_saddler": Vector2(7,5),
     "s_candlemaker": Vector2(7,5), "s_caravan_inn": Vector2(12,7),
     "s_wood_store": Vector2(6,4)}
-# Frozen ART revision measurements from imported Godot mesh vertex/index arrays.
+# Qwen255fd37 revision: coordinator measured imported Godot vertices/indices.
+# Shop sign projects .69m from the facade; actual street clearance is still open.
 # Bounds/triangles are expectations, not values recomputed from a producer report.
 # Mouth heights independently measured from the shipped GLB flue collider vertices.
 # No ignored measurement files are validation inputs; JSON below is output only.
 const MEASURED = {
-    "s_porters_barracks_11x5": {"min": Vector3(-5.85,-.24,-2.9), "max": Vector3(5.85,5.0,2.9), "triangles": 8600},
-    "s_porters_barracks_10x5": {"min": Vector3(-5.35,-.24,-2.9), "max": Vector3(5.35,5.0,2.9), "triangles": 8600},
-    "s_shoemaker": {"min": Vector3(-3.85,-.24,-2.9), "max": Vector3(3.85,6.8,2.9), "triangles": 8436, "mouth_y": 5.226190567},
-    "s_saddler": {"min": Vector3(-3.85,-.24,-2.9), "max": Vector3(3.85,6.8,2.9), "triangles": 9148, "mouth_y": 5.226190567},
-    "s_candlemaker": {"min": Vector3(-3.85,-.24,-2.9), "max": Vector3(3.85,6.8,2.9), "triangles": 8956, "mouth_y": 5.226190567},
-    "s_caravan_inn": {"min": Vector3(-6.35,-.24,-3.9), "max": Vector3(6.35,6.85,3.9), "triangles": 10228, "mouth_y": 4.650875688},
+    "s_porters_barracks_11x5": {"min": Vector3(-5.85,-.24,-2.9), "max": Vector3(5.85,5.0,2.9), "triangles": 8820},
+    "s_porters_barracks_10x5": {"min": Vector3(-5.35,-.24,-2.9), "max": Vector3(5.35,5.0,2.9), "triangles": 8820},
+    "s_shoemaker": {"min": Vector3(-3.85,-.24,-2.9), "max": Vector3(3.85,6.8,3.19), "triangles": 10516, "mouth_y": 5.226190567},
+    "s_saddler": {"min": Vector3(-3.85,-.24,-2.9), "max": Vector3(3.85,6.8,3.19), "triangles": 11832, "mouth_y": 5.226190567},
+    "s_candlemaker": {"min": Vector3(-3.85,-.24,-2.9), "max": Vector3(3.85,6.8,3.19), "triangles": 11508, "mouth_y": 5.226190567},
+    "s_caravan_inn": {"min": Vector3(-6.35,-.24,-3.9), "max": Vector3(6.35,6.85,3.9), "triangles": 10492, "mouth_y": 4.650875688},
     "s_wood_store": {"min": Vector3(-3.35,-.24,-2.4), "max": Vector3(3.35,4.25,2.4), "triangles": 6484}}
 var failures: Array[String] = []
 var results: Array = []
