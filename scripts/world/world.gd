@@ -91,6 +91,9 @@ var save: Node
 var inn: Node3D
 ## Every inn hall on the map (the forest inn first); their doors work like the village doors.
 var inns: Array[Node3D] = []
+const SNOW_CITY := "res://scripts/world/world_snow_city.gd"
+## Codex's snow city builder (when present): its doors join the inns' in the action button.
+var snow_city: Node3D
 var inn_keeper: Node3D
 var inn_talk: QuestTracker
 ## INN-REST-01: the rented bed in the inn loft and sleeping until the morning.
@@ -933,6 +936,14 @@ func _build_water_and_sites() -> void:
 		var direction: Array = spring.facing
 		water.add_spring_cave(Vector3(p[0] - HALF, p[2] - 1, p[1] - HALF), Vector3(direction[0], 0, direction[2]))
 	for city in world_layout.cities:
+		# WORLD-BUILD-01C (Claude 169 / Codex): the snow city from the book's plots by Codex's builder
+		# when it is in the project; until then its grey blocks stay.
+		if str(city.id) == "snow" and ResourceLoader.exists(SNOW_CITY):
+			snow_city = (load(SNOW_CITY) as GDScript).new()
+			snow_city.name = "SnowCity"
+			world_root.add_child(snow_city)
+			snow_city.build(self)
+			continue
 		var p: Array = city.spawn
 		for offset in [Vector3(-28, 0, 15), Vector3(26, 0, 18), Vector3(-20, 0, -25)]:
 			var size := Vector3(12, 12 + float(city.number) * 3, 16)
@@ -1178,12 +1189,16 @@ func _build_inn(site: Dictionary) -> void:
 ## but its door works with the same action button when no village door is nearer.
 func _offer_inn_door() -> void:
 	var door: Node3D = null
+	var doors: Array = []
 	for hall in inns:
-		if hall.door == null:
-			continue
-		hall.door.set_highlight(false)
-		if door == null or hall.door.can_interact(player):
-			door = hall.door
+		if hall.door != null:
+			doors.append(hall.door)
+	if snow_city != null and snow_city.has_method("get_doors"):
+		doors.append_array(snow_city.get_doors())
+	for d in doors:
+		d.set_highlight(false)
+		if door == null or d.can_interact(player):
+			door = d
 	if door == null:
 		return
 	var usable: bool = is_input_available() and door.can_interact(player)
