@@ -37,10 +37,17 @@ func run() -> void:
         if child.get_script() == City:city_count += 1
     if city_count!=1:fail("Snow city integration spawned duplicate/missing builders");return
     await physics_frame
-    if city.placed.size()!=29 or city.unresolved.size()!=12:
-        fail("Current29 exact modules or explicit unfinished12 plots lost");return
-    if city.get_doors().size()!=30:
-        fail("Building door or library lower portal missing");return
+    if city.placed.size()!=41 or not city.unresolved.is_empty():
+        fail("Expected all41 accepted book plots with matching modules");return
+    if city.get_doors().size()!=42:
+        fail("Expected42 doors including library lower and tower maintenance portals");return
+    for item in city.placed:
+        var expected_doors := 0 if item.code=="Др" else (2 if item.code in ["Бб","Бш"] else 1)
+        var actual_doors := 0
+        for portal in city.get_doors():
+            if item.node.is_ancestor_of(portal):actual_doors+=1
+        if actual_doors!=expected_doors:
+            fail("Missing or duplicate doors on book plot "+str(item.code));return
     var actor := CharacterBody3D.new()
     actor.collision_layer=2
     var shape := CollisionShape3D.new()
@@ -48,7 +55,11 @@ func run() -> void:
     actor.add_child(shape);root.add_child(actor)
     # Compare the placement against the independent serialized design, not the
     # builder's cached floor field or a potentially lowered terrain sample.
-    var design = JSON.parse_string(FileAccess.get_file_as_string("res://assets/world/graybox-v1/layout.json"))
+    var design_path := "res://assets/world/graybox-v1/layout.json"
+    var design_index := args.find("--fixture-design")
+    if isolated and design_index>=0 and design_index+1<args.size():
+        design_path=args[design_index+1]
+    var design = JSON.parse_string(FileAccess.get_file_as_string(design_path))
     if not design is Dictionary or not design.get("snow_lots") is Array:
         fail("Serialized authored floor levels missing");return
     var expected_levels: Dictionary = {}
@@ -99,8 +110,8 @@ func run() -> void:
         if light.shadow_enabled:fail("Disabled lighting kept shadow maps");return
     city.set_lighting_enabled(true)
     var copy := city.get_doors();copy.clear()
-    if city.get_doors().size()!=30:fail("Caller mutated registry");return
-    print("SNOW_CITY_CONTRACT_PASS mapped=29 unresolved=12 doors=30 frame=world_root fixture=",isolated," whole_city_ready=false")
+    if city.get_doors().size()!=42:fail("Caller mutated registry");return
+    print("SNOW_CITY_CONTRACT_PASS mapped=41 unresolved=0 doors=42 frame=world_root fixture=",isolated," whole_city_ready=false")
     # This interface test never establishes support, street clearance or whole-route acceptance.
     print("SNOW_CITY_PHYSICAL_PLACEMENT_ROUTES_WEATHER_MOBILE=UNVERIFIED")
     quit()
