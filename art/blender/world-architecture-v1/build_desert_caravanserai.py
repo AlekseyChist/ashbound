@@ -38,6 +38,24 @@ def slab(n,pts,t,m):
     v=[(px,py,pz-t) for px,py,pz in pts]+list(pts)
     f=[(3,2,1,0),(4,5,6,7),(0,1,5,4),(1,2,6,5),(2,3,7,6),(3,0,4,7)]
     return C.mesh(n,v,f,m)
+def ring_solid(n,x,y,z,rings,m,role=True):
+    # a closed solid of octagonal rings [(dz, half_x, half_y), ...] from bottom to top around (x,y,z)
+    k=8
+    v=[]
+    for dz,hx,hy in rings:
+        for i in range(k):
+            a=math.pi*2*i/k+math.pi/8
+            v.append((x+hx*math.cos(a),y+hy*math.sin(a),z+dz))
+    f=[tuple(range(k-1,-1,-1))]
+    for r in range(len(rings)-1):
+        for i in range(k):
+            j=(i+1)%k
+            f.append((r*k+i,r*k+j,(r+1)*k+j,(r+1)*k+i))
+    t=(len(rings)-1)*k
+    f.append(tuple(range(t,t+k)))
+    o=C.mesh(n,v,f,m)
+    if role:o['part_role']='interior_furniture'
+    return o
 # Shell: outer walls 14x8 (faces at x +-7, y +-4; inner faces +-6.6 / +-3.6), floor z=0, roof top ~3.8.
 box('foundation',(0,0,-.15),(14,8,.3),STONE)
 box('entry porch',(0,-4.6,-.12),(3.4,1.2,.24),STONE)
@@ -102,7 +120,7 @@ for dx in (-.7,.7):
 for x,y in ((-1.2,.6),(1.2,.6),(0,-.2),(0,1.4)):
     box('floor cushion',(x,y,.08),(.6,.6,.16),RUG,False)
 for y in (2.6,3.1):
-    box('jar',(-2.6,y,.3),(.3,.3,.6),CLAY,False)
+    ring_solid('jar',-2.6,y,(.3)-0.300,[(0.000,0.093,0.093),(0.180,0.150,0.150),(0.372,0.138,0.138),(0.480,0.075,0.075),(0.552,0.068,0.068),(0.600,0.087,0.087)],CLAY)
 # Sleeping room (x 3.1..6.6): three mats and a chest.
 for y in (-2.6,-.9,.8):
     box('sleeping mat',(5.4,y,.06),(2.0,1.2,.12),RUG,False)
