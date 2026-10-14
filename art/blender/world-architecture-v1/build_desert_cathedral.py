@@ -145,6 +145,8 @@ for y in (2.0,3.6,5.2):
     box('shelf',(13.1,y,1.3),(.4,1.4,2.6),WOOD)
     for z in (.6,1.2,1.8):
         box('book row',(13.0,y,z),(.25,1.2,.3),CLOTH,False)
+# the library keeps its own ceiling under the lost aisle roof (books under the sky would not survive)
+box('library ceiling',(9.7,4.2,5.1),(7.6,6.6,.2),WOOD)
 box('lectern',(9.7,4.0,1.0),(.6,.5,.12),WOOD)
 box('lectern post',(9.7,4.0,.5),(.12,.12,1.0),WOOD,False)
 box('hatch',(11.8,6.4,.12),(1.2,1.2,.06),WOOD,False)             # service hatch to the cisterns
