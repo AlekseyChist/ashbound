@@ -1,4 +1,14 @@
 extends SceneTree
+# Frozen expected dimensions independently checked against the six accepted GLBs.
+# No ignored generator reports are required to reproduce this validator.
+const EXPECTED = {
+    "s_home_8x6": [8.0, 6.0, 7.30],
+    "s_home_9x6": [9.0, 6.0, 7.80],
+    "s_home_8x5": [8.0, 5.0, 7.30],
+    "s_home_7x5": [7.0, 5.0, 6.80],
+    "s_home_6x5": [6.0, 5.0, 6.30],
+    "s_cottage_6x5": [6.0, 5.0, 4.65],
+}
 const TYPES = ["s_home_8x6", "s_home_9x6", "s_home_8x5", "s_home_7x5", "s_home_6x5", "s_cottage_6x5"]
 var failures: Array[String] = []
 var actor: CharacterBody3D
@@ -41,13 +51,6 @@ func run() -> void:
         if packed == null: continue
         var house = packed.instantiate(); stage.add_child(house)
         await settle(3)
-        var fact_path: String = "res://local/qa/snow-residential-family/"+slug+".json"
-        if not FileAccess.file_exists(fact_path): fact_path = "res://facts/"+slug+".json"
-        require(FileAccess.file_exists(fact_path),slug+" rebuild generator to produce local measurements")
-        if not FileAccess.file_exists(fact_path):
-            house.queue_free()
-            continue
-        var facts: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(fact_path))
         var entry: float = house.door.entry.z
         require(absf(entry - (house.wall_depth/2-.18)) < .001, slug + " native entry")
         require(house.get_node_or_null("EntryAnchor") != null, slug + " root EntryAnchor")
@@ -73,7 +76,11 @@ func run() -> void:
         var cord = house.lamp_assembly.get_node("SupportCord")
         require(absf(cord.position.y-cord.mesh.size.y/2-lamp_top)<.002,slug+" lantern cord contact")
         require(absf(cord.position.y+cord.mesh.size.y/2-(house.ceiling_height-.13))<.002,slug+" ceiling support cord contact")
-        var expected: Array = facts.whole_bounds_godot
+        var dimensions: Array = EXPECTED[slug]
+        var width: float = dimensions[0]
+        var depth: float = dimensions[1]
+        require(is_equal_approx(house.wall_width,width) and is_equal_approx(house.wall_depth,depth),slug+" book wall dimensions")
+        var expected: Array = [[-width/2-.35,-.24,-depth/2-.40],[width/2+.35,dimensions[2],depth/2+.40]]
         require(lo.distance_to(Vector3(expected[0][0],expected[0][1],expected[0][2])) < .015, slug + " whole vertex min "+str(lo))
         require(hi.distance_to(Vector3(expected[1][0],expected[1][1],expected[1][2])) < .015, slug + " whole vertex max "+str(hi))
         require(not house.interior_meshes.is_empty(), slug + " furniture metadata")
@@ -138,11 +145,14 @@ func run() -> void:
         require(not roof_hit.is_empty() and roof_hit.position.y > house.ceiling_height+.5,slug+" roof collision")
         var ceiling := space.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(0,1.6,-.5),Vector3(0,4,-.5),1))
         require(not ceiling.is_empty(),slug+" closed loft")
-        var cx: float = facts.stove[0]; var cz: float = -facts.stove[1]
-        var mouth_y: float = facts.chimney_mouth_y + .14
+        var cx: float = width/2-.95
+        var cz: float = -(depth/2-1.0)
+        var rise: float = 1.85 if slug == "s_cottage_6x5" else width*.5
+        var chimney_top: float = house.ceiling_height+rise+.10-(rise+.10)*absf(cx-.32)/(width/2+.28)+.65
+        var mouth_y: float = chimney_top + .14
         var mouth := space.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(cx-.6,mouth_y,cz),Vector3(cx+.6,mouth_y,cz),1))
         require(mouth.is_empty(),slug+" smoke mouth clear")
-        var flue_gap := space.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(cx+.31,house.ceiling_height+.20,cz),Vector3(cx+.31,facts.chimney_mouth_y+.20,cz),1))
+        var flue_gap := space.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(cx+.31,house.ceiling_height+.20,cz),Vector3(cx+.31,chimney_top+.20,cz),1))
         require(flue_gap.is_empty(),slug+" roof has actual flue aperture")
         var window_xs: Array = [-house.wall_width/2+1.15]
         if slug != "s_cottage_6x5": window_xs.append(house.wall_width/2-2.1)
