@@ -255,7 +255,9 @@ func build_stairs(stairs: Array) -> void:
 		var node := Node3D.new()
 		node.name = str(flight.id)
 		add_child(node)
-		for st in flight.steps:
+		var all: Array = flight.steps
+		for n in all.size():
+			var st: Array = all[n]
 			var at := Vector2(float(st[0]) - HALF, float(st[1]) - HALF)
 			var top := float(st[2])
 			var yaw := float(st[3])
@@ -295,6 +297,12 @@ func build_stairs(stairs: Array) -> void:
 				var pitch := atan2(STAIR_RISE, depth - 0.02)
 				var slab := basis * Basis(Vector3.RIGHT, pitch)
 				_stair_collider(node, Vector3(at.x, top + STAIR_RISE * 0.5 - 0.03, at.y), Vector3(width, 0.06, (depth - 0.02) / cos(pitch) + 0.04), slab)
+				# A flight's first raised tread over a landing or the ground (Codex be13087, the actual hero
+				# on snow stairs A/B/C: the slab began a full riser over the landing, a vertical edge at
+				# every entry): the same slope carried down one riser onto the plane below its low edge.
+				if not _tread_below(all, n):
+					var out: Vector3 = slab * Vector3(0, 0, (depth - 0.02) * 0.5 / cos(pitch) + STAIR_RUN_ENTRY * 0.5 / cos(pitch))
+					_stair_collider(node, Vector3(at.x + out.x, top + STAIR_RISE * 0.5 - 0.03 + out.y, at.y + out.z), Vector3(width, 0.06, STAIR_RUN_ENTRY / cos(pitch) + 0.04), slab)
 			# rails: 1 m over the tread, solid
 			var rails: Array = []
 			if rail == -1 or rail == 3:
@@ -310,6 +318,20 @@ func build_stairs(stairs: Array) -> void:
 
 
 const STAIR_RISE := 0.18
+const STAIR_RUN_ENTRY := 0.3
+
+
+## Whether the record next to tread n on its low side (one riser down) is itself a tread - its slab
+## then carries on; a landing, a deck or the ground below it gets an entry slope.
+func _tread_below(all: Array, n: int) -> bool:
+	var top := float(all[n][2])
+	for k in [n - 1, n + 1]:
+		if k < 0 or k >= all.size():
+			continue
+		var other: Array = all[k]
+		if absf(top - float(other[2]) - STAIR_RISE) < 0.06 and float(other[4]) < 0.6 and int(other[6] if other.size() > 6 else 0) != 4:
+			return true
+	return false
 
 func _stair_collider(parent: Node3D, centre: Vector3, size: Vector3, basis: Basis) -> void:
 	var body := StaticBody3D.new()

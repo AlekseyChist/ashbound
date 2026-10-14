@@ -4,7 +4,8 @@ extends SceneTree
 # - every new place: its spawn on the ground, its grey volumes resting on the ground (none floats,
 #   none buried) and clear of every road's deck;
 # - the debug list offers the places, and a teleport to the ruins puts the hero on the terrace;
-# - the ruins' west approach from the road to the gate is walkable on foot.
+# - the ruins' west approach from the road to the gate is walkable on foot;
+# - the snow city's 41 plots: level under the walls, a plinth over a fall, a door front without a ledge.
 
 var failures: Array[String] = []
 var checks := 0
@@ -275,5 +276,97 @@ func run() -> void:
 			print("BOOK_STAIRS_WALK %s %s done=%s at=%s" % [flight.id, leg[0], not stuck, actor.position + Vector3(1000, 0, 1000)])
 			require(not stuck, "%s not walkable %s" % [flight.id, leg[0]])
 
+	# WORLD-BUILD-01C: the snow city's 41 plots on the ACTUAL colliders (terrain and plinths only): under
+	# the walls nothing over the floor and nothing more than 0.35 m under it (a plinth fills a fall);
+	# from the threshold out the ground starts at the floor and climbs in steps of <= 0.25 m; and
+	# world_ground (where the builder sets each floor) reads the terrain's own 1.25 m triangles.
+	var space: PhysicsDirectSpaceState3D = w.get_world_3d().direct_space_state
+	var origin: Vector3 = w.world_root.global_position
+	var lots: Array = w.snow_lots.lots
+	require(lots.size() == 41, "Expected 41 snow plots, got %d" % lots.size())
+	var worst_read := 0.0
+	for lot in lots:
+		if w.snow_lots.CUTS.has(lot.code):
+			# the library's cut: inside the walls no terrain/plinth above its lower hall (3.2 m down)
+			var blocked := 0
+			for i in 9:
+				for j in 9:
+					var p: Vector2 = lot.c + lot.s * lerpf(-lot.w * 0.5 + 0.1, lot.w * 0.5 - 0.1, i / 8.0) + lot.f * lerpf(-lot.d * 0.5 + 0.1, lot.d * 0.5 - 0.1, j / 8.0)
+					var y = _lot_ray(space, origin, p, lot.level)
+					if y != null and y > lot.level - 3.3:
+						blocked += 1
+			print("SNOW_LOT %s cut blocked=%d" % [lot.code, blocked])
+			require(blocked == 0, "%s: the lower hall's cut is filled at %d points" % [lot.code, blocked])
+		var above := -INF
+		var below := -INF
+		var miss := 0
+		for i in 9:
+			for j in 9:
+				var u := lerpf(-lot.w * 0.5 + 0.1, lot.w * 0.5 - 0.1, i / 8.0)
+				var v := lerpf(-lot.d * 0.5 + 0.1, lot.d * 0.5 - 0.1, j / 8.0)
+				var p: Vector2 = lot.c + lot.s * u + lot.f * v
+				var y = _lot_ray(space, origin, p, lot.level)
+				if w.snow_lots.CUTS.has(lot.code):
+					break
+				if y == null:
+					miss += 1
+					continue
+				above = maxf(above, y - lot.level)
+				below = maxf(below, lot.level - y)
+				if not _on_plinth(space, origin, p, lot.level):
+					worst_read = maxf(worst_read, absf(float(w.world_ground(p.x, p.y)) - y))
+		var door := 0.0
+		for q in [-0.6, 0.0, 0.6]:
+			var prev = null
+			for k in 15:
+				var p: Vector2 = lot.c + lot.f * (lot.d * 0.5 + 0.05 + k * 0.1) + lot.s * q
+				var y = _lot_ray(space, origin, p, lot.level)
+				if y == null:
+					door = INF
+					break
+				door = maxf(door, absf(lot.level - y) * 5.0 if prev == null else absf(y - prev))
+				prev = y
+		print("SNOW_LOT %s level=%.2f above=%.2f below=%.2f miss=%d door_step=%.2f" % [lot.code, lot.level, above, below, miss, door])
+		require(miss == 0 and above <= 0.03, "%s: ground over the floor (%.2f m) or no ground" % [lot.code, above])
+		require(below <= 0.35, "%s: hangs %.2f m over the ground under its walls" % [lot.code, below])
+		require(door <= 0.25, "%s: its door front climbs %.2f m in a step (or a gap at the threshold)" % [lot.code, door])
+	print("SNOW_LOTS_GROUND_READ worst=%.3f" % worst_read)
+	require(worst_read <= 0.02, "world_ground misreads the snow plots' terrain by %.3f m" % worst_read)
+
 	print("WORLD_BOOK_PLACES_CHECKS checks=%d failures=%d" % [checks, failures.size()])
 	quit(0 if failures.is_empty() else 1)
+
+
+## The first terrain or plinth under a point (world frame), skipping anything else on the plot.
+func _lot_ray(space: PhysicsDirectSpaceState3D, origin: Vector3, p: Vector2, level: float):
+	var top := origin + Vector3(p.x, level + 6.0, p.y)
+	var q := PhysicsRayQueryParameters3D.create(top, top + Vector3.DOWN * 20.0)
+	var skip: Array[RID] = []
+	for k in 8:
+		q.exclude = skip
+		var hit := space.intersect_ray(q)
+		if hit.is_empty():
+			return null
+		var body: Node = hit.collider
+		if body.get_parent().is_in_group("graybox_terrain_chunk") or str(body.get_path()).contains("SnowPlinths"):
+			return hit.position.y - origin.y
+		skip.append(hit.rid)
+	return null
+
+
+func _on_plinth(space: PhysicsDirectSpaceState3D, origin: Vector3, p: Vector2, level: float) -> bool:
+	var top := origin + Vector3(p.x, level + 6.0, p.y)
+	var q := PhysicsRayQueryParameters3D.create(top, top + Vector3.DOWN * 20.0)
+	var skip: Array[RID] = []
+	for k in 8:
+		q.exclude = skip
+		var hit := space.intersect_ray(q)
+		if hit.is_empty():
+			return false
+		var body: Node = hit.collider
+		if body.get_parent().is_in_group("graybox_terrain_chunk"):
+			return false
+		if str(body.get_path()).contains("SnowPlinths"):
+			return true
+		skip.append(hit.rid)
+	return false

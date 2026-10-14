@@ -8,6 +8,7 @@ const Shapes = preload("res://scripts/world/world_graybox_shapes.gd")
 const Headwaters = preload("res://scripts/world/world_graybox_headwaters.gd")
 const Landmarks = preload("res://scripts/world/world_graybox_landmarks.gd")
 const BookPlaces = preload("res://scripts/world/world_book_places.gd")
+const SnowLots = preload("res://scripts/world/world_snow_lots.gd")
 ## TAVERN-01B (D-089): the forest inn — a one-storey log hall with beds on the loft — replaces
 ## the grey landmark at the forest_inn site, door towards the trail.
 const InnBuilding = preload("res://scripts/world/village_building.gd")
@@ -73,6 +74,8 @@ var world_heights: PackedFloat32Array
 var pad: RefCounted
 var world_root: Node3D
 var world_terrain: Node3D
+## WORLD-BUILD-01C: the snow city's level plots, drawn in 1.25 m terrain cells.
+var snow_lots: RefCounted
 var road_mask: Image
 var world_colors: PackedColorArray
 ## GRASS-WORLD-01: road and river pieces near the grass, bucketed by 32 m cells (scene frame).
@@ -211,6 +214,8 @@ func _build_world() -> void:
 	world_layout = JSON.parse_string(FileAccess.get_file_as_string(WORLD_LAYOUT))
 	world_width = int(world_layout.width)
 	original_heights = FileAccess.get_file_as_bytes(WORLD_HEIGHTS).to_float32_array()
+	snow_lots = SnowLots.new()
+	snow_lots.setup(world_layout)
 	world_heights = _flatten_inn(_raise_west_rim(pad.apply(original_heights, world_width, GRID)))
 	world_root = Node3D.new()
 	world_root.name = "WorldMap"
@@ -218,15 +223,17 @@ func _build_world() -> void:
 	add_child(world_root)
 	world_terrain = Geometry.new()
 	world_terrain.name = "Terrain"
-	world_terrain.skip_cell = func(x: int, z: int) -> bool: return pad.covers_cell(x, z, GRID)
+	world_terrain.skip_cell = func(x: int, z: int) -> bool: return pad.covers_cell(x, z, GRID) or snow_lots.skips(x, z)
 	world_terrain.material = terrain.material
 	world_terrain.surface_meta = "ground"
 	# SHORE-MESH-01: the banks along the water in 1.25 m cells, on the channel's own profile.
 	_index_shore()
 	world_terrain.refine_cell = func(x: int, z: int) -> bool:
+		if snow_lots.refines(x, z):
+			return true
 		var near := _shore_near((x + 0.5) * GRID - HALF, (z + 0.5) * GRID - HALF)
 		return not near.is_empty() and near[0] < near[2] + SHORE_REACH + GRID * 0.75
-	world_terrain.shore_height = _shore_height
+	world_terrain.shore_height = _fine_height
 	world_terrain.shore_color = _shore_color
 	world_root.add_child(world_terrain)
 	world_colors = _world_colors()
@@ -303,9 +310,33 @@ func _grid_height(grid: PackedFloat32Array, x: float, z: float) -> float:
 	return a + u * (b - a) + v * (c - a) if u + v <= 1.0 else d + (1.0 - u) * (c - d) + (1.0 - v) * (b - d)
 
 
-## World-frame ground height after the village was pressed in.
+## World-frame ground height after the village was pressed in; under the snow city's plots, the
+## terrain's own 1.25 m triangles (world_snow_lots).
 func world_ground(x: float, z: float) -> float:
-	return _grid_height(world_heights, x, z)
+	if snow_lots == null or not snow_lots.refines(floori((x + HALF) / GRID), floori((z + HALF) / GRID)):
+		return _grid_height(world_heights, x, z)
+	var fine: float = SnowLots.FINE
+	var ix := floori(x / fine)
+	var iz := floori(z / fine)
+	var u := x / fine - ix
+	var v := z / fine - iz
+	var a: float = snow_lots.lattice(ix, iz, _fine_vertex)
+	var b: float = snow_lots.lattice(ix + 1, iz, _fine_vertex)
+	var c: float = snow_lots.lattice(ix, iz + 1, _fine_vertex)
+	if u + v <= 1.0:
+		return a + u * (b - a) + v * (c - a)
+	var d: float = snow_lots.lattice(ix + 1, iz + 1, _fine_vertex)
+	return d + (1.0 - u) * (c - d) + (1.0 - v) * (b - d)
+
+
+func _fine_vertex(x: float, z: float) -> float:
+	return _fine_height(x, z, _grid_height(world_heights, x, z))
+
+
+## The refined cells' inner points: the banks, then the snow city's plots.
+func _fine_height(wx: float, wz: float, base: float) -> float:
+	var h := _shore_height(wx, wz, base)
+	return h if snow_lots == null else snow_lots.height(Vector2(wx, wz), h)
 
 
 ## Ground height in the scene (village) frame at a scene point, inside or outside the village.
@@ -975,6 +1006,7 @@ func _build_water_and_sites() -> void:
 	world_root.add_child(book)
 	book.build(self, world_layout.get("book_places", []))
 	book.build_stairs(world_layout.get("book_stairs", []))
+	snow_lots.build_plinths(book, world_ground)
 
 
 func open_debug_map() -> void:
