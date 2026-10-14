@@ -38,16 +38,16 @@ BOOK=C.mat('SA book covers',(.20,.16,.11,1),.98)
 IRON=C.mat('SA iron',(.09,.10,.11,1),.83)
 coll=[]
 furniture=[]
-def box(n,p,s,m,solid=True):
-    o=C.box(n,p,s,m,.015)
+def box(n,p,s,m,solid=True,bevel=.015):
+    o=C.box(n,p,s,m,bevel)
     if solid:coll.append((n,p,s))
     return o
 box('foundation',(0,0,-.18),(18,12,.36),STONE)
 # Upper slab excludes the full stair envelope, including the upper landing.
-box('upper west slab left',(-8.55,0,3.48),(.9,12,.24),WOOD)
-box('upper west slab right',(-1.275,0,3.48),(12.05,12,.24),WOOD)
-box('upper flue front slab',(-7.7,-3.9,3.48),(.8,4.2,.24),WOOD)
-box('upper flue rear slab',(-7.7,2.5,3.48),(.8,7,.24),WOOD)
+box('upper west slab left',(-8.6,0,3.48),(.8,12,.24),WOOD)
+box('upper west slab right',(-1.225,0,3.48),(11.95,12,.24),WOOD)
+box('upper flue front slab',(-7.7,-3.95,3.48),(1,4.1,.24),WOOD)
+box('upper flue rear slab',(-7.7,2.55,3.48),(1,6.9,.24),WOOD)
 box('upper front slab',(6.875,-3.25,3.48),(4.25,5.5,.24),WOOD)
 box('upper back slab',(6.875,5.5,3.48),(4.25,1,.24),WOOD)
 box('upper stair landing',(7.3,-.35,3.48),(1.6,.7,.24),WOOD)
@@ -62,15 +62,16 @@ def wall(n,axis,fixed,a,b,z0,z1,holes=()):
             if top-bottom<.001:continue
             p=((lo+hi)/2,fixed,(bottom+top)/2) if axis=='x' else (fixed,(lo+hi)/2,(bottom+top)/2)
             s=(hi-lo,.4,top-bottom) if axis=='x' else (.4,hi-lo,top-bottom)
-            box(n,p,s,STONE if z0==0 else PLASTER)
+            box(n,p,s,STONE if z0==0 else PLASTER,True,0)
 for level in (0,3.6):
-    openings=[(-7,-5.6,level+1.15,level+2.45),(5.6,7,level+1.15,level+2.45)]
+    openings=[(-7.7,-4.9,.9,2.7) if level==0 else (-7,-5.6,level+1.15,level+2.45),(5.6,7,level+1.15,level+2.45)]
     front=list(openings)
     if level==0:front.append((-.8,.8,0,2.5))
     wall('front','x',-5.8,-9,9,level,3.6 if level==0 else 7.33,front)
     wall('rear','x',5.8,-9,9,level,3.6 if level==0 else 7.33,openings)
     for x in (-8.8,8.8):
-        wall('side','y',x,-5.6,5.6,level,level+3.6,[(-3.6,-2.2,level+1.15,level+2.45),(1.5,2.9,level+1.15,level+2.45)])
+        apertures=[(-4.4,-2.4,.9,2.7),(2.6,4.6,.9,2.7)] if x<0 and level==0 else [(-3.6,-2.2,level+1.15,level+2.45),(1.5,2.9,level+1.15,level+2.45)]
+        wall('side','y',x,-5.6,5.6,level,level+3.6,apertures)
     # Continuous corridor walls with door gaps, clear1.8m between faces.
     for x in (-1.1,1.1):
         wall('corridor','y',x,-5.6,5.6,level,level+3.48,[(-2.4,-1,level,level+2.4),(1.1,2.5,level,level+2.4),(4.2,5.5,level,level+2.4)])
@@ -102,15 +103,15 @@ def ramp(n,x,y0,y1,bottom,top):
 ramp('first stair',5.6,0,3.36,0,1.8)
 ramp('second stair',7.3,3.36,0,1.8,3.6)
 # Ceiling closes nonplayable roof; the top ridge remains exactly11m.
-box('upper ceiling left',(-8.55,0,7.14),(.9,12,.12),WOOD)
-box('upper ceiling right',(.85,0,7.14),(16.3,12,.12),WOOD)
-box('ceiling flue front',(-7.7,-3.9,7.14),(.8,4.2,.12),WOOD)
-box('ceiling flue rear',(-7.7,2.5,7.14),(.8,7,.12),WOOD)
+box('upper ceiling left',(-8.6,0,7.14),(.8,12,.12),WOOD)
+box('upper ceiling right',(.9,0,7.14),(16.2,12,.12),WOOD)
+box('ceiling flue front',(-7.7,-3.95,7.14),(1,4.1,.12),WOOD)
+box('ceiling flue rear',(-7.7,2.55,7.14),(1,6.9,.12),WOOD)
 BOX_FACES=[(0,1,3,2),(4,6,7,5),(0,4,5,1),(2,3,7,6),(0,2,6,4),(1,5,7,3)]
 def cut_flue(rect):
     x0,x1,y0,y1=rect
-    a,b=max(x0,-8.1),min(x1,-7.3)
-    c,d=max(y0,-1.8),min(y1,-1.0)
+    a,b=max(x0,-8.2),min(x1,-7.2)
+    c,d=max(y0,-1.9),min(y1,-.9)
     if a>=b or c>=d:return [rect]
     return [r for r in [(x0,a,y0,y1),(b,x1,y0,y1),(a,b,y0,c),(a,b,d,y1)] if r[1]-r[0]>.001 and r[3]-r[2]>.001]
 def roof_piece(name,rect,top,thickness,material):
@@ -118,7 +119,7 @@ def roof_piece(name,rect,top,thickness,material):
     vertices=[(x,y,top-abs(y)*3.75/6.4+dz) for x in (x0,x1) for y in (y0,y1) for dz in (-thickness,0)]
     return C.mesh(name,vertices,BOX_FACES,material)
 for side in (-1,1):
-    for rect in cut_flue((-9.4,9.4,min(0,side*6.4),max(0,side*6.4))):
+    for rect in cut_flue((-9.8,9.8,min(0,side*6.75),max(0,side*6.75))):
         roof_piece('roof panel',rect,10.88,.15,SLATE)
         roof_piece('roof panel-colonly',rect,10.88,.15,SLATE).hide_render=True
 for x in (-8.8,8.8):
@@ -128,30 +129,39 @@ for x in (-8.8,8.8):
     C.mesh('gable',vertices,faces,PLASTER)
 for side in (-1,1):
     for row in range(12):
-        y=side*(row+.5)*6.4/12
-        for column in range(38):
-            x=-9.25+column*.5
-            for rect in cut_flue((x-.245,x+.245,max(min(0,side*6.4),y-.335),min(max(0,side*6.4),y+.335))):
+        y=side*(row+.5)*6.75/12
+        for column in range(40):
+            x=-9.75+column*.5
+            for rect in cut_flue((max(-9.8,x-.245),min(9.8,x+.245),max(min(0,side*6.75),y-.335),min(max(0,side*6.75),y+.335))):
                 roof_piece('slate plate',rect,10.965+row*.008,.05,SLATE)
-for rect in [(-8.25,-8,-1.95,-.85),(-7.4,-7.15,-1.95,-.85),(-8,-7.4,-1.95,-1.7),(-8,-7.4,-1.1,-.85)]:
+for rect in [(-8.35,-8.1,-2.05,-.75),(-7.3,-7.05,-2.05,-.75),(-8.1,-7.3,-2.05,-1.8),(-8.1,-7.3,-1,-.75)]:
     roof_piece('flue flashing',rect,10.995,.025,IRON)
-box('ridge cap',(0,0,10.94),(19,.24,.12),SLATE,False)
+box('ridge cap',(0,0,10.94),(19.6,.24,.12),SLATE,False)
+for y in (-6.75,6.75):box('eaves fascia',(0,y,10.805-abs(y)*3.75/6.4),(19.6,.12,.15),WOOD,False)
 # Window joinery follows the actual aperture dimensions on both floors.
 for level in (0,3.6):
     for y in (-5.8,5.8):
         for x in (-6.3,6.3):
-            for dx in (-.73,.73):box('window jamb',(x+dx,y,level+1.8),(.09,.48,1.4),WOOD)
-            for z in (1.12,2.48):box('window rail',(x,y,level+z),(1.55,.48,.09),WOOD)
-            box('window mullion',(x,y,level+1.8),(.055,.08,1.3),WOOD)
-            box('window sill',(x,y,level+1.08),(1.65,.68,.10),WOOD)
+            width,low,high=(2.8,.9,2.7) if x<0 and level==0 else (1.4,level+1.15,level+2.45)
+            middle=(low+high)/2
+            for dx in (-width/2-.03,width/2+.03):box('window jamb',(x+dx,y,middle),(.09,.48,high-low+.1),WOOD)
+            for z in (low-.03,high+.03):box('window rail',(x,y,z),(width+.15,.48,.09),WOOD)
+            box('window mullion',(x,y,middle),(.055,.08,high-low),WOOD)
+            box('window sill',(x,y,low-.07),(width+.25,.68,.10),WOOD)
     for x in (-8.8,8.8):
-        for y in (-2.9,2.2):
-            for dy in (-.73,.73):box('side window jamb',(x,y+dy,level+1.8),(.48,.09,1.4),WOOD)
-            for z in (1.12,2.48):box('side window rail',(x,y,level+z),(.48,1.55,.09),WOOD)
-            box('side window mullion',(x,y,level+1.8),(.08,.055,1.3),WOOD)
-            box('side window sill',(x,y,level+1.08),(.68,1.65,.1),WOOD)
+        centres=(-3.4,3.6) if x<0 and level==0 else (-2.9,2.2)
+        for y in centres:
+            width,low,high=(2,.9,2.7) if x<0 and level==0 else (1.4,level+1.15,level+2.45)
+            middle=(low+high)/2
+            for dy in (-width/2-.03,width/2+.03):box('side window jamb',(x,y+dy,middle),(.48,.09,high-low+.1),WOOD)
+            for z in (low-.03,high+.03):box('side window rail',(x,y,z),(.48,width+.15,.09),WOOD)
+            box('side window mullion',(x,y,middle),(.08,.055,high-low),WOOD)
+            box('side window sill',(x,y,low-.07),(.68,width+.25,.1),WOOD)
 for x in (-8.8,-3,3,8.8):
-    for y in (-5.82,5.82):box('facade upright',(x,y,3.6),(.16,.46,7.2),WOOD)
+    for y in (-5.82,5.82):box('facade upright',(x,y,3.6),(.24,.46,7.2),WOOD)
+for x in (-8.82,8.82):
+    for y in (-5.55,-.5,1.2,5.55):box('side upright',(x,y,3.6),(.46,.20,7.2),WOOD)
+    for z in (3.6,7.18):box('side belt',(x,0,z),(.46,11.4,.16),WOOD)
 for z in (3.6,7.18):
     for y in (-5.82,5.82):box('facade belt',(0,y,z),(18,.48,.16),WOOD)
 def prop(n,p,s,m=WOOD,solid=True):
@@ -189,14 +199,14 @@ box('stove hearth',(-7.7,-1.4,.07),(1.5,1.5,.14),STONE)
 box('masonry stove',(-7.7,-1.4,.88),(1.2,1.2,1.48),STONE)
 box('stove hatch',(-7.055,-1.4,.70),(.09,.48,.42),IRON,False)
 box('stove cornice',(-7.7,-1.4,1.70),(1.3,1.3,.16),STONE)
-box('continuous flue',(-7.7,-1.4,5.6),(.6,.6,7.8),STONE)
-for dx in (-.25,.25):box('chimney wall',(-7.7+dx,-1.4,10.16),(.1,.6,1.32),STONE)
-for dy in (-.25,.25):box('chimney wall',(-7.7,-1.4+dy,10.16),(.4,.1,1.32),STONE)
+box('continuous flue',(-7.7,-1.4,5.6),(.8,.8,7.8),STONE)
+for dx in (-.34,.34):box('chimney wall',(-7.7+dx,-1.4,10.57),(.12,.8,2.14),STONE)
+for dy in (-.34,.34):box('chimney wall',(-7.7,-1.4+dy,10.57),(.56,.12,2.14),STONE)
 for floor,thickness in [(3.48,.24),(7.14,.12)]:
-    for dx in (-.35,.35):box('flue collar',(-7.7+dx,-1.4,floor),(.10,.8,thickness),STONE)
-    for dy in (-.35,.35):box('flue collar',(-7.7,-1.4+dy,floor),(.6,.10,thickness),STONE)
-for dx in (-.30,.30):box('chimney rim',(-7.7+dx,-1.4,10.88),(.2,.8,.12),STONE)
-for dy in (-.30,.30):box('chimney rim',(-7.7,-1.4+dy,10.88),(.4,.2,.12),STONE)
+    for dx in (-.45,.45):box('flue collar',(-7.7+dx,-1.4,floor),(.10,1,thickness),STONE)
+    for dy in (-.45,.45):box('flue collar',(-7.7,-1.4+dy,floor),(.8,.10,thickness),STONE)
+for dx in (-.39,.39):box('chimney rim',(-7.7+dx,-1.4,11.72),(.22,1,.16),STONE)
+for dy in (-.39,.39):box('chimney rim',(-7.7,-1.4+dy,11.72),(.56,.22,.16),STONE)
 hinge=bpy.data.objects.new('SA_entry_hinge',None);C.ASSET.objects.link(hinge)
 hinge.location=(-.76,-5.8,0);hinge['open_angle_degrees']=-100.0
 door_parts=[]
