@@ -72,6 +72,8 @@ func run() -> void:
 	require(arm != null and (arm.collision_mask & 64) != 0, "The hero's SpringArm does not see the camera-only layer")
 	if obstacles != null and arm != null:
 		print("CAMERA_OBSTACLES groups=%d bodies=%d arm_mask=%d" % [obstacles.group_count(), obstacles.body_count(), arm.collision_mask])
+	# CAM-G03-CLOSE-01: the hero's two sprites under the camera visibility owner
+	require(w.camera_visibility != null and w.camera_visibility.materials.size() == 2, "The camera visibility does not own the hero's two sprites")
 
 	# Pads: sample a grid over the polygon shrunk towards its centroid (the margin eases outside it).
 	for pad in pads:

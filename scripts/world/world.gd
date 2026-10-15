@@ -10,6 +10,7 @@ const Landmarks = preload("res://scripts/world/world_graybox_landmarks.gd")
 const CaveMouths = preload("res://scripts/world/world_cave_mouths.gd")
 const CameraObstacles = preload("res://scripts/world/camera_mesh_obstacles.gd")
 const CameraSelection = preload("res://scripts/world/camera_obstacle_selection.gd")
+const CameraVisibility = preload("res://scripts/world/interior_camera_visibility.gd")
 const BookPlaces = preload("res://scripts/world/world_book_places.gd")
 const SnowLots = preload("res://scripts/world/world_snow_lots.gd")
 const SnowWalls = preload("res://scripts/world/world_snow_walls.gd")
@@ -84,6 +85,7 @@ var snow_lots: RefCounted
 var lowland_water: RefCounted
 var cave_mouths: Node3D
 var camera_obstacles: Node = null
+var camera_visibility: Node = null
 var road_mask: Image
 var world_colors: PackedColorArray
 ## GRASS-WORLD-01: road and river pieces near the grass, bucketed by 32 m cells (scene frame).
@@ -1416,3 +1418,11 @@ func _register_camera_obstacles() -> void:
 		if str(mouth.get_meta("exit_id", "")).begins_with("crown_mine"):
 			portals.append(mouth)
 	camera_obstacles.register_group(&"mine", CameraSelection.mine_timber(portals))
+	# CAM-G03-CLOSE-01 (Codex 393/395, R1; runtime file Codex's): the hero thins out when the camera is
+	# pressed close to him (a facade, a beam), so he no longer fills the view - one node, configured once
+	if camera_visibility == null:
+		camera_visibility = CameraVisibility.new()
+		camera_visibility.name = "CameraVisibility"
+		world_root.add_child(camera_visibility)
+		if not camera_visibility.configure(camera_rig, player):
+			push_warning("CAM-G03-CLOSE-01: the camera visibility was not configured")
