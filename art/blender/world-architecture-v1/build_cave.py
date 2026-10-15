@@ -81,8 +81,9 @@ for a,b,w in LINKS:
         for m in range(K):
             ang=2*math.pi*m/K;cs,sn=math.cos(ang),math.sin(ang)
             lump=1.0+0.28*max(0.0,noise.noise(o*0.9+Vector((cs*1.5,sn*1.5,0)))) # an uneven vault, outward
-            # a flatter bottom (below the floor) and a rounded vault
-            zz=fl+h*0.42+(hh*0.58*sn*lump if sn>0 else hh*0.5*sn)
+            # a rounded vault; the lower half lies flat just under the floor (Codex ART-CV-06: an arc
+            # below the floor squashed onto it point by point left thin bent triangles at the wall's foot)
+            zz=fl+h*0.42+hh*0.58*sn*lump if sn>0 else fl-0.02
             p2=q+side*(ww*cs*lump)
             ring.append(bmt.verts.new((p2.x,p2.y,zz)))
         rings.append(ring)
@@ -135,11 +136,16 @@ moves=[]
 for v in bm.verts:
     q=v.co;f=floor_at(q.x,q.y)
     if q.z<=f+0.02:moves.append((v,Vector((q.x,q.y,f))));continue
-    k=min(1.0,(q.z-f)/0.8)
+    t=max(0.0,min(1.0,(q.z-f)/1.2));k=t*t*(3-2*t)   # the wall leaves the floor gently
     # Large slow bulges break the drilled-tube look of the links; fine grain on top; never inward.
     n=noise.noise(q*0.16)*0.45+noise.noise(q*0.5)*0.2+noise.noise(q*1.4)*0.07
     moves.append((v,q-v.normal*max(0.05,0.32+n)*k))
 for v,co in moves:v.co=co
+# Codex ART-CV-06: thin bent triangles at the walls' foot - slivers of the union, the subdivision and the
+# floor's flattening; collapse the degenerate ones and flip edges towards the widest angles
+bmesh.ops.dissolve_degenerate(bm,dist=0.05,edges=bm.edges[:])
+bmesh.ops.triangulate(bm,faces=bm.faces[:])
+bmesh.ops.beautify_fill(bm,faces=bm.faces[:],edges=bm.edges[:])
 bm.normal_update()
 # Ground where the surface faces up (inward normals), rock elsewhere.
 # the slots first: materials.clear() resets every face's index to 0 (Codex ART-CV-03: the whole
