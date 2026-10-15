@@ -1,0 +1,46 @@
+{
+  "id": "crown_mine",
+  "source": "WORLD-PLAN-01 book (plan_mine.py, plan_mine_levels.py; PDF sheets 17, D-118): the working levels only; the Royal adit, the breach, the gates and the Ash hall are acts IV-V and stay behind Ш1's masonry",
+  "frame": "metres; origin = shaft С1 centre at the portal level; x east, z south (the book's level sheets), y up; levels by their depth under the portal (379 m)",
+  "deviations": [
+    "Н1: the sheets draw it 22 m long for a 35 m drop; built as a switchback of four 25-degree flights (x 8/12/16/20) with landings, arriving at the lower gallery from the north at x 20",
+    "a 12 m portal adit from the surface mouth to the shaft station at the portal level (the book: portal, headframe and lift)",
+    "the shaft station of each level joins its gallery by a short passage"
+  ],
+  "levels": [
+    {"id": "portal", "y": 0,
+     "galleries": [{"id": "portal adit", "pts": [[0, -17], [0, -3.5]], "w": 3.0, "rail": true}],
+     "rooms": [{"id": "portal station", "x": 0, "z": 0, "w": 9, "d": 7}]},
+    {"id": "upper", "y": -25,
+     "galleries": [
+       {"id": "main gallery", "pts": [[0, 0], [70, 0]], "w": 3.0, "rail": true},
+       {"id": "face west", "pts": [[22, 0], [22, -18]], "w": 2.0},
+       {"id": "face east", "pts": [[44, 0], [44, 17]], "w": 2.0},
+       {"id": "vent (cut in SQ-MINE-02)", "pts": [[58, 0], [58, -14], [60, -22]], "w": 1.5}],
+     "rooms": [
+       {"id": "upper station", "x": 0, "z": 0, "w": 9, "d": 7},
+       {"id": "rock fall (SQ-MINE-04, six behind it)", "x": 44, "z": 22, "w": 8, "d": 6},
+       {"id": "rest niche", "x": 66, "z": 0, "w": 6, "d": 5}],
+     "seals": [{"id": "rock fall", "at": [44, 17.5], "kind": "rubble"}]},
+    {"id": "lower", "y": -60,
+     "galleries": [
+       {"id": "lower gallery", "pts": [[-70, 22], [-20, 8], [0, 6], [60, 6]], "w": 3.5, "rail": true},
+       {"id": "station passage", "pts": [[0, 2], [0, 6]], "w": 3.5, "rail": true},
+       {"id": "Ш2 old drainage adit", "pts": [[-70, 22], [-110, 34]], "w": 2.0, "y_end": -69},
+       {"id": "service passage", "pts": [[-16, 8.5], [-14, -1]], "w": 1.5},
+       {"id": "Ш1 to the Royal adit", "pts": [[50, 6], [50, 40]], "w": 3.0, "rail": true},
+       {"id": "face 'paid three times'", "pts": [[30, 6], [30, -14]], "w": 2.0}],
+     "rooms": [
+       {"id": "lower station", "x": 0, "z": 0, "w": 9, "d": 5},
+       {"id": "loading", "x": 22, "z": 6, "w": 10, "d": 7},
+       {"id": "sump", "x": -14, "z": -4, "w": 6, "d": 5, "floor": -1.0},
+       {"id": "masonry", "x": 50, "z": 43, "w": 7, "d": 5}],
+     "seals": [{"id": "Ш1 masonry (opened in MQ-22, act IV)", "at": [50, 41], "kind": "masonry"}]}
+  ],
+  "incline": {"id": "Н1", "from": "upper", "to": "lower", "w": 2.0, "flights": [[8, 2, 21], [12, 21, 2], [16, 2, 21], [20, 21, 2]], "end": [20, 5]},
+  "shaft": {"id": "С1", "x": 0, "z": 0, "w": 5, "d": 5, "stops": ["portal", "upper", "lower"], "gates": {"portal": "-z", "upper": "+x", "lower": "+z"}},
+  "exits": [
+    {"id": "crown_mine:P", "level": "portal", "at": [0, -16], "out": [0, -1], "map": [1074, 204], "kind": "portal", "state": "open"},
+    {"id": "crown_mine:Ш2", "level": "lower", "at": [-109, 33.7], "out": [-0.958, 0.287], "map": [1005, 244], "kind": "old drainage adit on the slope (MQ-22, variant 3)", "state": "open"}
+  ]
+}
