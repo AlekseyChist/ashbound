@@ -390,19 +390,31 @@ func grade_streets(ground: Callable) -> void:
 				sum += raw[j]
 				count += 1
 			smooth.append(sum / count)
-		# the houses' fronts: their levels, and straight ramps between them
+		# the houses' fronts: their levels, and straight ramps between them. On a stair-street at the
+		# lower door where fronts face each other (Codex 371/372/374 G03-DOOR-JOIN-01: the mean of vs4's
+		# 263.57 and vs12's 266.17 left vs4's door 1.17 m under the street, behind a 45 deg bank; the
+		# upper door steps down to it by its own door stair)
+		var stair_street := false
+		for target in STAIR_STREETS:
+			var tw: Vector2 = target - Vector2(HALF, HALF)
+			for k in range(1, pts.size()):
+				stair_street = stair_street or tw.distance_to(Geometry2D.get_closest_point_to_segment(tw, pts[k - 1], pts[k])) < 3.0
 		var pins := PackedFloat32Array()
 		pins.resize(n)
 		for i in n:
 			var q := _along(pts, cum, minf(i * STREET_STEP, run))
 			var sum := 0.0
 			var count := 0
+			var lowest := INF
 			for lot in lots:
 				var d: Vector2 = q - lot.c
 				var out: float = d.dot(lot.f) - lot.d * 0.5
 				if absf(d.dot(lot.s)) <= lot.w * 0.5 + PIN_SIDE and out >= 0.0 and out <= PIN_REACH:
 					sum += lot.level
 					count += 1
+					lowest = minf(lowest, lot.level)
+			if stair_street and count > 0:
+				sum = lowest * count
 			var on_tread := false
 			for t in _treads:
 				on_tread = on_tread or q.distance_to(t[0]) < float(t[1])

@@ -449,6 +449,53 @@ func run() -> void:
 			require(walked, "%s: its door stair along the facade is not walkable" % code)
 	print("SNOW_DOOR_STAIRS along_facade=%s" % [side_stairs])
 
+	# The stair-street's doors (Codex 371/372/374 G03-DOOR-JOIN-01: from vs3's stair foot and vs4's door
+	# the hero stuck on a 45 deg bank under the street's treads): from each door's front - or its door
+	# stair's foot - within 4 m of a tread to the nearest tread and back, by the capsule with step-up.
+	var joins := 0
+	for lot in w.snow_lots.lots:
+		if lot.city != "snow":
+			continue
+		var join_from: Vector2 = lot.c + lot.f * (lot.d * 0.5 + 0.5)
+		if w.snow_lots.stoop_paths.has(lot.key):
+			var sp: PackedVector2Array = w.snow_lots.stoop_paths[lot.key]
+			join_from = sp[sp.size() - 1]
+		var tread := Vector2.INF
+		for st in w.snow_lots.stair_street_steps:
+			var c := Vector2(float(st[0]), float(st[1])) - Vector2(1000, 1000)
+			if c.distance_to(join_from) < 4.0 and c.distance_to(join_from) < tread.distance_to(join_from):
+				tread = c
+		if tread == Vector2.INF:
+			continue
+		joins += 1
+		for leg in [[join_from, tread], [tread, join_from]]:
+			var a: Vector2 = leg[0]
+			var target: Vector2 = leg[1]
+			actor.velocity = Vector3.ZERO
+			var down := PhysicsRayQueryParameters3D.create(origin + Vector3(a.x, 400, a.y), origin + Vector3(a.x, -50, a.y))
+			down.exclude = [actor.get_rid()]
+			var hit := space.intersect_ray(down)
+			actor.position = Vector3(a.x, ((hit.position.y - origin.y) if not hit.is_empty() else w.world_ground(a.x, a.y)) + 1.2, a.y)
+			for i in 20:
+				await physics_frame
+				actor.velocity = Vector3(0, 0.0 if actor.is_on_floor() else actor.velocity.y - 22.0 / 60.0, 0)
+				actor.move_and_slide()
+			var reached := false
+			for tick in 900:
+				await physics_frame
+				var off := Vector2(target.x - actor.position.x, target.y - actor.position.z)
+				if off.length() < 0.35:
+					reached = true
+					break
+				var hv := Vector3(off.x, 0, off.y).normalized() * 2.0
+				actor.velocity = Vector3(hv.x, 0.0 if actor.is_on_floor() else actor.velocity.y - 22.0 / 60.0, hv.z)
+				_step_up(actor, 1.0 / 60.0)
+				actor.move_and_slide()
+			print("SNOW_STAIR_STREET_JOIN %s %s -> %s reached=%s at=%s" % [lot.key, a + Vector2(1000, 1000), target + Vector2(1000, 1000), reached, actor.position + Vector3(1000, 0, 1000)])
+			require(reached, "%s: from its door to the stair-street (or back) is not walkable" % lot.key)
+	print("SNOW_STAIR_STREET_JOINS %d" % joins)
+	require(joins >= 2, "The stair-street's door joins not found (%d)" % joins)
+
 	# The snow city's streets (the book's plan): each walked end to end and back by the capsule with
 	# the hero's step-up, on the terrain, plinths and door stairs alone (no buildings loaded here).
 	# Each street whole, its ends at the stairs included; the capsule starts on the first surface
