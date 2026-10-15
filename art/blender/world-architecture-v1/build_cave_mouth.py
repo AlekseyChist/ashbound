@@ -64,7 +64,12 @@ for v in bmr.verts:
             front=1.0 if q.y>=1.0 else min(1.0,max(0.0,(abs(q.x)-4.5)/3.0))
             reach=(1.6-max(q.z,-0.9))*1.5*(0.75+0.5*(noise.noise(o*0.6+Vector((5.0,0,0)))*0.5+0.5))*front
             q+=side.normalized()*reach
-    q.z=max(q.z,-4.0)
+        # Codex 395 MOUTH-P-APRON-FLOAT-01: on a falling slope the apron's edge hung up to 4.07 m over the
+        # ground (mine P, downhill): under 0.9 m the skirt drops steeply to 10 m, so wherever the ground
+        # falls away the rock runs down into it (under level ground it stays hidden)
+        if q.z<-0.9:
+            q.z=-0.9+(q.z+0.9)*2.5
+    q.z=max(q.z,-10.0)
     v.co=q
 rock=bpy.data.objects.new('cave mouth rock-col',bpy.data.meshes.new('cave mouth rock'))
 bmr.to_mesh(rock.data);bmr.free()
