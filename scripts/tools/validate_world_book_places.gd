@@ -515,6 +515,22 @@ func run() -> void:
 		if str(mouth.get_meta("exit_id", "")) == "spring_cave:E":
 			spring = mouth
 	require(spring != null, "The spring cave's mouth is missing")
+	# SPRING-PROP-05 (Codex 418): no generated desert prop in a mouth's open vault
+	var in_vaults := 0
+	var multimeshes: Array[Node] = w.props.find_children("*", "MultiMeshInstance3D", true, false)
+	for mouth in w.cave_mouths.mouths:
+		var exit_id := str(mouth.get_meta("exit_id", ""))
+		var half := 9.0 if exit_id == "spring_cave:E" else 3.0
+		var deep := 18.0 if exit_id == "spring_cave:E" else 9.0
+		for mm in multimeshes:
+			var mmi := mm as MultiMeshInstance3D
+			for i in mmi.multimesh.instance_count:
+				var o: Vector3 = mouth.to_local(mmi.global_transform * mmi.multimesh.get_instance_transform(i).origin)
+				if absf(o.x) <= half and o.z <= 1.0 and o.z >= -deep:
+					in_vaults += 1
+					print("PROP_IN_VAULT %s %s %s" % [exit_id, mmi.name, o])
+	print("CAVE_VAULT_PROPS %d" % in_vaults)
+	require(in_vaults == 0, "%d generated props stand in the caves' vaults" % in_vaults)
 	if spring != null:
 		var way: Array[Vector2] = []
 		for q in [Vector3(4.95, 0, 5.0), Vector3(4.95, 0, -8.0), Vector3(2.0, 0, -13.5)]:

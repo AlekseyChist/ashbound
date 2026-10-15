@@ -61,6 +61,12 @@ func _sea_level() -> float:
 # --- Desert ----------------------------------------------------------------------------------
 
 func _dress_desert() -> void:
+	# the caves' open vaults (Codex 417/418 SPRING-PROP-05: a boulder stood in the spring's passage):
+	# [map, facing, depth to, half width] - filtered after the draws, so every other rock keeps its place
+	_mouths.clear()
+	if world.get("cave_mouths") != null:
+		for exit in world.cave_mouths.exits():
+			_mouths.append([exit.map, exit.facing, float(exit.get("depth", 9.0)) + 2.0, float(exit.get("inside_half", 3.0)) + 2.0])
 	var rng := RandomNumberGenerator.new()
 	rng.seed = SEED
 	var meshes: Array[Mesh] = []
@@ -100,8 +106,16 @@ func _dress_desert() -> void:
 	_commit(batches)
 
 
-## Sand, gently sloped, off roads and away from cities and places.
+var _mouths: Array = []
+
+
+## Sand, gently sloped, off roads and away from cities and places, out of the caves' vaults.
 func _desert_ground(map: Vector2) -> bool:
+	for m in _mouths:
+		var off: Vector2 = map - m[0]
+		var depth := -off.dot(m[1])
+		if depth >= -4.0 and depth <= float(m[2]) and absf(off.dot(Vector2(-m[1].y, m[1].x))) <= float(m[3]):
+			return false
 	var scene := Vector2(map.x - world.HALF + world.world_root.position.x, map.y - world.HALF + world.world_root.position.z)
 	var colour: Color = world.grass_color(scene.x, scene.y)
 	if colour.r <= colour.g or world.road_at(scene.x, scene.y) > 0.02:
