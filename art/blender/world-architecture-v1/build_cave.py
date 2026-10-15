@@ -154,18 +154,53 @@ for a,b,w in SEALED:
 for o in list(C.ASSET.objects):
     for col in list(o.users_collection):
         if col!=C.ASSET:col.objects.unlink(o)
-# UVs for the textured rock: projected in metres on each face's dominant axis (as the accepted
-# generators do), so the stone keeps its scale on the vaults.
+# UVs (Codex ART-CV-02: the dominant-axis projection stretched the tunnels into rings and cut hard
+# stripes where the axis switched): metric and continuous along each way. A link's rock is unwrapped
+# round its centre line - u metres along it, v the arc from its crown (the wrap at the bottom, under
+# the ground); a chamber's walls round its vertical axis (u arc, v height), its vault and every floor
+# face planar from above.
+LINK_LINES=[]
+for a,b,w in LINKS:
+    xa,zsa,_,_,fa=ch[a];xb,zsb,_,_,fb=ch[b];h=max(2.4,w*1.1)
+    LINK_LINES.append((P(xa,zsa,fa+h*0.42),P(xb,zsb,fb+h*0.42),(w+h)/4))
+def _wrap(angles):
+    out=[angles[0]]
+    for x in angles[1:]:
+        while x-out[0]>math.pi:x-=2*math.pi
+        while x-out[0]<-math.pi:x+=2*math.pi
+        out.append(x)
+    return out
 for o in [o for o in C.ASSET.objects if o.type=='MESH']:
     if not any(m.get('uv_metres',0) for m in o.data.materials):continue
     bm=bmesh.new();bm.from_mesh(o.data);bm.normal_update()
     uv=bm.loops.layers.uv.get('UVMap') or bm.loops.layers.uv.new('UVMap')
     for face in bm.faces:
         scale=o.data.materials[face.material_index].get('uv_metres',0) or 3
-        axis=max(range(3),key=lambda i:abs(face.normal[i]))
-        for loop in face.loops:
-            q=o.matrix_world@loop.vert.co
-            u,v=((q.y,q.z) if axis==0 else (q.x,q.z) if axis==1 else (q.x,q.y))
+        pts=[o.matrix_world@l.vert.co for l in face.loops]
+        c=sum(pts,Vector())/len(pts)
+        n=(o.matrix_world.to_3x3()@face.normal).normalized()
+        best=min(((math.hypot((c.x-cx)/rx,(c.y+zs)/rz),(cx,-zs,rx,rz,fl)) for _,cx,zs,rx,rz,fl in CHAMBERS),key=lambda t:t[0])
+        if abs(n.z)>0.75 or o.name.startswith('floor') or face.material_index==1:
+            coords=[(q.x,q.y) for q in pts]
+        elif best[0]<1.0:
+            # round the ellipsoid as built: u the arc round its axis, v the arc up its meridian
+            cx,cy,rx,rz,fl=best[1];H=2.6+0.25*min(rx,rz);cz=fl+H*0.35;rv=H*0.66
+            R=(rx+rz)/2;Rm=(R+rv)/2
+            ang=_wrap([math.atan2((q.y-cy)/rz,(q.x-cx)/rx) for q in pts])
+            el=[math.atan2((q.z-cz)/rv,math.hypot((q.x-cx)/rx,(q.y-cy)/rz)) for q in pts]
+            coords=[(a*R,e*Rm) for a,e in zip(ang,el)]
+        else:
+            def seg_d(L):
+                pa,pb,_=L;d=pb-pa;t=max(0.0,min(1.0,(c-pa).dot(d)/d.length_squared))
+                return (c-(pa+d*t)).length
+            pa,pb,R=min(LINK_LINES,key=seg_d)
+            d=(pb-pa).normalized();s=d.cross(Vector((0,0,1)))
+            s=s.normalized() if s.length>1e-6 else Vector((1,0,0));up=s.cross(d).normalized()
+            if up.z<0:up=-up
+            tl=[(q-pa).dot(d) for q in pts]
+            ang=_wrap([math.atan2((q-pa-d*t).dot(s),(q-pa-d*t).dot(up)) for q,t in zip(pts,tl)])
+            coords=[(t,a*R) for t,a in zip(tl,ang)]
+        for loop,(u,v) in zip(face.loops,coords):
             loop[uv].uv=(u/scale,v/scale)
     bm.to_mesh(o.data);bm.free()
 # Export GLB.
