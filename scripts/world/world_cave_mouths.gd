@@ -165,7 +165,32 @@ func build(height: Callable, half: float) -> void:
 		mouth.rotation.y = atan2(exit.facing.x, exit.facing.y)
 		add_child(mouth)
 		_dress(mouth, rock, earth, timber)
+		if str(exit.id) == SPRING_EXIT:
+			_spring_lights(mouth)
 		mouths.append(mouth)
+
+
+## SPRING-READABILITY-06 (Codex 445): the hot spring glows warm out of its depths, so the dry ledge
+## (x 4.95, z 0 .. -14 in the mouth's frame, +z out of the arch), the wall and the water's edge stay
+## readable at noon and at night. No shadows: two cheap lights, faded out with distance.
+const SPRING_GLOW := [
+	{"name": "SpringGlowDeep", "at": Vector3(1.8, 3.0, -15.5), "energy": 2.2, "range": 13.0, "color": Color(1.0, 0.66, 0.40)},
+	{"name": "SpringGlowLedge", "at": Vector3(4.2, 3.2, -7.5), "energy": 1.0, "range": 8.0, "color": Color(1.0, 0.80, 0.60)},
+]
+
+func _spring_lights(mouth: Node3D) -> void:
+	for spec in SPRING_GLOW:
+		var light := OmniLight3D.new()
+		light.name = spec.name
+		light.position = spec.at
+		light.light_energy = spec.energy
+		light.omni_range = spec.range
+		light.light_color = spec.color
+		light.shadow_enabled = false
+		light.distance_fade_enabled = true
+		light.distance_fade_begin = 60.0
+		light.distance_fade_length = 15.0
+		mouth.add_child(light)
 
 
 func _dress(node: Node, rock: Material, earth: Material, timber: Material) -> void:
