@@ -164,18 +164,26 @@ rock.data.materials.clear();rock.data.materials.append(ROCK)
 for poly in rock.data.polygons:poly.use_smooth=True
 # Darkness into the hill as a vertex colour (the world multiplies the albedo by it): white outside,
 # down to 6% at the plug, so the arch reads dark like a cave and the plug is no flat black disc.
+# The spring's mouth is walked into (Codex 445 SPRING-READABILITY-06: at noon the ledge, the wall and the
+# water's edge went black past z -8): there the darkness stops at 42% on what the hero walks on (faces
+# turned up, under 0.5 m) and at 20% on the walls; the world lights it from inside (world_cave_mouths.gd).
 for o in [o for o in C.ASSET.objects if o.type=='MESH']:
     attr=o.data.color_attributes.new('Col','BYTE_COLOR','CORNER')
-    for loop in o.data.loops:
-        c=o.matrix_world@o.data.vertices[loop.vertex_index].co
-        if SPRING:
-            inside=abs(c.x-spring_bend(c.y))<7.6 and c.z<8.2 and c.y>-5.0
-            k=max(0.0,min(1.0,(c.y+3.0)/15.0)) if inside else 0.0
-        else:
-            inside=abs(c.x-min(2.6,0.08*max(0.0,c.y-1.0)**2))<3.6 and c.z<4.8 and c.y>-3.5
-            k=max(0.0,min(1.0,(c.y+2.5)/8.0)) if inside else 0.0
-        g=1.0-0.96*k**0.75
-        attr.data[loop.index].color=(g,g,g,1.0)
+    rot=o.matrix_world.to_3x3()
+    for poly in o.data.polygons:
+        up=(rot@poly.normal).normalized().z
+        for li in poly.loop_indices:
+            c=o.matrix_world@o.data.vertices[o.data.loops[li].vertex_index].co
+            if SPRING:
+                inside=abs(c.x-spring_bend(c.y))<7.6 and c.z<8.2 and c.y>-5.0
+                k=max(0.0,min(1.0,(c.y+3.0)/15.0)) if inside else 0.0
+            else:
+                inside=abs(c.x-min(2.6,0.08*max(0.0,c.y-1.0)**2))<3.6 and c.z<4.8 and c.y>-3.5
+                k=max(0.0,min(1.0,(c.y+2.5)/8.0)) if inside else 0.0
+            g=1.0-0.96*k**0.75
+            if SPRING:
+                g=max(g,0.42 if (up>0.6 and c.z<0.5) else 0.20)
+            attr.data[li].color=(g,g,g,1.0)
     o.data.color_attributes.active_color=attr
 # UVs for the textured rock: projected in metres on each face's dominant axis.
 for o in [o for o in C.ASSET.objects if o.type=='MESH']:
