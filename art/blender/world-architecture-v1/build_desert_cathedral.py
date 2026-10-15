@@ -145,6 +145,12 @@ for x in (-5,5):
 # north to the wall; the lost roof is the east aisle's, its broken rafters left over it.
 roof_slope('nave roof',-5.6,0,-8.4,8.4,13.0,18.0,.3,ROOF)
 roof_slope('nave roof',5.6,0,-8.4,8.4,13.0,18.0,.3,ROOF)
+# the nave's gables over the north and south walls (Codex 356 CATH-GABLE-01: both ends stood open above
+# 13 m): masonry triangles in the walls' own planes, from their top up to the roof slabs' underside
+for y0,y1 in ((7.4,8.4),(-8.4,-7.4)):
+    xg=5.6-.3*5.6/5.0
+    vs=[(-xg,y0,13.0),(xg,y0,13.0),(0,y0,17.7),(-xg,y1,13.0),(xg,y1,13.0),(0,y1,17.7)]
+    C.mesh('nave gable',vs,[(0,2,1),(3,4,5),(0,1,4,3),(1,2,5,4),(2,0,3,5)],STONE)
 roof_slope('aisle roof',-14.4,-5.4,-8.4,8.4,9.0,11.6,.25,ROOF)   # whole west aisle; the east aisle open
 for x in (-5,5):
     box('clerestory',(x,0,12.3),(1.0,16.8,1.4),STONE)
@@ -223,7 +229,8 @@ bpy.context.view_layer.objects.active=next(o for o in C.ASSET.objects if o.type=
 asset=OUT/'d_cathedral.glb'
 bpy.ops.export_scene.gltf(filepath=str(asset),use_selection=True,export_format='GLB',export_apply=True,export_extras=True,export_yup=True,export_lights=False,export_cameras=False)
 data=asset.read_bytes();size=struct.unpack_from('<I',data,12)[0];document=json.loads(data[20:20+size])
-tints={'DC stone':(.74,.66,.52),'DC timber':(.33,.24,.16)}
+# the timber's tint lifted (Codex 356 CATH-MAT-01: over the dark oak texture .33/.24/.16 read black)
+tints={'DC stone':(.74,.66,.52),'DC timber':(.88,.78,.64)}
 for material in document['materials']:
     if material['name'] in tints:material['pbrMetallicRoughness']['baseColorFactor']=[*tints[material['name']],1]
 encoded=json.dumps(document,separators=(',',':')).encode();encoded+=b' '*((-len(encoded))%4)
