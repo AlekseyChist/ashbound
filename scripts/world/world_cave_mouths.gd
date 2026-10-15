@@ -35,7 +35,7 @@ const FRONT := 3.0
 ## nor on a narrow way up to the arch (Codex MOUTH-03: at forest X the spruce branches hid the hero
 ## and the mouth 12 m out): circles of APPROACH_CLEAR along it, out to APPROACH_REACH m.
 const HILL_CENTRE := 4.0
-const HILL_CLEAR := 10.0
+const HILL_CLEAR := 14.0
 const APPROACH_CLEAR := 3.5
 const APPROACH_REACH := 22.0
 
