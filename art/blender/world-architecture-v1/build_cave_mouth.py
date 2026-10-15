@@ -41,7 +41,7 @@ VARIANT=next((x for x in ARGS if x in ('a','b','c','spring')),'a')
 # Codex 403 SPRING-MOUTH-01 (A): the spring cave's one mouth over its stream - the 8 m water out of the
 # dark and a dry ledge beside it (clear span >= 10 m), a bigger hill round it
 SPRING=VARIANT=='spring' and not MINE
-HX,HFRONT,HBACK,HZ,HCY=(17.0,7.0,18.0,9.0,5.0) if SPRING else (11.0,4.5,12.0,5.4,4.0)
+HX,HFRONT,HBACK,HZ,HCY=(17.0,7.0,18.0,10.5,5.0) if SPRING else (11.0,4.5,12.0,5.4,4.0)
 ARCH_FRONT=8.5 if SPRING else 4.5
 SEED={'a':Vector((0,0,0)),'b':Vector((37.1,-11.3,5.7)),'c':Vector((-21.9,44.2,-8.4)),'spring':Vector((11.0,-29.0,17.0))}[VARIANT] if not MINE else Vector((63.0,7.0,-29.0))
 bmr=bmesh.new()
@@ -83,7 +83,7 @@ bpy.context.scene.collection.objects.link(rock)
 # varied by noise round the ring; past 1 m in it bends aside (cave) so the far end hides behind the
 # wall; its far end is closed by the rock itself. The mine's adit stays straight and squared.
 K=40;rings=[]
-ys=[-9.0+i*1.0 for i in range(28)] if SPRING else [-6.0+i*1.0 for i in range(15)]  # -6 .. 8 (spring -9 .. 18)
+ys=[-9.0+i*1.0 for i in range(25)] if SPRING else [-6.0+i*1.0 for i in range(15)]  # -6 .. 8 (spring -9 .. 18)
 ZC=2.8 if SPRING else 1.45
 def spring_bend(y):
     return min(4.0,0.03*max(0.0,y-4.0)**2)
@@ -94,8 +94,9 @@ for y in ys:
     narrow=1.0-0.15*max(0.0,min(1.0,d/8.0))
     rw,rh=1.9*flare*narrow,1.9*flare*narrow
     if SPRING:  # a wide low vault: 10.4 m clear at the water, 8 m high
+        # lower inward (Codex 409: the vault pierced the hill's back at the bend - daylight inside)
         narrow=1.0-0.12*max(0.0,min(1.0,d/14.0))
-        rw,rh=7.4*flare*narrow,5.2*flare*narrow
+        rw,rh=7.4*flare*narrow,5.2*flare*(1.0-0.3*max(0.0,min(1.0,(d-6.0)/10.0)))
     if MINE:  # a squared adit cut by hand: a superellipse, barely jittered, a little flare
         rw,rh=1.7*(1+0.12*math.exp(-max(d,0.0)/1.2)),1.75
     bend=0.0 if MINE else spring_bend(y) if SPRING else min(2.6,0.08*max(0.0,y-1.0)**2)
@@ -131,7 +132,7 @@ if SPRING:
     # no floor over the stream (its 8 m water, |x| < 4, runs out of the dark to the arch): a dry rock
     # ledge on the +x side over it, 1.9 m wide, at the arch's floor (the way in), then past the water's
     # head (9.4 m in) dry ground the width of the way, under its bend
-    fl=C.box('spring ledge-col',(4.95,4.0,-.7),(1.9,10.0,1.4),ROCK)
+    fl=C.box('spring ledge-col',(4.95,4.3,-.7),(1.9,10.6,1.4),ROCK)  # -1 .. 9.6: onto the dry floor (Codex 409: a 0.5 m gap)
     bm=bmesh.new();bm.from_mesh(fl.data);bmesh.ops.subdivide_edges(bm,edges=bm.edges[:],cuts=6,use_grid_fill=True);bm.to_mesh(fl.data);bm.free()
     fl=C.box('spring floor-col',(1.8,13.5,-.7),(11.0,8.0,1.4),EARTH)
 else:
