@@ -101,7 +101,7 @@ bpy.ops.object.modifier_apply(modifier='tunnel')
 bpy.data.objects.remove(tun)
 # The floor: wider than the arch (no trench by the walls), as far in as the way runs straight; past
 # the bend the rock's own floor (flat under the tunnel's bottom ring) carries on.
-fl=C.box('mouth floor-col',(0,2.0,-.05),(5.6,9.0,.1),EARTH)  # -2.5 .. 6.5: not out past the rock's front as a slab
+fl=C.box('mouth floor-col',(0,2.75,-.05),(5.6,7.5,.1),EARTH)  # -1 .. 6.5: inside the arch (Codex 351: its edge showed as a rectangle before forest X)
 bm=bmesh.new();bm.from_mesh(fl.data);bmesh.ops.subdivide_edges(bm,edges=bm.edges[:],cuts=8,use_grid_fill=True);bm.to_mesh(fl.data);bm.free()  # vertices for the darkness gradient
 if MINE:
     C.box('mouth depth',(0,8.6,1.6),(4.4,.1,4.4),DARK)
