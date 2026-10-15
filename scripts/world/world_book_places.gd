@@ -201,6 +201,7 @@ const KIT := {
 	"barrel": "res://assets/props/tavern-v1/wine_barrel_01.glb",
 	"axe": "res://assets/props/civic-v1/wooden_axe_03.glb",
 	"mouth": "res://assets/caves-v1/cave_mouth.glb",
+	"woodpile": "res://assets/buildings/ashbound/courtyard_woodpile.glb",
 }
 var models := 0
 var _scenes := {}
@@ -333,15 +334,38 @@ func _saltworks(parent: Node3D, o: Vector2) -> void:
 		_box(parent, o + c, Vector3(2.0, 1.2, 2.0), "salt", 45.0)
 
 
-# --- a lone farmstead (peat farmstead, outskirts): house, shed, stacks --------------------------------
+# --- a lone farmstead (peat farmstead, outskirts): the village's own closed house and barn (BOOK-DRESS-02,
+# instead of grey boxes), a woodpile, the peat stacks; each building on the highest ground under it (its
+# masonry footing reaches 2.6 m down the slope) and solid to its walls
+
+func _building(parent: Node3D, path: String, c: Vector2, yaw: float, footprint: Vector2) -> void:
+	var basis := Basis(Vector3.UP, deg_to_rad(yaw))
+	var top := -INF
+	for k in [Vector2(-1, -1), Vector2(1, -1), Vector2(-1, 1), Vector2(1, 1), Vector2.ZERO]:
+		var p: Vector3 = basis * Vector3(k.x * footprint.x * 0.5, 0, k.y * footprint.y * 0.5)
+		top = maxf(top, ground(c.x + p.x, c.y + p.z))
+	if not _scenes.has(path):
+		_scenes[path] = load(path)
+	var node: Node3D = _scenes[path].instantiate()
+	node.position = Vector3(c.x, top, c.y)
+	node.rotation.y = deg_to_rad(yaw)
+	parent.add_child(node)
+	models += 1
+	var body := StaticBody3D.new()
+	var shape := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = Vector3(footprint.x, 5.0, footprint.y)
+	shape.shape = box
+	body.add_child(shape)
+	body.position = Vector3(c.x, top + 2.5, c.y)
+	body.rotation.y = deg_to_rad(yaw)
+	parent.add_child(body)
+
 
 func _farmstead(parent: Node3D, o: Vector2) -> void:
-	_box(parent, o + Vector2(0, -6), Vector3(8, 3.0, 6), "clay")
-	for side in [-1, 1]:
-		var slope := Vector3(8.6, 0.18, 3.7)
-		_box(parent, o + Vector2(0, -6 + side * 1.55), slope, "roof", 0.0, 3.55, false, side * 28.0)
-	_box(parent, o + Vector2(8, -4), Vector3(5, 2.4, 4), "timber")
-	_box(parent, o + Vector2(8, -4), Vector3(5.6, 0.2, 4.6), "roof", 0.0, 2.4, false)
+	_building(parent, "res://assets/buildings/forest-village-v1/h01_closed.glb", o + Vector2(0, -6), 0.0, Vector2(6, 8))
+	_building(parent, "res://assets/buildings/forest-village-v1/b01_closed.glb", o + Vector2(11, -4), -90.0, Vector2(8, 10))
+	_model(parent, "woodpile", o + Vector2(-4.8, -1.5), 0.0, 1.0, 0.0, 0.6, 1.0)
 	for k in 3:
 		_box(parent, o + Vector2(-8 + k * 2.2, 4), Vector3(1.6, 1.1, 1.0), "peat", 10.0 * k, 0.0, false)
 
