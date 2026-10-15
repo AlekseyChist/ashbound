@@ -25,6 +25,7 @@ WOOD=surface('DL timber','fine_grained_wood_col_1k.jpg',.65)
 CLOTH=C.mat('DL shade',(.36,.30,.20,1),.98)
 CLAY=C.mat('DL clay',(.60,.38,.24,1),.9)
 CLOTH2=C.mat('DL cloth bolts',(.30,.36,.42,1),.98)
+CLOTH2_END=C.mat('DL cloth bolt end',(.17,.21,.25,1),.98)   # a bolt's end: the darker turns inside
 coll=[]
 def box(n,p,s,m,solid=True):
     o=C.box(n,p,s,m,.015)
@@ -49,6 +50,56 @@ def ring_solid(n,x,y,z,rings,m,role=True):
     f.append(tuple(range(t,t+k)))
     o=C.mesh(n,v,f,m)
     if role:o['part_role']='interior_furniture'
+    return o
+def vessel(n,x,y,z,rings,m,depth,lip=.8,role=True,k=10):
+    # Codex 453 DS-WARES-03 (mouths capped by one flat face; the bazaar's open vessel, BZR-ART-01b):
+    # its rings from the foot up, a rim (the top ring to an inner ring lip*its size), the inner wall down
+    # `depth` and an inner floor; k sides
+    v=[]
+    for dz,hx,hy in rings:
+        for i in range(k):
+            a=math.pi*2*i/k
+            v.append((x+hx*math.cos(a),y+hy*math.sin(a),z+dz))
+    tz,thx,thy=rings[-1]
+    for dz,f in ((0.0,lip),(-depth,lip*.92)):
+        for i in range(k):
+            a=math.pi*2*i/k
+            v.append((x+thx*f*math.cos(a),y+thy*f*math.sin(a),z+tz+dz))
+    n_r=len(rings)+2
+    faces=[tuple(range(k-1,-1,-1))]
+    for r in range(n_r-1):
+        for i in range(k):
+            j=(i+1)%k
+            faces.append((r*k+i,r*k+j,(r+1)*k+j,(r+1)*k+i))
+    faces.append(tuple(range((n_r-1)*k,n_r*k)))
+    o=C.mesh(n,v,faces,m)
+    if role:o['part_role']='interior_furniture'
+    return o
+def bolt(n,x,y,zc,length,r):
+    # DS-WARES-03 (blue blocks): a bolt of cloth lying along x on the shelf - a cylinder a little flattened
+    # where it lies, both ends darker inset turns, the loose edge of the cloth hanging over its front
+    k=12
+    v=[];f=[]
+    x0,x1=x-length/2,x+length/2
+    for xx in (x0,x1):
+        for i in range(k):
+            a=math.pi*2*i/k
+            v.append((xx,y+r*math.cos(a),zc+r*.9*math.sin(a)))
+    for i in range(k):
+        j=(i+1)%k;f.append((i,k+i,k+j,j))
+    # no flat end caps: the turns are the ends, each ring set a little deeper into the bolt
+    o=C.mesh(n,v,f,CLOTH2);o['part_role']='interior_furniture'
+    for side,xe in ((-1,x0),(1,x1)):
+        for t,(ra,rb) in enumerate(((r,r*.66),(r*.66,r*.4),(r*.4,r*.14),(r*.14,0.0))):
+            ve=[];fe=[]
+            xt=xe-side*t*.008
+            for i in range(k):
+                a=math.pi*2*i/k
+                ve.append((xt,y+ra*math.cos(a),zc+ra*.9*math.sin(a)));ve.append((xt,y+rb*math.cos(a),zc+rb*.9*math.sin(a)))
+            for i in range(k):
+                j=(i+1)%k;fe.append((2*i,2*i+1,2*j+1,2*j) if side>0 else (2*i,2*j,2*j+1,2*i+1))
+            e=C.mesh(n+' end',ve,fe,CLOTH2_END if t%2==0 else CLOTH2);e['part_role']='interior_furniture'
+    flap=C.box(n+' flap',(x,y-r*.98,zc-r*.45),(length*.96,.012,r*.9),CLOTH2,0);flap['part_role']='interior_furniture'
     return o
 def slab(n,pts,t,m):
     # a thin solid under the quad pts (4 corners, counter-clockwise from above), thickness t downward
@@ -79,6 +130,16 @@ def roof_piece(name,x0,x1,y0,y1,top,thick,material):
     vertices=[(x,y,top-y*.012+dz) for x in (x0,x1) for y in (y0,y1) for dz in (-thick,0)]
     return C.mesh(name,vertices,FACES,material)
 box('ceiling',(0,0,3.12),(6,5,.16),WOOD)
+# the bond course (Codex 453 DS-ROOF-01, as the workshop's DW-ROOF-01: walls and ceiling stopped at 3.20,
+# the roof slab's underside at 3.45-0.012y - a 22-28 cm open belt, the roof unsupported): masonry over
+# every wall line from 3.20 up into the roof slab, its top following the slab's slope
+def course(n,x0,x1,y0,y1):
+    vs=[(x,y,z) for x in (x0,x1) for y in (y0,y1) for z in (3.19,3.47-y*.012)]
+    return C.mesh(n,vs,FACES,LIME)
+course('bond course',-3.0,3.0,-2.5,-2.1)
+course('bond course',-3.0,3.0,2.1,2.5)
+course('bond course',-3.0,-2.6,-2.1,2.1)
+course('bond course',2.6,3.0,-2.1,2.1)
 roof_piece('flat lime roof',-3.3,3.3,-2.8,2.8,3.6,.15,LIME)
 roof_piece('flat roof-colonly',-3.3,3.3,-2.8,2.8,3.6,.15,LIME).hide_render=True
 # Parapet (eaves max 0.3 beyond walls); rear parapet open over the drain at x=0.
@@ -99,14 +160,14 @@ slab('entry shade',[(-2.4,-2.5,2.96),(0,-2.5,2.96),(0,-3.64,2.62),(-2.4,-3.64,2.
 box('counter top',(1.3,-1.55,.92),(2.0,.55,.08),WOOD)
 box('counter front',(1.3,-1.28,.46),(2.0,.04,.88),WOOD)
 for x in (.35,2.25):box('counter leg',(x,-1.75,.44),(.07,.07,.88),WOOD,False)
-for x in (.7,1.3,1.9):ring_solid('jar',x,-1.55,(1.09)-0.130,[(0.000,0.068,0.068),(0.078,0.110,0.110),(0.161,0.101,0.101),(0.208,0.055,0.055),(0.239,0.050,0.050),(0.260,0.064,0.064)],CLAY)
+for x in (.7,1.3,1.9):vessel('jar',x,-1.55,(1.09)-0.130,[(0.000,0.068,0.068),(0.078,0.110,0.110),(0.161,0.101,0.101),(0.208,0.055,0.055),(0.239,0.050,0.050),(0.260,0.064,0.064)],CLAY,.08)
 # Goods shelves along the rear wall: back panel, sides, four boards; jars and cloth bolts.
 box('shelf back',(0,2.05,1.0),(4.4,.06,2.0),WOOD)
 for x in (-2.2,2.2):box('shelf side',(x,1.85,1.0),(.08,.4,2.0),WOOD)
 for z in (.06,.7,1.34,1.96):box('shelf board',(0,1.85,z),(4.4,.4,.08),WOOD)
 for z in (.7,1.34):
-    for x in (-1.6,-.8,0,.8,1.6):ring_solid('jar',x,1.85,(z+.17)-0.130,[(0.000,0.074,0.074),(0.078,0.120,0.120),(0.161,0.110,0.110),(0.208,0.060,0.060),(0.239,0.054,0.054),(0.260,0.070,0.070)],CLAY)
-for x in (-1.5,-.5,.5,1.5):box('bolt',(x,1.85,1.96+.14),(.7,.25,.2),CLOTH2,False)
+    for x in (-1.6,-.8,0,.8,1.6):vessel('jar',x,1.85,(z+.17)-0.130,[(0.000,0.074,0.074),(0.078,0.120,0.120),(0.161,0.110,0.110),(0.208,0.060,0.060),(0.239,0.054,0.054),(0.260,0.070,0.070)],CLAY,.08)
+for x in (-1.5,-.5,.5,1.5):bolt('bolt',x,1.85,2.0+.09,.7,.1)
 # Chest near the door side.
 box('chest',(-2.1,.4,.3),(.6,.9,.6),WOOD)
 # Door: EntryPortal, front-left hinge, open -100 deg.
@@ -115,7 +176,8 @@ portal=bpy.data.objects.new('EntryPortal',None);C.ASSET.objects.link(portal)
 hinge=bpy.data.objects.new('EntryPortal_entry_hinge',None);C.ASSET.objects.link(hinge)
 hinge.parent=portal;hinge.location=(-2.0,-2.3,0);hinge['open_angle_degrees']=-100
 for k in range(5):
-    part=box('Door plank',(-1.82+k*.31,-2.3,1.18),(.30,.08,2.36),WOOD,False)
+    # DS-DOOR-02: 2.36 m planks ran 6 cm into the header (from 2.30); now 0.01..2.27, a 3 cm clearance
+    part=box('Door plank',(-1.82+k*.31,-2.3,1.14),(.30,.08,2.26),WOOD,False)
     part.parent=hinge;part.location-=Vector((-2.0,-2.3,0))
     door_parts.append(part)
 visual=[o for o in C.ASSET.objects if o.type=='MESH' and '-colonly' not in o.name]
