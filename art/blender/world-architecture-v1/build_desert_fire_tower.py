@@ -84,6 +84,67 @@ for side in range(14):
     lx,ly=CORNER[name]
     box('landing',(lx,ly,z-.1),(.9,.9,.2),STONE)
     box('landing body',(lx,ly,z-.2-.6),(.9,.9,1.2),STONE,False)
+# Railings (Codex 303): iron, 0.9 m, on the inner edge of every flight over the open well (rail 0.06 thick
+# on the 0.9 m tread leaves 0.84 m clear); posts on every second step, a hand rail and a mid rail. The
+# collision is the same rail as a stepped 0.06 panel per step (a visible support, no invisible wall).
+# Under the roof slab (underside 20.8) the rail stops where the gap to the slab closes. The landings
+# touch the well only at their inner corner, where two flights' rails meet on one post.
+GLASS=C.mat('DF lamp glass',(1.0,.72,.38,1),.4)
+ROOF_UNDER=20.8
+INNER={'W':('x',-1.33),'N':('y',1.33),'E':('x',1.33),'S':('y',-1.33)}
+def at_edge(name,u):
+    axis,c=INNER[name]
+    return (c,u) if axis=='x' else (u,c)
+z=0.0
+for side in range(14):
+    name,(x0,y0),(x1,y1)=SIDES[side%4]
+    u0,u1=(y0,y1) if name in ('W','E') else (x0,x1)
+    def rail_top(top):
+        return min(top+.9,ROOF_UNDER-.05) if side>=12 else top+.9
+    for i in range(8):
+        t0,t1=i/8,(i+1)/8;top=z+.1875*(i+1)
+        h=rail_top(top)-top
+        if h<.3:continue
+        ua,ub=u0+(u1-u0)*t0,u0+(u1-u0)*t1
+        px,py=at_edge(name,(ua+ub)/2)
+        size=(.06,abs(ub-ua),h) if name in ('W','E') else (abs(ub-ua),.06,h)
+        coll.append(('rail',(px,py,top+h/2),size))
+    posts=[]
+    for i in range(0,9,2):
+        top=z+.1875*min(max(i,1),8)  # the step top under a post (the first stands on step 1)
+        h=rail_top(top)-top
+        if h<.3:break
+        u=u0+(u1-u0)*(i/8)
+        posts.append((at_edge(name,u),top,h))
+        px,py=at_edge(name,u)
+        C.box('rail post',(px,py,top+h/2),(.045,.045,h),IRON,0)
+    for (pa,ta,ha),(pb,tb,hb) in zip(posts,posts[1:]):
+        C.beam('hand rail',Vector((pa[0],pa[1],ta+ha)),Vector((pb[0],pb[1],tb+hb)),.05,.05,IRON)
+        C.beam('mid rail',Vector((pa[0],pa[1],ta+ha*.5)),Vector((pb[0],pb[1],tb+hb*.5)),.035,.035,IRON)
+    z+=1.5
+# Lamps (Codex 303): TowerLamp_00..13, one over the middle of each flight by the outer wall, 2.0 m over
+# the tread there; an iron bracket out of the wall (0.15 m) and a small lantern under it. The empty sits
+# at the lantern's centre for the runtime light. Flight 13 rises above the wall top (21): its lamp hangs
+# from an iron post standing on the parapet instead.
+LAMP={'W':(-2.05,0),'N':(0,2.05),'E':(2.05,0),'S':(0,-2.05)}
+WALL={'W':(-2.2,0),'N':(0,2.2),'E':(2.2,0),'S':(0,-2.2)}
+for k in range(14):
+    name=SIDES[k%4][0];lx,ly=LAMP[name];wx,wy=WALL[name]
+    lz=1.5*k+.75+2.0
+    C.box('lamp body',(lx,ly,lz),(.16,.16,.26),IRON,0)
+    C.box('lamp glass',(lx,ly,lz),(.18,.18,.17),GLASS,0)
+    C.box('lamp cap',(lx,ly,lz+.16),(.22,.22,.05),IRON,0)
+    if lz+.2<21.0:
+        C.beam('lamp bracket',Vector((wx,wy,lz+.2)),Vector((lx,ly,lz+.2)),.05,.05,IRON)
+        C.beam('lamp bracket',Vector((wx,wy,lz-.15)),Vector(((wx+lx)/2,(wy+ly)/2,lz+.2)),.035,.035,IRON)
+    else:
+        # on the parapet (2.5..2.8), in the gap between the merlons at 0 and 1.1 along the wall
+        px,py=(wx*1.18+(.55 if name in ('N','S') else 0),wy*1.18+(.55 if name in ('W','E') else 0))
+        top=lz+.45
+        C.box('lamp post',(px,py,(21.8+top)/2),(.07,.07,top-21.8),IRON,0)
+        C.beam('lamp bracket',Vector((px,py,top)),Vector((lx,ly,top)),.05,.05,IRON)
+        C.box('lamp chain',(lx,ly,(lz+.18+top)/2),(.02,.02,top-lz-.18),IRON,0)
+    e=bpy.data.objects.new('TowerLamp_%02d'%k,None);e.location=(lx,ly,lz);C.ASSET.objects.link(e)
 # the roof at 21 m, open over the last two sides (the west and north bands) so the climb keeps its
 # headroom under it: x -1.3..2.2, y -2.2..1.3
 box('roof floor',(.45,-.45,20.9),(3.5,3.5,.2),STONE)
