@@ -180,6 +180,11 @@ func _ready() -> void:
 	water_spray.name = "WaterSpray"
 	add_child(water_spray)
 	water_spray.configure(self)
+	# WORLD-BUILD-01D: stone on the ledges of the falls W2-W5
+	var fall_stones: Node3D = preload("res://scripts/world/world_fall_stones.gd").new()
+	fall_stones.name = "FallStones"
+	world_root.add_child(fall_stones)
+	fall_stones.build(self)
 	dust_devils = preload("res://scripts/world/world_dust_devils.gd").new()
 	dust_devils.name = "DustDevils"
 	add_child(dust_devils)
