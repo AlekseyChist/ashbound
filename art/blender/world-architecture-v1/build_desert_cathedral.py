@@ -155,6 +155,9 @@ box('sanctuary dais',(0,6.0,.25),(9.6,2.8,.4),STONE)
 box('dais step',(0,4.45,.1),(4.0,.3,.2),STONE)
 box('altar',(0,6.6,.95),(2.2,.9,1.0),STONE)
 ring_solid('fire basin',2.6,6.3,.45,[(0,.25,.25),(.6,.2,.2),(.7,.5,.5),(.9,.55,.55)],IRON)
+# its collider (Codex 355 CATH-COLL-01: the hero walked through the basin): the bowl's square, to its rim;
+# the flame stays soft, the way round the altar open
+coll.append(('fire basin',(2.6,6.3,(.45+.9)*.5),(1.1,1.1,.45+.9)))
 ring_solid('fire basin flame',2.6,6.3,1.3,[(0,.38,.38),(.3,.25,.25),(.6,.08,.08),(.75,.02,.02)],FIRE,True)
 for x in (-3.5,3.5):
     box('banner',(x,7.36,7.0),(1.2,.04,4.5),CLOTH,False)
