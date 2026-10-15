@@ -18,6 +18,12 @@ const NOTCH_HALF_WIDTH := 4.5
 const NOTCH_DEPTH := Vector2(-2.0, 9.0)
 const NOTCH_RISE := 0.3
 const NOTCH_UNDER := 0.4
+## On a slope the arch's floor takes the ground before its rock (FRONT m out), not the slope's
+## brow at the exit point: the rock sinks into the hill and no drop opens before the entrance.
+const FRONT := 3.0
+## No forest tree inside this circle round the rock hill's middle (HILL_CENTRE m into the hill).
+const HILL_CENTRE := 4.0
+const HILL_CLEAR := 12.0
 
 var mouths: Array[Node3D] = []
 ## The ground at each exit before the cut (notch), by exit id: the arch's floor level.
@@ -44,7 +50,7 @@ func notch(grid: PackedFloat32Array, width: int, step: float, half: float, heigh
 	for exit in exits():
 		var at: Vector2 = exit.map - Vector2(half, half)
 		var out: Vector2 = exit.facing
-		var floor_y: float = height.call(at.x, at.y)
+		var floor_y: float = minf(height.call(at.x, at.y), height.call(at.x + out.x * FRONT, at.y + out.y * FRONT))
 		floors[exit.id] = floor_y
 		var reach := NOTCH_DEPTH.y + NOTCH_HALF_WIDTH
 		for gz in range(maxi(0, floori((at.y - reach + half) / step)), mini(width, ceili((at.y + reach + half) / step) + 1)):
@@ -57,6 +63,15 @@ func notch(grid: PackedFloat32Array, width: int, step: float, half: float, heigh
 				var i := gz * width + gx
 				if result[i] > floor_y + NOTCH_RISE:
 					result[i] = floor_y - NOTCH_UNDER
+	return result
+
+
+## Circles (x, z, radius) in the world_root frame that the forest keeps clear of.
+static func clearings(half: float) -> Array[Vector3]:
+	var result: Array[Vector3] = []
+	for exit in exits():
+		var at: Vector2 = exit.map - Vector2(half, half) - exit.facing * HILL_CENTRE
+		result.append(Vector3(at.x, at.y, HILL_CLEAR))
 	return result
 
 
@@ -101,4 +116,6 @@ func _surface(path: String, metres: float) -> StandardMaterial3D:
 	m.uv1_triplanar = true
 	m.uv1_world_triplanar = true
 	m.uv1_scale = Vector3.ONE / metres
+	# the GLB's vertex colour darkens the arch into the hill
+	m.vertex_color_use_as_albedo = true
 	return m

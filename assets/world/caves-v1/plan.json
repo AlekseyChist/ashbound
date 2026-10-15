@@ -239,10 +239,10 @@
       438.0
      ],
      "facing": [
-      1.0,
-      0.0
+      0.7071,
+      0.7071
      ],
-     "kind": "exit on the slope over the saddle (the book: ~600/438)",
+     "kind": "exit on the slope over the saddle (the book: ~600/438); faces down the slope (south-east), into the cliff rising north-west (WORLD-BUILD-01G frames)",
      "state": "open"
     },
     {
