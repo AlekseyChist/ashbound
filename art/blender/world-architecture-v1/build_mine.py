@@ -108,9 +108,11 @@ for v in bm.verts:
     moves.append((v,q-nrm*amount))
 for v,co in moves:v.co=co
 bm.normal_update()
+# the slots first: materials.clear() resets every face's index to 0 (Codex ART-CV-03: the whole
+# shell exported as rock, its floor's earth lost)
+base.data.materials.clear();base.data.materials.append(ROCK);base.data.materials.append(EARTH)
 for f in bm.faces:f.material_index=1 if f.normal.z>0.7 else 0
 bm.to_mesh(base.data);bm.free()
-base.data.materials.clear();base.data.materials.append(ROCK);base.data.materials.append(EARTH)
 base.name='mine shell-col'
 for col in list(base.users_collection):col.objects.unlink(base)
 C.ASSET.objects.link(base)
@@ -234,6 +236,7 @@ bpy.ops.export_scene.gltf(filepath=str(asset),use_selection=True,export_format='
 bpy.ops.wm.save_as_mainfile(filepath=str(QA/'crown_mine.blend'))
 visual=[o for o in C.ASSET.objects if o.type=='MESH' and not o.name.endswith('-colonly')]
 triangles=0
+earth_faces=sum(1 for o in visual for poly in o.data.polygons if o.data.materials and len(o.data.materials)>poly.material_index and o.data.materials[poly.material_index].name.endswith('earth'))
 for o in visual:o.data.calc_loop_triangles();triangles+=len(o.data.loop_triangles)
 points=[o.matrix_world@Vector(v) for o in visual for v in o.bound_box]
-(QA/'stats.json').write_text(json.dumps({'mine':'crown_mine','triangles':triangles,'meshes':len(visual),'exits':[e['id'] for e in PLAN['exits']],'bbox':[[min(p[i] for p in points) for i in range(3)],[max(p[i] for p in points) for i in range(3)]],'sha256':hashlib.sha256(asset.read_bytes()).hexdigest()},indent=2),encoding='utf-8')
+(QA/'stats.json').write_text(json.dumps({'mine':'crown_mine','triangles':triangles,'earth_faces':earth_faces,'meshes':len(visual),'exits':[e['id'] for e in PLAN['exits']],'bbox':[[min(p[i] for p in points) for i in range(3)],[max(p[i] for p in points) for i in range(3)]],'sha256':hashlib.sha256(asset.read_bytes()).hexdigest()},indent=2),encoding='utf-8')

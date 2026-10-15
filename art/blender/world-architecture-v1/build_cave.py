@@ -108,9 +108,11 @@ for v in bm.verts:
 for v,co in moves:v.co=co
 bm.normal_update()
 # Ground where the surface faces up (inward normals), rock elsewhere.
+# the slots first: materials.clear() resets every face's index to 0 (Codex ART-CV-03: the whole
+# shell exported as rock, its floor's earth lost)
+base.data.materials.clear();base.data.materials.append(ROCK);base.data.materials.append(EARTH)
 for face in bm.faces:face.material_index=1 if face.normal.z>0.6 else 0
 bm.to_mesh(base.data);bm.free()
-base.data.materials.clear();base.data.materials.append(ROCK);base.data.materials.append(EARTH)
 base.name='cave shell-col'
 # bpy.ops puts new objects in the scene's collection; the export takes the ASSET collection's
 for o in list(base.users_collection):o.objects.unlink(base)
@@ -212,6 +214,7 @@ bpy.ops.export_scene.gltf(filepath=str(asset),use_selection=True,export_format='
 bpy.ops.wm.save_as_mainfile(filepath=str(QA/(CAVE+'.blend')))
 visual=[o for o in C.ASSET.objects if o.type=='MESH' and not o.name.endswith('-colonly')]
 triangles=0
+earth_faces=sum(1 for o in visual for poly in o.data.polygons if o.data.materials and len(o.data.materials)>poly.material_index and o.data.materials[poly.material_index].name.endswith('earth'))
 for o in visual:o.data.calc_loop_triangles();triangles+=len(o.data.loop_triangles)
 points=[o.matrix_world@Vector(v) for o in visual for v in o.bound_box]
-(QA/'stats.json').write_text(json.dumps({'cave':CAVE,'chambers':len(CHAMBERS),'links':len(LINKS),'sealed':[a+'-'+b for a,b,_ in SEALED],'exits':[t for t,_ in EXITS],'triangles':triangles,'bbox':[[min(p[i] for p in points) for i in range(3)],[max(p[i] for p in points) for i in range(3)]],'sha256':hashlib.sha256(asset.read_bytes()).hexdigest()},indent=2),encoding='utf-8')
+(QA/'stats.json').write_text(json.dumps({'cave':CAVE,'chambers':len(CHAMBERS),'links':len(LINKS),'sealed':[a+'-'+b for a,b,_ in SEALED],'exits':[t for t,_ in EXITS],'triangles':triangles,'earth_faces':earth_faces,'bbox':[[min(p[i] for p in points) for i in range(3)],[max(p[i] for p in points) for i in range(3)]],'sha256':hashlib.sha256(asset.read_bytes()).hexdigest()},indent=2),encoding='utf-8')
