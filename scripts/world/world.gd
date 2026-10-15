@@ -7,6 +7,7 @@ const Geometry = preload("res://scripts/world/world_graybox_geometry.gd")
 const Shapes = preload("res://scripts/world/world_graybox_shapes.gd")
 const Headwaters = preload("res://scripts/world/world_graybox_headwaters.gd")
 const Landmarks = preload("res://scripts/world/world_graybox_landmarks.gd")
+const CaveMouths = preload("res://scripts/world/world_cave_mouths.gd")
 const BookPlaces = preload("res://scripts/world/world_book_places.gd")
 const SnowLots = preload("res://scripts/world/world_snow_lots.gd")
 const SnowWalls = preload("res://scripts/world/world_snow_walls.gd")
@@ -79,6 +80,7 @@ var world_terrain: Node3D
 ## WORLD-BUILD-01C: the snow city's level plots, drawn in 1.25 m terrain cells.
 var snow_lots: RefCounted
 var lowland_water: RefCounted
+var cave_mouths: Node3D
 var road_mask: Image
 var world_colors: PackedColorArray
 ## GRASS-WORLD-01: road and river pieces near the grass, bucketed by 32 m cells (scene frame).
@@ -224,7 +226,10 @@ func _build_world() -> void:
 	original_heights = FileAccess.get_file_as_bytes(WORLD_HEIGHTS).to_float32_array()
 	snow_lots = SnowLots.new()
 	snow_lots.setup(world_layout)
-	world_heights = _flatten_inn(_raise_west_rim(pad.apply(original_heights, world_width, GRID)))
+	var graded := _flatten_inn(_raise_west_rim(pad.apply(original_heights, world_width, GRID)))
+	# WORLD-BUILD-01G: the terrain cut under the caves' arches where a slope climbs into them
+	cave_mouths = CaveMouths.new()
+	world_heights = cave_mouths.notch(graded, world_width, GRID, HALF, func(x: float, z: float) -> float: return _grid_height(graded, x, z))
 	snow_lots.grade_streets(func(x: float, z: float) -> float: return _grid_height(world_heights, x, z))
 	world_root = Node3D.new()
 	world_root.name = "WorldMap"
@@ -764,6 +769,11 @@ func _index_grass_obstacles() -> void:
 			continue
 		var radius := 30.0 if site.kind == "settlement" else 16.0
 		_grass_blocks.append(Vector3(float(site.spawn[0]) + offset.x, float(site.spawn[2]) + offset.y, radius))
+	# no grass in the caves' arches or on the ground before them
+	for exit in CaveMouths.exits():
+		for depth in [-3.0, 2.0]:
+			var at: Vector2 = exit.map - Vector2(HALF, HALF) - exit.facing * depth
+			_grass_blocks.append(Vector3(at.x + offset.x, at.y + offset.y, 4.0))
 	const BOOK_CLEAR := {"ruins": 75.0, "farmsteads": 75.0, "saltworks": 22.0, "farmstead": 16.0, "viewpoint": 5.5}
 	for place in world_layout.get("book_places", []):
 		# The arrival point (world frame map - 1000) and the way to the place stay trodden.
@@ -1041,7 +1051,8 @@ func _build_water_and_sites() -> void:
 			marker.position = base + Vector3.UP * size.y * 0.5
 			world_root.add_child(marker)
 	for site in world_layout.sites:
-		if str(site.id) == SITE_SKIPPED or site.kind == "lake" or site.kind == "spring_cave":
+		# the caves' grey portals gave way to the rock mouths (world_cave_mouths.gd) below
+		if str(site.id) == SITE_SKIPPED or site.kind == "lake" or site.kind == "spring_cave" or site.kind == "cave":
 			continue
 		if INN_SITES.has(str(site.id)):
 			_build_inn(site)
@@ -1052,6 +1063,9 @@ func _build_water_and_sites() -> void:
 		var direction: Array = site.facing
 		var s: Array = site.spawn
 		landmark.build(site.kind, Vector3(s[0], float(site.point[2]), s[2]), Vector3(direction[0], 0, direction[2]))
+	cave_mouths.name = "CaveMouths"
+	world_root.add_child(cave_mouths)
+	cave_mouths.build(world_ground, HALF)
 	# WORLD-BUILD-01A (D-118): the world book's new places - grey volumes until their own models.
 	var book := BookPlaces.new()
 	world_root.add_child(book)
