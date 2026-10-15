@@ -6,6 +6,11 @@ extends Node3D
 
 const PLAN := "res://assets/world/caves-v1/plan.json"
 const MOUTH := "res://assets/caves-v1/cave_mouth.glb"
+## The Crown mine's portal and its old drainage adit Ш2 (assets/world/mine-v1/plan.json): the same
+## hill with a timbered adit and rails (build_cave_mouth.py -- mine).
+const MINE_PLAN := "res://assets/world/mine-v1/plan.json"
+const MINE_PORTAL := "res://assets/caves-v1/mine_portal.glb"
+const TIMBER := "res://assets/environment/village-house-materials-v1/fine_grained_wood_%s_1k.jpg"
 const ROCK := "res://assets/environment/cave-rock-v1/rock_face_03_%s_1k.jpg"
 const EARTH := "res://assets/environment/village-surfaces-v1/forest_ground_04_%s_1k.jpg"
 ## The spring's mouth is the headwaters' own (its water runs out of it): not doubled here.
@@ -39,7 +44,13 @@ static func exits() -> Array:
 			if exit.map == null or str(exit.state) != "open" or SKIPPED.has(str(exit.id)):
 				continue
 			var facing := Vector2(float(exit.facing[0]), float(exit.facing[1])).normalized()
-			result.append({"id": str(exit.id), "map": Vector2(float(exit.map[0]), float(exit.map[1])), "facing": facing})
+			result.append({"id": str(exit.id), "map": Vector2(float(exit.map[0]), float(exit.map[1])), "facing": facing, "scene": MOUTH})
+	var mine: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(MINE_PLAN))
+	for exit in mine.exits:
+		if exit.get("map") == null or str(exit.state) != "open":
+			continue
+		var facing := Vector2(float(exit.facing[0]), float(exit.facing[1])).normalized()
+		result.append({"id": str(exit.id), "map": Vector2(float(exit.map[0]), float(exit.map[1])), "facing": facing, "scene": MINE_PORTAL})
 	return result
 
 
@@ -77,23 +88,26 @@ static func clearings(half: float) -> Array[Vector3]:
 
 ## Places a mouth at every exit; `height` gives the world-frame ground (world.world_ground).
 func build(height: Callable, half: float) -> void:
-	var scene: PackedScene = load(MOUTH)
+	var scenes := {}
 	var rock := _surface(ROCK, 4.0)
 	var earth := _surface(EARTH, 3.0)
+	var timber := _surface(TIMBER, 0.8, "col")
 	for exit in exits():
 		var at: Vector2 = exit.map - Vector2(half, half)
-		var mouth: Node3D = scene.instantiate()
+		if not scenes.has(exit.scene):
+			scenes[exit.scene] = load(exit.scene)
+		var mouth: Node3D = scenes[exit.scene].instantiate()
 		mouth.name = "CaveMouth_" + str(exit.id).replace(":", "_")
 		mouth.set_meta("exit_id", exit.id)
 		mouth.position = Vector3(at.x, float(floors.get(exit.id, height.call(at.x, at.y))) + LIFT, at.y)
 		# the model's +z points out of the arch
 		mouth.rotation.y = atan2(exit.facing.x, exit.facing.y)
 		add_child(mouth)
-		_dress(mouth, rock, earth)
+		_dress(mouth, rock, earth, timber)
 		mouths.append(mouth)
 
 
-func _dress(node: Node, rock: Material, earth: Material) -> void:
+func _dress(node: Node, rock: Material, earth: Material, timber: Material) -> void:
 	if node is MeshInstance3D:
 		var mesh: Mesh = node.mesh
 		for s in mesh.get_surface_count():
@@ -102,14 +116,16 @@ func _dress(node: Node, rock: Material, earth: Material) -> void:
 				node.set_surface_override_material(s, rock)
 			elif name.contains("earth"):
 				node.set_surface_override_material(s, earth)
+			elif name.contains("timber"):
+				node.set_surface_override_material(s, timber)
 	for child in node.get_children():
-		_dress(child, rock, earth)
+		_dress(child, rock, earth, timber)
 
 
 ## Triplanar in world space: the rock keeps its scale over the bulges with no UV seams.
-func _surface(path: String, metres: float) -> StandardMaterial3D:
+func _surface(path: String, metres: float, colour := "diff") -> StandardMaterial3D:
 	var m := StandardMaterial3D.new()
-	m.albedo_texture = load(path % "diff")
+	m.albedo_texture = load(path % colour)
 	m.normal_enabled = true
 	m.normal_texture = load(path % "nor_gl")
 	m.roughness = 0.95

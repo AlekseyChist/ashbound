@@ -1056,8 +1056,8 @@ func _build_water_and_sites() -> void:
 			marker.position = base + Vector3.UP * size.y * 0.5
 			world_root.add_child(marker)
 	for site in world_layout.sites:
-		# the caves' grey portals gave way to the rock mouths (world_cave_mouths.gd) below
-		if str(site.id) == SITE_SKIPPED or site.kind == "lake" or site.kind == "spring_cave" or site.kind == "cave":
+		# the caves' and the mine's grey portals gave way to the rock mouths (world_cave_mouths.gd) below
+		if str(site.id) == SITE_SKIPPED or site.kind == "lake" or site.kind == "spring_cave" or site.kind == "cave" or site.kind == "mine":
 			continue
 		if INN_SITES.has(str(site.id)):
 			_build_inn(site)
