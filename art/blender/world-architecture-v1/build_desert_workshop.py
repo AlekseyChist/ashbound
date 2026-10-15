@@ -27,6 +27,7 @@ WOOD=surface('DW timber','fine_grained_wood_col_1k.jpg',.65)
 CLOTH=C.mat('DW shade',(.36,.30,.20,1),.98)
 CLAY=C.mat('DW clay',(.60,.38,.24,1),.9)
 YARN=C.mat('DW yarn',(.48,.22,.16,1),.98)
+WARP=C.mat('DW warp',(.78,.72,.60,1),.98)
 coll=[]
 def box(n,p,s,m,solid=True):
     o=C.box(n,p,s,m,.015)
@@ -50,6 +51,29 @@ def ring_solid(n,x,y,z,rings,m,role=True):
     t=(len(rings)-1)*k
     f.append(tuple(range(t,t+k)))
     o=C.mesh(n,v,f,m)
+    if role:o['part_role']='interior_furniture'
+    return o
+def vessel(n,x,y,z,rings,m,depth,lip=.82,role=True,k=12):
+    # an OPEN vessel (Codex 359: the pots were closed bodies): rings from the foot, a rim to an inner ring
+    # lip*its size, the inner wall down `depth`, an inner floor
+    v=[]
+    for dz,hx,hy in rings:
+        for i in range(k):
+            a=math.pi*2*i/k
+            v.append((x+hx*math.cos(a),y+hy*math.sin(a),z+dz))
+    tz,thx,thy=rings[-1]
+    for dz,f in ((0.0,lip),(-depth,lip*.92)):
+        for i in range(k):
+            a=math.pi*2*i/k
+            v.append((x+thx*f*math.cos(a),y+thy*f*math.sin(a),z+tz+dz))
+    n_r=len(rings)+2
+    faces=[tuple(range(k-1,-1,-1))]
+    for r in range(n_r-1):
+        for i in range(k):
+            j2=(i+1)%k
+            faces.append((r*k+i,r*k+j2,(r+1)*k+j2,(r+1)*k+i))
+    faces.append(tuple(range((n_r-1)*k,n_r*k)))
+    o=C.mesh(n,v,faces,m)
     if role:o['part_role']='interior_furniture'
     return o
 def slab(n,pts,t,m):
@@ -80,6 +104,18 @@ def roof_piece(name,x0,x1,y0,y1,top,thick,material):
     vertices=[(x,y,top-y*.012+dz) for x in (x0,x1) for y in (y0,y1) for dz in (-thick,0)]
     return C.mesh(name,vertices,FACES,material)
 box('ceiling',(0,0,3.12),(6,5,.16),WOOD)
+# the bond course (Codex 359 DW-ROOF-01: walls and ceiling stopped at 3.20, the roof slab's underside at
+# 3.45-0.012y - a 22-28 cm gap, roof and parapet unsupported): masonry over every wall line from 3.20 up
+# into the roof slab, its top following the slab's slope
+def course(n,x0,x1,y0,y1):
+    vs=[(x,y,z) for x in (x0,x1) for y in (y0,y1) for z in (3.19,3.47-y*.012)]
+    o=C.mesh(n,vs,FACES,LIME);coll_mesh.append((n,vs))
+    return o
+coll_mesh=[]
+course('bond course',-3.0,3.0,-2.5,-2.1)
+course('bond course',-3.0,3.0,2.1,2.5)
+course('bond course',-3.0,-2.6,-2.1,2.1)
+course('bond course',2.6,3.0,-2.1,2.1)
 roof_piece('flat lime roof',-3.3,3.3,-2.8,2.8,3.6,.15,LIME)
 roof_piece('flat roof-colonly',-3.3,3.3,-2.8,2.8,3.6,.15,LIME).hide_render=True
 # Parapet (eaves max 0.3 beyond walls).
@@ -106,25 +142,37 @@ box('shelf back',(-2.55,1.2,1.0),(.06,1.6,2.0),WOOD)
 for y in (.4,2.0):box('shelf side',(-2.35,y,1.0),(.4,.08,2.0),WOOD)
 for z in (.06,.7,1.34,1.96):box('shelf board',(-2.35,1.2,z),(.4,1.6,.08),WOOD)
 for z in (.7,1.34,1.96):
-    for y in (.7,1.2,1.7):ring_solid('pot',-2.35,y,(z+.17)-0.130,[(0.000,0.074,0.074),(0.078,0.120,0.120),(0.161,0.110,0.110),(0.208,0.060,0.060),(0.239,0.054,0.054),(0.260,0.070,0.070)],CLAY)
+    for y in (.7,1.2,1.7):vessel('pot',-2.35,y,(z+.17)-0.130,[(0.000,0.074,0.074),(0.078,0.120,0.120),(0.161,0.110,0.110),(0.208,0.060,0.060),(0.239,0.054,0.054),(0.260,0.070,0.070)],CLAY,.12,.78)
 # Loom on the right in the depth, with a weaver bench.
 for x in (1.1,2.3):box('loom upright',(x,1.4,.9),(.1,.1,1.8),WOOD)
 box('loom beam',(1.7,1.4,1.75),(1.3,.1,.1),WOOD,False)
 box('loom beam',(1.7,1.4,.35),(1.3,.1,.1),WOOD,False)
-box('loom cloth',(1.7,1.4,1.05),(1.1,.02,1.3),YARN,False)
+# Codex 359 DW-ART-01 (a frame with a flat red panel): the warp strung between the beams, a band of
+# woven cloth over the lower beam rolling onto the cloth beam, the heddle bar across the threads
+for i in range(22):
+    xw=1.15+i*1.1/21
+    box('loom warp',(xw,1.4,1.12),(.008,.008,1.26),WARP,False)
+box('loom cloth',(1.7,1.39,.62),(1.1,.025,.42),YARN,False)
+C.beam('loom cloth roll',(1.12,1.31,.38),(2.28,1.31,.38),.11,.11,YARN)['part_role']='interior_furniture'
+box('loom heddle',(1.7,1.36,1.15),(1.2,.04,.05),WOOD,False)
+for x in (1.15,2.25):box('loom heddle cord',(x,1.36,1.45),(.012,.012,.6),WARP,False)
 box('weaver bench',(1.7,.75,.22),(1.0,.35,.44),WOOD)
 # Yarn work table on the right near the door.
 box('work table',(1.7,-1.2,.78),(1.2,.6,.08),WOOD)
 for dx in (-.5,.5):
     for dy in (-.22,.22):box('table leg',(1.7+dx,-1.2+dy,.37),(.07,.07,.74),WOOD,False)
-for x in (1.35,1.75,2.1):ring_solid('yarn',x,-1.2,.82,[(0,.09,.09),(.04,.125,.125),(.12,.125,.125),(.16,.09,.09)],YARN)
+for x in (1.35,1.75,2.1):
+    # spools: wooden cheeks, the yarn wound between them
+    for zc in (.82,.98):ring_solid('yarn spool',x,-1.2,zc,[(0,.11,.11),(.02,.11,.11)],WOOD)
+    ring_solid('yarn',x,-1.2,.84,[(0,.07,.07),(.02,.095,.095),(.12,.095,.095),(.14,.07,.07)],YARN)
 # Door: EntryPortal, front hinge, open -100 deg.
 door_parts=[]
 portal=bpy.data.objects.new('EntryPortal',None);C.ASSET.objects.link(portal)
 hinge=bpy.data.objects.new('EntryPortal_entry_hinge',None);C.ASSET.objects.link(hinge)
 hinge.parent=portal;hinge.location=(-.8,-2.3,0);hinge['open_angle_degrees']=-100
 for k in range(5):
-    part=box('Door plank',(-.62+k*.31,-2.3,1.18),(.30,.08,2.36),WOOD,False)
+    # 2.26 high: 4 cm under the header (Codex 359 DW-DOOR-01: at 2.36 the closed leaf ran 6 cm into it)
+    part=box('Door plank',(-.62+k*.31,-2.3,1.13),(.30,.08,2.26),WOOD,False)
     part.parent=hinge;part.location-=Vector((-.8,-2.3,0))
     door_parts.append(part)
 visual=[o for o in C.ASSET.objects if o.type=='MESH' and '-colonly' not in o.name]
