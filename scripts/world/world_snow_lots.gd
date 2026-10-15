@@ -719,9 +719,13 @@ func height(p: Vector2, base: float) -> float:
 	for t in _street_treads:
 		# within the tread's own footprint only (Codex 363/364 G03-DOOR-JOIN-01: a round reach lowered the
 		# ground beside the stair-street, and the stoops of vs3/vs4 met its side 0.7 m under its treads)
+		# Along the street one lattice cell (FINE) further: a 1.25 m triangle from a corner under this tread
+		# to one under the next, higher tread rose over this tread by the riser (Codex 382 G03-STEP27-SEAM-01:
+		# a 21 deg wedge of ground over step 26 against step 27's riser stopped the hero) - every corner
+		# within a cell of a tread lies under the lowest such tread
 		var off: Vector2 = p - t[0]
 		var dir: Vector2 = t[1]
-		if absf(off.dot(dir)) <= float(t[2]) and absf(off.dot(Vector2(-dir.y, dir.x))) <= float(t[3]) - 0.05:
+		if absf(off.dot(dir)) <= float(t[2]) + FINE and absf(off.dot(Vector2(-dir.y, dir.x))) <= float(t[3]) - 0.05:
 			g = minf(g, float(t[4]) - 0.02)
 	# ... nor over a floor within a cell of its walls
 	for i in _buckets.get(key, []):

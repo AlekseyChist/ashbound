@@ -403,10 +403,38 @@ func _farmstead(parent: Node3D, o: Vector2) -> void:
 # --- the W1 viewpoint (sheet wfW1): a 6 x 4 m stone platform by ledge 2, a low parapet towards the falls
 
 func _viewpoint(parent: Node3D, o: Vector2) -> void:
-	_box(parent, o, Vector3(6.0, 0.3, 4.0), "rock")
-	_box(parent, o + Vector2(-2.85, 0), Vector3(0.3, 0.9, 4.0), "rock", 0.0, 0.3)
-	for z in [-1.85, 1.85]:
-		_box(parent, o + Vector2(-1.5, z), Vector3(2.7, 0.6, 0.3), "rock", 0.0, 0.3)
+	# BOOK-DRESS-04: the falls viewpoint (W1) in the kit's stone and timber instead of grey boxes - a
+	# dressed terrace, a parapet with a coping towards the falls (-x), two benches facing them clear of
+	# the stair's landing on the south edge, rocks at the back corners
+	_box(parent, o, Vector3(6.0, 0.3, 4.0), "tread")
+	_box(parent, o + Vector2(-2.8, 0), Vector3(0.4, 0.85, 4.0), "masonry", 0.0, 0.3)
+	_box(parent, o + Vector2(-2.8, 0), Vector3(0.6, 0.12, 4.2), "tread", 0.0, 1.15, false)
+	for z in [-1.1, 1.1]:
+		var b := o + Vector2(-0.7, z)
+		for dz in [-0.55, 0.55]:
+			_box(parent, b + Vector2(0, dz), Vector3(0.36, 0.4, 0.3), "masonry", 0.0, 0.3)
+		# the seat: a plank of its own thickness on the two blocks (a _box would reach SINK down between
+		# them as a solid block); in its own node - it rests on the blocks, not on the ground
+		var low := INF
+		for dz in [-0.55, 0.55]:
+			for dx in [-0.18, 0.18]:
+				low = minf(low, ground(b.x + dx, b.y + dz + 0.15 * signf(dz)))
+		var holder := Node3D.new()
+		holder.name = "Bench"
+		parent.add_child(holder)
+		var seat := MeshInstance3D.new()
+		var plank := BoxMesh.new()
+		plank.size = Vector3(0.46, 0.07, 1.5)
+		seat.mesh = plank
+		seat.material_override = _material("wood")
+		seat.position = Vector3(b.x, low + 0.7 + 0.035, b.y)
+		seat.visibility_range_end = 450.0
+		holder.add_child(seat)
+	_model(parent, "bigboulder", o + Vector2(3.7, -2.6), 40.0, 0.9, -0.3, 0.0, 1.0, true)
+	# single stones only (the moss set spreads its rocks 3 m - two lay on the terrace)
+	_model(parent, "boulder", o + Vector2(3.9, 2.6), 110.0, 0.6, -0.15, 0.0, 1.0, true)
+	_model(parent, "boulder", o + Vector2(4.3, 1.3), 200.0, 0.4, -0.1)
+	_model(parent, "boulder", o + Vector2(2.4, -2.5), 15.0, 0.4, -0.1)
 
 
 # --- the W1 stair flights (sheet wfW1, Codex ACK160): stone treads and landings from build.py's
