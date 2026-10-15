@@ -54,6 +54,16 @@ for v in bmr.verts:
     if q.z<1.6:  # the foot spreads out as scree into the ground
         k=(1.6-q.z)/5.0
         q.x*=1.0+0.45*k;q.y=4.0+(q.y-4.0)*(1.0+0.35*k)
+    # Codex 374 MOUTH-02 (flat/sharp mound bases: the ellipsoid's near-vertical side met the grass in one
+    # level line): under 1.6 m the foot runs out as an apron (~34 deg, up to ~4.7 m), widest from 0.9 m under the ground, its
+    # reach varied by noise so the contact line wanders - not in front of the arch (|x| < 4.5 there), where
+    # the way and its floor are
+    if q.z<1.6:
+        side=Vector((q.x,q.y-4.0,0.0))
+        if side.length>1e-6:
+            front=1.0 if q.y>=1.0 else min(1.0,max(0.0,(abs(q.x)-4.5)/3.0))
+            reach=(1.6-max(q.z,-0.9))*1.5*(0.75+0.5*(noise.noise(o*0.6+Vector((5.0,0,0)))*0.5+0.5))*front
+            q+=side.normalized()*reach
     q.z=max(q.z,-4.0)
     v.co=q
 rock=bpy.data.objects.new('cave mouth rock-col',bpy.data.meshes.new('cave mouth rock'))
