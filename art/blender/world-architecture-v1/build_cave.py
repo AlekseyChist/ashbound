@@ -196,6 +196,16 @@ for _ in range(20):
         if min(min_angle(a,c,d),min_angle(b,d,c))>min(min_angle(a,b,c),min_angle(a,d,b))+1e-4:
             if bmesh.utils.edge_rotate(e,True) is not None:flips+=1
     if not flips:break
+# Codex CV-SPRING-MESH-01: the collapses can leave two faces on one set of vertices (the spring shell had
+# 11068/11069 twice - the exporter's validate() then fixed the mesh, warning "Mesh Sphere is not valid");
+# keep one of each, the first in a fixed order
+seen=set();dups=[]
+for f in sorted(bm.faces,key=lambda f:sorted(tuple(v.co) for v in f.verts)):
+    k=tuple(sorted(tuple(v.co) for v in f.verts))
+    if k in seen:dups.append(f)
+    else:seen.add(k)
+if dups:bmesh.ops.delete(bm,geom=dups,context='FACES_ONLY')
+print('CAVE_SHELL duplicate faces removed',len(dups))
 bm.normal_update()
 # Ground where the surface faces up (inward normals), rock elsewhere.
 # the slots first: materials.clear() resets every face's index to 0 (Codex ART-CV-03: the whole
@@ -212,6 +222,7 @@ faces.sort()
 me=base.data;me.clear_geometry();me.from_pydata([tuple(v.co) for v in order],[],[f[0] for f in faces])
 for poly,(_,m) in zip(me.polygons,faces):poly.material_index=m
 me.update();bm.free()
+assert not me.validate(verbose=True),'the cave shell is not a valid mesh'
 base.name='cave shell-col'
 # Codex CV-07 (the earth/rock material switched face by face at the walls' foot): a continuous
 # floor-to-rock weight in COLOR_0.r per vertex (1 earth, 0 rock; one value per shared vertex) for the
