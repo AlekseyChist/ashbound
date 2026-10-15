@@ -683,7 +683,9 @@ func _lot_ray(space: PhysicsDirectSpaceState3D, origin: Vector3, p: Vector2, lev
 	var top := origin + Vector3(p.x, level + 6.0, p.y)
 	var q := PhysicsRayQueryParameters3D.create(top, top + Vector3.DOWN * 20.0)
 	var skip: Array[RID] = []
-	for k in 8:
+	# through the model's own colliders down to the ground (the desert's two-storey modules - order cells,
+	# pilgrims' house - stack more than 8: roof, floors, furniture)
+	for k in 32:
 		q.exclude = skip
 		var hit := space.intersect_ray(q)
 		if hit.is_empty():
