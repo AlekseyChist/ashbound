@@ -107,7 +107,9 @@ bpy.ops.object.select_all(action='DESELECT')
 for o in C.ASSET.objects:o.select_set(True)
 bpy.context.view_layer.objects.active=next(o for o in C.ASSET.objects if o.type=='MESH')
 asset=OUT/'cave_mouth.glb'
-bpy.ops.export_scene.gltf(filepath=str(asset),use_selection=True,export_format='GLB',export_apply=True,export_extras=True,export_yup=True,export_lights=False,export_cameras=False)
+# no images in the GLB: the world gives the rock and ground their textures (triplanar) from
+# assets/environment at runtime (world_cave_mouths.gd), so the file stays small
+bpy.ops.export_scene.gltf(filepath=str(asset),use_selection=True,export_format='GLB',export_apply=True,export_extras=True,export_yup=True,export_lights=False,export_cameras=False,export_image_format='NONE')
 bpy.ops.wm.save_as_mainfile(filepath=str(QA/'cave_mouth.blend'))
 visual=[o for o in C.ASSET.objects if o.type=='MESH']
 triangles=0
