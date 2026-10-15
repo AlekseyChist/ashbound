@@ -100,6 +100,16 @@ func notch(grid: PackedFloat32Array, width: int, step: float, half: float, heigh
 	return result
 
 
+## The arches' footprints for the fine ground (world_snow_lots.arch_zones), after notch():
+## [centre, out, depth from, depth to, half width, floor] in the world_root frame.
+func arch_zones(half: float) -> Array:
+	var result: Array = []
+	for exit in exits():
+		if floors.has(exit.id):
+			result.append([exit.map - Vector2(half, half), exit.facing, -1.0, NOTCH_DEPTH.y, INSIDE_HALF_WIDTH, float(floors[exit.id]) + LIFT])
+	return result
+
+
 ## Circles (x, z, radius) in the world_root frame that the forest keeps clear of.
 static func clearings(half: float) -> Array[Vector3]:
 	var result: Array[Vector3] = []

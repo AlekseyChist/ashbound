@@ -147,8 +147,16 @@ func _broken_wall(parent: Node3D, a: Vector2, b: Vector2, low: float, high: floa
 				open = true
 		if open:
 			continue
-		var h := lerpf(low, high, fposmod(sin(float(seed * 31 + i * 7)) * 43758.5453, 1.0))
-		_wall(parent, a.lerp(b, t0 / length), a.lerp(b, t1 / length), 1.2, h)
+		var r := fposmod(sin(float(seed * 31 + i * 7)) * 43758.5453, 1.0)
+		var h := lerpf(low, high, r)
+		# BOOK-DRESS-03: dressed stone, a ragged top course, fallen stones at the foot
+		var p0 := a.lerp(b, t0 / length)
+		var p1 := a.lerp(b, t1 / length)
+		_wall(parent, p0, p1, 1.2, h, "masonry")
+		var f := 0.25 + 0.5 * fposmod(r * 7.31, 1.0)
+		_wall(parent, p0.lerp(p1, f * 0.4), p0.lerp(p1, f * 0.4 + 0.45), 1.0, h + 0.4 + 0.6 * r, "masonry")
+		var side := Vector2(-(b - a).y, (b - a).x).normalized() * (1.2 + r)
+		_model(parent, "boulder", (p0 + p1) * 0.5 + side * (1.0 if i % 2 == 0 else -1.0), r * 300.0, 0.35 + 0.4 * r, -0.1)
 
 
 ## Four broken walls round a w x d footprint (no roof): a ruined building, door gap on `door` side.
@@ -175,14 +183,17 @@ func _ruins(parent: Node3D, o: Vector2) -> void:
 	_broken_wall(parent, ring[2], ring[3], 2.0, 5.0, [[59, 69]], 3)
 	_broken_wall(parent, ring[3], ring[0], 2.0, 5.0, [[65, 73]], 4)
 	for corner in ring:
-		_box(parent, corner, Vector3(4, 7, 4), "rock")
+		_box(parent, corner, Vector3(4, 7, 4), "masonry")
 	_shell(parent, o + Vector2(22, -22), 36, 20, 5.0, 11.0, 3, 10)      # cathedral, door west
 	_shell(parent, o + Vector2(-34, 20), 16, 10, 2.5, 4.5, 0, 20)      # archive
 	_shell(parent, o + Vector2(40, 26), 14, 9, 2.5, 4.5, 3, 30)        # mint
 	_shell(parent, o + Vector2(-40, -32), 12, 8, 2.0, 3.5, 2, 40)      # royal kennel
 	_box(parent, o + Vector2(18, 44), Vector3(4, 1.6, 3), "timber", 15.0)   # marauders' tent
-	for rubble in [Vector2(55, 50), Vector2(10, 5), Vector2(-15, -40)]:
-		_box(parent, o + rubble, Vector3(5, 1.2, 4), "rock", 25.0)
+	for rubble: Vector2 in [Vector2(55, 50), Vector2(10, 5), Vector2(-15, -40)]:
+		# a heap of fallen masonry (BOOK-DRESS-03): boulders of the kit, solid
+		for k in 5:
+			var off := Vector2(cos(k * 1.3), sin(k * 1.7)) * (0.6 + 0.4 * k)
+			_model(parent, "bigboulder", o + rubble + off, k * 70.0, 0.55 - 0.06 * k, -0.15, 0.0, 1.0, true)
 
 
 # --- BOOK-DRESS-01: the three places by the start (camp, Wolf Hollow, Watch Rock) dressed from the
@@ -323,15 +334,34 @@ func _lookout(parent: Node3D, o: Vector2) -> void:
 # --- the salt works (sheet 22): boiling shed, evaporation pans, salt heaps --------------------------
 
 func _saltworks(parent: Node3D, o: Vector2) -> void:
-	_box(parent, o + Vector2(0, -10), Vector3(8, 3.0, 5), "clay")
-	_box(parent, o + Vector2(0, -10), Vector3(8.8, 0.3, 5.8), "roof", 0.0, 3.0, false)
-	_box(parent, o + Vector2(3, -12), Vector3(0.8, 4.5, 0.8), "rock")   # boiling-house chimney
+	# BOOK-DRESS-03: the boiling house (the village's closed workshop) and its chimney, the evaporation pans
+	# as stone-rimmed basins of white salt, the salt heaps as cones
+	_building(parent, "res://assets/buildings/forest-village-v1/w01_closed.glb", o + Vector2(0, -10), 180.0, Vector2(7, 9))
+	_box(parent, o + Vector2(3, -14.2), Vector3(0.9, 6.0, 0.9), "masonry")
 	for i in 3:
 		for j in 2:
-			var c := o + Vector2(-8 + i * 8, 2 + j * 7)
-			_box(parent, c, Vector3(6, 0.25, 5), "salt", 0.0, 0.0, false)
-	for c in [Vector2(10, -6), Vector2(12, -2)]:
-		_box(parent, o + c, Vector3(2.0, 1.2, 2.0), "salt", 45.0)
+			var c := o + Vector2(-8 + i * 8, 4 + j * 7)
+			for side: Vector3 in [Vector3(0, 0, -2.5), Vector3(0, 0, 2.5), Vector3(-3, 0, 0), Vector3(3, 0, 0)]:
+				var along := absf(side.z) > 0.0
+				_box(parent, c + Vector2(side.x, side.z), Vector3(6.3 if along else 0.3, 0.35, 0.3 if along else 5.3), "masonry", 0.0, 0.0, false)
+			_box(parent, c, Vector3(5.7, 0.2, 4.7), "salt", 0.0, 0.12, false)
+	for c: Vector2 in [Vector2(10, -6), Vector2(12.5, -2.5), Vector2(9.5, -1.0)]:
+		var at := o + c
+		var cone := MeshInstance3D.new()
+		var mesh := CylinderMesh.new()
+		mesh.top_radius = 0.05
+		mesh.bottom_radius = 1.3
+		mesh.height = 1.4
+		mesh.radial_segments = 14
+		cone.mesh = mesh
+		cone.material_override = _material("salt")
+		cone.position = Vector3(at.x, ground(at.x, at.y) + 0.65, at.y)
+		# under its own node: the place's direct meshes are its volumes (the book places validator)
+		var holder := Node3D.new()
+		holder.name = "SaltHeap"
+		parent.add_child(holder)
+		holder.add_child(cone)
+		models += 1
 
 
 # --- a lone farmstead (peat farmstead, outskirts): the village's own closed house and barn (BOOK-DRESS-02,

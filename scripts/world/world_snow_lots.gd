@@ -99,6 +99,8 @@ const STAIR_RISE := 0.18
 var stair_street_steps: Array = []
 ## Their treads [at, reach, top] for the ground's clamp only (the lane walls keep to the street).
 var _street_treads: Array = []
+## [centre, out, depth from, depth to, half width, floor] per cave arch (set by world.gd from the mouths).
+var arch_zones: Array = []
 const STOOP_MAX := 24
 ## A straight stoop must meet the ground within this many steps, or the stair turns along the facade
 ## after a LANDING m deep landing at the door.
@@ -494,7 +496,7 @@ func grade_streets(ground: Callable) -> void:
 				var dir := (_along(pts, cum, minf(mid + 0.3, run)) - _along(pts, cum, maxf(mid - 0.3, 0.0))).normalized()
 				var depth := t - t0 + 0.02
 				stair_street_steps.append([q.x + HALF, q.y + HALF, top, rad_to_deg(atan2(dir.x, dir.y)), depth, width, 0])
-				_street_treads.append([q, 0.5 * Vector2(depth, width).length() + 0.5, top])
+				_street_treads.append([q, dir, depth * 0.5, width * 0.5, top])
 				top += STAIR_RISE * signf(h - top) if absf(h - top) >= STAIR_RISE else 0.0
 				t0 = t
 	# Where streets meet, one height: a street running through the junction keeps its own and the
@@ -681,16 +683,34 @@ func height(p: Vector2, base: float) -> float:
 			if p.distance_to(t[0]) < float(t[1]) - 0.5:
 				graded = true
 				break
+	# the caves' arches (world_cave_mouths.arch_zones): inside one the ground lies under its floor
+	# (Codex 364 MOUTH-FLOOR-01: on the fine lattice the stair's end pad lifted it 0.21-0.36 m over
+	# foothill X's floor)
+	var arch_floor := INF
+	for z in arch_zones:
+		var off: Vector2 = p - z[0]
+		var out: Vector2 = z[1]
+		var depth := -off.dot(out)
+		if depth >= z[2] and depth <= z[3] and absf(off.dot(Vector2(-out.y, out.x))) <= z[4]:
+			arch_floor = minf(arch_floor, float(z[5]))
+	if arch_floor < INF:
+		graded = true
 	if not graded:
 		return base
+	if arch_floor < INF:
+		g = minf(g, arch_floor - 0.06)
 	# never over a stair tread (the stairs stay on top: Codex 6ef4e04 had three of C's buried) ...
 	for t in _treads:
 		if p.distance_to(t[0]) < float(t[1]) - 0.5:
 			g = minf(g, float(t[2]) - 0.02)
 	# ... nor over the stair-street's (SNOW-G03): no earth under it
 	for t in _street_treads:
-		if p.distance_to(t[0]) < float(t[1]) - 0.5:
-			g = minf(g, float(t[2]) - 0.02)
+		# within the tread's own footprint only (Codex 363/364 G03-DOOR-JOIN-01: a round reach lowered the
+		# ground beside the stair-street, and the stoops of vs3/vs4 met its side 0.7 m under its treads)
+		var off: Vector2 = p - t[0]
+		var dir: Vector2 = t[1]
+		if absf(off.dot(dir)) <= float(t[2]) and absf(off.dot(Vector2(-dir.y, dir.x))) <= float(t[3]) - 0.05:
+			g = minf(g, float(t[4]) - 0.02)
 	# ... nor over a floor within a cell of its walls
 	for i in _buckets.get(key, []):
 		var lot := lots[i]

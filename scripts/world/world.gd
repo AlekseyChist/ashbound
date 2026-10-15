@@ -235,6 +235,7 @@ func _build_world() -> void:
 	# WORLD-BUILD-01G: the terrain cut under the caves' arches where a slope climbs into them
 	cave_mouths = CaveMouths.new()
 	world_heights = cave_mouths.notch(graded, world_width, GRID, HALF, func(x: float, z: float) -> float: return _grid_height(graded, x, z), world_layout.get("book_stairs", []))
+	snow_lots.arch_zones = cave_mouths.arch_zones(HALF)
 	snow_lots.grade_streets(func(x: float, z: float) -> float: return _grid_height(world_heights, x, z))
 	world_root = Node3D.new()
 	world_root.name = "WorldMap"
