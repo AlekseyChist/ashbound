@@ -30,6 +30,9 @@ FLAG=surface('CR flags','stone_wall_02_diff_1k.jpg',3.2)
 CHAR=surface('CR charred timber','fine_grained_wood_col_1k.jpg',.65)
 EARTH=C.mat('CR earth',(.24,.21,.17,1),.98)
 SOOT=C.mat('CR soot',(.09,.085,.08,1),.97)
+CANVAS=C.mat('CR canvas',(.52,.47,.38,1),.95)
+PATCHED=C.mat('CR patched canvas',(.30,.27,.22,1),.97)
+EMBER=C.mat('CR embers',(.20,.08,.04,1),.9)
 coll=[]
 def hsh(*k):
     # a repeatable 0..1 from integers (no random state: the export must not depend on call order)
@@ -248,6 +251,48 @@ for i in range(len(ROUTE)-1):
         t=(k+.5)/n;x=a[0]+(b[0]-a[0])*t;z=a[1]+(b[1]-a[1])*t
         blk('street paving',(*S(x,z),.05),(2.3,3.6+.6*hsh(i,k,51),.1),FLAG,yaw=yaw,solid=False)
 
+# --- RUINS-01 step 3: the camps of the sheet --------------------------------------------------------
+def tent(n,cx,cz,l,w,h,yaw,m):
+    # an A-frame tent on sheet (cx,cz): ridge l long at height h, w wide at the foot, its back closed;
+    # a ridge pole through it and two uprights at its ends
+    rot=Matrix.Rotation(math.radians(yaw),3,'Z');c=Vector((*S(cx,cz),0))
+    def P(x,y,z):return tuple(c+rot@Vector((x,y,z)))
+    v=[P(-l/2,-w/2,0),P(l/2,-w/2,0),P(l/2,0,h),P(-l/2,0,h),P(-l/2,w/2,0),P(l/2,w/2,0)]
+    o=C.mesh(n,v,[(0,1,2,3),(3,2,5,4),(0,3,4)],m)
+    for x in (-l/2-.05,l/2+.05):
+        a=Vector(P(x,0,0));b=Vector(P(x,0,h+.15))
+        C.beam(n+' upright',tuple(a),tuple(b),.08,.08,CHAR)
+    C.beam(n+' ridge',P(-l/2-.2,0,h+.05),P(l/2+.2,0,h+.05),.07,.07,CHAR)
+    return o
+def campfire(n,cx,cz,seed):
+    # a ring of stones round the embers, two log seats
+    for k in range(9):
+        a=math.tau*k/9
+        blk(n+' ring',(*S(cx+.75*math.cos(a),cz+.75*math.sin(a)),.12),(.34,.28,.24),STONE,yaw=math.degrees(a),solid=False)
+    blk(n+' embers',(*S(cx,cz),.04),(1.0,1.0,.08),EMBER,solid=False)
+    for k in range(2):
+        a=math.tau*(.15+.45*k+.1*hsh(seed,k))
+        x=cx+2.1*math.cos(a);z=cz+2.1*math.sin(a)
+        C.beam(n+' log seat',(*S(x-.8*math.sin(a),z+.8*math.cos(a)),.22),(*S(x+.8*math.sin(a),z-.8*math.cos(a)),.22),.34,.34,CHAR)
+def camp(n,cx,cz,yaw,seed):
+    # a company's camp in the ruins: three tents round a fire, crates by the tents
+    for k in range(3):
+        a=math.radians(yaw)+math.tau*k/3
+        # the ridge points at the fire, the open end (local +x) towards it
+        tent(n+' tent',cx+4.2*math.cos(a),cz+4.2*math.sin(a),2.6,2.2,1.5,math.degrees(math.atan2(math.sin(a),-math.cos(a))),CANVAS)
+        blk(n+' crate',(*S(cx+5.9*math.cos(a+.5),cz+5.9*math.sin(a+.5)),.3),(.6,.6,.6),CHAR,yaw=math.degrees(a),solid=False)
+    campfire(n+' fire',cx,cz,seed)
+camp('council camp',-50,40,20,61)                 # the Council's company (sheet: south-west)
+camp('order camp',50,-45,200,62)                  # the Order's company (sheet: north-east)
+# the marauders' tent: a patched lean-to over a cold fire, plunder heaped at its mouth
+tent('marauders tent',18,44,8,5,2.4,0,PATCHED)
+campfire('marauders fire',18,48.5,63)
+for k in range(5):
+    blk('marauders plunder',(*S(15.5+k*1.2,47.0+.4*hsh(64,k)),.25),(.7,.5,.5),CHAR,yaw=40*hsh(65,k),solid=False)
+# the street's collapse: a heap of masonry across the lane, the way goes round it
+rubble('street collapse',*S(55,50),(1,1),78,count=22,spread=4.0)
+blk('street collapse core',(*S(55,50),.7),(4.5,3.2,1.4),STONE)
+
 # --- export ------------------------------------------------------------------------------------------
 visual=[o for o in C.ASSET.objects if o.type=='MESH']
 for o in visual:
@@ -273,7 +318,7 @@ asset=OUT/'capital_ruins.glb'
 bpy.ops.export_scene.gltf(filepath=str(asset),use_selection=True,export_format='GLB',export_apply=True,export_extras=True,export_yup=True,export_lights=False,export_cameras=False)
 data=asset.read_bytes();size=struct.unpack_from('<I',data,12)[0];document=json.loads(data[20:20+size])
 # burnt capital stone: grey with a cold cast, not the desert's ochre
-tints={'CR stone':(.66,.63,.58),'CR flags':(.62,.60,.56),'CR charred timber':(.30,.26,.22)}
+tints={'CR canvas':(.86,.80,.68),'CR stone':(.66,.63,.58),'CR flags':(.62,.60,.56),'CR charred timber':(.30,.26,.22)}
 for material in document['materials']:
     if material['name'] in tints:material['pbrMetallicRoughness']['baseColorFactor']=[*tints[material['name']],1]
 encoded=json.dumps(document,separators=(',',':')).encode();encoded+=b' '*((-len(encoded))%4)
@@ -283,7 +328,7 @@ visual=[o for o in C.ASSET.objects if o.type=='MESH' and '-colonly' not in o.nam
 triangles=0
 for o in visual:o.data.calc_loop_triangles();triangles+=len(o.data.loop_triangles)
 points=[o.matrix_world@Vector(v) for o in visual for v in o.bound_box]
-(QA/'stats.json').write_text(json.dumps({'state':'RUINS-01 steps 1-2 wall, four ruined buildings, street; Codex review pending','triangles':triangles,'colliders':len(coll),
+(QA/'stats.json').write_text(json.dumps({'state':'RUINS-01 steps 1-3 wall, four ruined buildings, street, camps; Codex review pending','triangles':triangles,'colliders':len(coll),
     'bbox':[[round(min(p[i] for p in points),3) for i in range(3)],[round(max(p[i] for p in points),3) for i in range(3)]],
     'sha256':hashlib.sha256(asset.read_bytes()).hexdigest()},indent=2),encoding='utf-8')
 if 'preview' in ARGS:
@@ -299,7 +344,7 @@ if 'preview' in ARGS:
     sun.rotation_euler=(math.radians(50),0,math.radians(-35));scene.collection.objects.link(sun)
     world=bpy.data.worlds.new('W');scene.world=world;world.use_nodes=True
     world.node_tree.nodes['Background'].inputs[0].default_value=(.55,.62,.7,1)
-    for k,(loc,look) in enumerate((((-95,-110,55),(0,0,0)),((2,8,8),(30,26,3)),((80,70,40),(0,0,0)),((14,-6,3),(24,22,5)))):
+    for k,(loc,look) in enumerate((((-95,-110,55),(0,0,0)),((2,8,8),(30,26,3)),((80,70,40),(0,0,0)),((14,-6,3),(24,22,5)),((-40,-30,4),(-50,-40,0)))):
         cam=bpy.data.objects.new('Cam%d'%k,bpy.data.cameras.new('Cam%d'%k));cam.data.lens=28
         scene.collection.objects.link(cam);cam.location=loc
         cam.rotation_mode='QUATERNION';cam.rotation_quaternion=(Vector(look)-Vector(loc)).to_track_quat('-Z','Y')
