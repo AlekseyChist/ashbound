@@ -113,9 +113,10 @@ if MINE:
         C.box('portal cap',(0,yk,2.9),(3.2,.24,.24),TIMBER,0)
     for sx in (-1,1):C.box('portal frame post',(sx*1.6,-4.6,1.6),(.4,.4,3.2),TIMBER,0)
     C.box('portal frame lintel',(0,-4.6,3.35),(4.2,.45,.45),TIMBER,0)
-    for k in range(int(20/0.75)):
-        C.box('rail sleeper',(0,-10.5+k*0.75,.05),(1.3,.22,.1),TIMBER,0)
-    for sx in (-1,1):C.box('rail',(sx*.45,-0.5,.135),(.06,20.0,.07),IRON,0)
+    # the rails end 1.4 m past the frame (in-game frames: 5.5 m of them hung over the falling yard)
+    for k in range(int(15.6/0.75)):
+        C.box('rail sleeper',(0,-6.0+k*0.75,.05),(1.3,.22,.1),TIMBER,0)
+    for sx in (-1,1):C.box('rail',(sx*.45,1.8,.135),(.06,15.6,.07),IRON,0)
 # Transition marker: empty inside the tunnel; local +y points into the cave.
 e=bpy.data.objects.new('CavePortal',None)
 e.location=(0,2.5,0);e.empty_display_size=1.0
