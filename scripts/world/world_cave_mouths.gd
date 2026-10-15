@@ -15,8 +15,13 @@ const MINE_PORTAL := "res://assets/caves-v1/mine_portal.glb"
 const TIMBER := "res://assets/environment/village-house-materials-v1/fine_grained_wood_%s_1k.jpg"
 const ROCK := "res://assets/environment/cave-rock-v1/rock_face_03_%s_1k.jpg"
 const EARTH := "res://assets/environment/village-surfaces-v1/forest_ground_04_%s_1k.jpg"
-## The spring's mouth is the headwaters' own (its water runs out of it): not doubled here.
-const SKIPPED := ["spring_cave:E"]
+const SKIPPED: Array[String] = []
+## The spring cave's one mouth (Codex 403 SPRING-MOUTH-01 A) on the east river's source (layout springs):
+## a wide low vault over the 8 m stream with a dry ledge beside it (build_cave_mouth.py -- spring); its
+## cut is wider and deeper - the ground under the stream lies under its water.
+const SPRING_EXIT := "spring_cave:E"
+const SPRING_MOUTH := "res://assets/caves-v1/cave_mouth_spring.glb"
+const SPRING_CUT := {"inside_half": 6.0, "notch_half": 8.0, "depth": 17.0, "under": 1.6}
 ## The arch's floor 3 cm over the ground at the exit point (no flicker with the terrain).
 const LIFT := 0.03
 ## Where a slope runs up into the arch, the terrain's points inside this box of the mouth (metres,
@@ -54,8 +59,14 @@ static func exits() -> Array:
 			if exit.map == null or str(exit.state) != "open" or SKIPPED.has(str(exit.id)):
 				continue
 			var facing := Vector2(float(exit.facing[0]), float(exit.facing[1])).normalized()
-			result.append({"id": str(exit.id), "map": Vector2(float(exit.map[0]), float(exit.map[1])), "facing": facing, "scene": MOUTHS[n % MOUTHS.size()]})
-			n += 1
+			var entry := {"id": str(exit.id), "map": Vector2(float(exit.map[0]), float(exit.map[1])), "facing": facing}
+			if str(exit.id) == SPRING_EXIT:
+				entry.scene = SPRING_MOUTH
+				entry.merge(SPRING_CUT)
+			else:
+				entry.scene = MOUTHS[n % MOUTHS.size()]
+				n += 1
+			result.append(entry)
 	var mine: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(MINE_PLAN))
 	for exit in mine.exits:
 		if exit.get("map") == null or str(exit.state) != "open":
@@ -83,20 +94,24 @@ func notch(grid: PackedFloat32Array, width: int, step: float, half: float, heigh
 					nearest = d
 					floor_y = float(st[2])
 		floors[exit.id] = floor_y
-		var reach := NOTCH_DEPTH.y + NOTCH_HALF_WIDTH
+		var half_w: float = exit.get("notch_half", NOTCH_HALF_WIDTH)
+		var inside_w: float = exit.get("inside_half", INSIDE_HALF_WIDTH)
+		var deep: float = exit.get("depth", NOTCH_DEPTH.y)
+		var under: float = exit.get("under", NOTCH_UNDER)
+		var reach := deep + half_w
 		for gz in range(maxi(0, floori((at.y - reach + half) / step)), mini(width, ceili((at.y + reach + half) / step) + 1)):
 			for gx in range(maxi(0, floori((at.x - reach + half) / step)), mini(width, ceili((at.x + reach + half) / step) + 1)):
 				var d := Vector2(gx * step - half, gz * step - half) - at
 				var depth := -d.dot(out)
 				var across := absf(d.dot(Vector2(-out.y, out.x)))
-				if across > NOTCH_HALF_WIDTH or depth < NOTCH_DEPTH.x or depth > NOTCH_DEPTH.y:
+				if across > half_w or depth < NOTCH_DEPTH.x or depth > deep:
 					continue
 				var i := gz * width + gx
 				# inside the arch the ground always lies under its floor (Codex 351: terrain showed through
 				# the bent way's bottom and across the mine's adit); before it only where the slope climbs
-				var inside := depth >= 0.5 and across <= INSIDE_HALF_WIDTH
-				if result[i] > floor_y + NOTCH_RISE or (inside and result[i] > floor_y - NOTCH_UNDER):
-					result[i] = floor_y - NOTCH_UNDER
+				var inside := depth >= 0.5 and across <= inside_w
+				if result[i] > floor_y + NOTCH_RISE or (inside and result[i] > floor_y - under):
+					result[i] = floor_y - under
 	return result
 
 
@@ -106,7 +121,7 @@ func arch_zones(half: float) -> Array:
 	var result: Array = []
 	for exit in exits():
 		if floors.has(exit.id):
-			result.append([exit.map - Vector2(half, half), exit.facing, -1.0, NOTCH_DEPTH.y, INSIDE_HALF_WIDTH, float(floors[exit.id]) + LIFT])
+			result.append([exit.map - Vector2(half, half), exit.facing, -1.0, float(exit.get("depth", NOTCH_DEPTH.y)), float(exit.get("inside_half", INSIDE_HALF_WIDTH)), float(floors[exit.id]) + LIFT])
 	return result
 
 

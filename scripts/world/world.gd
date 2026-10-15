@@ -1012,10 +1012,7 @@ func _build_water_and_sites() -> void:
 		var lake_mesh: MeshInstance3D = water.add_lake(Vector3(p[0] - HALF, p[2], p[1] - HALF), Vector2(lake.radii_m[0], lake.radii_m[1]), float(lake.get("cut_z", INF)) - HALF)
 		if lake_mesh != null:
 			lake_mesh.material_override = water_material(false)
-	for spring in world_layout.springs:
-		var p: Array = spring.mouth
-		var direction: Array = spring.facing
-		water.add_spring_cave(Vector3(p[0] - HALF, p[2] - 1, p[1] - HALF), Vector3(direction[0], 0, direction[2]))
+	# the spring's mouth is the cave mouths' (world_cave_mouths.SPRING_EXIT, Codex 403): no grey boxes here
 	for city in world_layout.cities:
 		# WORLD-BUILD-01C (Claude 169 / Codex): the snow city from the book's plots by Codex's builder
 		# when it is in the project; until then its grey blocks stay.

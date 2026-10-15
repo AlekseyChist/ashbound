@@ -357,12 +357,12 @@
      "id": "spring_cave:E",
      "chamber": "E",
      "map": [
-      1373.0,
-      552.0
+      1350.0,
+      540.0
      ],
      "facing": [
-      0.8866,
-      0.4626
+      0.53,
+      0.848
      ],
      "kind": "mouth",
      "state": "open"
