@@ -132,6 +132,22 @@ bm.normal_update()
 # Natural shell: the bowl under the walkable level becomes the floor itself (no disc/strip seam:
 # floor and wall are one surface), and the walls bulge OUTWARD only by noise, so the passable volume
 # the capsule walked (Codex 305) only grows.
+# The vertex normals in a fixed order (Codex CV-EXPORT-REPRO-01: Blender's threaded normals summed
+# in a varying order; that float noise moved the walls differently each run): angle-weighted, as
+# Blender's, from canonical triangle normals in their centres' order.
+def tri_normal(f):
+    vs=[tuple(v.co) for v in f.verts];k=vs.index(min(vs));vs=vs[k:]+vs[:k]
+    a,b,c=Vector(vs[0]),Vector(vs[1]),Vector(vs[2]);return (b-a).cross(c-a).normalized()
+vnormal={}
+for v in bm.verts:
+    acc=[]
+    for l in v.link_loops:
+        p=l.link_loop_prev.vert.co-v.co;nx=l.link_loop_next.vert.co-v.co
+        acc.append((tuple(l.face.calc_center_median()),p.angle(nx) if p.length>1e-12 and nx.length>1e-12 else 0.0,tri_normal(l.face)))
+    acc.sort(key=lambda t:t[0])
+    n=Vector((0,0,0))
+    for _,ang,fn in acc:n+=fn*ang
+    vnormal[v]=n.normalized() if n.length>1e-12 else Vector(v.normal)
 moves=[]
 for v in bm.verts:
     q=v.co;f=floor_at(q.x,q.y)
@@ -139,20 +155,63 @@ for v in bm.verts:
     t=max(0.0,min(1.0,(q.z-f)/1.2));k=t*t*(3-2*t)   # the wall leaves the floor gently
     # Large slow bulges break the drilled-tube look of the links; fine grain on top; never inward.
     n=noise.noise(q*0.16)*0.45+noise.noise(q*0.5)*0.2+noise.noise(q*1.4)*0.07
-    moves.append((v,q-v.normal*max(0.05,0.32+n)*k))
+    moves.append((v,q-vnormal[v]*max(0.05,0.32+n)*k))
 for v,co in moves:v.co=co
 # Codex ART-CV-06: thin bent triangles at the walls' foot - slivers of the union, the subdivision and the
-# floor's flattening; collapse the degenerate ones and flip edges towards the widest angles
-bmesh.ops.dissolve_degenerate(bm,dist=0.05,edges=bm.edges[:])
+# floor's flattening; collapse the degenerate ones and flip edges towards the widest angles. Both in a
+# fixed order (CV-EXPORT-REPRO-01: dissolve_degenerate and beautify_fill pick among ties by memory
+# order, so two exports of one commit differed): edges under 5 cm, and the shortest edge (under 15 cm)
+# of a triangle under 5 cm high, collapsed shortest first; then flips that widen the smaller angle.
+def edge_key(e):
+    a,b=sorted((tuple(e.verts[0].co),tuple(e.verts[1].co)));return (e.calc_length(),a,b)
+while True:
+    cand=[e for e in bm.edges if e.calc_length()<0.05]
+    for f in bm.faces:
+        es=sorted(f.edges,key=edge_key);longest=es[-1].calc_length()
+        if longest>1e-9 and 2*f.calc_area()/longest<0.05 and es[0].calc_length()<0.15:cand.append(es[0])
+    if not cand:break
+    bmesh.ops.collapse(bm,edges=[min(cand,key=edge_key)])
 bmesh.ops.triangulate(bm,faces=bm.faces[:])
-bmesh.ops.beautify_fill(bm,faces=bm.faces[:],edges=bm.edges[:])
+def min_angle(p,q,r):
+    m=math.pi
+    for a,b,c in ((p,q,r),(q,r,p),(r,p,q)):
+        u=b-a;w=c-a
+        if u.length<1e-9 or w.length<1e-9:return 0.0
+        m=min(m,u.angle(w))
+    return m
+for _ in range(20):
+    flips=0
+    for e in sorted([e for e in bm.edges if len(e.link_faces)==2],key=edge_key):
+        if not e.is_valid or len(e.link_faces)!=2:continue
+        f0,f1=e.link_faces
+        if len(f0.verts)!=3 or len(f1.verts)!=3:continue
+        a,b=sorted((tuple(e.verts[0].co),tuple(e.verts[1].co)))
+        c=tuple(next(v for v in f0.verts if v not in e.verts).co);d=tuple(next(v for v in f1.verts if v not in e.verts).co)
+        c,d=sorted((c,d));a,b,c,d=Vector(a),Vector(b),Vector(c),Vector(d)
+        nc=(b-a).cross(c-a);nd=(d-a).cross(b-a)
+        # not across a fold (the rock's shape stays), and only a convex pair
+        if nc.length<1e-12 or nd.length<1e-12 or nc.normalized().dot(nd.normalized())<0.7:continue
+        N=nc+nd
+        if ((d-c).cross(a-c)).dot(N)*((d-c).cross(b-c)).dot(N)>=0:continue
+        if min(min_angle(a,c,d),min_angle(b,d,c))>min(min_angle(a,b,c),min_angle(a,d,b))+1e-4:
+            if bmesh.utils.edge_rotate(e,True) is not None:flips+=1
+    if not flips:break
 bm.normal_update()
 # Ground where the surface faces up (inward normals), rock elsewhere.
 # the slots first: materials.clear() resets every face's index to 0 (Codex ART-CV-03: the whole
 # shell exported as rock, its floor's earth lost)
 base.data.materials.clear();base.data.materials.append(ROCK);base.data.materials.append(EARTH)
 for face in bm.faces:face.material_index=1 if face.normal.z>0.6 else 0
-bm.to_mesh(base.data);bm.free()
+# a canonical order (vertices by position, each face from its lowest vertex, faces sorted): the same
+# file from every export of one commit
+order=sorted(bm.verts,key=lambda v:tuple(v.co));index={v:i for i,v in enumerate(order)}
+faces=[]
+for face in bm.faces:
+    ids=[index[v] for v in face.verts];k=ids.index(min(ids));faces.append((ids[k:]+ids[:k],face.material_index))
+faces.sort()
+me=base.data;me.clear_geometry();me.from_pydata([tuple(v.co) for v in order],[],[f[0] for f in faces])
+for poly,(_,m) in zip(me.polygons,faces):poly.material_index=m
+me.update();bm.free()
 base.name='cave shell-col'
 # Codex CV-07 (the earth/rock material switched face by face at the walls' foot): a continuous
 # floor-to-rock weight in COLOR_0.r per vertex (1 earth, 0 rock; one value per shared vertex) for the
