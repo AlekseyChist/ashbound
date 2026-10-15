@@ -65,6 +65,13 @@ func run() -> void:
 	var places: Array = layout.get("book_places", [])
 	require(pads.size() == 4, "Expected 4 book pads (ruins, two snow terraces, the W1 viewpoint), got %d" % pads.size())
 	require(places.size() == 8, "Expected 8 book places (seven places and the W1 viewpoint), got %d" % places.size())
+	# SHARED-CAMERA-01: the mine portals' timber in the hero camera's camera-only layer (Codex's registry)
+	var obstacles = w.camera_obstacles
+	var arm := w.camera_rig.get_node_or_null("SpringArm3D") as SpringArm3D
+	require(obstacles != null and obstacles.has_group(&"mine") and obstacles.body_count() > 0, "The mine portals' timber is not registered with the camera")
+	require(arm != null and (arm.collision_mask & 64) != 0, "The hero's SpringArm does not see the camera-only layer")
+	if obstacles != null and arm != null:
+		print("CAMERA_OBSTACLES groups=%d bodies=%d arm_mask=%d" % [obstacles.group_count(), obstacles.body_count(), arm.collision_mask])
 
 	# Pads: sample a grid over the polygon shrunk towards its centroid (the margin eases outside it).
 	for pad in pads:

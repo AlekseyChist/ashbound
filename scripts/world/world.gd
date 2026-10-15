@@ -8,6 +8,8 @@ const Shapes = preload("res://scripts/world/world_graybox_shapes.gd")
 const Headwaters = preload("res://scripts/world/world_graybox_headwaters.gd")
 const Landmarks = preload("res://scripts/world/world_graybox_landmarks.gd")
 const CaveMouths = preload("res://scripts/world/world_cave_mouths.gd")
+const CameraObstacles = preload("res://scripts/world/camera_mesh_obstacles.gd")
+const CameraSelection = preload("res://scripts/world/camera_obstacle_selection.gd")
 const BookPlaces = preload("res://scripts/world/world_book_places.gd")
 const SnowLots = preload("res://scripts/world/world_snow_lots.gd")
 const SnowWalls = preload("res://scripts/world/world_snow_walls.gd")
@@ -81,6 +83,7 @@ var world_terrain: Node3D
 var snow_lots: RefCounted
 var lowland_water: RefCounted
 var cave_mouths: Node3D
+var camera_obstacles: Node = null
 var road_mask: Image
 var world_colors: PackedColorArray
 ## GRASS-WORLD-01: road and river pieces near the grass, bucketed by 32 m cells (scene frame).
@@ -1072,6 +1075,14 @@ func _build_water_and_sites() -> void:
 	cave_mouths.name = "CaveMouths"
 	world_root.add_child(cave_mouths)
 	cave_mouths.build(world_ground, HALF)
+	# SHARED-CAMERA-01 (Codex 370 contract; the two runtime files are Codex's): one camera-only obstacle
+	# owner for the hero's SpringArm, layer 7 CameraOnly - the mine portals' timber in it, so the camera
+	# stops before the beams instead of passing behind them
+	camera_obstacles = CameraObstacles.new()
+	camera_obstacles.name = "CameraObstacles"
+	world_root.add_child(camera_obstacles)
+	# after the scene is ready: while the world builds, the hero's rig is not yet there
+	_register_camera_obstacles.call_deferred()
 	# WORLD-BUILD-01A (D-118): the world book's new places - grey volumes until their own models.
 	var book := BookPlaces.new()
 	world_root.add_child(book)
@@ -1392,3 +1403,16 @@ func talk_to_inn_keeper() -> bool:
 	hud.show_message(line.name_key, line.line_key)
 	inn_talk.apply_line(line)
 	return true
+
+
+## SHARED-CAMERA-01: the hero's SpringArm under one camera-only owner, the mine portals' timber in it.
+func _register_camera_obstacles() -> void:
+	var arm := camera_rig.get_node_or_null("SpringArm3D") as SpringArm3D if camera_rig != null else null
+	if arm == null or not camera_obstacles.configure(arm):
+		push_warning("SHARED-CAMERA-01: the camera obstacle owner was not configured")
+		return
+	var portals: Array[Node3D] = []
+	for mouth in cave_mouths.mouths:
+		if str(mouth.get_meta("exit_id", "")).begins_with("crown_mine"):
+			portals.append(mouth)
+	camera_obstacles.register_group(&"mine", CameraSelection.mine_timber(portals))

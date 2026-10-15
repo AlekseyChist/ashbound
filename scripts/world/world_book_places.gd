@@ -430,6 +430,16 @@ func _viewpoint(parent: Node3D, o: Vector2) -> void:
 		seat.position = Vector3(b.x, low + 0.7 + 0.035, b.y)
 		seat.visibility_range_end = 450.0
 		holder.add_child(seat)
+		# its collider (Codex 391 W1-BENCH-COLL-01: the hero walked through the north plank): the plank,
+		# 0.25 m deeper below it so the capsule meets it whole - 0.4 m over the terrace, above a step
+		var body := StaticBody3D.new()
+		var shape := CollisionShape3D.new()
+		var box := BoxShape3D.new()
+		box.size = Vector3(0.46, 0.07 + 0.25, 1.5)
+		shape.shape = box
+		body.add_child(shape)
+		body.position = seat.position - Vector3(0, 0.125, 0)
+		holder.add_child(body)
 	_model(parent, "bigboulder", o + Vector2(3.7, -2.6), 40.0, 0.9, -0.3, 0.0, 1.0, true)
 	# single stones only (the moss set spreads its rocks 3 m - two lay on the terrace)
 	_model(parent, "boulder", o + Vector2(3.9, 2.6), 110.0, 0.6, -0.15, 0.0, 1.0, true)

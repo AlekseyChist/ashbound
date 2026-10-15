@@ -117,6 +117,7 @@ locale/translations=PackedStringArray("res://localization/en.po", "res://localiz
 3d_physics/layer_4="Enemies"
 3d_physics/layer_5="Interactables"
 3d_physics/layer_6="Triggers"
+3d_physics/layer_7="CameraOnly"
 
 [physics]
 
