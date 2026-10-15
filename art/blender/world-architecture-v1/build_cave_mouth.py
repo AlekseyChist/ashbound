@@ -37,6 +37,17 @@ mod=rock.modifiers.new('d','DISPLACE')
 mod.texture=tex;mod.strength=1.8;mod.mid_level=0.5
 bpy.context.view_layer.objects.active=rock
 bpy.ops.object.modifier_apply(modifier='d')
+# The hill the arch goes into (in-game frames: a lone boulder on a meadow read as a stone with a
+# hole): a mass behind and two shoulders, joined to the front rock before the tunnel is cut.
+for k,(loc,scl) in enumerate((((0,11.0,1.8),(11.0,8.0,6.8)),((-8.5,5.5,0.4),(5.0,6.0,4.2)),((8.8,6.5,0.6),(5.5,5.5,4.6)))):
+    bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=3,radius=1,location=loc)
+    m=bpy.context.active_object;m.scale=scl;bpy.ops.object.transform_apply(scale=True)
+    t=bpy.data.textures.new('CM noise %d'%k,'CLOUDS');t.noise_scale=2.6
+    d=m.modifiers.new('d','DISPLACE');d.texture=t;d.strength=1.6;d.mid_level=.5
+    bpy.context.view_layer.objects.active=m;bpy.ops.object.modifier_apply(modifier='d')
+    u=rock.modifiers.new('u','BOOLEAN');u.operation='UNION';u.solver='EXACT';u.object=m
+    bpy.context.view_layer.objects.active=rock;bpy.ops.object.modifier_apply(modifier='u')
+    bpy.data.objects.remove(m)
 # Cut the bottom flat 2 m under the ground (z=-2): on a slope the rock stays sunk in, no gap under it.
 bpy.ops.mesh.primitive_cube_add(size=1,location=(0,3.0,-7.0))
 cut=bpy.context.active_object
@@ -50,13 +61,13 @@ bpy.data.objects.remove(cut)
 # Tunnel (no drilled tube): rings of an irregular arch along +y, flared at the entrance and narrowing
 # inward; every vertex jittered by noise. Centre 1.45 m over the floor; the bottom runs under it.
 K=20;rings=[]
-ys=[-5.0+i*1.0 for i in range(12)]  # -5 .. 6
+ys=[-5.0+i*1.0 for i in range(15)]  # -5 .. 9
 bmt=bmesh.new()
 for y in ys:
     d=y+3.0  # depth past the rock's front
     flare=1.0+0.45*math.exp(-max(d,0.0)/1.6)
     narrow=1.0-0.12*max(0.0,min(1.0,d/8.0))
-    rw,rh=1.6*flare*narrow,1.75*flare*narrow
+    rw,rh=1.9*flare*narrow,1.9*flare*narrow
     ring=[]
     for i in range(K):
         a=2*math.pi*i/K
@@ -78,9 +89,10 @@ bpy.context.view_layer.objects.active=rock
 bpy.ops.object.modifier_apply(modifier='tunnel')
 bpy.data.objects.remove(tun)
 # Tunnel floor/threshold.
-C.box('mouth floor-col',(0,2.5,-.05),(5.0,8.0,.1),EARTH)  # wider than the arch at the floor: no trench by the walls
+fl=C.box('mouth floor-col',(0,4.0,-.05),(5.6,11.0,.1),EARTH)
+bm=bmesh.new();bm.from_mesh(fl.data);bmesh.ops.subdivide_edges(bm,edges=bm.edges[:],cuts=8,use_grid_fill=True);bm.to_mesh(fl.data);bm.free()  # vertices for the darkness gradient  # wider than the arch at the floor: no trench by the walls
 # Dark plug closing the far end of the tunnel (no light leak).
-C.box('mouth depth',(0,5.6,1.5),(4.0,.1,4.0),DARK)
+C.box('mouth depth',(0,8.6,1.6),(4.4,.1,4.4),DARK)
 # Transition marker: empty inside the tunnel; local +y points into the cave.
 e=bpy.data.objects.new('CavePortal',None)
 e.location=(0,2.5,0);e.empty_display_size=1.0
@@ -89,6 +101,17 @@ C.ASSET.objects.link(e)
 for col in list(rock.users_collection):col.objects.unlink(rock)
 C.ASSET.objects.link(rock)
 rock.data.materials.clear();rock.data.materials.append(ROCK)
+# Darkness into the hill as a vertex colour (the world multiplies the albedo by it): white outside,
+# down to 6% at the plug, so the arch reads dark like a cave and the plug is no flat black disc.
+for o in [o for o in C.ASSET.objects if o.type=='MESH']:
+    attr=o.data.color_attributes.new('Col','BYTE_COLOR','CORNER')
+    for loop in o.data.loops:
+        c=o.matrix_world@o.data.vertices[loop.vertex_index].co
+        inside=abs(c.x)<3.4 and c.z<4.6 and c.y>-3.5
+        k=max(0.0,min(1.0,(c.y+2.5)/9.0)) if inside else 0.0
+        g=1.0-0.94*k**0.8
+        attr.data[loop.index].color=(g,g,g,1.0)
+    o.data.color_attributes.active_color=attr
 # UVs for the textured rock: projected in metres on each face's dominant axis.
 for o in [o for o in C.ASSET.objects if o.type=='MESH']:
     scale=o.data.materials[0].get('uv_metres',0) if o.data.materials else 0
@@ -109,7 +132,7 @@ bpy.context.view_layer.objects.active=next(o for o in C.ASSET.objects if o.type=
 asset=OUT/'cave_mouth.glb'
 # no images in the GLB: the world gives the rock and ground their textures (triplanar) from
 # assets/environment at runtime (world_cave_mouths.gd), so the file stays small
-bpy.ops.export_scene.gltf(filepath=str(asset),use_selection=True,export_format='GLB',export_apply=True,export_extras=True,export_yup=True,export_lights=False,export_cameras=False,export_image_format='NONE')
+bpy.ops.export_scene.gltf(filepath=str(asset),use_selection=True,export_format='GLB',export_apply=True,export_extras=True,export_yup=True,export_lights=False,export_cameras=False,export_image_format='NONE',export_vertex_color='ACTIVE')
 bpy.ops.wm.save_as_mainfile(filepath=str(QA/'cave_mouth.blend'))
 visual=[o for o in C.ASSET.objects if o.type=='MESH']
 triangles=0
