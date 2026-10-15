@@ -154,6 +154,21 @@ base.data.materials.clear();base.data.materials.append(ROCK);base.data.materials
 for face in bm.faces:face.material_index=1 if face.normal.z>0.6 else 0
 bm.to_mesh(base.data);bm.free()
 base.name='cave shell-col'
+# Codex CV-07 (the earth/rock material switched face by face at the walls' foot): a continuous
+# floor-to-rock weight in COLOR_0.r per vertex (1 earth, 0 rock; one value per shared vertex) for the
+# runtime's blending shader - from how much the surface faces up and how high over the floor it lies.
+# The binary material split stays as it was.
+me=base.data;me.calc_normals_split() if hasattr(me,'calc_normals_split') else None
+wts=[]
+for v in me.vertices:
+    q=v.co;up=v.normal.z
+    a=max(0.0,min(1.0,(up-0.35)/0.45));a=a*a*(3-2*a)
+    hgt=max(0.0,q.z-floor_at(q.x,q.y));b=max(0.0,min(1.0,1.0-hgt/0.9));b=b*b*(3-2*b)
+    wts.append(max(0.0,min(1.0,a*b)))
+col=me.color_attributes.new('Col','BYTE_COLOR','CORNER')
+for loop in me.loops:
+    w=wts[loop.vertex_index];col.data[loop.index].color=(w,w,w,1.0)
+me.color_attributes.active_color=col
 # bpy.ops puts new objects in the scene's collection; the export takes the ASSET collection's
 for o in list(base.users_collection):o.objects.unlink(base)
 C.ASSET.objects.link(base)
@@ -255,7 +270,7 @@ bpy.ops.object.select_all(action='DESELECT')
 for o in C.ASSET.objects:o.select_set(True)
 bpy.context.view_layer.objects.active=next(o for o in C.ASSET.objects if o.type=='MESH')
 asset=OUT/(CAVE+'.glb')
-bpy.ops.export_scene.gltf(filepath=str(asset),use_selection=True,export_format='GLB',export_apply=True,export_extras=True,export_yup=True,export_lights=False,export_cameras=False)
+bpy.ops.export_scene.gltf(filepath=str(asset),use_selection=True,export_format='GLB',export_apply=True,export_extras=True,export_yup=True,export_lights=False,export_cameras=False,export_vertex_color='ACTIVE')
 bpy.ops.wm.save_as_mainfile(filepath=str(QA/(CAVE+'.blend')))
 visual=[o for o in C.ASSET.objects if o.type=='MESH' and not o.name.endswith('-colonly')]
 triangles=0
