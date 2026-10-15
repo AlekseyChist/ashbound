@@ -21,7 +21,9 @@ const SKIPPED: Array[String] = []
 ## cut is wider and deeper - the ground under the stream lies under its water.
 const SPRING_EXIT := "spring_cave:E"
 const SPRING_MOUTH := "res://assets/caves-v1/cave_mouth_spring.glb"
-const SPRING_CUT := {"inside_half": 6.0, "notch_half": 8.0, "depth": 17.0, "under": 1.6}
+## "bank": its floor (the ledge) is the ground this far beside the exit on the ledge's side (the exit
+## point lies on the stream's carved bed, 1.7 m under its banks).
+const SPRING_CUT := {"inside_half": 9.0, "notch_half": 11.0, "depth": 18.0, "under": 1.6, "bank": 6.5}
 ## The arch's floor 3 cm over the ground at the exit point (no flicker with the terrain).
 const LIFT := 0.03
 ## Where a slope runs up into the arch, the terrain's points inside this box of the mouth (metres,
@@ -86,6 +88,10 @@ func notch(grid: PackedFloat32Array, width: int, step: float, half: float, heigh
 		var at: Vector2 = exit.map - Vector2(half, half)
 		var out: Vector2 = exit.facing
 		var floor_y: float = minf(height.call(at.x, at.y), height.call(at.x + out.x * FRONT, at.y + out.y * FRONT))
+		if exit.has("bank"):
+			# the model's +x (the ledge's side) in the world: (out.y, -out.x)
+			var bank: Vector2 = at + Vector2(out.y, -out.x) * float(exit.bank)
+			floor_y = height.call(bank.x, bank.y)
 		var nearest := STAIR_REACH
 		for flight in stairs:
 			for st in [flight.steps[0], flight.steps[flight.steps.size() - 1]]:
@@ -121,7 +127,9 @@ func arch_zones(half: float) -> Array:
 	var result: Array = []
 	for exit in exits():
 		if floors.has(exit.id):
-			result.append([exit.map - Vector2(half, half), exit.facing, -1.0, float(exit.get("depth", NOTCH_DEPTH.y)), float(exit.get("inside_half", INSIDE_HALF_WIDTH)), float(floors[exit.id]) + LIFT])
+			# the 7th field: the zone on the fine lattice of its own (the spring's: away from any plot, the
+			# 5 m grid could not keep its 12 m vault's ground under the ledge - Codex 409)
+			result.append([exit.map - Vector2(half, half), exit.facing, -1.0, float(exit.get("depth", NOTCH_DEPTH.y)), float(exit.get("inside_half", INSIDE_HALF_WIDTH)), float(floors[exit.id]) + LIFT, exit.has("bank")])
 	return result
 
 

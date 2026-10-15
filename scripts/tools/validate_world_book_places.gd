@@ -507,6 +507,55 @@ func run() -> void:
 	print("SNOW_STAIR_STREET_JOINS %d" % joins)
 	require(joins >= 2, "The stair-street's door joins not found (%d)" % joins)
 
+	# SPRING-MOUTH-01 (Codex 403): the spring cave's dry ledge beside the stream - from the ground before the
+	# arch along the ledge to the dry floor past the water's head, and back (model frame: +x the ledge's
+	# side, -z into the hill)
+	var spring: Node3D = null
+	for mouth in w.cave_mouths.mouths:
+		if str(mouth.get_meta("exit_id", "")) == "spring_cave:E":
+			spring = mouth
+	require(spring != null, "The spring cave's mouth is missing")
+	if spring != null:
+		var way: Array[Vector2] = []
+		for q in [Vector3(4.95, 0, 5.0), Vector3(4.95, 0, -8.0), Vector3(2.0, 0, -13.5)]:
+			var g: Vector3 = w.world_root.to_local(spring.to_global(q))
+			way.append(Vector2(g.x, g.z))
+		# placed from under the vault (a ray from 400 m found the hill's top over the dry floor)
+		var under_roof: float = w.world_root.to_local(spring.global_position).y + 3.0
+		for leg in [way, _reversed(PackedVector2Array(way))]:
+			var a: Vector2 = leg[0]
+			actor.velocity = Vector3.ZERO
+			var down := PhysicsRayQueryParameters3D.create(origin + Vector3(a.x, under_roof, a.y), origin + Vector3(a.x, -50, a.y))
+			down.exclude = [actor.get_rid()]
+			var hit := space.intersect_ray(down)
+			actor.position = Vector3(a.x, ((hit.position.y - origin.y) if not hit.is_empty() else w.world_ground(a.x, a.y)) + 1.2, a.y)
+			for i in 20:
+				await physics_frame
+				actor.velocity = Vector3(0, 0.0 if actor.is_on_floor() else actor.velocity.y - 22.0 / 60.0, 0)
+				actor.move_and_slide()
+			var walked := true
+			for k in range(1, leg.size()):
+				var target: Vector2 = leg[k]
+				var reached := false
+				for tick in 900:
+					await physics_frame
+					var off := Vector2(target.x - actor.position.x, target.y - actor.position.z)
+					if off.length() < 0.35:
+						reached = true
+						break
+					var hv := Vector3(off.x, 0, off.y).normalized() * 2.0
+					actor.velocity = Vector3(hv.x, 0.0 if actor.is_on_floor() else actor.velocity.y - 22.0 / 60.0, hv.z)
+					_step_up(actor, 1.0 / 60.0)
+					actor.move_and_slide()
+				print("SPRING_LEDGE to=%s reached=%s at=%s feet_over_floor=%.2f" % [target + Vector2(1000, 1000), reached, actor.position + Vector3(1000, 0, 1000), actor.position.y - 0.875 - (under_roof - 3.0)])
+				# inside, on the ledge and the dry floor, the feet stay at the arch's floor (not over the hill)
+				if target != leg[0] and target != way[0]:
+					require(absf(actor.position.y - 0.875 - (under_roof - 3.0)) < 0.5, "The spring ledge walk left the floor at %s" % [target + Vector2(1000, 1000)])
+				if not reached:
+					walked = false
+					break
+			require(walked, "The spring cave's dry ledge is not walkable")
+
 	# The snow city's streets (the book's plan): each walked end to end and back by the capsule with
 	# the hero's step-up, on the terrain, plinths and door stairs alone (no buildings loaded here).
 	# Each street whole, its ends at the stairs included; the capsule starts on the first surface

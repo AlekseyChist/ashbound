@@ -577,6 +577,59 @@ func _street_at(index: int, p: Vector2) -> Array:
 	return [best, lerpf(smooth[i], smooth[j], f - i)]
 
 
+## The lowest floor of the arches over `p` (INF outside them); `own_only`: only the arches on the fine
+## lattice of their own (arch_zones' 7th field).
+func _arch_floor(p: Vector2, own_only: bool) -> float:
+	var result := INF
+	for z in arch_zones:
+		if own_only and not (z.size() > 6 and bool(z[6])):
+			continue
+		var off: Vector2 = p - z[0]
+		var out: Vector2 = z[1]
+		var depth := -off.dot(out)
+		if depth >= z[2] and depth <= z[3] and absf(off.dot(Vector2(-out.y, out.x))) <= z[4]:
+			result = minf(result, float(z[5]))
+	return result
+
+
+## Before an arch of its own (the spring's), on its ledge's side: the bank rises to the ledge over
+## LEDGE_RAMP m (Codex 409: bank-to-ledge - the bank lay 1 m under the ledge's end); -INF elsewhere.
+const LEDGE_RAMP := 8.0
+func _ledge_ramp(p: Vector2) -> float:
+	var result := -INF
+	for z in arch_zones:
+		if not (z.size() > 6 and bool(z[6])):
+			continue
+		var off: Vector2 = p - z[0]
+		var out: Vector2 = z[1]
+		var depth := -off.dot(out)
+		# the model's +x, the ledge's side, is (out.y, -out.x) in the world; the ledge spans 4.0 .. 5.9
+		var across := off.dot(Vector2(out.y, -out.x))
+		if depth > z[2] + 2.0 or depth < z[2] - LEDGE_RAMP or across < 3.0 or across > 6.8:
+			continue
+		# level with the ledge 1.5 m before it (a lattice dip at its edge let the step-up take the edge for
+		# floor and stop), rising to it over the rest
+		var t := smoothstep(z[2] - LEDGE_RAMP, z[2] - 1.5, depth)
+		# full from 3.8 (a 1.25 m lattice triangle reaching a low corner by the water dipped at the ledge's line)
+		var edge := minf(smoothstep(3.0, 3.8, across), 1.0 - smoothstep(6.0, 6.8, across))
+		var target: float = float(z[5]) - 0.04
+		result = maxf(result, target - (1.0 - t * edge) * 2.0)
+	return result
+
+
+## The arches (world_cave_mouths.arch_zones); those on the fine lattice of their own mark its cells.
+func set_arch_zones(zones: Array) -> void:
+	arch_zones = zones
+	for z in zones:
+		if not (z.size() > 6 and bool(z[6])):
+			continue
+		var c: Vector2 = z[0]
+		var reach := float(z[3]) + float(z[4]) + LEDGE_RAMP + GRID
+		for cx in range(floori((c.x - reach + HALF) / GRID), floori((c.x + reach + HALF) / GRID) + 1):
+			for cz in range(floori((c.y - reach + HALF) / GRID), floori((c.y + reach + HALF) / GRID) + 1):
+				refined[Vector2i(cx, cz)] = true
+
+
 func refines(cell_x: int, cell_z: int) -> bool:
 	return refined.has(Vector2i(cell_x, cell_z))
 
@@ -617,7 +670,13 @@ func _dist(lot: Dictionary, p: Vector2) -> float:
 func height(p: Vector2, base: float) -> float:
 	var key := Vector2i(floori(p.x / BUCKET), floori(p.y / BUCKET))
 	if not _buckets.has(key) and not _street_b.has(key) and not _fill_b.has(key):
-		return base
+		# an arch on the fine lattice of its own, away from the plots (the spring's): its ground under its floor
+		var own := _arch_floor(p, true)
+		# under the ledge's front the ramp carries on 1 m (no step at the ledge's end), still under its top
+		var ramp := _ledge_ramp(p)
+		if own < INF:
+			return maxf(minf(base, own - 0.06), minf(ramp, own - 0.06))
+		return maxf(base, ramp)
 	var h := INF
 	var core := INF
 	var dists: Array[float] = []
@@ -698,13 +757,7 @@ func height(p: Vector2, base: float) -> float:
 	# the caves' arches (world_cave_mouths.arch_zones): inside one the ground lies under its floor
 	# (Codex 364 MOUTH-FLOOR-01: on the fine lattice the stair's end pad lifted it 0.21-0.36 m over
 	# foothill X's floor)
-	var arch_floor := INF
-	for z in arch_zones:
-		var off: Vector2 = p - z[0]
-		var out: Vector2 = z[1]
-		var depth := -off.dot(out)
-		if depth >= z[2] and depth <= z[3] and absf(off.dot(Vector2(-out.y, out.x))) <= z[4]:
-			arch_floor = minf(arch_floor, float(z[5]))
+	var arch_floor := _arch_floor(p, false)
 	if arch_floor < INF:
 		graded = true
 	if not graded:
