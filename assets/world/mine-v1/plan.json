@@ -1,7 +1,7 @@
 {
   "id": "crown_mine",
   "source": "WORLD-PLAN-01 book (plan_mine.py, plan_mine_levels.py; PDF sheets 17, D-118): the working levels only; the Royal adit, the breach, the gates and the Ash hall are acts IV-V and stay behind Ш1's masonry",
-  "frame": "exits: at/out in the interior frame, map/facing on the surface (facing out of the hill: the portal towards the weighing yard, Ш2 down its slope); metres; origin = shaft С1 centre at the portal level; x east, z south (the book's level sheets), y up; levels by their depth under the portal (379 m)",
+  "frame": "exits: at/out in the interior frame, map/facing on the surface (facing out of the hill: the portal towards the weighing yard, Ш2 west along its slope to the smugglers' trail); metres; origin = shaft С1 centre at the portal level; x east, z south (the book's level sheets), y up; levels by their depth under the portal (379 m)",
   "deviations": [
     "Н1: the sheets draw it 22 m long for a 35 m drop; built as a switchback of four 25-degree flights (x 8/12/16/20) with landings, arriving at the lower gallery from the north at x 20",
     "a 12 m portal adit from the surface mouth to the shaft station at the portal level (the book: portal, headframe and lift)",
@@ -41,6 +41,6 @@
   "shaft": {"id": "С1", "x": 0, "z": 0, "w": 5, "d": 5, "stops": ["portal", "upper", "lower"], "gates": {"portal": "-z", "upper": "+x", "lower": "+z"}},
   "exits": [
     {"id": "crown_mine:P", "level": "portal", "at": [0, -16], "out": [0, -1], "map": [1074, 204], "facing": [0.832, 0.555], "kind": "portal", "state": "open"},
-    {"id": "crown_mine:Ш2", "level": "lower", "at": [-109, 33.7], "out": [-0.958, 0.287], "map": [1005, 244], "facing": [0.0, 1.0], "kind": "old drainage adit on the slope (MQ-22, variant 3)", "state": "open"}
+    {"id": "crown_mine:Ш2", "level": "lower", "at": [-109, 33.7], "out": [-0.958, 0.287], "map": [1005, 244], "facing": [-1.0, 0.0], "kind": "old drainage adit on the slope (MQ-22, variant 3)", "state": "open"}
   ]
 }

@@ -233,7 +233,8 @@ func run() -> void:
 	# The W1 stair flights: even risers, every tread over its ground, built blocks; then walked down
 	# and up by the capsule stepping like the hero (courtyard_player._step_up: up to 0.4 m).
 	var stairs: Array = layout.get("book_stairs", [])
-	require(stairs.size() == 4, "Expected the W1 flights and the snow city's routes A/B/C, got %d" % stairs.size())
+	# W1, the snow city's routes A/B/C and the smugglers' trail's three switchbacks (WORLD-BUILD-01G)
+	require(stairs.size() == 7, "Expected the W1 flights, the snow city's routes A/B/C and the smugglers' three stairs, got %d" % stairs.size())
 	for flight in stairs:
 		var steps: Array = flight.steps
 		var worst_rise := 0.0

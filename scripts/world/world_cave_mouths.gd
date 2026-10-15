@@ -6,6 +6,8 @@ extends Node3D
 
 const PLAN := "res://assets/world/caves-v1/plan.json"
 const MOUTH := "res://assets/caves-v1/cave_mouth.glb"
+## Three bodies of rock by seed (Codex MOUTH-02: one model at every exit read as a placed object).
+const MOUTHS := [MOUTH, "res://assets/caves-v1/cave_mouth_b.glb", "res://assets/caves-v1/cave_mouth_c.glb"]
 ## The Crown mine's portal and its old drainage adit Ш2 (assets/world/mine-v1/plan.json): the same
 ## hill with a timbered adit and rails (build_cave_mouth.py -- mine).
 const MINE_PLAN := "res://assets/world/mine-v1/plan.json"
@@ -26,9 +28,13 @@ const NOTCH_UNDER := 0.4
 ## On a slope the arch's floor takes the ground before its rock (FRONT m out), not the slope's
 ## brow at the exit point: the rock sinks into the hill and no drop opens before the entrance.
 const FRONT := 3.0
-## No forest tree inside this circle round the rock hill's middle (HILL_CENTRE m into the hill).
+## No forest tree inside this circle round the rock hill's middle (HILL_CENTRE m into the hill),
+## nor on a narrow way up to the arch (Codex MOUTH-03: at forest X the spruce branches hid the hero
+## and the mouth 12 m out): circles of APPROACH_CLEAR along it, out to APPROACH_REACH m.
 const HILL_CENTRE := 4.0
-const HILL_CLEAR := 12.0
+const HILL_CLEAR := 10.0
+const APPROACH_CLEAR := 3.5
+const APPROACH_REACH := 22.0
 
 var mouths: Array[Node3D] = []
 ## The ground at each exit before the cut (notch), by exit id: the arch's floor level.
@@ -39,12 +45,14 @@ var floors := {}
 static func exits() -> Array:
 	var result: Array = []
 	var plan: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(PLAN))
+	var n := 0
 	for cave in plan.caves:
 		for exit in cave.exits:
 			if exit.map == null or str(exit.state) != "open" or SKIPPED.has(str(exit.id)):
 				continue
 			var facing := Vector2(float(exit.facing[0]), float(exit.facing[1])).normalized()
-			result.append({"id": str(exit.id), "map": Vector2(float(exit.map[0]), float(exit.map[1])), "facing": facing, "scene": MOUTH})
+			result.append({"id": str(exit.id), "map": Vector2(float(exit.map[0]), float(exit.map[1])), "facing": facing, "scene": MOUTHS[n % MOUTHS.size()]})
+			n += 1
 	var mine: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(MINE_PLAN))
 	for exit in mine.exits:
 		if exit.get("map") == null or str(exit.state) != "open":
@@ -83,6 +91,11 @@ static func clearings(half: float) -> Array[Vector3]:
 	for exit in exits():
 		var at: Vector2 = exit.map - Vector2(half, half) - exit.facing * HILL_CENTRE
 		result.append(Vector3(at.x, at.y, HILL_CLEAR))
+		var out := 6.0
+		while out <= APPROACH_REACH:
+			var w: Vector2 = exit.map - Vector2(half, half) + exit.facing * out
+			result.append(Vector3(w.x, w.y, APPROACH_CLEAR))
+			out += 4.0
 	return result
 
 

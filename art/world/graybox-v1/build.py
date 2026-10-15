@@ -154,10 +154,24 @@ for city in D['cities']:
 # 14 Oct: at 286 the end pinned it to the plain, a 40 % drop the bridge ramp could not follow and the
 # hero was stopped by its toe).
 roads.append({'id':'w1_footbridge','points':[[352,440,160],[250,440,150]],'width_m':3,'label':'W1 footbridge'})
+# WORLD-BUILD-01G (book PDF141 p.59/p.27, Codex 331/333: foothill cave X stood on a 45-50 deg mountain
+# side, no way to it): the smugglers' trail from the cave's exit X (~600/438) up the north slope past
+# the snow city to the old drainage adit Sh2 (~1005/244), round the council's outpost (25 m) and the
+# snow city's ring, 7-9 m outside its walls (tests57: a line along the west wall made the wall leave a gap
+# for it and the Sh2 stair hit the north-west corner) - the plan's grade-limited path (<= 30 %). Its gentle legs are trails here;
+# its three steep climbs are stone switchback stairs (SMUGGLER_STAIRS below).
+SMUGGLER_LEGS=[
+    [[625.0,445.0,188.2],[660.0,445.0,189.8],[730.0,480.0,189.9],[765.0,465.0,198.0],[800.0,470.0,205.9],[820.0,440.0,215.7],[815.0,430.0,218.2],[815.0,385.0,224.3],[825.0,365.0,227.7],[840.0,355.0,231.6]],
+    [[860.0,320.0,261.8],[903.0,320.0,270.5],[892.0,306.0,274.5],[890.0,300.0,278.3],[900.0,288.0,281.5]],
+    [[900.0,249.0,303.0],[920.0,240.0,307.2],[995.0,240.0,308.3],[999.0,242.0,308.0]],
+]
+for _k,_pts in enumerate(SMUGGLER_LEGS):
+    roads.append({'id':'smugglers_trail_%d'%(_k+1),'points':_pts,'width_m':3,'label':'smugglers trail','planned':True})
 
 sites=D['sites']
 plazas=[c['plaza'] for c in cities]+[s['point'] for s in sites]
-anchors={tuple(r['points'][end]) for r in roads for end in [0,-1]}
+# the smugglers' trail ('planned') is no anchor: its ends lie on the mountain side, not at a junction
+anchors={tuple(r['points'][end]) for r in roads for end in [0,-1] if not r.get('planned')}
 
 def round_path(path):
     # Circular fillets have a known inner radius; quadratic corners can fold a ribbon.
@@ -187,7 +201,7 @@ for r in roads:
         n=max(1,math.ceil(math.dist(a[:2],b[:2])/2))
         for i in range(n):
             p=[a[k]+(b[k]-a[k])*i/n for k in range(3)]
-            for nx,nz,nh in flat_nodes:
+            for nx,nz,nh in ([] if r.get('planned') else flat_nodes):
                 influence=1-float(smooth((math.hypot(p[0]-nx,p[1]-nz)-18)/20))
                 p[2]=p[2]*(1-influence)+nh*influence
             sampled.append(p)
@@ -365,6 +379,8 @@ for r in roads:
     iz_=np.clip(np.round(pts[:,1]/STEP).astype(int),0,WIDTH-1);ix_=np.clip(np.round(pts[:,0]/STEP).astype(int),0,WIDTH-1)
     to_river=water_distance[iz_,ix_]
     keep=steep*smooth((np.abs(planned-ground)-4.0)/10.0)*smooth((to_city-150.0)/250.0)*smooth((to_river-120.0)/120.0)
+    # the smugglers' trail's heights come from the finished ground (the plan's path finder): kept
+    if r.get('planned'):keep=np.ones_like(keep)
     mixed=ground*(1-keep)+planned*keep
     # A median first removes single-sample spikes of the plan at road corners.
     padded=np.pad(mixed,3,mode='edge')
@@ -380,6 +396,9 @@ ids=list(profiles)
 # Where two roads run together or cross, the lesser one (narrower, then later in the plan) takes
 # the main one's final height on every shared sample; no averaging, so no saw-tooth along a shared stretch.
 width_of={r['id']:float(r.get('width_m',6)) for r in roads}
+# the smugglers' trail keeps its planned profile: no plate or shared stretch pins it (a plan junction
+# by the snow city pinned its third leg 12.6 m under its own start)
+_planned_ids={r['id'] for r in roads if r.get('planned')}
 # Near a node its level plate decides, so a shared stretch never pins a sample next to a plate.
 node_xy=np.array(list(nodes)+[tuple(c['plaza'][:2]) for c in cities]+[tuple(s['point'][:2]) for s in sites],float)
 city_plaza_xy=np.array([c['plaza'][:2] for c in cities],float)
@@ -394,6 +413,7 @@ for a_i,ra in enumerate(ids):
         d=np.hypot(pa[:,None,0]-pb[None,:,0],pa[:,None,1]-pb[None,:,1])
         close=np.argwhere(d<4.0)
         if not len(close):continue
+        if ra in _planned_ids or rb in _planned_ids:continue
         main,minor=(ra,rb) if width_of[ra]>=width_of[rb] else (rb,ra)
         dm=d if main==ra else d.T
         for iu in {int(ib if main==ra else ia) for ia,ib in close}:
@@ -406,6 +426,7 @@ for key in nodes:
         # 5 m: a rounded corner passes a junction up to ~3.5 m off (snow_desert at J1 missed its plate).
         if d[i]<5.0:nodes[key].append((rid,i))
 for key,hits in nodes.items():
+    hits[:]=[(rid,i) for rid,i in hits if rid not in _planned_ids]
     if not hits:continue
     # A branch joins a through road at the through road's level; only road ends meeting each other
     # settle on their average.
@@ -591,12 +612,23 @@ for r in roads:
     r['geometry_points']=[[float(px),float(pz),float(ph)] for (px,pz),ph in zip(pts,h)]
 # The ground meets each road within its width; beyond, a slope of at most 1:3 (narrower where
 # the ground is already close to the road), so nothing looks built up or dug out.
-dd,dh=nearest([r['geometry_points'] for r in roads],130)
-_,dw=nearest([[[p[0],p[1],float(r.get('width_m',6))] for p in r['geometry_points']] for r in roads],130)
+_main=[r for r in roads if not r.get('planned')]
+_trail=[r for r in roads if r.get('planned')]
+dd,dh=nearest([r['geometry_points'] for r in _main],130)
+_,dw=nearest([[[p[0],p[1],float(r.get('width_m',6))] for p in r['geometry_points']] for r in _main],130)
 core=dw*.5+1.0
 fall=np.clip(3.0*np.abs(heights-dh),6.0,90.0)
 w=np.where(dd<=core,1.0,1-ease((dd-core)/fall))
 heights=heights*(1-w)+(dh-.05)*w
+# WORLD-BUILD-01G: the smugglers' trail on a 45 deg mountain side - a 1:3 fade cut or filled up to 90 m
+# of the slope round it (first bake: -37/+19 m); a mountain path meets its slope 1:1 within 15 m.
+if _trail:
+    td,th=nearest([r['geometry_points'] for r in _trail],40)
+    tcore=float(_trail[0].get('width_m',3))*.5+1.0
+    tfall=np.clip(np.abs(heights-th),3.0,15.0)
+    tw=np.where(td<=tcore,1.0,1-ease((td-tcore)/tfall))
+    heights=heights*(1-tw)+(th-.05)*tw
+    dd=np.minimum(dd,td)
 # A level lake basin with a continuous shoreline; its outlet joins the river profile.
 for lake in D['lakes']:
     px,pz,level=lake['center'];rx,rz=lake['radii_m']
@@ -945,6 +977,56 @@ for _sid,_nodes,_w,_bl in SNOW_ROUTES:
         # terrace, behind its retaining wall); the rest of the terrace keeps its level
         well=np.hypot(x[i0:i1+1,j0:j1+1]-sx,z[i0:i1+1,j0:j1+1]-sz)<=max(dep,wid)*.5+2.5
         near&=~_snow_pad_mask[i0:i1+1,j0:j1+1]|well
+        heights[i0:i1+1,j0:j1+1]=np.where(near,np.minimum(win,top-.12),win)
+# WORLD-BUILD-01G: the smugglers' trail's steep climbs as stone switchbacks - legs 45 deg off the fall
+# line (a ~0.6 grade on these slopes, the stairs' own), landings at the turns, the treads at the ground's
+# level along each leg and the ground cut under them (as the snow routes).
+def stair_zigzag(top_xz,top_h,foot_xz,foot_h,legs,width=2.0):
+    """From top to foot in `legs` legs zigzagging off the fall line, landings at the turns; each leg
+    rises an equal share, its angle off the fall line set so the leg is no steeper than its treads."""
+    fx,fz=foot_xz[0]-top_xz[0],foot_xz[1]-top_xz[1];F=math.hypot(fx,fz);fx,fz=fx/F,fz/F
+    cx,cz=-fz,fx
+    adv=(F-2.5*(legs-1))/legs
+    rise=(foot_h-top_h)/legs
+    L=max(adv,abs(rise)/.6+1.0)
+    ca,sa=adv/L,math.sqrt(max(0.0,1-(adv/L)**2))
+    nodes=[(top_xz[0],top_xz[1],top_h)];px,pz=top_xz;side=1.0;h=top_h
+    for k in range(legs):
+        px,pz=px+(fx*ca+cx*sa*side)*L,pz+(fz*ca+cz*sa*side)*L;h+=rise
+        nodes.append((px,pz,h))
+        if k<legs-1:
+            px,pz=px+fx*2.5,pz+fz*2.5;nodes.append((px,pz,h))   # the turn's landing
+        side=-side
+    if math.hypot(foot_xz[0]-px,foot_xz[1]-pz)>0.5:nodes.append((foot_xz[0],foot_xz[1],h))   # level to the trail
+    return nodes
+# the ends at the cave mouth's floor (210.1, the finished ground before the cave) and the trail legs'
+SMUGGLER_STAIRS=[('smugglers_stairs_X',(602.1,440.1),210.1,(625.0,445.0),188.2,4),
+                 ('smugglers_stairs_mid',(840.0,355.0),231.6,(860.0,320.0),261.8,6),
+                 ('smugglers_stairs_sh2',(900.0,288.0),281.5,(900.0,249.0),303.0,4)]
+# the trail legs' finished decks at the stairs' ends (their profiles are smoothed: up to 1.3 m off the
+# plan, a step no one climbs)
+_deck={}
+for _r in roads:
+    if _r['id'].startswith('smugglers_trail'):
+        _g=_r['geometry_points'];_deck[(round(_g[0][0]),round(_g[0][1]))]=_g[0][2];_deck[(round(_g[-1][0]),round(_g[-1][1]))]=_g[-1][2]
+for _sid,_top,_th,_foot,_fh,_n in SMUGGLER_STAIRS:
+    _th=_deck.get((round(_top[0]),round(_top[1])),_th);_fh=_deck.get((round(_foot[0]),round(_foot[1])),_fh)
+    _nodes=stair_zigzag(_top,_th,_foot,_fh,_n);_st=[]
+    for _a,_b in zip(_nodes,_nodes[1:]):
+        if abs(_b[2]-_a[2])<1e-6 and math.dist(_a[:2],_b[:2])<3.0:
+            # a turn: the landing without rails (tests54: its rails stopped the hero where the flights meet
+            # it at ~117 deg; tests55: a 3.6 m square pad covered the next flight's first treads)
+            _st.append(_rec((_a[0]+_b[0])*.5,(_a[1]+_b[1])*.5,_a[2],math.degrees(math.atan2(_b[0]-_a[0],_b[1]-_a[1])),3.0,2.4,0))
+            continue
+        # the level ends of a flight (by a turn) carry no rails either - the hero comes onto them off
+        # the landing at an angle (tests56: stopped by them on the mid and Sh2 stairs); treads keep theirs
+        _st+=[r_[:6]+[0] if r_[4]>0.6 else r_ for r_ in stair_route([_a,_b],2.0,())]
+    BOOK_STAIRS.append({'id':_sid,'steps':_st})
+    for sx,sz,top,_yaw,dep,wid,_r in _st:
+        reach=max(dep,wid)*.5+4.5
+        i0,i1=max(0,int((sz-reach)/STEP)),min(WIDTH-1,int((sz+reach)/STEP)+1)
+        j0,j1=max(0,int((sx-reach)/STEP)),min(WIDTH-1,int((sx+reach)/STEP)+1)
+        win=heights[i0:i1+1,j0:j1+1];near=np.hypot(x[i0:i1+1,j0:j1+1]-sx,z[i0:i1+1,j0:j1+1]-sz)<=reach
         heights[i0:i1+1,j0:j1+1]=np.where(near,np.minimum(win,top-.12),win)
 # The meltwater channel between the middle terrace and the Academy (the book: a cut channel, the
 # rope bridge over it, its bed 285 under the bridge): a dry stone-lined cut, 3 m bed, banks 1:1.
