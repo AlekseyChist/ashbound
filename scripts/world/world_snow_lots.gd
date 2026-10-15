@@ -30,6 +30,12 @@ const FLAT_SHACK := 1.0
 const APRON := 3.0
 const SHACK_FRONT := 1.0
 const BLEND := 3.0
+## A plot cut into a slope (the ground over its level) fades into it over its height / CUT_GRADE m,
+## up to CUT_BLEND_MAX (owner 14 Oct, Codex 925dd80 010/028-030: a 3 m fade under a 3-4 m cut left
+## 45-50 deg earth banks behind the houses). Inside another plot's level ground the 3 m stays (its
+## floor is never dug under). Fills keep BLEND: a wider fill only grows the earth humps.
+const CUT_GRADE := 0.577
+const CUT_BLEND_MAX := 8.0
 const KEEP := 2.0
 const BUCKET := 20.0
 ## Plinth: under a house the ground falls more than this below its floor -> a stone plinth.
@@ -141,7 +147,7 @@ func setup(layout: Dictionary) -> void:
 	var area := Rect2()
 	for i in lots.size():
 		var lot := lots[i]
-		var reach: float = Vector2(lot.w * 0.5 + FLAT, lot.d * 0.5 + FLAT + APRON).length() + BLEND
+		var reach: float = Vector2(lot.w * 0.5 + FLAT, lot.d * 0.5 + FLAT + APRON).length() + CUT_BLEND_MAX
 		var c: Vector2 = lot.c
 		for bx in range(floori((c.x - reach) / BUCKET), floori((c.x + reach) / BUCKET) + 1):
 			for bz in range(floori((c.y - reach) / BUCKET), floori((c.y + reach) / BUCKET) + 1):
@@ -545,16 +551,26 @@ func height(p: Vector2, base: float) -> float:
 		return base
 	var h := INF
 	var core := INF
+	var dists: Array[float] = []
+	for i in _buckets.get(key, []):
+		var d := _dist(lots[i], p)
+		dists.append(d)
+		core = minf(core, d)
+	var in_flat := core == 0.0
+	var n := 0
 	for i in _buckets.get(key, []):
 		var lot := lots[i]
-		var d := _dist(lot, p)
-		core = minf(core, d)
-		if d >= BLEND:
+		var d: float = dists[n]
+		n += 1
+		var blend := BLEND
+		if base > lot.level and not in_flat:
+			blend = clampf((base - lot.level) / CUT_GRADE, BLEND, CUT_BLEND_MAX)
+		if d >= blend:
 			continue
 		# a shack's yard is a stone platform where the slope falls under it (build_plinths): the ground
 		# is cut down to its level but never banked up to it (Codex G03, direction A)
 		var target: float = minf(lot.level, base) if lot.shack else lot.level
-		h = minf(h, lerpf(target, base, smoothstep(0.0, BLEND, d)))
+		h = minf(h, lerpf(target, base, smoothstep(0.0, blend, d)))
 		# under a building's own floor the ground lies FLOOR_GAP lower (Codex d086d7a native: the
 		# floors shared the terrain's plane and flickered gravel through the boards)
 		if d == 0.0 and _inside_walls(lot, p):
@@ -817,6 +833,108 @@ func build_lane_walls(book: Node3D, ground: Callable) -> void:
 						count += 1
 				i = j
 	print("SNOW_LANE_WALLS blocks=%d" % count)
+
+
+## Terrace walls (owner 14 Oct "chopped slopes"; slope census 15 Oct: the straight 45-60 deg banks of
+## the city were the book's pads - the middle terrace and the academy shelf - levelled in build.py with a
+## 4 m margin, a 4-8 m drop over it, houses right under). Along a snow pad's edge, where the ground
+## falls more than PAD_WALL_MIN over its margin, a stone retaining wall at the bank's foot holds the
+## terrace: its face at the margin's outer side, its top over the terrace's edge, the bank inside it.
+## Not where a street, a door stair, a flight or a house is within the bank (they keep their ground).
+const PAD_WALL_MIN := 0.8
+const PAD_WALL_RUN := 3
+
+func build_pad_walls(book: Node3D, ground: Callable, layout: Dictionary) -> void:
+	var node := Node3D.new()
+	node.name = "SnowPadWalls"
+	book.add_child(node)
+	var count := 0
+	for pad in layout.get("book_pads", []):
+		if not str(pad.id).begins_with("snow_"):
+			continue
+		var poly := PackedVector2Array()
+		for q in pad.poly:
+			poly.append(Vector2(float(q[0]) - HALF, float(q[1]) - HALF))
+		var centre := Vector2.ZERO
+		for q in poly:
+			centre += q
+		centre /= poly.size()
+		var margin: float = float(pad.get("margin", 4))
+		for e in poly.size():
+			var a: Vector2 = poly[e]
+			var b: Vector2 = poly[(e + 1) % poly.size()]
+			var dir := (b - a).normalized()
+			var out := Vector2(-dir.y, dir.x)
+			if out.dot((a + b) * 0.5 - centre) < 0.0:
+				out = -out
+			var n := int(floor(a.distance_to(b) / STREET_STEP))
+			var samples: Array = []
+			for i in n:
+				var q: Vector2 = a + dir * (i + 0.5) * STREET_STEP
+				var top := float(ground.call(q.x - out.x * 0.5, q.y - out.y * 0.5))
+				var foot := float(ground.call(q.x + out.x * (margin + 0.4), q.y + out.y * (margin + 0.4)))
+				var c: Vector2 = q + out * margin * 0.5
+				var ok := top - foot >= PAD_WALL_MIN
+				if ok:
+					for si in _profiles.size():
+						if float(_street_at(si, c)[0]) < float(_profiles[si][3]) + 0.3 + margin * 0.5 + 0.5:
+							ok = false
+					for lot in lots:
+						if _wall_dist(lot, c) < margin * 0.5 + 0.5:
+							ok = false
+					for code in stoop_paths:
+						var sp: PackedVector2Array = stoop_paths[code]
+						for k in sp.size() - 1:
+							if c.distance_to(Geometry2D.get_closest_point_to_segment(c, sp[k], sp[k + 1])) < STOOP_WIDTH * 0.5 + margin * 0.5 + 0.3:
+								ok = false
+					for tr in _treads:
+						if c.distance_to(tr[0]) < float(tr[1]) + margin * 0.5 + 0.3:
+							ok = false
+				samples.append([top, foot] if ok else null)
+			var i := 0
+			while i < n:
+				if samples[i] == null:
+					i += 1
+					continue
+				var j := i
+				while j < n and samples[j] != null:
+					j += 1
+				if j - i >= PAD_WALL_RUN:
+					var front := PackedVector3Array()
+					var back := PackedVector3Array()
+					var tops := PackedFloat32Array()
+					var lows := PackedFloat32Array()
+					for k in range(i, j + 1):
+						var q: Vector2 = a + dir * k * STREET_STEP
+						var s0: Array = samples[maxi(k - 1, i)]
+						var s1: Array = samples[mini(k, j - 1)]
+						var f2: Vector2 = q + out * margin
+						var b2: Vector2 = q - out * 0.3
+						front.append(Vector3(f2.x, 0, f2.y))
+						back.append(Vector3(b2.x, 0, b2.y))
+						tops.append(maxf(float(s0[0]), float(s1[0])) + LANE_WALL_PROUD)
+						lows.append(minf(float(s0[1]), float(s1[1])) - 1.5)
+					_wall_strip(book, node, front, back, tops, lows, "masonry")
+					var lip_f := PackedVector3Array()
+					var lip_b := PackedVector3Array()
+					var lip_t := PackedFloat32Array()
+					var lip_l := PackedFloat32Array()
+					for k in front.size():
+						var inward := (back[k] - front[k]).normalized()
+						lip_f.append(front[k] - inward * 0.03)
+						lip_b.append(front[k] + inward * 0.34)
+						lip_t.append(tops[k] + 0.08)
+						lip_l.append(tops[k] - 0.04)
+					_wall_strip(book, node, lip_f, lip_b, lip_t, lip_l, "tread")
+					for k in range(i, j):
+						var q0: Vector3 = (front[k - i] + back[k - i] + front[k - i + 1] + back[k - i + 1]) * 0.25
+						var top_y := (tops[k - i] + tops[k - i + 1]) * 0.5
+						var bottom_y := minf(lows[k - i], lows[k - i + 1])
+						var turn := Basis(Vector3.UP, atan2(dir.x, dir.y))
+						book._stair_collider(node, Vector3(q0.x, (top_y + bottom_y) * 0.5, q0.z), Vector3(margin + 0.3, top_y - bottom_y, STREET_STEP + 0.02), turn)
+						count += 1
+				i = j
+	print("SNOW_PAD_WALLS blocks=%d" % count)
 
 
 ## A continuous prism along a polyline: at each point k its front and back points (y unused), the

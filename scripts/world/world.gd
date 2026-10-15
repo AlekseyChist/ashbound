@@ -1078,6 +1078,7 @@ func _build_water_and_sites() -> void:
 	book.build_stairs(world_layout.get("book_stairs", []))
 	snow_lots.build_plinths(book, world_ground)
 	snow_lots.build_lane_walls(book, world_ground)
+	snow_lots.build_pad_walls(book, world_ground, world_layout)
 	# the snow city's walls and gates from the book's plan (world_snow_walls.gd)
 	SnowWalls.new().build(book, world_ground, world_layout, snow_lots.streets)
 	# WORLD-BUILD-01E: the desert city's ring of walls and its four gates
