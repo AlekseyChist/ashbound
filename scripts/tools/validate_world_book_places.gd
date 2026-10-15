@@ -74,6 +74,8 @@ func run() -> void:
 		print("CAMERA_OBSTACLES groups=%d bodies=%d arm_mask=%d" % [obstacles.group_count(), obstacles.body_count(), arm.collision_mask])
 	# CAM-G03-CLOSE-01: the hero's two sprites under the camera visibility owner
 	require(w.camera_visibility != null and w.camera_visibility.materials.size() == 2, "The camera visibility does not own the hero's two sprites")
+	# W1-NIGHT-READ-01: the viewpoint's three lanterns stand on physical support
+	require(w.w1_lanterns != null and w.w1_lanterns.complete and w.w1_lanterns.posts.size() == 3, "The W1 viewpoint's lanterns are not all placed: %s" % [w.w1_lanterns.unresolved if w.w1_lanterns else "none"])
 
 	# Pads: sample a grid over the polygon shrunk towards its centroid (the margin eases outside it).
 	for pad in pads:

@@ -11,6 +11,7 @@ const CaveMouths = preload("res://scripts/world/world_cave_mouths.gd")
 const CameraObstacles = preload("res://scripts/world/camera_mesh_obstacles.gd")
 const CameraSelection = preload("res://scripts/world/camera_obstacle_selection.gd")
 const CameraVisibility = preload("res://scripts/world/interior_camera_visibility.gd")
+const W1Lanterns = preload("res://scripts/world/w1_viewpoint_lanterns.gd")
 const BookPlaces = preload("res://scripts/world/world_book_places.gd")
 const SnowLots = preload("res://scripts/world/world_snow_lots.gd")
 const SnowWalls = preload("res://scripts/world/world_snow_walls.gd")
@@ -86,6 +87,7 @@ var lowland_water: RefCounted
 var cave_mouths: Node3D
 var camera_obstacles: Node = null
 var camera_visibility: Node = null
+var w1_lanterns: Node3D = null
 var road_mask: Image
 var world_colors: PackedColorArray
 ## GRASS-WORLD-01: road and river pieces near the grass, bucketed by 32 m cells (scene frame).
@@ -1090,6 +1092,11 @@ func _build_water_and_sites() -> void:
 	world_root.add_child(book)
 	book.build(self, world_layout.get("book_places", []))
 	book.build_stairs(world_layout.get("book_stairs", []))
+	# W1-NIGHT-READ-01 (Codex 397; the runtime file is Codex's): three lanterns at the falls viewpoint, set
+	# on its terrace and the stair's arrival once their physics is there
+	w1_lanterns = W1Lanterns.new()
+	world_root.add_child(w1_lanterns)
+	w1_lanterns.build(self)
 	snow_lots.build_plinths(book, world_ground)
 	snow_lots.build_lane_walls(book, world_ground)
 	# SNOW-G03: the slum's stone stair-street (world_snow_lots.STAIR_STREETS)
