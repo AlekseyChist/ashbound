@@ -276,6 +276,39 @@ func run() -> void:
 					break
 			print("BOOK_STAIRS_WALK %s %s done=%s at=%s" % [flight.id, leg[0], not stuck, actor.position + Vector3(1000, 0, 1000)])
 			require(not stuck, "%s not walkable %s" % [flight.id, leg[0]])
+		# WORLD-BUILD-01G (Codex 351): the smugglers' stairs must also join their trail legs - from each end
+		# step onto the nearest trail point 4-8 m on, and back
+		if str(flight.id).begins_with("smugglers"):
+			for end in [steps[0], steps[steps.size() - 1]]:
+				var e := Vector2(float(end[0]), float(end[1]))
+				var best := Vector3.INF
+				for road in layout.get("roads", []):
+					if not str(road.id).begins_with("smugglers_trail"):
+						continue
+					for gp in road.geometry_points:
+						var d := Vector2(float(gp[0]), float(gp[1])).distance_to(e)
+						if d >= 4.0 and d <= 8.0 and (best == Vector3.INF or d < Vector2(best.x, best.z).distance_to(e)):
+							best = Vector3(float(gp[0]), float(gp[2]), float(gp[1]))
+				if best == Vector3.INF:
+					continue
+				for pair in [[Vector3(e.x, float(end[2]), e.y), best], [best, Vector3(e.x, float(end[2]), e.y)]]:
+					var from: Vector3 = pair[0]
+					var to: Vector3 = pair[1]
+					actor.velocity = Vector3.ZERO
+					actor.position = Vector3(from.x - 1000.0, from.y + 1.0, from.z - 1000.0)
+					var arrived := false
+					for tick in 900:
+						await physics_frame
+						var off := Vector2(to.x - 1000.0 - actor.position.x, to.z - 1000.0 - actor.position.z)
+						if off.length() < 0.5:
+							arrived = true
+							break
+						var hv := Vector3(off.x, 0, off.y).normalized() * 2.0
+						actor.velocity = Vector3(hv.x, 0.0 if actor.is_on_floor() else actor.velocity.y - 22.0 / 60.0, hv.z)
+						_step_up(actor, 1.0 / 60.0)
+						actor.move_and_slide()
+					print("BOOK_STAIRS_JOIN %s %s -> %s done=%s at=%s" % [flight.id, from, to, arrived, actor.position + Vector3(1000, 0, 1000)])
+					require(arrived, "%s: the join to its trail is not walkable %s -> %s" % [flight.id, from, to])
 
 	# WORLD-BUILD-01C: the snow city's 41 plots on the ACTUAL colliders (terrain and plinths only): under
 	# the walls nothing over the floor and nothing more than 0.35 m under it (a plinth fills a fall);

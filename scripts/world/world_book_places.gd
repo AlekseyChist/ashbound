@@ -51,7 +51,7 @@ func build(world_node: Node, places: Array) -> void:
 					_farmstead(node, at + offset)
 			_:
 				push_warning("BOOK_PLACES unknown kind %s" % place.kind)
-	print("BOOK_PLACES places=%d boxes=%d" % [places.size(), boxes])
+	print("BOOK_PLACES places=%d boxes=%d models=%d" % [places.size(), boxes, models])
 
 
 ## A box whose footprint centre is `c` (world frame x/z), `size` metres, turned by `yaw` degrees:
@@ -185,39 +185,138 @@ func _ruins(parent: Node3D, o: Vector2) -> void:
 		_box(parent, o + rubble, Vector3(5, 1.2, 4), "rock", 25.0)
 
 
+# --- BOOK-DRESS-01: the three places by the start (camp, Wolf Hollow, Watch Rock) dressed from the
+# project's own kit (village forest, forest floor and edge rocks - Poly Haven CC0 - the tavern props,
+# the caves' rock mouth) instead of grey boxes. The other places keep their volumes until their sheets.
+const KIT := {
+	"boulder": "res://assets/environment/village-forest-v1/boulder.glb",
+	"stump": "res://assets/environment/village-forest-v1/stump.glb",
+	"trunk": "res://assets/environment/forest-floor-v1/dead_tree_trunk.glb",
+	"branches": "res://assets/environment/forest-floor-v1/dry_branches_medium_01.glb",
+	"roots": "res://assets/environment/forest-floor-v1/pine_roots.glb",
+	"mossrock": "res://assets/environment/forest-floor-v1/rock_moss_set_02.glb",
+	"cliff": "res://assets/environment/edge-rocks-v1/namaqualand_cliff_01.glb",
+	"bigboulder": "res://assets/environment/world-props-v1/namaqualand_boulder_03.glb",
+	"bucket": "res://assets/props/tavern-v1/wooden_bucket_01.glb",
+	"barrel": "res://assets/props/tavern-v1/wine_barrel_01.glb",
+	"axe": "res://assets/props/civic-v1/wooden_axe_03.glb",
+	"mouth": "res://assets/caves-v1/cave_mouth.glb",
+}
+var models := 0
+var _scenes := {}
+
+
+## A kit model at `c` (world frame), on the ground there + `lift`, turned `yaw` degrees, `size` a
+## number or a Vector3; `solid` > 0: a cylinder of that radius and `height` round it; `trimesh`: its
+## own surfaces become colliders (rocks the hero climbs or walks round).
+func _model(parent: Node3D, kind: String, c: Vector2, yaw: float, size: Variant, lift := 0.0, solid := 0.0, height := 1.0, trimesh := false, pitch := 0.0, roll := 0.0) -> Node3D:
+	if not _scenes.has(kind):
+		_scenes[kind] = load(KIT[kind])
+	var node: Node3D = _scenes[kind].instantiate()
+	var g := ground(c.x, c.y)
+	node.position = Vector3(c.x, g + lift, c.y)
+	node.rotation = Vector3(deg_to_rad(pitch), deg_to_rad(yaw), deg_to_rad(roll))
+	node.scale = size if size is Vector3 else Vector3.ONE * float(size)
+	parent.add_child(node)
+	models += 1
+	if trimesh:
+		for m in node.find_children("*", "MeshInstance3D", true, false):
+			(m as MeshInstance3D).create_trimesh_collision()
+	elif solid > 0.0:
+		var body := StaticBody3D.new()
+		var shape := CollisionShape3D.new()
+		var cyl := CylinderShape3D.new()
+		cyl.radius = solid
+		cyl.height = height
+		shape.shape = cyl
+		body.add_child(shape)
+		body.position = Vector3(c.x, g + height * 0.5, c.y)
+		parent.add_child(body)
+	return node
+
+
+## A pole (timber, textured) from a to b (world frame, heights absolute), `r` thick.
+func _pole(parent: Node3D, a: Vector3, b: Vector3, r: float) -> void:
+	var mesh := MeshInstance3D.new()
+	var box := BoxMesh.new()
+	box.size = Vector3(r, a.distance_to(b), r)
+	mesh.mesh = box
+	mesh.material_override = _material("wood")
+	mesh.position = (a + b) * 0.5
+	mesh.basis = Basis(Quaternion(Vector3.UP, (b - a).normalized()))
+	parent.add_child(mesh)
+	models += 1
+
+
 # --- the band's glade in the Old Pine Grove (book sheet 01: common pot, lean-tos) -------------------
 
 func _camp(parent: Node3D, o: Vector2) -> void:
-	for k in 8:
-		var a := TAU * k / 8.0
-		_box(parent, o + Vector2(cos(a), sin(a)) * 1.1, Vector3(0.4, 0.3, 0.4), "rock", rad_to_deg(a), 0.0, false)
-	_box(parent, o, Vector3(0.9, 0.15, 0.9), "dark", 0.0, 0.0, false)
-	for side in [-1, 1]:
+	# the fire: a ring of stones, ash, a tripod over it with the common pot
+	for k in 9:
+		var a := TAU * k / 9.0
+		_model(parent, "boulder", o + Vector2(cos(a), sin(a)) * 1.05, rad_to_deg(a) * 1.7, 0.26 + 0.05 * (k % 3), -0.08)
+	_box(parent, o, Vector3(1.4, 0.06, 1.4), "dark", 0.0, 0.0, false)
+	var top := Vector3(o.x, ground(o.x, o.y) + 1.9, o.y)
+	for k in 3:
+		var a := TAU * k / 3.0 + 0.5
+		var foot := o + Vector2(cos(a), sin(a)) * 1.25
+		_pole(parent, Vector3(foot.x, ground(foot.x, foot.y) - 0.1, foot.y), top + Vector3(0, 0.15, 0), 0.07)
+	_model(parent, "bucket", o, 0.0, 1.6, 0.75)
+	# two lean-tos: forked posts, a ridge pole, a sloping roof of branches over a back screen
+	for side in [-1.0, 1.0]:
 		var c := o + Vector2(side * 5.5, -3.0)
-		_box(parent, c + Vector2(0, 1.2), Vector3(3.2, 1.9, 0.2), "timber")                 # back screen
-		_box(parent, c, Vector3(3.4, 0.12, 2.4), "roof", 0.0, 1.6, false)                    # roof sheet
-		_box(parent, o + Vector2(side * 2.6, 1.8), Vector3(2.2, 0.4, 0.4), "timber", 90.0 * side)  # log seat
+		var g := ground(c.x, c.y)
+		for dx in [-1.5, 1.5]:
+			_pole(parent, Vector3(c.x + dx, g - 0.2, c.y + 0.9), Vector3(c.x + dx, g + 1.75, c.y + 0.9), 0.12)
+		_pole(parent, Vector3(c.x - 1.8, g + 1.72, c.y + 0.9), Vector3(c.x + 1.8, g + 1.72, c.y + 0.9), 0.1)
+		_box(parent, c + Vector2(0, -0.1), Vector3(3.4, 0.08, 2.3), "roof", 0.0, 1.25, false, -34.0)
+		for k in 4:
+			_model(parent, "branches", c + Vector2(-1.2 + k * 0.8, -0.1), 90.0 + k * 7.0, 1.5, 1.3 + 0.02 * k, 0.0, 1.0, false, -34.0)
+		_box(parent, c + Vector2(0, -0.95), Vector3(3.2, 0.9, 0.15), "wood", 0.0, 0.0, true)
+		# a log to sit on facing the fire, a stump with the axe in it by one shelter
+		_model(parent, "trunk", o + Vector2(side * 2.7, 1.9), 90.0 + side * 12.0, Vector3(0.8, 1.7, 1.7), 0.05, 0.0)
+	var stump := o + Vector2(-3.2, -6.4)
+	_model(parent, "stump", stump, 30.0, 1.0, -0.05, 0.35, 0.6)
+	_model(parent, "axe", stump + Vector2(0.05, 0), 20.0, 1.2, 0.85, 0.0, 1.0, false, 0.0, 25.0)
+	_model(parent, "barrel", o + Vector2(7.6, -4.4), 0.0, 1.0, 0.0, 0.42, 0.9)
+	_model(parent, "roots", o + Vector2(-8.0, 2.5), 40.0, 1.3, -0.02)
 
 
-# --- Wolf Hollow: boulders round the pack's lair ----------------------------------------------------
+# --- Wolf Hollow: boulders round the pack's lair under the bank -------------------------------------
 
 func _hollow(parent: Node3D, o: Vector2) -> void:
 	var stones := [[Vector2(-7, -3), 3.0, 20.0], [Vector2(6, -5), 2.4, -35.0], [Vector2(2, 7), 3.6, 60.0],
 		[Vector2(-4, 6), 1.8, 10.0], [Vector2(9, 4), 2.0, 75.0]]
 	for s in stones:
-		_box(parent, o + s[0], Vector3(s[1] * 1.3, s[1], s[1]), "rock", s[2])
-	_box(parent, o + Vector2(0, -9), Vector3(4, 2.2, 3), "dark", 0.0)   # the lair under the bank
+		var k: float = s[1] / 1.5
+		_model(parent, "bigboulder", o + s[0], s[2], k, -0.25 * k, 0.0, 1.0, true)
+	for c in [Vector2(-9, 1), Vector2(4, -10), Vector2(11, -2)]:
+		_model(parent, "mossrock", o + c, c.x * 13.0, 1.3, 0.0, 0.0, 1.0, true)
+	# the lair: the caves' rock mouth, small - a low dark den under the bank (too low for the hero)
+	var lair := _model(parent, "mouth", o + Vector2(0, -9), 0.0, 0.34, -0.5)
+	# its rock, triplanar and darkening inward, as the mouths'; its collider comes with the import
+	var cm := preload("res://scripts/world/world_cave_mouths.gd")
+	var mouths: Node3D = cm.new()
+	mouths._dress(lair, mouths._surface(cm.ROCK, 4.0), mouths._surface(cm.EARTH, 3.0), mouths._surface(cm.TIMBER, 0.8, "col"))
+	mouths.free()
+	for c in [Vector2(-2, -6), Vector2(3, -6.5), Vector2(-5, -1), Vector2(1, 3)]:
+		_model(parent, "branches", o + c, c.x * 31.0, 1.4, 0.0)
+	_model(parent, "roots", o + Vector2(-2.5, -7.0), 160.0, 1.4, -0.05)
+	_model(parent, "trunk", o + Vector2(-1, 11), 70.0, Vector3(1.2, 2.0, 2.0), 0.08, 0.0)
 
 
-# --- Watch Rock: an outcrop with steps to a viewing ledge -------------------------------------------
+# --- Watch Rock: an outcrop with stone steps to a viewing ledge and a cairn -------------------------
 
 func _lookout(parent: Node3D, o: Vector2) -> void:
-	_box(parent, o + Vector2(0, -4), Vector3(9, 3.2, 7), "rock", 8.0)
-	_box(parent, o + Vector2(2, -6), Vector3(5, 5.0, 4), "rock", -12.0)
-	# rough steps up the near side to the ledge (0.32 m each)
+	_model(parent, "cliff", o + Vector2(0.5, -5.0), 8.0, 1.15, -0.4, 0.0, 1.0, true)
+	_model(parent, "bigboulder", o + Vector2(4.5, -1.5), -40.0, 1.3, -0.3, 0.0, 1.0, true)
+	_model(parent, "bigboulder", o + Vector2(-5.5, -6.0), 75.0, 1.6, -0.4, 0.0, 1.0, true)
+	# the ledge: a flat stone shelf on the outcrop's front shoulder at 3.2 m, reached by rough steps
+	_box(parent, o + Vector2(-1.5, -1.2), Vector3(3.6, 0.35, 2.6), "tread", 8.0, 3.2 - 0.35)
 	for k in 9:
-		_box(parent, o + Vector2(-3.5, 3.0 - k * 0.45), Vector3(1.6, 0.32 * (k + 1), 0.5), "rock")
-	_box(parent, o + Vector2(0, -4), Vector3(0.6, 1.2, 0.6), "rock", 0.0, 3.2)   # cairn on the ledge
+		_box(parent, o + Vector2(-3.5, 3.0 - k * 0.45), Vector3(1.6, 0.32 * (k + 1), 0.5), "tread")
+	for k in 3:
+		_model(parent, "boulder", o + Vector2(-1.2, -1.4), k * 70.0, 0.42 - 0.1 * k, 3.2 + 0.3 * k)
 
 
 # --- the salt works (sheet 22): boiling shed, evaporation pans, salt heaps --------------------------

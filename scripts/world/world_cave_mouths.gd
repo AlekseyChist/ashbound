@@ -25,6 +25,9 @@ const NOTCH_HALF_WIDTH := 4.5
 const NOTCH_DEPTH := Vector2(-2.0, 9.0)
 const NOTCH_RISE := 0.3
 const NOTCH_UNDER := 0.4
+const INSIDE_HALF_WIDTH := 3.0
+## A book stair starting this close to an exit sets the arch's floor.
+const STAIR_REACH := 5.0
 ## On a slope the arch's floor takes the ground before its rock (FRONT m out), not the slope's
 ## brow at the exit point: the rock sinks into the hill and no drop opens before the entrance.
 const FRONT := 3.0
@@ -64,12 +67,21 @@ static func exits() -> Array:
 
 ## A copy of the world grid with the terrain cut under each arch where the slope climbs into it.
 ## Flat ground is left alone. `height` is the grid's own sampler (world frame).
-func notch(grid: PackedFloat32Array, width: int, step: float, half: float, height: Callable) -> PackedFloat32Array:
+## `stairs`: the layout's book stairs - a flight starting at an exit sets that arch's floor (Codex 351:
+## foothill X's floor came 3.26 m under its stair's top from the ground the stair's cut had lowered).
+func notch(grid: PackedFloat32Array, width: int, step: float, half: float, height: Callable, stairs: Array = []) -> PackedFloat32Array:
 	var result := grid.duplicate()
 	for exit in exits():
 		var at: Vector2 = exit.map - Vector2(half, half)
 		var out: Vector2 = exit.facing
 		var floor_y: float = minf(height.call(at.x, at.y), height.call(at.x + out.x * FRONT, at.y + out.y * FRONT))
+		var nearest := STAIR_REACH
+		for flight in stairs:
+			for st in [flight.steps[0], flight.steps[flight.steps.size() - 1]]:
+				var d := Vector2(float(st[0]) - half, float(st[1]) - half).distance_to(at)
+				if d < nearest:
+					nearest = d
+					floor_y = float(st[2])
 		floors[exit.id] = floor_y
 		var reach := NOTCH_DEPTH.y + NOTCH_HALF_WIDTH
 		for gz in range(maxi(0, floori((at.y - reach + half) / step)), mini(width, ceili((at.y + reach + half) / step) + 1)):
@@ -80,7 +92,10 @@ func notch(grid: PackedFloat32Array, width: int, step: float, half: float, heigh
 				if across > NOTCH_HALF_WIDTH or depth < NOTCH_DEPTH.x or depth > NOTCH_DEPTH.y:
 					continue
 				var i := gz * width + gx
-				if result[i] > floor_y + NOTCH_RISE:
+				# inside the arch the ground always lies under its floor (Codex 351: terrain showed through
+				# the bent way's bottom and across the mine's adit); before it only where the slope climbs
+				var inside := depth >= 0.5 and across <= INSIDE_HALF_WIDTH
+				if result[i] > floor_y + NOTCH_RISE or (inside and result[i] > floor_y - NOTCH_UNDER):
 					result[i] = floor_y - NOTCH_UNDER
 	return result
 

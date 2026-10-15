@@ -234,7 +234,7 @@ func _build_world() -> void:
 	var graded := _flatten_inn(_raise_west_rim(pad.apply(original_heights, world_width, GRID)))
 	# WORLD-BUILD-01G: the terrain cut under the caves' arches where a slope climbs into them
 	cave_mouths = CaveMouths.new()
-	world_heights = cave_mouths.notch(graded, world_width, GRID, HALF, func(x: float, z: float) -> float: return _grid_height(graded, x, z))
+	world_heights = cave_mouths.notch(graded, world_width, GRID, HALF, func(x: float, z: float) -> float: return _grid_height(graded, x, z), world_layout.get("book_stairs", []))
 	snow_lots.grade_streets(func(x: float, z: float) -> float: return _grid_height(world_heights, x, z))
 	world_root = Node3D.new()
 	world_root.name = "WorldMap"
@@ -1078,6 +1078,9 @@ func _build_water_and_sites() -> void:
 	book.build_stairs(world_layout.get("book_stairs", []))
 	snow_lots.build_plinths(book, world_ground)
 	snow_lots.build_lane_walls(book, world_ground)
+	# SNOW-G03: the slum's stone stair-street (world_snow_lots.STAIR_STREETS)
+	if not snow_lots.stair_street_steps.is_empty():
+		book.build_stairs([{"id": "snow_stair_street_8", "steps": snow_lots.stair_street_steps}])
 	snow_lots.build_pad_walls(book, world_ground, world_layout)
 	# the snow city's walls and gates from the book's plan (world_snow_walls.gd)
 	SnowWalls.new().build(book, world_ground, world_layout, snow_lots.streets)

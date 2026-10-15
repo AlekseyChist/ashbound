@@ -1000,7 +1000,7 @@ def stair_zigzag(top_xz,top_h,foot_xz,foot_h,legs,width=2.0):
     if math.hypot(foot_xz[0]-px,foot_xz[1]-pz)>0.5:nodes.append((foot_xz[0],foot_xz[1],h))   # level to the trail
     return nodes
 # the ends at the cave mouth's floor (210.1, the finished ground before the cave) and the trail legs'
-SMUGGLER_STAIRS=[('smugglers_stairs_X',(602.1,440.1),210.1,(625.0,445.0),188.2,4),
+SMUGGLER_STAIRS=[('smugglers_stairs_X',(601.0,439.0),210.1,(625.0,445.0),188.2,4),
                  ('smugglers_stairs_mid',(840.0,355.0),231.6,(860.0,320.0),261.8,6),
                  ('smugglers_stairs_sh2',(900.0,288.0),281.5,(900.0,249.0),303.0,4)]
 # the trail legs' finished decks at the stairs' ends (their profiles are smoothed: up to 1.3 m off the
@@ -1021,13 +1021,48 @@ for _sid,_top,_th,_foot,_fh,_n in SMUGGLER_STAIRS:
         # the level ends of a flight (by a turn) carry no rails either - the hero comes onto them off
         # the landing at an angle (tests56: stopped by them on the mid and Sh2 stairs); treads keep theirs
         _st+=[r_[:6]+[0] if r_[4]>0.6 else r_ for r_ in stair_route([_a,_b],2.0,())]
+    # the three steps at each end carry no rails: the trail leaves them at an angle (the join check:
+    # the last flight's rail stopped the hero turning onto trail 2)
+    for _q in list(range(min(3,len(_st))))+list(range(max(0,len(_st)-3),len(_st))):_st[_q]=_st[_q][:6]+[0]
     BOOK_STAIRS.append({'id':_sid,'steps':_st})
-    for sx,sz,top,_yaw,dep,wid,_r in _st:
-        reach=max(dep,wid)*.5+4.5
-        i0,i1=max(0,int((sz-reach)/STEP)),min(WIDTH-1,int((sz+reach)/STEP)+1)
-        j0,j1=max(0,int((sx-reach)/STEP)),min(WIDTH-1,int((sx+reach)/STEP)+1)
-        win=heights[i0:i1+1,j0:j1+1];near=np.hypot(x[i0:i1+1,j0:j1+1]-sx,z[i0:i1+1,j0:j1+1]-sz)<=reach
-        heights[i0:i1+1,j0:j1+1]=np.where(near,np.minimum(win,top-.12),win)
+    # the cut under the flights: every grid point within reach of a tread down to its NEAREST tread
+    # (Codex 351: the min over all treads within 4.5 m dug a switchback's upper end down to the turns
+    # below - 3.2 m under trail 2's deck), and none where a trail leg is nearer than any tread
+    _xs=np.array([t[0] for t in _st]);_zs=np.array([t[1] for t in _st]);_tops=np.array([t[2] for t in _st])
+    _reach=np.array([max(t[4],t[5])*.5+4.5 for t in _st])
+    i0,i1=max(0,int((_zs.min()-10)/STEP)),min(WIDTH-1,int((_zs.max()+10)/STEP)+1)
+    j0,j1=max(0,int((_xs.min()-10)/STEP)),min(WIDTH-1,int((_xs.max()+10)/STEP)+1)
+    _gx=x[i0:i1+1,j0:j1+1];_gz=z[i0:i1+1,j0:j1+1]
+    _d=np.hypot(_gx[...,None]-_xs,_gz[...,None]-_zs);_k=_d.argmin(axis=-1);_dn=np.take_along_axis(_d,_k[...,None],-1)[...,0]
+    _road=np.full(_gx.shape,1e9)
+    for _r in roads:
+        if _r['id'].startswith('smugglers_trail'):
+            for _p in _r['geometry_points']:_road=np.minimum(_road,np.hypot(_gx-_p[0],_gz-_p[1]))
+    _near=(_dn<=_reach[_k])&(_road>_dn)
+    win=heights[i0:i1+1,j0:j1+1]
+    heights[i0:i1+1,j0:j1+1]=np.where(_near,np.minimum(win,_tops[_k]-.12),win)
+# ... and under the trail legs the ground is their deck again (as ROADS-UNIFY): where a flight's cut
+# reached a leg's end the trail started 0.8 m over the ground beside the stair's last landing
+for _r in roads:
+    if not _r['id'].startswith('smugglers_trail'):continue
+    _g=np.array(_r['geometry_points'],float);_core=float(_r.get('width_m',3))*.5+1.0
+    i0,i1=max(0,int((_g[:,1].min()-_core-5)/STEP)),min(WIDTH-1,int((_g[:,1].max()+_core+5)/STEP)+1)
+    j0,j1=max(0,int((_g[:,0].min()-_core-5)/STEP)),min(WIDTH-1,int((_g[:,0].max()+_core+5)/STEP)+1)
+    _gx=x[i0:i1+1,j0:j1+1];_gz=z[i0:i1+1,j0:j1+1]
+    _d=np.hypot(_gx[...,None]-_g[:,0],_gz[...,None]-_g[:,1]);_k=_d.argmin(axis=-1)
+    _dn=np.take_along_axis(_d,_k[...,None],-1)[...,0]
+    # only where the trail is nearer than any of its stairs' treads (re-pressing a turn of a flight buried
+    # its lower treads - the treads-under-ground check)
+    _td=np.full(_gx.shape,1e9)
+    for _f in BOOK_STAIRS:
+        if _f['id'].startswith('smugglers'):
+            for _t in _f['steps']:_td=np.minimum(_td,np.hypot(_gx-_t[0],_gz-_t[1]))
+    # only by the stairs' ends (on a leg's sharp turn the nearest deck point lay across the bend: tests62)
+    _te=np.full(_gx.shape,1e9)
+    for _f in BOOK_STAIRS:
+        if _f['id'].startswith('smugglers'):
+            for _t in (_f['steps'][0],_f['steps'][-1]):_te=np.minimum(_te,np.hypot(_gx-_t[0],_gz-_t[1]))
+    heights[i0:i1+1,j0:j1+1]=np.where((_dn<=_core)&(_dn<_td)&(_te<8.0),_g[:,2][_k]-.05,heights[i0:i1+1,j0:j1+1])
 # The meltwater channel between the middle terrace and the Academy (the book: a cut channel, the
 # rope bridge over it, its bed 285 under the bridge): a dry stone-lined cut, 3 m bed, banks 1:1.
 MELT=[(1034,262,290.0),(1040,284,285.0),(1044,312,279.0),(1040,330,274.5)]

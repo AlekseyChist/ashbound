@@ -89,6 +89,16 @@ const PIN_REACH := 6.0
 const PIN_SIDE := 0.5
 ## The steepest a graded street runs (tan 25 deg).
 const STREET_GRADE := 0.466
+## SNOW-G03 (Codex 335/350, choice A): the slum's steep lane (street-8 by vs3/vs4, up to 25 deg) is a
+## stone stair-street - treads of STAIR_RISE on its graded profile, its flat stretches (pinned to the
+## doors' thresholds) landings; no earth under it: the ground lies just under its treads, and its body
+## stands to the ground as masonry (the ridge and the earth cut at vs4 were the old earth lane).
+const STAIR_STREETS := [Vector2(1000.9, 419.5)]
+const STAIR_RISE := 0.18
+## Map-frame tread records [x, z, top, yaw, depth, width, rail] for book.build_stairs.
+var stair_street_steps: Array = []
+## Their treads [at, reach, top] for the ground's clamp only (the lane walls keep to the street).
+var _street_treads: Array = []
 const STOOP_MAX := 24
 ## A straight stoop must meet the ground within this many steps, or the stair turns along the facade
 ## after a LANDING m deep landing at the door.
@@ -195,7 +205,10 @@ func setup(layout: Dictionary) -> void:
 			if area.intersects(Rect2(a, Vector2.ZERO).expand(b).grow(half)):
 				_add_keep(Rect2(a, Vector2.ZERO).expand(b).grow(half + 0.5 + KEEP), [a, b, half + 0.5])
 	for flight in layout.get("book_stairs", []):
-		if not str(flight.id).begins_with("snow"):
+		# the smugglers' switchbacks too (Codex 351/352: on the 5 m grid a flight rising 2.4 m inside one
+		# cell either buried its lower treads or left a pit at its end): their ground on the fine lattice,
+		# in earth banks, with a pad past each end at its end tread's level
+		if not (str(flight.id).begins_with("snow") or str(flight.id).begins_with("smugglers")):
 			continue
 		for st in flight.steps:
 			var reach := maxf(float(st[4]), float(st[5])) * 0.5 + 0.5
@@ -214,15 +227,20 @@ func setup(layout: Dictionary) -> void:
 			if near_deck:
 				continue
 			var half := maxf(float(st[4]), float(st[5])) * 0.5
+			# no earth bank by the smugglers' flights (tests61: it rose over trail 2's deck beside the Sh2
+			# stair); they stand on their own masonry
+			var bank := not str(flight.id).begins_with("smugglers")
 			var i := _fill.size()
-			_fill.append([at, half, float(st[2])])
+			if bank:
+				_fill.append([at, half, float(st[2])])
 			var box := Rect2(at, Vector2.ZERO).grow(half + FILL_REACH)
 			for bx in range(floori(box.position.x / BUCKET), floori(box.end.x / BUCKET) + 1):
 				for bz in range(floori(box.position.y / BUCKET), floori(box.end.y / BUCKET) + 1):
 					var key := Vector2i(bx, bz)
 					if not _fill_b.has(key):
-						_fill_b[key] = []
-					_fill_b[key].append(i)
+						_fill_b[key] = []   # the bucket still reaches height()'s tread clamp
+					if bank:
+						_fill_b[key].append(i)
 			var r := half + FILL_FINE + GRID * 0.72
 			for cx in range(floori((at.x - r + HALF) / GRID), floori((at.x + r + HALF) / GRID) + 1):
 				for cz in range(floori((at.y - r + HALF) / GRID), floori((at.y + r + HALF) / GRID) + 1):
@@ -442,6 +460,43 @@ func grade_streets(ground: Callable) -> void:
 			for cx in range(floori((q.x - reach - GRID + HALF) / GRID), floori((q.x + reach + GRID + HALF) / GRID) + 1):
 				for cz in range(floori((q.y - reach - GRID + HALF) / GRID), floori((q.y + reach + GRID + HALF) / GRID) + 1):
 					refined[Vector2i(cx, cz)] = true
+	# the stair-streets (STAIR_STREETS): treads on each one's graded profile
+	for target in STAIR_STREETS:
+		var w: Vector2 = target - Vector2(HALF, HALF)
+		var si := -1
+		var best := INF
+		for j in _profiles.size():
+			var d := float(_street_at(j, w)[0])
+			if d < best:
+				best = d
+				si = j
+		if si < 0 or best > 3.0:
+			continue
+		var pts: PackedVector2Array = _profiles[si][0]
+		var cum: PackedFloat32Array = _profiles[si][1]
+		var smooth: PackedFloat32Array = _profiles[si][2]
+		var width := float(_profiles[si][3]) * 2.0
+		var run: float = cum[cum.size() - 1]
+		var height_at := func(t: float) -> float:
+			var f := t / STREET_STEP
+			var a := clampi(floori(f), 0, smooth.size() - 1)
+			var b := mini(a + 1, smooth.size() - 1)
+			return lerpf(smooth[a], smooth[b], f - a)
+		var t0 := 0.0
+		var top: float = height_at.call(0.0)
+		var t := 0.0
+		while t < run:
+			t = minf(t + 0.02, run)
+			var h: float = height_at.call(t)
+			if absf(h - top) >= STAIR_RISE or t >= run:
+				var mid := (t0 + t) * 0.5
+				var q := _along(pts, cum, mid)
+				var dir := (_along(pts, cum, minf(mid + 0.3, run)) - _along(pts, cum, maxf(mid - 0.3, 0.0))).normalized()
+				var depth := t - t0 + 0.02
+				stair_street_steps.append([q.x + HALF, q.y + HALF, top, rad_to_deg(atan2(dir.x, dir.y)), depth, width, 0])
+				_street_treads.append([q, 0.5 * Vector2(depth, width).length() + 0.5, top])
+				top += STAIR_RISE * signf(h - top) if absf(h - top) >= STAIR_RISE else 0.0
+				t0 = t
 	# Where streets meet, one height: a street running through the junction keeps its own and the
 	# streets ending there come to it; where streets only end there, they meet at their mean. Each
 	# ending street eases to it over its last STREET_PIN m (Codex 0208cfd: graded alone, the streets'
@@ -619,10 +674,21 @@ func height(p: Vector2, base: float) -> float:
 		if off.length() < END_PAD + STREET_BLEND and off.dot(e[1]) > -0.2:
 			g = lerpf(g, float(e[2]), 1.0 - smoothstep(END_PAD, END_PAD + STREET_BLEND, off.length()))
 			graded = true
+	# a tread close by always grades the point (a flight cut into the slope, where no bank or street
+	# touched the ground, left the ground over 12 of the smugglers' mid treads)
+	if not graded:
+		for t in _treads:
+			if p.distance_to(t[0]) < float(t[1]) - 0.5:
+				graded = true
+				break
 	if not graded:
 		return base
 	# never over a stair tread (the stairs stay on top: Codex 6ef4e04 had three of C's buried) ...
 	for t in _treads:
+		if p.distance_to(t[0]) < float(t[1]) - 0.5:
+			g = minf(g, float(t[2]) - 0.02)
+	# ... nor over the stair-street's (SNOW-G03): no earth under it
+	for t in _street_treads:
 		if p.distance_to(t[0]) < float(t[1]) - 0.5:
 			g = minf(g, float(t[2]) - 0.02)
 	# ... nor over a floor within a cell of its walls
