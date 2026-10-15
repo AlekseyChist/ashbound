@@ -92,7 +92,11 @@ def build(slug,w,d,poor):
         if b>a:box('loft ceiling', (cx,(a+b)/2,h),(.60,b-a,.14),wood,True)
     for y in (-yf,yf):
         vs=[(-w/2,y-.12,h),(w/2,y-.12,h),(0,y-.12,ridge),(-w/2,y+.12,h),(w/2,y+.12,h),(0,y+.12,ridge)]
-        C.mesh('closed gable',vs,[(0,2,1),(3,4,5),(0,1,4,3),(1,2,5,4),(2,0,3,5)],wood if poor else plaster)
+        gable_faces=[(0,2,1),(3,4,5),(0,1,4,3),(1,2,5,4),(2,0,3,5)]
+        C.mesh('closed gable',vs,gable_faces,wood if poor else plaster)
+        # its own triangular prism as a collider (Codex 338 CAM-VS3-01: the camera's spring arm passed
+        # through the uncollided gable of vs4 and the hero was hidden behind it)
+        roof_collision.append((vs,gable_faces))
         for side in (-1,1):C.beam('gable rake',(side*w/2,y-.15,h),(0,y-.15,ridge),.16,.18,wood)
         box('gable king post',(0,y-.16,h+rise/2),(.16,.18,rise),wood)
         box('gable tie',(0,y-.16,h+.75),(w*(1-.75/rise),.18,.15),wood)
