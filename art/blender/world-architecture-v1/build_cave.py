@@ -37,31 +37,61 @@ SEALED=[(l['a'],l['b'],float(l['width'])) for l in PLAN['links'] if str(l.get('k
 EXITS=[(e['id'],e['chamber']) for e in PLAN['exits']]
 ch={c[0]:c[1:] for c in CHAMBERS}  # id -> (x, z of the scheme, rx, rz, floor)
 volumes=[]
-# Chambers: UV spheres, bottom 0.31H below floor, top H above floor.
+# Codex ART-CV-04 (in game: the ways read as straight even tubes, the chambers as regular ovals):
+# a chamber is its ellipsoid plus two or three lobes off-centre; a way runs along a bent axis (a
+# quadratic curve, up to 4 m aside) with a section that only widens by noise - never under its width
+# and headroom, so the capsule's passage holds.
+import random
+RNG=random.Random(sum(map(ord,CAVE)))
+def ellipsoid(name,c,r):
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=24,ring_count=12,radius=1,location=c)
+    o=bpy.context.active_object;o.name=name;o.scale=r
+    bpy.ops.object.transform_apply(scale=True);volumes.append(o)
 for cid,x,zs,rx,rz,floor in CHAMBERS:
     H=2.6+0.25*min(rx,rz)
-    bpy.ops.mesh.primitive_uv_sphere_add(segments=32,ring_count=16,radius=1,location=P(x,zs,floor+H*0.35))
-    o=bpy.context.active_object
-    o.name='chamber '+cid
-    o.scale=(rx,rz,H*0.66)
-    bpy.ops.object.transform_apply(scale=True)
-    volumes.append(o)
-# Links: cylinders between chamber centres, axis Z along the link.
-for a,b,w in LINKS:
+    ellipsoid('chamber '+cid,P(x,zs,floor+H*0.35),(rx,rz,H*0.66))
+    for k in range(RNG.choice((2,3))):
+        a=RNG.uniform(0,2*math.pi);f=RNG.uniform(0.45,0.7)
+        c=P(x+math.cos(a)*rx*0.55,zs+math.sin(a)*rz*0.55,floor+H*RNG.uniform(0.25,0.4))
+        ellipsoid('chamber %s lobe %d'%(cid,k),c,(rx*f,rz*f*RNG.uniform(0.8,1.2),H*0.66*RNG.uniform(0.75,0.95)))
+def link_axis(a,b):
+    """The bent axis of a way, map plane points (x, -z) with floor heights, every ~1 m."""
     xa,zsa,_,_,fa=ch[a];xb,zsb,_,_,fb=ch[b]
-    h=max(2.4,w*1.1)
-    pa=P(xa,zsa,fa+h*0.42);pb=P(xb,zsb,fb+h*0.42)
-    L=(pb-pa).length
-    bpy.ops.mesh.primitive_cylinder_add(vertices=20,radius=0.5,depth=1.0)
-    o=bpy.context.active_object
-    o.name='link '+a+'-'+b
-    o.scale=(w,h,L)
-    direction=(pb-pa).normalized()
-    o.rotation_mode='QUATERNION'
-    o.rotation_quaternion=direction.to_track_quat('Z','Y')
-    o.location=(pa+pb)/2
-    bpy.ops.object.transform_apply(location=False,rotation=True,scale=True)
-    volumes.append(o)
+    A=Vector((xa,-zsa));B=Vector((xb,-zsb));L=(B-A).length;side=Vector((-(B-A).y,(B-A).x)).normalized()
+    amp=min(4.0,L*0.12)*RNG.choice((-1,1))*RNG.uniform(0.5,1.0)
+    Cc=(A+B)/2+side*amp
+    n=max(8,int(L))
+    pts=[]
+    for i in range(n+1):
+        t=i/n;q=A*(1-t)**2+Cc*2*t*(1-t)+B*t*t
+        pts.append((q,fa+(fb-fa)*t))
+    return pts
+AXES={(a,b):link_axis(a,b) for a,b,w in LINKS}
+K=16
+for a,b,w in LINKS:
+    pts=AXES[(a,b)];h=max(2.4,w*1.1)
+    bmt=bmesh.new();rings=[]
+    for i,(q,fl) in enumerate(pts):
+        j=min(i+1,len(pts)-1);k0=max(i-1,0)
+        d=(pts[j][0]-pts[k0][0]).normalized();side=Vector((-d.y,d.x))
+        o=Vector((q.x*0.21,q.y*0.21,fl*0.21))+Vector((sum(map(ord,a+b)),0,0))
+        # wider than high, as a natural passage (never under the plan's width/headroom)
+        ww=w*(1.35+0.6*max(0.0,noise.noise(o)))*0.5+0.3;hh=h*(1.0+0.3*max(0.0,noise.noise(o*1.7)))
+        ring=[]
+        for m in range(K):
+            ang=2*math.pi*m/K;cs,sn=math.cos(ang),math.sin(ang)
+            lump=1.0+0.28*max(0.0,noise.noise(o*0.9+Vector((cs*1.5,sn*1.5,0)))) # an uneven vault, outward
+            # a flatter bottom (below the floor) and a rounded vault
+            zz=fl+h*0.42+(hh*0.58*sn*lump if sn>0 else hh*0.5*sn)
+            p2=q+side*(ww*cs*lump)
+            ring.append(bmt.verts.new((p2.x,p2.y,zz)))
+        rings.append(ring)
+    for r0,r1 in zip(rings,rings[1:]):
+        for m in range(K):bmt.faces.new((r0[m],r0[(m+1)%K],r1[(m+1)%K],r1[m]))
+    bmt.faces.new(rings[0][::-1]);bmt.faces.new(rings[-1])
+    bmesh.ops.recalc_face_normals(bmt,faces=bmt.faces[:])
+    o=bpy.data.objects.new('link '+a+'-'+b,bpy.data.meshes.new('link'));bmt.to_mesh(o.data);bmt.free()
+    bpy.context.scene.collection.objects.link(o);volumes.append(o)
 # Union all volumes into one shell.
 base=volumes[0]
 for other in volumes[1:]:
@@ -79,11 +109,12 @@ def floor_at(x,y):
         if d<=1.0:best=floor if best is None else max(best,floor)
         near=min(near,(d-1.0,floor))
     for a,b,w in LINKS:
-        xa,zsa,_,_,fa=ch[a];xb,zsb,_,_,fb=ch[b]
-        ax,ay,bx,by=xa,-zsa,xb,-zsb;L2=(bx-ax)**2+(by-ay)**2
-        t=max(0.0,min(1.0,((x-ax)*(bx-ax)+(y-ay)*(by-ay))/L2))
-        d=math.hypot(x-(ax+t*(bx-ax)),y-(ay+t*(by-ay)))/(w*.95/2)
-        h=fa+t*(fb-fa)
+        pts=AXES[(a,b)];bd=(1e9,0.0)
+        for (q0,f0),(q1,f1) in zip(pts,pts[1:]):
+            e=q1-q0;L2=e.length_squared or 1e-9;t=max(0.0,min(1.0,((x-q0.x)*e.x+(y-q0.y)*e.y)/L2))
+            dd=math.hypot(x-(q0.x+t*e.x),y-(q0.y+t*e.y))
+            if dd<bd[0]:bd=(dd,f0+(f1-f0)*t)
+        d=bd[0]/(w*.95/2);h=bd[1]
         if d<=1.0:best=h if best is None else max(best,h)
         near=min(near,(d-1.0,h))
     return near[1] if best is None else best
@@ -91,8 +122,11 @@ def floor_at(x,y):
 bm=bmesh.new();bm.from_mesh(base.data)
 for f in bm.faces:f.normal_flip()
 bmesh.ops.triangulate(bm,faces=bm.faces[:])
-bmesh.ops.subdivide_edges(bm,edges=bm.edges[:],cuts=1,use_grid_fill=True)
-bmesh.ops.triangulate(bm,faces=bm.faces[:])
+for _ in range(4):  # only the long edges: the rock needs vertices where the faces are big
+    long=[e for e in bm.edges if e.calc_length()>1.8]
+    if not long:break
+    bmesh.ops.subdivide_edges(bm,edges=long,cuts=1)
+    bmesh.ops.triangulate(bm,faces=bm.faces[:])
 bm.normal_update()
 # Natural shell: the bowl under the walkable level becomes the floor itself (no disc/strip seam:
 # floor and wall are one surface), and the walls bulge OUTWARD only by noise, so the passable volume
@@ -128,8 +162,10 @@ for cid,x,zs,rx,rz,floor in CHAMBERS:
     C.ASSET.objects.link(o)
 # Floors: slanted boards per link.
 for a,b,w in LINKS:
-    xa,zsa,_,_,fa=ch[a];xb,zsb,_,_,fb=ch[b]
-    C.beam('floor link '+a+'-'+b+'-colonly',P(xa,zsa,fa-0.15),P(xb,zsb,fb-0.15),w*0.95,0.3,EARTH)
+    pts=AXES[(a,b)]
+    for k,((q0,f0),(q1,f1)) in enumerate(zip(pts,pts[1:])):
+        e=(q1-q0).normalized()*0.15   # overlap the pieces so the floor has no seams
+        C.beam('floor link %s-%s %d-colonly'%(a,b,k),Vector((q0.x-e.x,q0.y-e.y,f0-0.15)),Vector((q1.x+e.x,q1.y+e.y,f1-0.15)),w*0.95,0.3,EARTH)
 # Exits: empty markers on the floor at the exit chamber's edge, away from the chamber it links to;
 # +x local points out (the forest cave's E: (-rx+1, 0), facing -x).
 for tag,cid in EXITS:
@@ -144,7 +180,7 @@ for tag,cid in EXITS:
 # Sealed links: a rock fall across the middle, visible and solid (-col), the way beyond kept for later.
 for a,b,w in SEALED:
     xa,zsa,_,_,fa=ch[a];xb,zsb,_,_,fb=ch[b]
-    mid=(P(xa,zsa,fa)+P(xb,zsb,fb))/2
+    q,fm=AXES[(a,b)][len(AXES[(a,b)])//2];mid=Vector((q.x,q.y,fm))
     for k,(dx,dy,r) in enumerate(((0,0,1.5),(.9,.6,1.1),(-.8,-.5,1.2),(.3,-.9,.9),(-.4,.8,1.0))):
         bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=2,radius=r,location=mid+Vector((dx,dy,r*.55)))
         o=bpy.context.active_object;o.name='rock fall %d-col'%k
@@ -161,10 +197,13 @@ for o in list(C.ASSET.objects):
 # round its centre line - u metres along it, v the arc from its crown (the wrap at the bottom, under
 # the ground); a chamber's walls round its vertical axis (u arc, v height), its vault and every floor
 # face planar from above.
+# the ways' bent axes as segments, each with its arc length from the way's start (u runs on)
 LINK_LINES=[]
 for a,b,w in LINKS:
-    xa,zsa,_,_,fa=ch[a];xb,zsb,_,_,fb=ch[b];h=max(2.4,w*1.1)
-    LINK_LINES.append((P(xa,zsa,fa+h*0.42),P(xb,zsb,fb+h*0.42),(w+h)/4))
+    h=max(2.4,w*1.1);s0=0.0;pts=AXES[(a,b)]
+    for (q0,f0),(q1,f1) in zip(pts,pts[1:]):
+        pa=Vector((q0.x,q0.y,f0+h*0.42));pb=Vector((q1.x,q1.y,f1+h*0.42))
+        LINK_LINES.append((pa,pb,(w+h)/4,s0));s0+=(pb-pa).length
 def _wrap(angles):
     out=[angles[0]]
     for x in angles[1:]:
@@ -193,15 +232,15 @@ for o in [o for o in C.ASSET.objects if o.type=='MESH']:
             coords=[(a*R,e*Rm) for a,e in zip(ang,el)]
         else:
             def seg_d(L):
-                pa,pb,_=L;d=pb-pa;t=max(0.0,min(1.0,(c-pa).dot(d)/d.length_squared))
+                pa,pb,_,_=L;d=pb-pa;t=max(0.0,min(1.0,(c-pa).dot(d)/d.length_squared))
                 return (c-(pa+d*t)).length
-            pa,pb,R=min(LINK_LINES,key=seg_d)
+            pa,pb,R,s0=min(LINK_LINES,key=seg_d)
             d=(pb-pa).normalized();s=d.cross(Vector((0,0,1)))
             s=s.normalized() if s.length>1e-6 else Vector((1,0,0));up=s.cross(d).normalized()
             if up.z<0:up=-up
             tl=[(q-pa).dot(d) for q in pts]
             ang=_wrap([math.atan2((q-pa-d*t).dot(s),(q-pa-d*t).dot(up)) for q,t in zip(pts,tl)])
-            coords=[(t,a*R) for t,a in zip(tl,ang)]
+            coords=[(s0+t,a*R) for t,a in zip(tl,ang)]
         for loop,(u,v) in zip(face.loops,coords):
             loop[uv].uv=(u/scale,v/scale)
     bm.to_mesh(o.data);bm.free()
@@ -217,4 +256,4 @@ triangles=0
 earth_faces=sum(1 for o in visual for poly in o.data.polygons if o.data.materials and len(o.data.materials)>poly.material_index and o.data.materials[poly.material_index].name.endswith('earth'))
 for o in visual:o.data.calc_loop_triangles();triangles+=len(o.data.loop_triangles)
 points=[o.matrix_world@Vector(v) for o in visual for v in o.bound_box]
-(QA/'stats.json').write_text(json.dumps({'cave':CAVE,'chambers':len(CHAMBERS),'links':len(LINKS),'sealed':[a+'-'+b for a,b,_ in SEALED],'exits':[t for t,_ in EXITS],'triangles':triangles,'earth_faces':earth_faces,'bbox':[[min(p[i] for p in points) for i in range(3)],[max(p[i] for p in points) for i in range(3)]],'sha256':hashlib.sha256(asset.read_bytes()).hexdigest()},indent=2),encoding='utf-8')
+(QA/'stats.json').write_text(json.dumps({'cave':CAVE,'chambers':len(CHAMBERS),'links':len(LINKS),'sealed':[a+'-'+b for a,b,_ in SEALED],'exits':[t for t,_ in EXITS],'triangles':triangles,'earth_faces':earth_faces,'axes':{a+'-'+b:[[round(q.x,2),round(q.y,2),round(f,2)] for q,f in AXES[(a,b)]] for a,b,_ in LINKS},'bbox':[[min(p[i] for p in points) for i in range(3)],[max(p[i] for p in points) for i in range(3)]],'sha256':hashlib.sha256(asset.read_bytes()).hexdigest()},indent=2),encoding='utf-8')
