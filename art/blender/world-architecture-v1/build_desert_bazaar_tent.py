@@ -26,6 +26,9 @@ CLOTH=C.mat('DB awning',(.62,.52,.36,1),.98)
 STRIPE=C.mat('DB stripe',(.52,.17,.11,1),.95)
 CLAY=C.mat('DB clay',(.60,.38,.24,1),.9)
 WOOL=C.mat('DB carpet',(.40,.14,.12,1),.98)
+WOOL_END=C.mat('DB carpet end',(.22,.07,.06,1),.98)   # a roll's end: the darker turns inside
+WICKER=C.mat('DB wicker',(.48,.36,.20,1),.95)
+PRODUCE=C.mat('DB produce',(.72,.42,.14,1),.8)
 coll=[]
 def box(n,p,s,m,solid=True):
     o=C.box(n,p,s,m,.015)
@@ -50,6 +53,56 @@ def ring_solid(n,x,y,z,rings,m,role=True):
     f.append(tuple(range(t,t+k)))
     o=C.mesh(n,v,f,m)
     if role:o['part_role']='interior_furniture'
+    return o
+def vessel(n,x,y,z,rings,m,depth,lip=.82,role=True,k=12):
+    # Codex BZR-ART-01b (baskets and jars capped by one flat face): an OPEN vessel - its rings from the
+    # foot up, a rim (the top ring to an inner ring lip*its size), the inner wall down `depth` and an
+    # inner floor; k sides
+    v=[]
+    for dz,hx,hy in rings:
+        for i in range(k):
+            a=math.pi*2*i/k
+            v.append((x+hx*math.cos(a),y+hy*math.sin(a),z+dz))
+    tz,thx,thy=rings[-1]
+    for dz,f in ((0.0,lip),(-depth,lip*.92)):
+        for i in range(k):
+            a=math.pi*2*i/k
+            v.append((x+thx*f*math.cos(a),y+thy*f*math.sin(a),z+tz+dz))
+    n_r=len(rings)+2
+    faces=[tuple(range(k-1,-1,-1))]
+    for r in range(n_r-1):
+        for i in range(k):
+            j=(i+1)%k
+            faces.append((r*k+i,r*k+j,(r+1)*k+j,(r+1)*k+i))
+    faces.append(tuple(range((n_r-1)*k,n_r*k)))   # the inner floor, facing up
+    o=C.mesh(n,v,faces,m)
+    if role:o['part_role']='interior_furniture'
+    return o
+def roll(n,x,y,h,r):
+    # Codex BZR-ART-01a (square wooden bars): a rolled carpet standing on end - a slightly flattened
+    # cylinder, its top end a darker inset spiral of turns, the loose edge of the cloth down one side
+    k=14
+    v=[];f=[]
+    for z in (0.0,h):
+        for i in range(k):
+            a=math.pi*2*i/k
+            v.append((x+r*.92*math.cos(a),y+r*math.sin(a),z))
+    for i in range(k):
+        j=(i+1)%k;f.append((i,j,k+j,k+i))
+    f.append(tuple(range(k-1,-1,-1)))
+    o=C.mesh(n,v,f+[tuple(range(k,2*k))],WOOL)
+    o['part_role']='interior_furniture'
+    # the end: concentric turns, each a thin ring a little lower and darker
+    for t,(ra,rb) in enumerate(((r*.9,r*.66),(r*.62,r*.4),(r*.36,r*.14))):
+        ve=[];fe=[]
+        zt=h+.004-t*.006
+        for i in range(k):
+            a=math.pi*2*i/k
+            ve.append((x+ra*.92*math.cos(a),y+ra*math.sin(a),zt));ve.append((x+rb*.92*math.cos(a),y+rb*math.sin(a),zt))
+        for i in range(k):
+            j=(i+1)%k;fe.append((2*i,2*j,2*j+1,2*i+1))
+        e=C.mesh(n+' end',ve,fe,WOOL_END if t%2==0 else WOOL);e['part_role']='interior_furniture'
+    flap=C.box(n+' flap',(x+r*.9,y-r*.25,h*.5),(.012,r*.9,h*.96),WOOL,0);flap['part_role']='interior_furniture'
     return o
 # Base slab 5x4.
 box('base',(0,0,-.08),(5,4,.16),STONE)
@@ -79,13 +132,19 @@ for x in (-1.95,.95):
     box('counter leg',(x,-1.15,.44),(.08,.08,.88),WOOD,False)
 # Wares: baskets on the counter, carpet rolls by the rear drape, jars right,
 # crates left, trader stool.
-for x in (-1.6,-.9,-.2,.5):
-    ring_solid('basket',x,-1.4,.96,[(0,.15,.13),(.2,.2,.17),(.21,.18,.15)],WOOL if x<-1 else CLAY)
+for k_,x in enumerate((-1.6,-.9,-.2,.5)):
+    # baskets: wicker, low and wide with a woven band, fruit in them (unlike the clay jars)
+    vessel('basket',x,-1.4,.96,[(0,.15,.13),(.09,.2,.17),(.1,.212,.182),(.11,.2,.17),(.2,.2,.17)],WICKER,.12)
+    for dx,dy in ((-.06,-.03),(.06,.02),(0,.05),(-.02,-.07)):
+        bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=1,radius=.055,location=(x+dx,-1.4+dy,.96+.13))
+        fr=bpy.context.active_object;fr.name='basket produce';fr.data.materials.append(PRODUCE);fr['part_role']='interior_furniture'
+        for c in list(fr.users_collection):c.objects.unlink(fr)
+        C.ASSET.objects.link(fr)
 for x in (-1.8,-1.2,-.6):
-    r=C.beam('carpet roll',(x,1.6,.0),(x,1.6,1.4),.22,.22,WOOL)
-    r['part_role']='interior_furniture'
+    roll('carpet roll',x,1.6,1.4,.11)
 for x,y in ((1.5,1.2),(1.9,1.4),(1.7,.8)):
-    ring_solid('jar',x,y,(.3)-0.300,[(0.000,0.099,0.099),(0.180,0.160,0.160),(0.372,0.147,0.147),(0.480,0.080,0.080),(0.552,0.072,0.072),(0.600,0.093,0.093)],CLAY)
+    # jars: clay with an open neck and a lip
+    vessel('jar',x,y,0.0,[(0.000,0.099,0.099),(0.180,0.160,0.160),(0.372,0.147,0.147),(0.480,0.080,0.080),(0.552,0.072,0.072),(0.600,0.093,0.093)],CLAY,.16,.78)
 box('crate',(-1.9,.6,.3),(.6,.6,.6),WOOD)
 box('crate',(-1.9,.6,.85),(.5,.5,.5),WOOD)
 box('stool',(.5,-.6,.25),(.35,.35,.5),WOOD)
@@ -117,7 +176,8 @@ bpy.context.view_layer.objects.active=next(o for o in C.ASSET.objects if o.type=
 asset=OUT/'d_bazaar_tent_5x4.glb'
 bpy.ops.export_scene.gltf(filepath=str(asset),use_selection=True,export_format='GLB',export_apply=True,export_extras=True,export_yup=True,export_lights=False,export_cameras=False)
 data=asset.read_bytes();size=struct.unpack_from('<I',data,12)[0];document=json.loads(data[20:20+size])
-tints={'DB stone':(.72,.63,.49),'DB timber':(.33,.24,.16)}
+# the timber's tint lifted (Codex BZR-MAT-01: over the dark oak texture .33/.24/.16 read black)
+tints={'DB stone':(.72,.63,.49),'DB timber':(.88,.78,.64)}
 for material in document['materials']:
     if material['name'] in tints:material['pbrMetallicRoughness']['baseColorFactor']=[*tints[material['name']],1]
 encoded=json.dumps(document,separators=(',',':')).encode();encoded+=b' '*((-len(encoded))%4)
