@@ -49,6 +49,25 @@ resources.push(...files.filter(f=>(f.startsWith('assets/audio/village-v1/')||f.s
 resources.push(...files.filter(f=>f.startsWith('scripts/combat/')&&f.endsWith('.gd')));
 resources.push(...['hit','block','perfect_block','windup','swing'].map(id=>'assets/vfx/painted-combat-v1/'+id+'.png'),'assets/characters/courtyard/enemy-preview/wolf_frames.tres');
 if(qa)resources.push('scripts/tools/validate_world_village.gd');
+// APK-STRING-REFS-01: scenes and models loaded by path in code (load("res://...") or "res://dir/%s.glb") are
+// not seen by the selected-resource exporter, and the phone build silently lacked them. Every res:// literal in
+// the game's own .gd/.tscn/.tres (scripts/, scenes/, assets/; not scripts/tools/) is exported; a literal with a
+// format marker or a trailing slash exports its whole directory. The APK is checked for them after export.
+const keepRef=f=>!f.endsWith('.import')&&!f.endsWith('.uid')&&!f.endsWith('.md');
+const stringRefs=new Set();
+for(const f of files){
+ if(!/\.(gd|tscn|tres)$/.test(f)||!/^(scripts|scenes|assets)\//.test(f)||f.startsWith('scripts/tools/'))continue;
+ const src=path.join(root,f);if(!fs.existsSync(src))continue;
+ for(const m of fs.readFileSync(src,'utf8').matchAll(/res:\/\/([^"'\s)]+)/g)){
+  const ref=m[1],cut=ref.search(/[%{+]/);
+  if(cut>=0||ref.endsWith('/')){
+   const dir=(cut>=0?ref.slice(0,cut):ref).replace(/[^/]*$/,'');
+   if(dir.split('/').length>2)for(const g of files)if(g.startsWith(dir)&&keepRef(g))stringRefs.add(g);
+  }else if(files.includes(ref)&&keepRef(ref))stringRefs.add(ref);
+ }
+}
+const listed=new Set(resources);for(const g of stringRefs)if(!listed.has(g))resources.push(g);
+console.log(`STRING_REFS ${stringRefs.size} referenced, ${resources.length-listed.size} added`);
 let presets=fs.readFileSync(path.join(stage,'export_presets.cfg'),'utf8')
  .replaceAll('export_files=PackedStringArray(',`export_files=PackedStringArray(${resources.map(v=>JSON.stringify('res://'+v)).join(', ')}, `)
  .replaceAll('include_filter="localization/*.po,assets/ui/fonts/OFL.txt"','include_filter="localization/*.po,assets/ui/fonts/OFL.txt,assets/world/*.json,assets/world/graybox-v1/*,assets/world/far-forest-v1/*,assets/world/forest-city-v1/*"')
@@ -65,13 +84,30 @@ if(!args.includes('--stage-only')){
  const windows=path.join(root,'.tools/builds/world-village',version,'AshBound-World.exe');
  fs.mkdirSync(path.dirname(android),{recursive:true});fs.mkdirSync(path.dirname(windows),{recursive:true});
  run('android',['--export-debug','Android Courtyard',android]);
+ checkApk(android,stringRefs);
  if(!qa)run('windows',['--export-debug','Windows Courtyard',windows]);
  const result={version,code,packageId,android,apkSHA256:sha(android),...(qa?{qaMode:'full'}:{windows,exeSHA256:sha(windows)})};
  fs.writeFileSync(path.join(out,name+'-artifacts.json'),JSON.stringify(result,null,2));console.log(JSON.stringify(result));
 }
+// Every string-referenced resource must be in the APK: as itself, its .remap (scenes/scripts) or its .import.
+function checkApk(apk,refs){
+ const buf=fs.readFileSync(apk);let eocd=buf.length-22;
+ while(eocd>=0&&buf.readUInt32LE(eocd)!==0x06054b50)eocd--;
+ if(eocd<0)throw Error('APK zip directory not found '+apk);
+ const names=new Set();let p=buf.readUInt32LE(eocd+16);
+ for(let i=buf.readUInt16LE(eocd+10);i>0;i--){
+  if(buf.readUInt32LE(p)!==0x02014b50)throw Error('APK zip entry broken at '+p);
+  const n=buf.readUInt16LE(p+28);names.add(buf.toString('utf8',p+46,p+46+n));
+  p+=46+n+buf.readUInt16LE(p+30)+buf.readUInt16LE(p+32);
+ }
+ const missing=[...refs].filter(f=>!['','.remap','.import'].some(s=>names.has('assets/'+f+s)));
+ if(missing.length){console.log(missing.slice(0,40).join('\n'));throw Error(`APK lacks ${missing.length} string-referenced resources`);}
+ console.log(`PASS ${name} apk-refs ${refs.size}`);
+}
 function run(label,options){
  const log=path.join(out,name+'-'+label+'.log'),fd=fs.openSync(log,'w');let error;
- try{execFileSync(godot,['--headless','--path',stage,...options],{cwd:root,windowsHide:true,timeout:300000,stdio:['ignore',fd,fd]});}catch(e){error=e;}finally{fs.closeSync(fd);}
+ // 40 min: the full world's first import in a fresh stage runs past the former 5 min
+ try{execFileSync(godot,['--headless','--path',stage,...options],{cwd:root,windowsHide:true,timeout:2400000,stdio:['ignore',fd,fd]});}catch(e){error=e;}finally{fs.closeSync(fd);}
  const text=fs.readFileSync(log,'utf8');
  if(error||/SCRIPT ERROR:|^ERROR:/m.test(text)){console.log(text.slice(-6500));throw Error('Build failed '+label+' '+(error?.status??''));}
  console.log('PASS '+name+' '+label);
