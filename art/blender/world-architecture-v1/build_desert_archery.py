@@ -148,28 +148,81 @@ for x in (-3.2,3.2):
     box('bench',(x,.2,.24),(.4,2.2,.06),WOOD)
     for y in (-.7,1.1):box('bench leg',(x,y,.1),(.3,.08,.2),WOOD,False)
 # Straw bales for spare targets in the right front corner.
+def straw_image(name,w,h,ends,seed):
+    # Codex 483 DA-STRAW-02 (smooth faces read as foam): a procedural straw texture packed in the GLB -
+    # long faces: dense stalks along U, each a 1-2 px line of its own length and shade over a warm base;
+    # ends: the cut stalks, a dense field of small light rings with dark cores. Deterministic (own hash).
+    import numpy as np
+    def h32(*k):
+        # a murmur-style mix: the plain linear step put every dot of a series on one line
+        v=seed*0x9E3779B1&0xffffffff
+        for q in k:
+            v=(v^(int(q)*0x85EBCA6B))&0xffffffff
+            v=(v^(v>>13))*0xC2B2AE35&0xffffffff
+            v^=v>>16
+        return v
+    img=np.zeros((h,w,3),dtype=np.float32)
+    base=np.array([.56,.44,.22],dtype=np.float32)
+    img[:]=base
+    if not ends:
+        for i in range(w*h//18):
+            r=h32(i,1);y=r%h;x0=h32(i,2)%w;ln=40+h32(i,3)%(w-40);t=1+h32(i,4)%2
+            sh=(h32(i,5)%1000)/1000.0
+            col=base*(.62+.75*sh)
+            for dx in range(ln):
+                xx=(x0+dx)%w;yy=(y+(dx*(h32(i,6)%3-1))//(ln//2+1))%h
+                img[yy:yy+t,xx]=col
+    else:
+        img[:]=base*.78
+        for i in range(w*h//22):
+            cx=h32(i,7)%w;cy=h32(i,8)%h;rr=2+h32(i,9)%3
+            sh=(h32(i,10)%1000)/1000.0
+            ring=base*(.95+.6*sh);core=base*(.30+.2*sh)
+            for dy in range(-rr,rr+1):
+                for dx in range(-rr,rr+1):
+                    d=dx*dx+dy*dy
+                    if d<=rr*rr:img[(cy+dy)%h,(cx+dx)%w]=core if d<=(rr-1)*(rr-1) else ring
+    im=bpy.data.images.new(name,w,h,alpha=False)
+    rgba=np.ones((h,w,4),dtype=np.float32);rgba[:,:,:3]=np.clip(img,0,1)
+    im.pixels.foreach_set(rgba.ravel());im.pack()
+    return im
+def straw_material(name,ends,scale):
+    m=C.mat(name,(1,1,1,1),.98);m['uv_metres']=scale
+    tex=m.node_tree.nodes.new('ShaderNodeTexImage')
+    tex.image=straw_image(name+' image',256,256,ends,7 if ends else 3)
+    m.node_tree.links.new(tex.outputs['Color'],m.node_tree.nodes['Principled BSDF'].inputs['Base Color'])
+    return m
+BALE_SIDE=straw_material('DA bale stalks',False,.55)
+BALE_END=straw_material('DA bale cut ends',True,.5)
 def bale(n,c,s,seed):
-    # Codex 477 DA-STRAW-ART-01 (two plain light blocks): a straw bale - a softly bevelled body, darker
-    # stalks laid along its long faces, two twine bands round it, ragged tufts out of both cut ends;
-    # its collider the same box as before
+    # Codex 477/483 DA-STRAW (blocks, then foam): a straw bale - a softly bevelled body in stalks running
+    # along its length, both cut ends a dense field of cut stalks with a ragged outline standing a little
+    # proud, two twine bands round it; its collider the same box as before
     x,y,z=c;sx,sy,sz=s
-    body=C.box(n,c,(sx-.04,sy,sz),BALE,.05);body['part_role']='interior_furniture'
+    body=C.box(n,c,(sx-.04,sy,sz),BALE_SIDE,.05);body['part_role']='interior_furniture'
     coll.append((n,c,s))
-    def r(i,j):return ((seed*73+i*37+j*11)%17)/17.0
-    for i in range(7):   # stalks on the top and the front face
-        yy=y-sy/2+sy*(i+.5)/7
-        plain_stalk(n+' stalk',(x+(r(i,1)-.5)*.06,yy,z+sz/2+.004),(sx*(.7+.25*r(i,2)),.018,.008))
-        zz=z-sz/2+sz*(i+.5)/7
-        plain_stalk(n+' stalk',(x+(r(i,3)-.5)*.06,y-sy/2-.004,zz),(sx*(.7+.25*r(i,4)),.008,.018))
+    def r(i,j):return ((seed*73+i*37+j*11)%29)/29.0
+    k=18
+    for side in (-1,1):  # the cut ends: ragged outlines 1-2.5 cm proud of the body
+        pts=[]
+        for i in range(k):
+            a=math.tau*i/k
+            # a rounded rectangle, each vertex pushed in or out a little
+            cy,cz=math.cos(a),math.sin(a)
+            m=max(abs(cy)/(sy/2),abs(cz)/(sz/2));ry,rz=cy/m,cz/m
+            j=.92+.1*r(i,side+3)
+            pts.append((ry*j,rz*j))
+        xe=x+side*(sx/2-.02)
+        v=[(xe,y+py,z+pz) for py,pz in pts]+[(xe+side*(.012+.013*r(i,side+5)),y+py*.97,z+pz*.97) for i,(py,pz) in enumerate(pts)]
+        f=[tuple(range(k)) if side<0 else tuple(range(k-1,-1,-1)),tuple(range(2*k-1,k-1,-1)) if side<0 else tuple(range(k,2*k))]
+        for i in range(k):
+            j=(i+1)%k;f.append((i,j,k+j,k+i) if side>0 else (j,i,k+i,k+j))
+        e=C.mesh(n+' end',v,f,BALE_END);e['part_role']='interior_furniture'
     for bx in (-sx*.26,sx*.26):   # the twine bands, a little proud of the straw
         for dy,dz,w,h in ((0,sz/2+.006,.025,sy+.012),(0,-sz/2-.006,.025,sy+.012)):
             plain_stalk(n+' twine',(x+bx,y,z+dz),(w,h,.012),TWINE)
         for dy in (-sy/2-.006,sy/2+.006):
             plain_stalk(n+' twine',(x+bx,y+dy,z),(.025,.012,sz+.012),TWINE)
-    for side in (-1,1):  # tufts out of the cut ends
-        for i in range(9):
-            ty=y-sy*.4+sy*.8*r(i,5);tz=z-sz*.4+sz*.8*r(i,6)
-            plain_stalk(n+' tuft',(x+side*(sx/2-.01+.03*r(i,7)),ty,tz),(.06+.05*r(i,8),.03,.03),STRAW_DARK if i%2 else BALE)
 def plain_stalk(n,c,s,m=None):
     o=C.box(n,c,s,m or STRAW_DARK,0);o['part_role']='interior_furniture'
     return o
