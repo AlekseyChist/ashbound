@@ -53,6 +53,29 @@ def ring_solid(n,x,y,z,rings,m,role=True):
     o=C.mesh(n,v,f,m)
     if role:o['part_role']='interior_furniture'
     return o
+def vessel(n,x,y,z,rings,m,depth,lip=.8,role=True,k=10):
+    # an OPEN vessel (Codex BZR-ART-01b/453 DS-WARES-03: mouths capped by one flat face): its rings from the
+    # foot up, a rim (the top ring to an inner ring lip*its size), the inner wall down `depth`, an inner floor
+    v=[]
+    for dz,hx,hy in rings:
+        for i in range(k):
+            a=math.pi*2*i/k
+            v.append((x+hx*math.cos(a),y+hy*math.sin(a),z+dz))
+    tz,thx,thy=rings[-1]
+    for dz,f in ((0.0,lip),(-depth,lip*.92)):
+        for i in range(k):
+            a=math.pi*2*i/k
+            v.append((x+thx*f*math.cos(a),y+thy*f*math.sin(a),z+tz+dz))
+    n_r=len(rings)+2
+    faces=[tuple(range(k-1,-1,-1))]
+    for r in range(n_r-1):
+        for i in range(k):
+            j=(i+1)%k
+            faces.append((r*k+i,r*k+j,(r+1)*k+j,(r+1)*k+i))
+    faces.append(tuple(range((n_r-1)*k,n_r*k)))
+    o=C.mesh(n,v,faces,m)
+    if role:o['part_role']='interior_furniture'
+    return o
 def stave(n,a,b,w,m):
     o=C.beam(n,a,b,w,w,m)
     o['part_role']='interior_furniture'
@@ -76,6 +99,16 @@ def roof_piece(name,x0,x1,y0,y1,top,thick,material):
     vertices=[(x,y,top-y*.012+dz) for x in (x0,x1) for y in (y0,y1) for dz in (-thick,0)]
     return C.mesh(name,vertices,FACES,material)
 box('ceiling',(0,0,3.12),(8,5,.16),WOOD)
+# the bond course (as the workshop's DW-ROOF-01 and the shop's DS-ROOF-01: walls, front beam and ceiling
+# stopped at 3.20, the roof slab's underside at 3.45-0.012y - a 22-28 cm open belt): masonry over every
+# wall line and the front beam from 3.20 up into the roof slab, its top following the slab's slope
+def course(n,x0,x1,y0,y1):
+    vs=[(x,y,z) for x in (x0,x1) for y in (y0,y1) for z in (3.19,3.47-y*.012)]
+    return C.mesh(n,vs,FACES,LIME)
+course('bond course',-4.0,4.0,-2.5,-2.1)
+course('bond course',-4.0,4.0,2.1,2.5)
+course('bond course',-4.0,-3.6,-2.1,2.1)
+course('bond course',3.6,4.0,-2.1,2.1)
 roof_piece('flat lime roof',-4.3,4.3,-2.8,2.8,3.6,.15,LIME)
 roof_piece('flat roof-colonly',-4.3,4.3,-2.8,2.8,3.6,.15,LIME).hide_render=True
 # Parapet (eaves max 0.3 beyond walls).
@@ -101,7 +134,8 @@ for x in (-2.4,2.4):
         stave('bow string',(bx,1.87,.08),(bx,1.87,1.92),.008,LEATHER)
 # Quivers with arrows along the middle of the rear wall.
 for x in (-.6,-.2,.2,.6):
-    ring_solid('quiver',x,1.9,0,[(0,.07,.07),(.06,.09,.09),(.86,.1,.1),(.9,.095,.095)],LEATHER)
+    # an open leather quiver, the fletchings standing in its mouth
+    vessel('quiver',x,1.9,0,[(0,.07,.07),(.06,.09,.09),(.86,.1,.1),(.9,.095,.095)],LEATHER,.3,.82)
     for dx,dy in ((-.04,-.03),(.04,-.03),(0,.04)):
         box('quiver fletching',(x+dx,1.9+dy,.98),(.02,.05,.14),STRAW,False)
 # Two benches along the side walls.
