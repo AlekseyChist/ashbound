@@ -1,0 +1,13 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/buildings/world-architecture-v1/d_shop_6x5.glb" id="1"]
+[ext_resource type="Script" path="res://scripts/buildings/desert_shop.gd" id="2"]
+
+[node name="d_shop_6x5" instance=ExtResource("1")]
+script = ExtResource("2")
+
+[node name="LampAnchor" type="Node3D" parent="."]
+position = Vector3(0, 2.35, -0.2)
+
+[node name="LampCeiling" type="Node3D" parent="."]
+position = Vector3(0, 3.04, -0.2)

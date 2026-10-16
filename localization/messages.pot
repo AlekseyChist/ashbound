@@ -639,6 +639,30 @@ msgstr ""
 msgid "WORLD_SITE_FOREST_CAVE"
 msgstr ""
 
+msgid "WORLD_SITE_OLD_PINE_GROVE"
+msgstr ""
+
+msgid "WORLD_SITE_WOLF_HOLLOW"
+msgstr ""
+
+msgid "WORLD_SITE_WATCH_ROCK"
+msgstr ""
+
+msgid "WORLD_SITE_CAPITAL_RUINS"
+msgstr ""
+
+msgid "WORLD_SITE_SALT_FLATS"
+msgstr ""
+
+msgid "WORLD_SITE_PEAT_FARMSTEAD"
+msgstr ""
+
+msgid "WORLD_SITE_OUTSKIRTS_FARMSTEADS"
+msgstr ""
+
+msgid "WORLD_SITE_W1_VIEWPOINT"
+msgstr ""
+
 #. World exploration graybox; working place label.
 msgid "WORLD_SITE_FOOTHILL_CAVE"
 msgstr ""

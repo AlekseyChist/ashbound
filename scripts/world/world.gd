@@ -7,6 +7,15 @@ const Geometry = preload("res://scripts/world/world_graybox_geometry.gd")
 const Shapes = preload("res://scripts/world/world_graybox_shapes.gd")
 const Headwaters = preload("res://scripts/world/world_graybox_headwaters.gd")
 const Landmarks = preload("res://scripts/world/world_graybox_landmarks.gd")
+const CaveMouths = preload("res://scripts/world/world_cave_mouths.gd")
+const CameraObstacles = preload("res://scripts/world/camera_mesh_obstacles.gd")
+const CameraSelection = preload("res://scripts/world/camera_obstacle_selection.gd")
+const CameraVisibility = preload("res://scripts/world/interior_camera_visibility.gd")
+const W1Lanterns = preload("res://scripts/world/w1_viewpoint_lanterns.gd")
+const BookPlaces = preload("res://scripts/world/world_book_places.gd")
+const SnowLots = preload("res://scripts/world/world_snow_lots.gd")
+const SnowWalls = preload("res://scripts/world/world_snow_walls.gd")
+const LowlandWater = preload("res://scripts/world/world_lowland_water.gd")
 ## TAVERN-01B (D-089): the forest inn — a one-storey log hall with beds on the loft — replaces
 ## the grey landmark at the forest_inn site, door towards the trail.
 const InnBuilding = preload("res://scripts/world/village_building.gd")
@@ -72,6 +81,14 @@ var world_heights: PackedFloat32Array
 var pad: RefCounted
 var world_root: Node3D
 var world_terrain: Node3D
+## WORLD-BUILD-01C: the snow city's level plots, drawn in 1.25 m terrain cells.
+var snow_lots: RefCounted
+var lowland_water: RefCounted
+var cave_mouths: Node3D
+var camera_obstacles: Node = null
+var camera_visibility: Node = null
+var w1_lanterns: Node3D = null
+var desert_range: Node3D = null
 var road_mask: Image
 var world_colors: PackedColorArray
 ## GRASS-WORLD-01: road and river pieces near the grass, bucketed by 32 m cells (scene frame).
@@ -90,6 +107,12 @@ var save: Node
 var inn: Node3D
 ## Every inn hall on the map (the forest inn first); their doors work like the village doors.
 var inns: Array[Node3D] = []
+const SNOW_CITY := "res://scripts/world/world_snow_city.gd"
+## WORLD-BUILD-01E: Codex's desert builder (PR #201) on the book's desert plan, when present.
+const DESERT_CITY := "res://scripts/world/world_desert_city.gd"
+## Codex's snow city builder (when present): its doors join the inns' in the action button.
+var snow_city: Node3D
+var desert_city: Node3D
 var inn_keeper: Node3D
 var inn_talk: QuestTracker
 ## INN-REST-01: the rented bed in the inn loft and sleeping until the morning.
@@ -165,6 +188,11 @@ func _ready() -> void:
 	water_spray.name = "WaterSpray"
 	add_child(water_spray)
 	water_spray.configure(self)
+	# WORLD-BUILD-01D: stone on the ledges of the falls W2-W5
+	var fall_stones: Node3D = preload("res://scripts/world/world_fall_stones.gd").new()
+	fall_stones.name = "FallStones"
+	world_root.add_child(fall_stones)
+	fall_stones.build(self)
 	dust_devils = preload("res://scripts/world/world_dust_devils.gd").new()
 	dust_devils.name = "DustDevils"
 	add_child(dust_devils)
@@ -209,22 +237,31 @@ func _build_world() -> void:
 	world_layout = JSON.parse_string(FileAccess.get_file_as_string(WORLD_LAYOUT))
 	world_width = int(world_layout.width)
 	original_heights = FileAccess.get_file_as_bytes(WORLD_HEIGHTS).to_float32_array()
-	world_heights = _flatten_inn(_raise_west_rim(pad.apply(original_heights, world_width, GRID)))
+	snow_lots = SnowLots.new()
+	snow_lots.setup(world_layout)
+	var graded := _flatten_inn(_raise_west_rim(pad.apply(original_heights, world_width, GRID)))
+	# WORLD-BUILD-01G: the terrain cut under the caves' arches where a slope climbs into them
+	cave_mouths = CaveMouths.new()
+	world_heights = cave_mouths.notch(graded, world_width, GRID, HALF, func(x: float, z: float) -> float: return _grid_height(graded, x, z), world_layout.get("book_stairs", []))
+	snow_lots.set_arch_zones(cave_mouths.arch_zones(HALF))
+	snow_lots.grade_streets(func(x: float, z: float) -> float: return _grid_height(world_heights, x, z))
 	world_root = Node3D.new()
 	world_root.name = "WorldMap"
 	world_root.position = Vector3(HALF - VILLAGE_ORIGIN_MAP.x, -BASE_HEIGHT, HALF - VILLAGE_ORIGIN_MAP.y)
 	add_child(world_root)
 	world_terrain = Geometry.new()
 	world_terrain.name = "Terrain"
-	world_terrain.skip_cell = func(x: int, z: int) -> bool: return pad.covers_cell(x, z, GRID)
+	world_terrain.skip_cell = func(x: int, z: int) -> bool: return pad.covers_cell(x, z, GRID) or snow_lots.skips(x, z)
 	world_terrain.material = terrain.material
 	world_terrain.surface_meta = "ground"
 	# SHORE-MESH-01: the banks along the water in 1.25 m cells, on the channel's own profile.
 	_index_shore()
 	world_terrain.refine_cell = func(x: int, z: int) -> bool:
+		if snow_lots.refines(x, z):
+			return true
 		var near := _shore_near((x + 0.5) * GRID - HALF, (z + 0.5) * GRID - HALF)
 		return not near.is_empty() and near[0] < near[2] + SHORE_REACH + GRID * 0.75
-	world_terrain.shore_height = _shore_height
+	world_terrain.shore_height = _fine_height
 	world_terrain.shore_color = _shore_color
 	world_root.add_child(world_terrain)
 	world_colors = _world_colors()
@@ -301,9 +338,33 @@ func _grid_height(grid: PackedFloat32Array, x: float, z: float) -> float:
 	return a + u * (b - a) + v * (c - a) if u + v <= 1.0 else d + (1.0 - u) * (c - d) + (1.0 - v) * (b - d)
 
 
-## World-frame ground height after the village was pressed in.
+## World-frame ground height after the village was pressed in; under the snow city's plots, the
+## terrain's own 1.25 m triangles (world_snow_lots).
 func world_ground(x: float, z: float) -> float:
-	return _grid_height(world_heights, x, z)
+	if snow_lots == null or not snow_lots.refines(floori((x + HALF) / GRID), floori((z + HALF) / GRID)):
+		return _grid_height(world_heights, x, z)
+	var fine: float = SnowLots.FINE
+	var ix := floori(x / fine)
+	var iz := floori(z / fine)
+	var u := x / fine - ix
+	var v := z / fine - iz
+	var a: float = snow_lots.lattice(ix, iz, _fine_vertex)
+	var b: float = snow_lots.lattice(ix + 1, iz, _fine_vertex)
+	var c: float = snow_lots.lattice(ix, iz + 1, _fine_vertex)
+	if u + v <= 1.0:
+		return a + u * (b - a) + v * (c - a)
+	var d: float = snow_lots.lattice(ix + 1, iz + 1, _fine_vertex)
+	return d + (1.0 - u) * (c - d) + (1.0 - v) * (b - d)
+
+
+func _fine_vertex(x: float, z: float) -> float:
+	return _fine_height(x, z, _grid_height(world_heights, x, z))
+
+
+## The refined cells' inner points: the banks, then the snow city's plots.
+func _fine_height(wx: float, wz: float, base: float) -> float:
+	var h := _shore_height(wx, wz, base)
+	return h if snow_lots == null else snow_lots.height(Vector2(wx, wz), h)
 
 
 ## Ground height in the scene (village) frame at a scene point, inside or outside the village.
@@ -456,7 +517,7 @@ func _build_roads() -> void:
 				continue
 			if run.size() >= 2:
 				# The hero walks the same profile the bridge shows: ramps down to the ground at both ends.
-				var strip: MeshInstance3D = roads.add_strip(bridges.deck_profile(run, core), width, ROAD_TINT, true)
+				var strip: MeshInstance3D = roads.add_strip(bridges.deck_profile(run, core, PackedByteArray(), width * 0.5), width, ROAD_TINT, true)
 				if strip != null:
 					strip.name = "%s_bridge_%d" % [road.id, i]
 					_paint(strip, Color(ROAD_TINT.srgb_to_linear(), 1.0))
@@ -600,6 +661,16 @@ func _apply_road_mask() -> void:
 			var b := _map_of(points[i + 1])
 			if ring.has_point(a) or ring.has_point(b):
 				_stamp_segment(a, b, width, ring)
+	# WORLD-BUILD-01C: the snow city's streets from the book's plan, trodden into the ground like the
+	# forest city's yards.
+	var whole := Rect2(0, 0, road_mask.get_width(), road_mask.get_height())
+	for street in snow_lots.streets:
+		var pts: PackedVector2Array = street[0]
+		# the stair-street is stone end to end, its sides plinths and door stairs (Codex 585 SC01)
+		if snow_lots.is_stone_street(pts):
+			continue
+		for i in range(pts.size() - 1):
+			_stamp_segment(pts[i], pts[i + 1], float(street[1]), whole)
 	var material: ShaderMaterial = terrain.material
 	material.set_shader_parameter("use_road_mask", true)
 	material.set_shader_parameter("road_mask", ImageTexture.create_from_image(road_mask))
@@ -715,6 +786,27 @@ func _index_grass_obstacles() -> void:
 			continue
 		var radius := 30.0 if site.kind == "settlement" else 16.0
 		_grass_blocks.append(Vector3(float(site.spawn[0]) + offset.x, float(site.spawn[2]) + offset.y, radius))
+	# no grass in the caves' arches or on the ground before them
+	for exit in CaveMouths.exits():
+		for depth in [-3.0, 2.0]:
+			var at: Vector2 = exit.map - Vector2(HALF, HALF) - exit.facing * depth
+			_grass_blocks.append(Vector3(at.x + offset.x, at.y + offset.y, 4.0))
+	const BOOK_CLEAR := {"ruins": 75.0, "farmsteads": 75.0, "saltworks": 22.0, "farmstead": 16.0, "viewpoint": 5.5}
+	for place in world_layout.get("book_places", []):
+		# The arrival point (world frame map - 1000) and the way to the place stay trodden.
+		var arrive: Array = place.get("arrival", place.point)
+		for t in [0.0, 0.5]:
+			_grass_blocks.append(Vector3(lerpf(float(arrive[0]), float(place.point[0]), t) - HALF + offset.x, lerpf(float(arrive[1]), float(place.point[1]), t) - HALF + offset.y, 4.0))
+		if BOOK_CLEAR.has(str(place.kind)):
+			# a platform is cleared round itself, not round the hero's arrival (Codex 5b143f4: the
+			# viewpoint's circle sat 6.5 m off its 6 x 4 m floor)
+			var clear_at: Vector2 = Vector2(float(place.point[0]) - HALF, float(place.point[1]) - HALF) if str(place.kind) == "viewpoint" else Vector2(float(place.spawn[0]), float(place.spawn[2]))
+			_grass_blocks.append(Vector3(clear_at.x + offset.x, clear_at.y + offset.y, float(BOOK_CLEAR.get(str(place.kind), 0.0))))
+	# the W1 stair flights stay clear of grass (every fourth tread)
+	for flight in world_layout.get("book_stairs", []):
+		for i in range(0, flight.steps.size(), 4):
+			var st: Array = flight.steps[i]
+			_grass_blocks.append(Vector3(float(st[0]) - HALF + offset.x, float(st[1]) - HALF + offset.y, 2.0))
 	for site_id in INN_SITES:
 		var inn_frame := _inn_frame(site_id)
 		if not inn_frame.is_empty():
@@ -733,9 +825,14 @@ func _index_grass_obstacles() -> void:
 	# LAKE-SHORE-01: a lake is an ellipse; one circle over its long radius kept the whole shore bare.
 	# Circles of the short radius along the long axis cover the water and leave the shore to the grass.
 	for lake in world_layout.lakes:
-		var c: Array = lake.center
+		var c: Array = lake.center.duplicate()
 		var rx := float(lake.radii_m[0])
 		var rz := float(lake.radii_m[1])
+		# A cut lake (the W1 sill): its water is the part north of the cut.
+		if lake.has("cut_z") and float(lake.cut_z) < float(c[1]) + rz:
+			var north := float(c[1]) - rz
+			c[1] = (north + float(lake.cut_z)) * 0.5
+			rz = (float(lake.cut_z) - north) * 0.5
 		var r := minf(rx, rz) + 2.0
 		var reach := absf(rx - rz)
 		for k in range(-2, 3):
@@ -916,14 +1013,27 @@ func _build_water_and_sites() -> void:
 	world_root.add_child(water)
 	for lake in world_layout.lakes:
 		var p: Array = lake.center
-		var lake_mesh: MeshInstance3D = water.add_lake(Vector3(p[0] - HALF, p[2], p[1] - HALF), Vector2(lake.radii_m[0], lake.radii_m[1]))
+		var lake_mesh: MeshInstance3D = water.add_lake(Vector3(p[0] - HALF, p[2], p[1] - HALF), Vector2(lake.radii_m[0], lake.radii_m[1]), float(lake.get("cut_z", INF)) - HALF)
 		if lake_mesh != null:
 			lake_mesh.material_override = water_material(false)
-	for spring in world_layout.springs:
-		var p: Array = spring.mouth
-		var direction: Array = spring.facing
-		water.add_spring_cave(Vector3(p[0] - HALF, p[2] - 1, p[1] - HALF), Vector3(direction[0], 0, direction[2]))
+	# the spring's mouth is the cave mouths' (world_cave_mouths.SPRING_EXIT, Codex 403): no grey boxes here
 	for city in world_layout.cities:
+		# WORLD-BUILD-01C (Claude 169 / Codex): the snow city from the book's plots by Codex's builder
+		# when it is in the project; until then its grey blocks stay.
+		if str(city.id) == "snow" and ResourceLoader.exists(SNOW_CITY):
+			snow_city = (load(SNOW_CITY) as GDScript).new()
+			snow_city.name = "SnowCity"
+			world_root.add_child(snow_city)
+			snow_city.build(self)
+			continue
+		# WORLD-BUILD-01E: the desert city by its plan (its random grey volumes crossed the modules; the
+		# plots without a model yet stay open, levelled ground - not stand-ins)
+		if str(city.id) == "desert" and ResourceLoader.exists(DESERT_CITY):
+			desert_city = (load(DESERT_CITY) as GDScript).new()
+			desert_city.name = "DesertCity"
+			world_root.add_child(desert_city)
+			desert_city.build(self)
+			continue
 		# FOREST-CITY-01 (D-111): the forest city is built by its plan, not grey blocks.
 		if str(city.id) == "forest":
 			forest_city = preload("res://scripts/world/world_forest_city.gd").new()
@@ -955,7 +1065,8 @@ func _build_water_and_sites() -> void:
 			marker.position = base + Vector3.UP * size.y * 0.5
 			world_root.add_child(marker)
 	for site in world_layout.sites:
-		if str(site.id) == SITE_SKIPPED or site.kind == "lake" or site.kind == "spring_cave":
+		# the caves' and the mine's grey portals gave way to the rock mouths (world_cave_mouths.gd) below
+		if str(site.id) == SITE_SKIPPED or site.kind == "lake" or site.kind == "spring_cave" or site.kind == "cave" or site.kind == "mine":
 			continue
 		if INN_SITES.has(str(site.id)):
 			_build_inn(site)
@@ -966,6 +1077,49 @@ func _build_water_and_sites() -> void:
 		var direction: Array = site.facing
 		var s: Array = site.spawn
 		landmark.build(site.kind, Vector3(s[0], float(site.point[2]), s[2]), Vector3(direction[0], 0, direction[2]))
+	cave_mouths.name = "CaveMouths"
+	world_root.add_child(cave_mouths)
+	cave_mouths.build(world_ground, HALF)
+	# SHARED-CAMERA-01 (Codex 370 contract; the two runtime files are Codex's): one camera-only obstacle
+	# owner for the hero's SpringArm, layer 7 CameraOnly - the mine portals' timber in it, so the camera
+	# stops before the beams instead of passing behind them
+	camera_obstacles = CameraObstacles.new()
+	camera_obstacles.name = "CameraObstacles"
+	world_root.add_child(camera_obstacles)
+	# after the scene is ready: while the world builds, the hero's rig is not yet there
+	_register_camera_obstacles.call_deferred()
+	# WORLD-BUILD-01A (D-118): the world book's new places - grey volumes until their own models.
+	var book := BookPlaces.new()
+	world_root.add_child(book)
+	book.build(self, world_layout.get("book_places", []))
+	book.build_stairs(world_layout.get("book_stairs", []))
+	# W1-NIGHT-READ-01 (Codex 397; the runtime file is Codex's): three lanterns at the falls viewpoint, set
+	# on its terrace and the stair's arrival once their physics is there
+	w1_lanterns = W1Lanterns.new()
+	world_root.add_child(w1_lanterns)
+	w1_lanterns.build(self)
+	# DA-FIELD01 (Codex 485): the desert's longbow range by its plan line - sill, stakes, the fire-sign cliff
+	desert_range = preload("res://scripts/world/world_desert_range.gd").new()
+	world_root.add_child(desert_range)
+	desert_range.build(self)
+	snow_lots.build_plinths(book, world_ground)
+	snow_lots.build_lane_walls(book, world_ground)
+	# SNOW-G03: the slum's stone stair-street (world_snow_lots.STAIR_STREETS)
+	if not snow_lots.stair_street_steps.is_empty():
+		book.build_stairs([{"id": "snow_stair_street_8", "steps": snow_lots.stair_street_steps}])
+	snow_lots.build_pad_walls(book, world_ground, world_layout)
+	# the snow city's walls and gates from the book's plan (world_snow_walls.gd)
+	SnowWalls.new().build(book, world_ground, world_layout, snow_lots.streets)
+	# WORLD-BUILD-01E: the desert city's ring of walls and its four gates
+	SnowWalls.new().build(book, world_ground, world_layout, snow_lots.streets, SnowWalls.DESERT_PLAN)
+	# WORLD-BUILD-01F: the lowland city's ring and its citadel's walls
+	SnowWalls.new().build(book, world_ground, world_layout, snow_lots.streets, SnowWalls.LOWLAND_PLAN)
+	# WORLD-BUILD-01F: the lowland's boardwalks, shacks on stilts, piers and mole; the stilts' floors
+	# reach the builder through snow_lots.level_of(code, "lowland")
+	lowland_water = LowlandWater.new()
+	lowland_water.build(book, world_ground, world_layout)
+	for code in lowland_water.stilt_levels:
+		snow_lots.extra_levels["lowland:" + str(code)] = lowland_water.stilt_levels[code]
 
 
 func open_debug_map() -> void:
@@ -979,6 +1133,8 @@ func debug_locations() -> Array:
 		places.append(city)
 	for site in world_layout.sites:
 		places.append(site)
+	for place in world_layout.get("book_places", []):
+		places.append(place)
 	return places
 
 
@@ -1178,12 +1334,18 @@ func _build_inn(site: Dictionary) -> void:
 ## but its door works with the same action button when no village door is nearer.
 func _offer_inn_door() -> void:
 	var door: Node3D = null
+	var doors: Array = []
 	for hall in inns:
-		if hall.door == null:
-			continue
-		hall.door.set_highlight(false)
-		if door == null or hall.door.can_interact(player):
-			door = hall.door
+		if hall.door != null:
+			doors.append(hall.door)
+	if snow_city != null and snow_city.has_method("get_doors"):
+		doors.append_array(snow_city.get_doors())
+	if desert_city != null and desert_city.has_method("get_doors"):
+		doors.append_array(desert_city.get_doors())
+	for d in doors:
+		d.set_highlight(false)
+		if door == null or d.can_interact(player):
+			door = d
 	if door == null:
 		return
 	var usable: bool = is_input_available() and door.can_interact(player)
@@ -1255,3 +1417,24 @@ func talk_to_inn_keeper() -> bool:
 	hud.show_message(line.name_key, line.line_key)
 	inn_talk.apply_line(line)
 	return true
+
+
+## SHARED-CAMERA-01: the hero's SpringArm under one camera-only owner, the mine portals' timber in it.
+func _register_camera_obstacles() -> void:
+	var arm := camera_rig.get_node_or_null("SpringArm3D") as SpringArm3D if camera_rig != null else null
+	if arm == null or not camera_obstacles.configure(arm):
+		push_warning("SHARED-CAMERA-01: the camera obstacle owner was not configured")
+		return
+	var portals: Array[Node3D] = []
+	for mouth in cave_mouths.mouths:
+		if str(mouth.get_meta("exit_id", "")).begins_with("crown_mine"):
+			portals.append(mouth)
+	camera_obstacles.register_group(&"mine", CameraSelection.mine_timber(portals))
+	# CAM-G03-CLOSE-01 (Codex 393/395, R1; runtime file Codex's): the hero thins out when the camera is
+	# pressed close to him (a facade, a beam), so he no longer fills the view - one node, configured once
+	if camera_visibility == null:
+		camera_visibility = CameraVisibility.new()
+		camera_visibility.name = "CameraVisibility"
+		world_root.add_child(camera_visibility)
+		if not camera_visibility.configure(camera_rig, player):
+			push_warning("CAM-G03-CLOSE-01: the camera visibility was not configured")

@@ -110,6 +110,21 @@ discs = [((c['point'][0], c['point'][1]), CITY_CLEAR) for c in layout['cities']]
 discs.append(RUINS)
 for s in layout['sites']:
     discs.append(((s['point'][0], s['point'][1]), SITE_CLEAR.get(s['kind'], 30.0)))
+# WORLD-BUILD-01A (D-118): the world book's new places (layout.book_places) - glades round their
+# grey volumes; the outskirts are three farmsteads (offsets as in world_book_places.gd).
+BOOK_CLEAR = {'camp': 15.0, 'hollow': 12.0, 'lookout': 12.0, 'saltworks': 30.0, 'farmstead': 22.0, 'ruins': 110.0}
+for b in layout.get('book_places', []):
+    offsets = [(-50, -20), (40, 10), (0, 55)] if b['kind'] == 'farmsteads' else [(0, 0)]
+    for dx, dz in offsets:
+        discs.append(((b['point'][0] + dx, b['point'][1] + dz), BOOK_CLEAR.get(b['kind'], 22.0)))
+    # the hero's arrival on the way in and the line of sight from it to the place
+    ax, az = b.get('arrival', b['point'])
+    for t in (0.0, 0.5):
+        discs.append(((ax + (b['point'][0] - ax) * t, az + (b['point'][1] - az) * t), 8.0))
+# the W1 stair flights (layout.book_stairs): no tree on the stairs
+for flight in layout.get('book_stairs', []):
+    for st in flight['steps'][::6]:
+        discs.append(((st[0], st[1]), 4.0))
 # FOREST-CITY-02 (book D-118): the forest city's additions outside its 140 m disc (tannery, Vetla's hut,
 # the lower posad) get their own clearings, so the kit houses do not stand inside the conifers.
 _city_plan = os.path.join(ROOT, 'assets/world/forest-city-v1/plan.json')
@@ -117,6 +132,24 @@ if os.path.exists(_city_plan):
     for b in json.load(open(_city_plan, encoding='utf-8'))['buildings']:
         if b['kind'] in ('tannery', 'healer_hut', 'posad'):
             discs.append(((float(b['map'][0]), float(b['map'][1])), 16.0))
+# WORLD-BUILD-01C/E (D-118): the snow and desert cities' book plans - a glade round every plot and a
+# corridor along every street and door path, wherever the plot lies from its city's point (a tree, its
+# place drawn from the shared random stream, came up on vs3's door stair once the lowland roads moved).
+for _plan in ('assets/world/snow-city-v1/plan.json', 'assets/world/desert-city-v1/plan.json'):
+    _path = os.path.join(ROOT, _plan)
+    if not os.path.exists(_path):
+        continue
+    _p = json.load(open(_path, encoding='utf-8'))
+    for b in _p.get('buildings', []):
+        discs.append(((float(b['x']), float(b['z'])), max(float(b['w']), float(b['d'])) * 0.5 + 6.0))
+    for line in _p.get('lines', []):
+        if line['kind'] in ('street', 'path', 'stairs', 'wall'):
+            pts = [(float(q[0]), float(q[1])) for q in line['pts']]
+            r = float(line.get('width', 3.0)) * 0.5 + 3.0
+            for (ax, az), (bx, bz) in zip(pts, pts[1:]):
+                n = max(1, int(math.hypot(bx - ax, bz - az) / 2.0))
+                for i in range(n + 1):
+                    discs.append(((ax + (bx - ax) * i / n, az + (bz - az) * i / n), r))
 lakes = [(l['center'][0], l['center'][1], l['radii_m'][0] + 10.0, l['radii_m'][1] + 10.0) for l in layout['lakes']]
 
 def lakeside(x, z):

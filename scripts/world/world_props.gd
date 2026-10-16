@@ -9,7 +9,7 @@ const MODELS := "res://assets/environment/world-props-v1/%s.glb"
 const SEED := 270927
 const CELL := 10.0
 const CHUNK := 100.0
-## [model, chance per 10 m cell, scale range, visible to (m, at draw distance 220), solid radius (x scale)]
+## [model, chance per 10 m cell, scale range, visible to (m, at draw distance 220), solid (> 0: its own hull collides)]
 const DESERT := [
 	["namaqualand_boulder_03", 0.045, Vector2(1.5, 3.5), 300.0, 1.0],
 	["namaqualand_boulder_04", 0.045, Vector2(1.5, 3.5), 300.0, 1.0],
@@ -61,6 +61,27 @@ func _sea_level() -> float:
 # --- Desert ----------------------------------------------------------------------------------
 
 func _dress_desert() -> void:
+	# the caves' open vaults (Codex 417/418 SPRING-PROP-05: a boulder stood in the spring's passage):
+	# [map, facing, depth to, half width] - filtered after the draws, so every other rock keeps its place
+	_mouths.clear()
+	if world.get("cave_mouths") != null:
+		for exit in world.cave_mouths.exits():
+			_mouths.append([exit.map, exit.facing, float(exit.get("depth", 9.0)) + 2.0, float(exit.get("inside_half", 3.0)) + 2.0])
+	# the cities' streets (map frame) for DESERT-ROAD-PROP-03: [a, b, half width]
+	_street_segs.clear()
+	if world.get("snow_lots") != null:
+		for street in world.snow_lots.streets:
+			var pts: PackedVector2Array = street[0]
+			for i in pts.size() - 1:
+				_street_segs.append([pts[i], pts[i + 1], float(street[1]) * 0.5])
+		# DA-FIELD01 (Codex 485): nothing random on the longbow range - its strip, run on 10 m past its end
+		# over the fire-sign boulder
+		_field_segs.clear()
+		for field in world.snow_lots.fields:
+			var fp: PackedVector2Array = field[0]
+			for i in fp.size() - 1:
+				var tail := (fp[i + 1] - fp[i]).normalized() * 10.0 if i == fp.size() - 2 else Vector2.ZERO
+				_field_segs.append([fp[i], fp[i + 1] + tail, float(field[1]) * 0.5])
 	var rng := RandomNumberGenerator.new()
 	rng.seed = SEED
 	var meshes: Array[Mesh] = []
@@ -86,22 +107,101 @@ func _dress_desert() -> void:
 				var yaw := rng.randf_range(-PI, PI)
 				if not _desert_ground(map):
 					continue
+				# Codex 461 DESERT-ROAD-PROP-03: a solid rock stays off every road and street with all of
+				# its outline and the hero's width (its centre alone on sand let the hull reach the way)
+				if float(item[4]) > 0.0 and _blocks_way(map, _reach_of(k, meshes[k]) * scale + WAY_CLEAR):
+					continue
+				if _on_field(map, (_reach_of(k, meshes[k]) if float(item[4]) > 0.0 else 1.0) * scale + WAY_CLEAR):
+					continue
 				var at := _add(batches, meshes[k], item[0], map, scale, yaw, float(item[3]))
 				counts[item[0]] += 1
 				if float(item[4]) > 0.0:
+					# the rock's own hull, turned and scaled as drawn (Codex 450 FALLS-W5-PROP-01: a sphere of
+					# radius 1.0 x scale left boulder_03's 1.54 m long side open, the hero walked into it)
 					var shape := CollisionShape3D.new()
-					var sphere := SphereShape3D.new()
-					sphere.radius = float(item[4]) * scale
-					shape.shape = sphere
-					shape.position = at + Vector3.UP * sphere.radius * 0.6
+					var hull := ConvexPolygonShape3D.new()
+					var points := PackedVector3Array()
+					for point in _hull_of(k, meshes[k]):
+						points.append(point * scale)
+					hull.points = points
+					shape.shape = hull
+					shape.transform = Transform3D(Basis(Vector3.UP, yaw), at)
 					solid.add_child(shape)
 			x += CELL
 		z += CELL
 	_commit(batches)
 
 
-## Sand, gently sloped, off roads and away from cities and places.
+var _mouths: Array = []
+var _hulls := {}
+var _reaches := {}
+var _street_segs: Array = []
+var _field_segs: Array = []
+
+
+func _on_field(map: Vector2, reach: float) -> bool:
+	for seg in _field_segs:
+		var near := Geometry2D.get_closest_point_to_segment(map, seg[0], seg[1])
+		if map.distance_to(near) <= float(seg[2]) + reach:
+			return true
+	return false
+## The hero's capsule radius 0.28 and a little more: the clear way kept beside a solid rock.
+const WAY_CLEAR := 0.4
+
+
+## The farthest the model's hull reaches from its origin across the ground (any yaw).
+func _reach_of(k: int, mesh: Mesh) -> float:
+	if not _reaches.has(k):
+		var reach := 0.0
+		for point in _hull_of(k, mesh):
+			reach = maxf(reach, Vector2(point.x, point.z).length())
+		_reaches[k] = reach
+	return _reaches[k]
+
+
+## Does a circle of `reach` round `map` touch a road (the mask) or a city's street (its plan width)?
+func _blocks_way(map: Vector2, reach: float) -> bool:
+	for seg in _street_segs:
+		var a: Vector2 = seg[0]
+		var b: Vector2 = seg[1]
+		var near := Geometry2D.get_closest_point_to_segment(map, a, b)
+		if map.distance_to(near) <= float(seg[2]) + reach:
+			return true
+	var origin := Vector2(world.world_root.position.x, world.world_root.position.z) - Vector2(world.HALF, world.HALF)
+	for ring in [0.0, 0.5, 1.0]:
+		var steps := 1 if ring == 0.0 else 12
+		for i in steps:
+			var a := TAU * i / steps
+			var p: Vector2 = map + Vector2(cos(a), sin(a)) * reach * ring + origin
+			if world.road_at(p.x, p.y) > 0.02:
+				return true
+	return false
+
+
+## The model's simplified convex hull in its own frame (32 points), computed once per model, with every
+## point also dropped 0.5 m under the model's base: the rock's sides run straight down to the ground from
+## its widest outline (Codex 459 FALLS-W5-CAMERA-02: under boulder_03's rounded overhang the hero walked
+## into a pocket where the camera saw only the ground).
+func _hull_of(k: int, mesh: Mesh) -> PackedVector3Array:
+	if not _hulls.has(k):
+		var points := (mesh.create_convex_shape(true, true) as ConvexPolygonShape3D).points
+		var base := INF
+		for point in points:
+			base = minf(base, point.y)
+		var full := PackedVector3Array(points)
+		for point in points:
+			full.append(Vector3(point.x, base - 0.5, point.z))
+		_hulls[k] = full
+	return _hulls[k]
+
+
+## Sand, gently sloped, off roads and away from cities and places, out of the caves' vaults.
 func _desert_ground(map: Vector2) -> bool:
+	for m in _mouths:
+		var off: Vector2 = map - m[0]
+		var depth := -off.dot(m[1])
+		if depth >= -4.0 and depth <= float(m[2]) and absf(off.dot(Vector2(-m[1].y, m[1].x))) <= float(m[3]):
+			return false
 	var scene := Vector2(map.x - world.HALF + world.world_root.position.x, map.y - world.HALF + world.world_root.position.z)
 	var colour: Color = world.grass_color(scene.x, scene.y)
 	if colour.r <= colour.g or world.road_at(scene.x, scene.y) > 0.02:

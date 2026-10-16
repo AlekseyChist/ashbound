@@ -21,6 +21,9 @@ var trail_width := 3.0
 var counts: Dictionary = {}
 var _roads: Dictionary = {}
 
+## BOOK-DRESS-01: the camp's, Wolf Hollow's and Watch Rock's glades.
+const GLADE_CLEAR := 11.0
+
 func build_trail(scene: Node3D) -> void:
 	world = scene
 	floor_rng.seed = SEED
@@ -39,6 +42,11 @@ func build_trail(scene: Node3D) -> void:
 		push_error("trail dressing: no start_trail")
 		return
 	var inn: Vector3 = world.inn.global_position if world.inn != null else Vector3(INF, 0, INF)
+	# BOOK-DRESS-01: the book's places by the start keep their glades (the camp stood among the trunks)
+	var glades: Array[Vector2] = []
+	for place in world.world_layout.get("book_places", []):
+		if str(place.kind) in ["camp", "hollow", "lookout"]:
+			glades.append(Vector2(float(place.point[0]) - 1000.0 + world.world_root.position.x, float(place.point[1]) - 1000.0 + world.world_root.position.z))
 	var trees: Array = [[], [], []]
 	var boulders: Array = [[], []]
 	var stones: Array = [[], []]
@@ -64,6 +72,11 @@ func build_trail(scene: Node3D) -> void:
 		var at := along + side * d
 		var p := Vector2(at.x, at.z)
 		if _in_village(p) or Vector2(inn.x, inn.z).distance_to(p) < INN_CLEAR:
+			continue
+		var in_glade := false
+		for g in glades:
+			in_glade = in_glade or g.distance_to(p) < GLADE_CLEAR
+		if in_glade:
 			continue
 		var verge := kind == "stone" or kind == "grass"
 		if _road_clearance(p) < (trail_width * .5 + .4 if verge else SHOULDER + .5):

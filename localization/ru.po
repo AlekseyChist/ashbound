@@ -642,6 +642,30 @@ msgstr "Лесопилка"
 msgid "WORLD_SITE_FOREST_CAVE"
 msgstr "Лесная пещера"
 
+msgid "WORLD_SITE_OLD_PINE_GROVE"
+msgstr "Старый бор"
+
+msgid "WORLD_SITE_WOLF_HOLLOW"
+msgstr "Волчий лог"
+
+msgid "WORLD_SITE_WATCH_ROCK"
+msgstr "Смотровая скала"
+
+msgid "WORLD_SITE_CAPITAL_RUINS"
+msgstr "Руины столицы"
+
+msgid "WORLD_SITE_SALT_FLATS"
+msgstr "Солончаки"
+
+msgid "WORLD_SITE_PEAT_FARMSTEAD"
+msgstr "Торфяной хутор"
+
+msgid "WORLD_SITE_OUTSKIRTS_FARMSTEADS"
+msgstr "Хутора окраин"
+
+msgid "WORLD_SITE_W1_VIEWPOINT"
+msgstr "Смотровая у водопада"
+
 #. World exploration graybox; working place label.
 msgid "WORLD_SITE_FOOTHILL_CAVE"
 msgstr "Пещера предгорий"

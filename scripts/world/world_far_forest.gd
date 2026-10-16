@@ -48,7 +48,9 @@ func build(scene: Node3D) -> void:
 	var keep_off: Array[Vector3] = []
 	var city: Node = world.get("forest_city")
 	if city != null:
-		keep_off = city.yards
+		keep_off = city.yards.duplicate()
+	# WORLD-BUILD-01G: nor round the caves' rock mouths
+	keep_off.append_array(preload("res://scripts/world/world_cave_mouths.gd").clearings(world.HALF))
 	var chunks: Dictionary = {}
 	for i in range(0, data.size() - RECORD_FLOATS + 1, RECORD_FLOATS):
 		var map := Vector2(data[i], data[i + 1])

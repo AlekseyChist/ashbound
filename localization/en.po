@@ -641,6 +641,30 @@ msgstr "Sawmill"
 msgid "WORLD_SITE_FOREST_CAVE"
 msgstr "Forest cave"
 
+msgid "WORLD_SITE_OLD_PINE_GROVE"
+msgstr "Old Pine Grove"
+
+msgid "WORLD_SITE_WOLF_HOLLOW"
+msgstr "Wolf Hollow"
+
+msgid "WORLD_SITE_WATCH_ROCK"
+msgstr "Watch Rock"
+
+msgid "WORLD_SITE_CAPITAL_RUINS"
+msgstr "Capital Ruins"
+
+msgid "WORLD_SITE_SALT_FLATS"
+msgstr "Salt Flats"
+
+msgid "WORLD_SITE_PEAT_FARMSTEAD"
+msgstr "Peat Farmstead"
+
+msgid "WORLD_SITE_OUTSKIRTS_FARMSTEADS"
+msgstr "Outskirts Farmsteads"
+
+msgid "WORLD_SITE_W1_VIEWPOINT"
+msgstr "Falls viewpoint"
+
 #. World exploration graybox; working place label.
 msgid "WORLD_SITE_FOOTHILL_CAVE"
 msgstr "Foothill cave"
