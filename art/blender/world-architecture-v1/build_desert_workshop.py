@@ -103,7 +103,9 @@ FACES=[(0,1,3,2),(4,6,7,5),(0,4,5,1),(2,3,7,6),(0,2,6,4),(1,5,7,3)]
 def roof_piece(name,x0,x1,y0,y1,top,thick,material):
     vertices=[(x,y,top-y*.012+dz) for x in (x0,x1) for y in (y0,y1) for dz in (-thick,0)]
     return C.mesh(name,vertices,FACES,material)
-box('ceiling',(0,0,3.12),(6,5,.16),WOOD)
+# inset into the walls' thickness (as Codex 477 DA-ROOF-JOINT-01 on the archery pavilion: a ceiling as large
+# as the walls' outer faces lay in them - a black band under the roof)
+box('ceiling',(0,0,3.12),(5.6,4.6,.16),WOOD)
 # the bond course (Codex 359 DW-ROOF-01: walls and ceiling stopped at 3.20, the roof slab's underside at
 # 3.45-0.012y - a 22-28 cm gap, roof and parapet unsupported): masonry over every wall line from 3.20 up
 # into the roof slab, its top following the slab's slope
