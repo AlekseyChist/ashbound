@@ -2,6 +2,7 @@ extends Node3D
 ## Owned Codex builder. Claude owns PDF plan, lots, walls and world connection.
 const PLAN := "res://assets/world/desert-city-v1/plan.json"
 const MODULES := {
+    "лб1": {"scene":"res://scenes/buildings/world-architecture-v1/d_shop_6x5.tscn", "walls":Vector2(6,5)},
     "С": {"scene":"res://scenes/buildings/world-architecture-v1/d_cathedral.tscn", "walls":Vector2(30,18)},
     "К": {"scene":"res://scenes/buildings/world-architecture-v1/d_baths.tscn", "walls":Vector2(12,7)},
     "Ш": {"scene":"res://scenes/buildings/world-architecture-v1/d_order_cells.tscn", "walls":Vector2(14,7)},
