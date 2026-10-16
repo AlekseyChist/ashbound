@@ -79,7 +79,18 @@ FACES=[(0,1,3,2),(4,6,7,5),(0,4,5,1),(2,3,7,6),(0,2,6,4),(1,5,7,3)]
 def roof_piece(name,x0,x1,y0,y1,top,thick,material):
     vertices=[(x,y,top-y*.012+dz) for x in (x0,x1) for y in (y0,y1) for dz in (-thick,0)]
     return C.mesh(name,vertices,FACES,material)
-box('ceiling',(0,0,3.12),(8,6,.16),WOOD)
+# inset into the walls' thickness (as Codex 477 DA-ROOF-JOINT-01 on the archery pavilion: a ceiling as large
+# as the walls' outer faces lay in them - a black band under the roof)
+box('ceiling',(0,0,3.12),(7.6,5.6,.16),WOOD)
+# the bond course (as the workshop's DW-ROOF-01 and the shop's DS-ROOF-01: walls stopped at 3.20, the roof
+# slab's underside at 3.45-0.012y - a 22-28 cm open belt): masonry over every wall line up into the slab
+def course(n,x0,x1,y0,y1):
+    vs=[(x,y,z) for x in (x0,x1) for y in (y0,y1) for z in (3.19,3.47-y*.012)]
+    return C.mesh(n,vs,FACES,LIME)
+course('bond course',-4.0,4.0,-3.0,-2.6)
+course('bond course',-4.0,4.0,2.6,3.0)
+course('bond course',-4.0,-3.6,-2.6,2.6)
+course('bond course',3.6,4.0,-2.6,2.6)
 roof_piece('flat lime roof',-4.3,4.3,-3.3,3.3,3.6,.15,LIME)
 roof_piece('flat roof-colonly',-4.3,4.3,-3.3,3.3,3.6,.15,LIME).hide_render=True
 # Parapet (eaves max 0.3 beyond walls).
@@ -134,7 +145,8 @@ portal=bpy.data.objects.new('EntryPortal',None);C.ASSET.objects.link(portal)
 hinge=bpy.data.objects.new('EntryPortal_entry_hinge',None);C.ASSET.objects.link(hinge)
 hinge.parent=portal;hinge.location=(-.9,-2.8,0);hinge['open_angle_degrees']=-100
 for k in range(5):
-    part=box('Door plank',(-.7+k*.35,-2.8,1.18),(.35,.08,2.36),WOOD,False)
+    # as DS-DOOR-02 on the shop: 2.36 m planks ran 6 cm into the header (from 2.30); now 0.01..2.27
+    part=box('Door plank',(-.7+k*.35,-2.8,1.14),(.35,.08,2.26),WOOD,False)
     part.parent=hinge;part.location-=Vector((-.9,-2.8,0))
     door_parts.append(part)
 visual=[o for o in C.ASSET.objects if o.type=='MESH' and '-colonly' not in o.name]
