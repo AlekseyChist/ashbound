@@ -93,13 +93,34 @@ for a,b,w in LINKS:
     bmesh.ops.recalc_face_normals(bmt,faces=bmt.faces[:])
     o=bpy.data.objects.new('link '+a+'-'+b,bpy.data.meshes.new('link'));bmt.to_mesh(o.data);bmt.free()
     bpy.context.scene.collection.objects.link(o);volumes.append(o)
-# Union all volumes into one shell.
-base=volumes[0]
-for other in volumes[1:]:
+# Union all volumes into one shell. A union only grows the shell: if the exact solver loses part of it
+# (the foothill cave's bent climbing way U-X once kept only the union's last pieces, its chambers E and
+# A gone), the step is undone and the volume made watertight by a voxel remesh first, then retried.
+def bbox(o):
+    ps=[o.matrix_world@v.co for v in o.data.vertices]
+    return [min(q[i] for q in ps) for i in range(3)],[max(q[i] for q in ps) for i in range(3)]
+def grew(before,after):
+    return all(after[0][i]<=before[0][i]+0.01 and after[1][i]>=before[1][i]-0.01 for i in range(3))
+def union(base,other):
     mod=base.modifiers.new('u','BOOLEAN')
     mod.operation='UNION';mod.solver='EXACT';mod.object=other
     bpy.context.view_layer.objects.active=base
     bpy.ops.object.modifier_apply(modifier='u')
+base=volumes[0]
+for other in volumes[1:]:
+    before=bbox(base);kept=base.data.copy()
+    union(base,other)
+    if not grew(before,bbox(base)):
+        print('CAVE_UNION retry',other.name)
+        lost=base.data;base.data=kept;bpy.data.meshes.remove(lost)
+        rm=other.modifiers.new('r','REMESH');rm.mode='VOXEL';rm.voxel_size=0.4
+        bpy.context.view_layer.objects.active=other
+        bpy.ops.object.modifier_apply(modifier='r')
+        before=bbox(base)
+        union(base,other)
+        assert grew(before,bbox(base)),'the union lost the shell at '+other.name
+    else:
+        bpy.data.meshes.remove(kept)
     bpy.data.objects.remove(other)
 # The walkable top at a point: the highest floor collider over it (chamber discs at .92 of the
 # ellipse, link boards w*.95 wide whose top runs fa->fb), else the nearest one's level.
