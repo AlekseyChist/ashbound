@@ -67,6 +67,13 @@ func _dress_desert() -> void:
 	if world.get("cave_mouths") != null:
 		for exit in world.cave_mouths.exits():
 			_mouths.append([exit.map, exit.facing, float(exit.get("depth", 9.0)) + 2.0, float(exit.get("inside_half", 3.0)) + 2.0])
+	# the cities' streets (map frame) for DESERT-ROAD-PROP-03: [a, b, half width]
+	_street_segs.clear()
+	if world.get("snow_lots") != null:
+		for street in world.snow_lots.streets:
+			var pts: PackedVector2Array = street[0]
+			for i in pts.size() - 1:
+				_street_segs.append([pts[i], pts[i + 1], float(street[1]) * 0.5])
 	var rng := RandomNumberGenerator.new()
 	rng.seed = SEED
 	var meshes: Array[Mesh] = []
@@ -92,6 +99,10 @@ func _dress_desert() -> void:
 				var yaw := rng.randf_range(-PI, PI)
 				if not _desert_ground(map):
 					continue
+				# Codex 461 DESERT-ROAD-PROP-03: a solid rock stays off every road and street with all of
+				# its outline and the hero's width (its centre alone on sand let the hull reach the way)
+				if float(item[4]) > 0.0 and _blocks_way(map, _reach_of(k, meshes[k]) * scale + WAY_CLEAR):
+					continue
 				var at := _add(batches, meshes[k], item[0], map, scale, yaw, float(item[3]))
 				counts[item[0]] += 1
 				if float(item[4]) > 0.0:
@@ -113,12 +124,55 @@ func _dress_desert() -> void:
 
 var _mouths: Array = []
 var _hulls := {}
+var _reaches := {}
+var _street_segs: Array = []
+## The hero's capsule radius 0.28 and a little more: the clear way kept beside a solid rock.
+const WAY_CLEAR := 0.4
 
 
-## The model's simplified convex hull in its own frame (32 points), computed once per model.
+## The farthest the model's hull reaches from its origin across the ground (any yaw).
+func _reach_of(k: int, mesh: Mesh) -> float:
+	if not _reaches.has(k):
+		var reach := 0.0
+		for point in _hull_of(k, mesh):
+			reach = maxf(reach, Vector2(point.x, point.z).length())
+		_reaches[k] = reach
+	return _reaches[k]
+
+
+## Does a circle of `reach` round `map` touch a road (the mask) or a city's street (its plan width)?
+func _blocks_way(map: Vector2, reach: float) -> bool:
+	for seg in _street_segs:
+		var a: Vector2 = seg[0]
+		var b: Vector2 = seg[1]
+		var near := Geometry2D.get_closest_point_to_segment(map, a, b)
+		if map.distance_to(near) <= float(seg[2]) + reach:
+			return true
+	var origin := Vector2(world.world_root.position.x, world.world_root.position.z) - Vector2(world.HALF, world.HALF)
+	for ring in [0.0, 0.5, 1.0]:
+		var steps := 1 if ring == 0.0 else 12
+		for i in steps:
+			var a := TAU * i / steps
+			var p: Vector2 = map + Vector2(cos(a), sin(a)) * reach * ring + origin
+			if world.road_at(p.x, p.y) > 0.02:
+				return true
+	return false
+
+
+## The model's simplified convex hull in its own frame (32 points), computed once per model, with every
+## point also dropped 0.5 m under the model's base: the rock's sides run straight down to the ground from
+## its widest outline (Codex 459 FALLS-W5-CAMERA-02: under boulder_03's rounded overhang the hero walked
+## into a pocket where the camera saw only the ground).
 func _hull_of(k: int, mesh: Mesh) -> PackedVector3Array:
 	if not _hulls.has(k):
-		_hulls[k] = (mesh.create_convex_shape(true, true) as ConvexPolygonShape3D).points
+		var points := (mesh.create_convex_shape(true, true) as ConvexPolygonShape3D).points
+		var base := INF
+		for point in points:
+			base = minf(base, point.y)
+		var full := PackedVector3Array(points)
+		for point in points:
+			full.append(Vector3(point.x, base - 0.5, point.z))
+		_hulls[k] = full
 	return _hulls[k]
 
 
