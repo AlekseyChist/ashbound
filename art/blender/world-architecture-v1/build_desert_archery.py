@@ -28,6 +28,9 @@ LIME=surface('DA lime','plaster_grey_04_diff_1k.jpg',2)
 WOOD=surface('DA timber','fine_grained_wood_col_1k.jpg',.65)
 STRAW=C.mat('DA straw',(.72,.62,.38,1),.98)
 LEATHER=C.mat('DA leather',(.36,.22,.14,1),.9)
+BALE=C.mat('DA bale straw',(.60,.48,.25,1),.98)          # warmer than the fletchings' straw: it read white
+STRAW_DARK=C.mat('DA straw stalks',(.44,.33,.16,1),.98)   # the darker stalks on a bale's faces and ends
+TWINE=C.mat('DA twine',(.30,.22,.13,1),.95)
 coll=[]
 def box(n,p,s,m,solid=True):
     o=C.box(n,p,s,m,.015)
@@ -98,7 +101,9 @@ FACES=[(0,1,3,2),(4,6,7,5),(0,4,5,1),(2,3,7,6),(0,2,6,4),(1,5,7,3)]
 def roof_piece(name,x0,x1,y0,y1,top,thick,material):
     vertices=[(x,y,top-y*.012+dz) for x in (x0,x1) for y in (y0,y1) for dz in (-thick,0)]
     return C.mesh(name,vertices,FACES,material)
-box('ceiling',(0,0,3.12),(8,5,.16),WOOD)
+# 7.6 x 4.6 (Codex 477 DA-ROOF-JOINT-01: at 8 x 5 its sides lay in the walls' outer faces - a black band
+# under the bond course); now its edges stop inside the walls' thickness
+box('ceiling',(0,0,3.12),(7.6,4.6,.16),WOOD)
 # the bond course (as the workshop's DW-ROOF-01 and the shop's DS-ROOF-01: walls, front beam and ceiling
 # stopped at 3.20, the roof slab's underside at 3.45-0.012y - a 22-28 cm open belt): masonry over every
 # wall line and the front beam from 3.20 up into the roof slab, its top following the slab's slope
@@ -143,8 +148,33 @@ for x in (-3.2,3.2):
     box('bench',(x,.2,.24),(.4,2.2,.06),WOOD)
     for y in (-.7,1.1):box('bench leg',(x,y,.1),(.3,.08,.2),WOOD,False)
 # Straw bales for spare targets in the right front corner.
-box('straw bale',(3.1,-1.6,.3),(.8,.6,.6),STRAW)
-box('straw bale',(3.1,-1.6,.9),(.8,.6,.6),STRAW)
+def bale(n,c,s,seed):
+    # Codex 477 DA-STRAW-ART-01 (two plain light blocks): a straw bale - a softly bevelled body, darker
+    # stalks laid along its long faces, two twine bands round it, ragged tufts out of both cut ends;
+    # its collider the same box as before
+    x,y,z=c;sx,sy,sz=s
+    body=C.box(n,c,(sx-.04,sy,sz),BALE,.05);body['part_role']='interior_furniture'
+    coll.append((n,c,s))
+    def r(i,j):return ((seed*73+i*37+j*11)%17)/17.0
+    for i in range(7):   # stalks on the top and the front face
+        yy=y-sy/2+sy*(i+.5)/7
+        plain_stalk(n+' stalk',(x+(r(i,1)-.5)*.06,yy,z+sz/2+.004),(sx*(.7+.25*r(i,2)),.018,.008))
+        zz=z-sz/2+sz*(i+.5)/7
+        plain_stalk(n+' stalk',(x+(r(i,3)-.5)*.06,y-sy/2-.004,zz),(sx*(.7+.25*r(i,4)),.008,.018))
+    for bx in (-sx*.26,sx*.26):   # the twine bands, a little proud of the straw
+        for dy,dz,w,h in ((0,sz/2+.006,.025,sy+.012),(0,-sz/2-.006,.025,sy+.012)):
+            plain_stalk(n+' twine',(x+bx,y,z+dz),(w,h,.012),TWINE)
+        for dy in (-sy/2-.006,sy/2+.006):
+            plain_stalk(n+' twine',(x+bx,y+dy,z),(.025,.012,sz+.012),TWINE)
+    for side in (-1,1):  # tufts out of the cut ends
+        for i in range(9):
+            ty=y-sy*.4+sy*.8*r(i,5);tz=z-sz*.4+sz*.8*r(i,6)
+            plain_stalk(n+' tuft',(x+side*(sx/2-.01+.03*r(i,7)),ty,tz),(.06+.05*r(i,8),.03,.03),STRAW_DARK if i%2 else BALE)
+def plain_stalk(n,c,s,m=None):
+    o=C.box(n,c,s,m or STRAW_DARK,0);o['part_role']='interior_furniture'
+    return o
+bale('straw bale',(3.1,-1.6,.3),(.8,.6,.6),1)
+bale('straw bale',(3.1,-1.6,.9),(.8,.6,.6),2)
 # No door: open front between the three piers.
 door_parts=[]
 visual=[o for o in C.ASSET.objects if o.type=='MESH' and '-colonly' not in o.name]
