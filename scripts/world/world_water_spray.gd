@@ -17,6 +17,11 @@ var _rapids: Array[Vector3] = []
 var _steam: Array[CPUParticles3D] = []
 var _pool: Array[CPUParticles3D] = []
 var _tick := 0.0
+## FALLS-SPRAY-ART-01 (Codex 450): unshaded, the drops and the steam burned white at night like lamps;
+## their colour now follows the day's light (moonlit at night), every half second with the rest.
+const SPRAY_WHITE := Color(0.92, 0.95, 0.97)
+const NIGHT_LIGHT := 0.24
+var _materials: Array[StandardMaterial3D] = []
 
 
 func configure(scene: Node3D) -> void:
@@ -75,7 +80,7 @@ func _emitter() -> CPUParticles3D:
 	spray.scale_amount_min = 0.15
 	spray.scale_amount_max = 0.4
 	var fade := Gradient.new()
-	fade.set_color(0, Color(1, 1, 1, 0.55))
+	fade.set_color(0, Color(1, 1, 1, 0.4))
 	fade.set_color(1, Color(1, 1, 1, 0.0))
 	spray.color_ramp = fade
 	var quad := QuadMesh.new()
@@ -86,7 +91,8 @@ func _emitter() -> CPUParticles3D:
 	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	material.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
 	material.vertex_color_use_as_albedo = true
-	material.albedo_color = Color(0.92, 0.95, 0.97)
+	material.albedo_color = SPRAY_WHITE
+	_materials.append(material)
 	# WATER-02: right in front of the camera a drop filled the view as a big white blur; it fades out.
 	material.distance_fade_mode = BaseMaterial3D.DISTANCE_FADE_PIXEL_ALPHA
 	material.distance_fade_min_distance = 1.5
@@ -110,7 +116,7 @@ func _steam_emitter() -> CPUParticles3D:
 	steam.scale_amount_max = 6.0
 	var fade := Gradient.new()
 	fade.set_color(0, Color(1, 1, 1, 0.0))
-	fade.add_point(0.25, Color(1, 1, 1, 0.5))
+	fade.add_point(0.25, Color(1, 1, 1, 0.34))
 	fade.set_color(fade.get_point_count() - 1, Color(1, 1, 1, 0.0))
 	steam.color_ramp = fade
 	steam.emitting = false
@@ -119,9 +125,10 @@ func _steam_emitter() -> CPUParticles3D:
 
 ## A soft round dot (owner: the spray was square pixels).
 static func _soft_dot() -> Texture2D:
+	# a soft falloff (FALLS-SPRAY-ART-01: an even disc read as bokeh balls): dense only at the centre
 	var ramp := Gradient.new()
-	ramp.set_color(0, Color(1, 1, 1, 1))
-	ramp.set_color(1, Color(1, 1, 1, 0))
+	ramp.offsets = PackedFloat32Array([0.0, 0.35, 0.7, 1.0])
+	ramp.colors = PackedColorArray([Color(1, 1, 1, 1), Color(1, 1, 1, 0.45), Color(1, 1, 1, 0.12), Color(1, 1, 1, 0)])
 	var dot := GradientTexture2D.new()
 	dot.gradient = ramp
 	dot.fill = GradientTexture2D.FILL_RADIAL
@@ -137,6 +144,7 @@ func _process(delta: float) -> void:
 	if _tick > 0.0 or world == null or _rapids.is_empty():
 		return
 	_tick = 0.5
+	_follow_light()
 	var hero: Vector3 = world.world_root.to_local(world.player.global_position)
 	var near: Array = []
 	for at in _rapids:
@@ -156,3 +164,13 @@ func _process(delta: float) -> void:
 			spray.emitting = true
 		else:
 			spray.emitting = false
+
+
+func _follow_light() -> void:
+	var atmosphere: Node = world.get("atmosphere")
+	if atmosphere == null:
+		return
+	var light := lerpf(NIGHT_LIGHT, 1.0, clampf(float(atmosphere.get("daylight")), 0.0, 1.0))
+	var colour := Color(SPRAY_WHITE.r * light, SPRAY_WHITE.g * light, SPRAY_WHITE.b * light)
+	for material in _materials:
+		material.albedo_color = colour

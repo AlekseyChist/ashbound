@@ -9,7 +9,7 @@ const MODELS := "res://assets/environment/world-props-v1/%s.glb"
 const SEED := 270927
 const CELL := 10.0
 const CHUNK := 100.0
-## [model, chance per 10 m cell, scale range, visible to (m, at draw distance 220), solid radius (x scale)]
+## [model, chance per 10 m cell, scale range, visible to (m, at draw distance 220), solid (> 0: its own hull collides)]
 const DESERT := [
 	["namaqualand_boulder_03", 0.045, Vector2(1.5, 3.5), 300.0, 1.0],
 	["namaqualand_boulder_04", 0.045, Vector2(1.5, 3.5), 300.0, 1.0],
@@ -95,11 +95,16 @@ func _dress_desert() -> void:
 				var at := _add(batches, meshes[k], item[0], map, scale, yaw, float(item[3]))
 				counts[item[0]] += 1
 				if float(item[4]) > 0.0:
+					# the rock's own hull, turned and scaled as drawn (Codex 450 FALLS-W5-PROP-01: a sphere of
+					# radius 1.0 x scale left boulder_03's 1.54 m long side open, the hero walked into it)
 					var shape := CollisionShape3D.new()
-					var sphere := SphereShape3D.new()
-					sphere.radius = float(item[4]) * scale
-					shape.shape = sphere
-					shape.position = at + Vector3.UP * sphere.radius * 0.6
+					var hull := ConvexPolygonShape3D.new()
+					var points := PackedVector3Array()
+					for point in _hull_of(k, meshes[k]):
+						points.append(point * scale)
+					hull.points = points
+					shape.shape = hull
+					shape.transform = Transform3D(Basis(Vector3.UP, yaw), at)
 					solid.add_child(shape)
 			x += CELL
 		z += CELL
@@ -107,6 +112,14 @@ func _dress_desert() -> void:
 
 
 var _mouths: Array = []
+var _hulls := {}
+
+
+## The model's simplified convex hull in its own frame (32 points), computed once per model.
+func _hull_of(k: int, mesh: Mesh) -> PackedVector3Array:
+	if not _hulls.has(k):
+		_hulls[k] = (mesh.create_convex_shape(true, true) as ConvexPolygonShape3D).points
+	return _hulls[k]
 
 
 ## Sand, gently sloped, off roads and away from cities and places, out of the caves' vaults.
