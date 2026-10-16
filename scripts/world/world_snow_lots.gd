@@ -100,6 +100,15 @@ const CHEEK_PROUD := 0.08
 const STAIR_RISE := 0.18
 ## Map-frame tread records [x, z, top, yaw, depth, width, rail] for book.build_stairs.
 var stair_street_steps: Array = []
+## The stair-streets' polylines in the map frame (their first and last points): paved in stone end to end,
+## so the world's road mask does not stamp their strip as trodden earth (Codex 585 SC01: the ochre road
+## tint ran over the ground left beside the treads, between them and the plinths and door stairs).
+var _stone_street_ends: Array = []
+func is_stone_street(pts: PackedVector2Array) -> bool:
+	for e in _stone_street_ends:
+		if pts[0].distance_to(e[0]) < 0.01 and pts[pts.size() - 1].distance_to(e[1]) < 0.01:
+			return true
+	return false
 ## Their treads [at, reach, top] for the ground's clamp only (the lane walls keep to the street).
 var _street_treads: Array = []
 ## [centre, out, depth from, depth to, half width, floor] per cave arch (set by world.gd from the mouths).
@@ -498,6 +507,7 @@ func grade_streets(ground: Callable) -> void:
 			continue
 		var pts: PackedVector2Array = _profiles[si][0]
 		var cum: PackedFloat32Array = _profiles[si][1]
+		_stone_street_ends.append([pts[0] + Vector2(HALF, HALF), pts[pts.size() - 1] + Vector2(HALF, HALF)])
 		var smooth: PackedFloat32Array = _profiles[si][2]
 		var width := float(_profiles[si][3]) * 2.0
 		var run: float = cum[cum.size() - 1]

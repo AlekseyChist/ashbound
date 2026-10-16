@@ -666,6 +666,9 @@ func _apply_road_mask() -> void:
 	var whole := Rect2(0, 0, road_mask.get_width(), road_mask.get_height())
 	for street in snow_lots.streets:
 		var pts: PackedVector2Array = street[0]
+		# the stair-street is stone end to end, its sides plinths and door stairs (Codex 585 SC01)
+		if snow_lots.is_stone_street(pts):
+			continue
 		for i in range(pts.size() - 1):
 			_stamp_segment(pts[i], pts[i + 1], float(street[1]), whole)
 	var material: ShaderMaterial = terrain.material
