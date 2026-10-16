@@ -94,6 +94,9 @@ const STREET_GRADE := 0.466
 ## doors' thresholds) landings; no earth under it: the ground lies just under its treads, and its body
 ## stands to the ground as masonry (the ridge and the earth cut at vs4 were the old earth lane).
 const STAIR_STREETS := [Vector2(1000.9, 419.5)]
+## A door stair's side walls (_flush_cheek): thickness, and how far over its nosings' line they rise.
+const CHEEK_W := 0.22
+const CHEEK_PROUD := 0.08
 const STAIR_RISE := 0.18
 ## Map-frame tread records [x, z, top, yaw, depth, width, rail] for book.build_stairs.
 var stair_street_steps: Array = []
@@ -818,6 +821,8 @@ func _steps(book: Node3D, node: Node3D, ground: Callable, start: Vector2, dir: V
 	# pitch] - one long slab per even run (Codex/validator: the capsule caught the joints of nine
 	# separate 27 deg slabs on vs3's door stair)
 	var run_slab: Array = []
+	# the stair's side walls along a run of blocks: [point on the axis, nosing height, footing]
+	var cheek: Array = []
 	for k in range(1, slots + 1):
 		var p: Vector2 = start + dir * (STOOP_RUN * (k - 0.5))
 		end = p + dir * (STOOP_RUN * 0.5)
@@ -842,11 +847,13 @@ func _steps(book: Node3D, node: Node3D, ground: Callable, start: Vector2, dir: V
 		# ground within reach of the walking level - and, after a block, no more than a riser under it
 		# (Codex 106ecf5: vs13's foot ended 0.287 m over the ground just past its last block)
 		if low >= top - 0.05 and (built == 0 or before - low <= STOOP_RISE + 0.02):
+			_flush_cheek(book, node, cheek, across, width)
 			idle += 1
 			# done once its steps meet the ground for STOOP_LEVEL steps (Codex 6ef4e04: after two, vs13's
 			# bank fell on 0.68 m past the stair's foot)
 			if built > 0 and idle >= STOOP_LEVEL:
 				_flush_slab(book, node, run_slab, width, yaw)
+				_flush_cheek(book, node, cheek, across, width)
 				return [built, true, end]
 			if built == 0 and idle >= 3:
 				_flush_slab(book, node, run_slab, width, yaw)
@@ -859,6 +866,9 @@ func _steps(book: Node3D, node: Node3D, ground: Callable, start: Vector2, dir: V
 			# (Codex 27c3f38 014/015: stepped undersides read as cantilevers over the falling snow)
 			var bottom := foot - 1.2
 			book._stair_block(node, Vector3(p.x, (top + bottom) * 0.5, p.y), Vector3(width, top - bottom, STOOP_RUN + 0.03), yaw, "masonry", false)
+			if cheek.is_empty():
+				cheek.append([p - dir * (STOOP_RUN * 0.5), before, bottom])
+			cheek.append([p + dir * (STOOP_RUN * 0.5), top, bottom])
 			# its collision stops STOOP_UNDER under its top: the walking slab below carries the hero (the
 			# block's edge 3 cm over the slab caught the capsule at vs3 - as the flights' treads do)
 			var body_top := top - STOOP_UNDER
@@ -876,7 +886,33 @@ func _steps(book: Node3D, node: Node3D, ground: Callable, start: Vector2, dir: V
 				run_slab = [hi, before, lo, top, pitch]
 			book._stair_block(node, Vector3(p.x, top - 0.05, p.y), Vector3(width + 0.04, 0.1, STOOP_RUN + 0.02), yaw, "tread", false)
 	_flush_slab(book, node, run_slab, width, yaw)
+	_flush_cheek(book, node, cheek, across, width)
 	return [built, false, end]
+
+
+## The side walls of a run of door-stair blocks (owner 14 Oct: the blocks' stepped sides stood
+## as a saw over the falling slope): solid masonry from the footing up to just over the line of the
+## nosings, CHEEK_W thick, on both sides - a wall, not a beam (Codex cd261e9 014/024: the earlier thin
+## tilted cheeks read as beams across the approach). Visual only: under the walking slab's edge.
+func _flush_cheek(book: Node3D, node: Node3D, cheek: Array, across: Vector2, width: float) -> void:
+	if cheek.size() >= 2:
+		for side in [-1.0, 1.0]:
+			var front := PackedVector3Array()
+			var back := PackedVector3Array()
+			var tops := PackedFloat32Array()
+			var lows := PackedFloat32Array()
+			var low := INF
+			for c in cheek:
+				low = minf(low, float(c[2]))
+			for c in cheek:
+				var a: Vector2 = c[0] + across * side * (width * 0.5 + 0.01)
+				var b: Vector2 = a + across * side * CHEEK_W
+				front.append(Vector3(a.x, 0, a.y))
+				back.append(Vector3(b.x, 0, b.y))
+				tops.append(float(c[1]) + CHEEK_PROUD)
+				lows.append(low)
+			_wall_strip(book, node, front, back, tops, lows, "masonry")
+	cheek.clear()
 
 
 ## One walking slab over a run of door steps: from its high edge (height) to its low edge (height).
