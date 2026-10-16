@@ -287,7 +287,7 @@ func _read_plan(path: String, city: String, levels: Dictionary) -> void:
 			# south-east wall at 1082/306.8 and the street runs on to the mine road at 1081/331.4.
 			if city == "snow" and pts[0].distance_to(MINE_STREET_FROM) < 1.0 and pts[pts.size() - 1].distance_to(MINE_STREET_BOOK_END) < 1.0:
 				pts = PackedVector2Array(MINE_STREET_ROUTE)
-			streets.append([pts, float(line.width)])
+			streets.append([pts, float(line.width), city])
 	for b in plan.get("buildings", []):
 		var code := str(b.code)
 		if city == "snow" and not levels.has(code):
@@ -470,7 +470,7 @@ func grade_streets(ground: Callable) -> void:
 		print("SNOW_STREET %d length=%.0f steepest=%.0f deg" % [_profiles.size(), run, rad_to_deg(atan(steepest))])
 		var half := float(street[1]) * 0.5
 		var index := _profiles.size()
-		_profiles.append([pts, cum, smooth, half])
+		_profiles.append([pts, cum, smooth, half, str(street[2]) if street.size() > 2 else "snow"])
 		var reach := half + 0.3 + STREET_BLEND
 		for i in n:
 			var q := _along(pts, cum, minf(i * STREET_STEP, run))
@@ -865,7 +865,7 @@ func _steps(book: Node3D, node: Node3D, ground: Callable, start: Vector2, dir: V
 			# deep into the slope below: the stair stands on a solid wall, never on a visible edge
 			# (Codex 27c3f38 014/015: stepped undersides read as cantilevers over the falling snow)
 			var bottom := foot - 1.2
-			book._stair_block(node, Vector3(p.x, (top + bottom) * 0.5, p.y), Vector3(width, top - bottom, STOOP_RUN + 0.03), yaw, "masonry", false)
+			book._stair_block(node, Vector3(p.x, (top + bottom) * 0.5, p.y), Vector3(width, top - bottom, STOOP_RUN + 0.03), yaw, _stone("masonry"), false)
 			if cheek.is_empty():
 				cheek.append([p - dir * (STOOP_RUN * 0.5), before, bottom])
 			cheek.append([p + dir * (STOOP_RUN * 0.5), top, bottom])
@@ -884,7 +884,7 @@ func _steps(book: Node3D, node: Node3D, ground: Callable, start: Vector2, dir: V
 			else:
 				_flush_slab(book, node, run_slab, width, yaw)
 				run_slab = [hi, before, lo, top, pitch]
-			book._stair_block(node, Vector3(p.x, top - 0.05, p.y), Vector3(width + 0.04, 0.1, STOOP_RUN + 0.02), yaw, "tread", false)
+			book._stair_block(node, Vector3(p.x, top - 0.05, p.y), Vector3(width + 0.04, 0.1, STOOP_RUN + 0.02), yaw, _stone("tread"), false)
 	_flush_slab(book, node, run_slab, width, yaw)
 	_flush_cheek(book, node, cheek, across, width)
 	return [built, false, end]
@@ -911,7 +911,7 @@ func _flush_cheek(book: Node3D, node: Node3D, cheek: Array, across: Vector2, wid
 				back.append(Vector3(b.x, 0, b.y))
 				tops.append(float(c[1]) + CHEEK_PROUD)
 				lows.append(low)
-			_wall_strip(book, node, front, back, tops, lows, "masonry")
+			_wall_strip(book, node, front, back, tops, lows, _stone("masonry"))
 	cheek.clear()
 
 
@@ -930,6 +930,13 @@ func _flush_slab(book: Node3D, node: Node3D, run_slab: Array, width: float, yaw:
 	book._stair_collider(node, Vector3(mid.x, (h0 + h1) * 0.5 - 0.03, mid.y), Vector3(width, 0.06, length / cos(pitch) + 0.04), turn)
 
 
+## The city whose stone the builders below are laying (Codex 576 SC03: the snow city's walls, stairs and
+## yards in a cool grey stone apart from its brown timber; the desert and the lowland keep the warm one).
+var _stone_city := "snow"
+func _stone(kind: String) -> String:
+	return "snow_" + kind if _stone_city == "snow" else kind
+
+
 ## The lane walls (see LANE_WALL_MIN), after build_plinths (they keep off its door stairs).
 func build_lane_walls(book: Node3D, ground: Callable) -> void:
 	var node := Node3D.new()
@@ -937,6 +944,7 @@ func build_lane_walls(book: Node3D, ground: Callable) -> void:
 	book.add_child(node)
 	var count := 0
 	for si in _profiles.size():
+		_stone_city = str(_profiles[si][4])
 		var pts: PackedVector2Array = _profiles[si][0]
 		var cum: PackedFloat32Array = _profiles[si][1]
 		var edge: float = float(_profiles[si][3]) + 0.3
@@ -1005,7 +1013,7 @@ func build_lane_walls(book: Node3D, ground: Callable) -> void:
 						# 24159a5 031: the ground showed through it as a flat pale face)
 						tops.append(top + LANE_WALL_PROUD)
 						lows.append(float(_street_at(si, q)[1]) - 1.5)
-					_wall_strip(book, node, front, back, tops, lows, "masonry")
+					_wall_strip(book, node, front, back, tops, lows, _stone("masonry"))
 					# the coping: 0.34 deep on the front edge, 0.12 over the top
 					var lip_b := PackedVector3Array()
 					var lip_t := PackedFloat32Array()
@@ -1017,7 +1025,7 @@ func build_lane_walls(book: Node3D, ground: Callable) -> void:
 					var lip_f := PackedVector3Array()
 					for k in front.size():
 						lip_f.append(front[k] - (back[k] - front[k]).normalized() * 0.03)
-					_wall_strip(book, node, lip_f, lip_b, lip_t, lip_l, "tread")
+					_wall_strip(book, node, lip_f, lip_b, lip_t, lip_l, _stone("tread"))
 					for k in range(i, j):
 						var a2: Array = samples[k]
 						var t0: float = tops[k - i]
@@ -1047,6 +1055,7 @@ func build_pad_walls(book: Node3D, ground: Callable, layout: Dictionary) -> void
 	node.name = "SnowPadWalls"
 	book.add_child(node)
 	var count := 0
+	_stone_city = "snow"
 	for pad in layout.get("book_pads", []):
 		if not str(pad.id).begins_with("snow_"):
 			continue
@@ -1112,7 +1121,7 @@ func build_pad_walls(book: Node3D, ground: Callable, layout: Dictionary) -> void
 						back.append(Vector3(b2.x, 0, b2.y))
 						tops.append(maxf(float(s0[0]), float(s1[0])) + LANE_WALL_PROUD)
 						lows.append(minf(float(s0[1]), float(s1[1])) - 1.5)
-					_wall_strip(book, node, front, back, tops, lows, "masonry")
+					_wall_strip(book, node, front, back, tops, lows, _stone("masonry"))
 					var lip_f := PackedVector3Array()
 					var lip_b := PackedVector3Array()
 					var lip_t := PackedFloat32Array()
@@ -1123,7 +1132,7 @@ func build_pad_walls(book: Node3D, ground: Callable, layout: Dictionary) -> void
 						lip_b.append(front[k] + inward * 0.34)
 						lip_t.append(tops[k] + 0.08)
 						lip_l.append(tops[k] - 0.04)
-					_wall_strip(book, node, lip_f, lip_b, lip_t, lip_l, "tread")
+					_wall_strip(book, node, lip_f, lip_b, lip_t, lip_l, _stone("tread"))
 					for k in range(i, j):
 						var q0: Vector3 = (front[k - i] + back[k - i] + front[k - i + 1] + back[k - i + 1]) * 0.25
 						var top_y := (tops[k - i] + tops[k - i + 1]) * 0.5
@@ -1209,7 +1218,7 @@ func _paving(book: Node3D, node: Node3D, lot: Dictionary, u0: float, u1: float, 
 		return
 	var mesh := MeshInstance3D.new()
 	mesh.mesh = st.commit()
-	mesh.material_override = book._material("tread")
+	mesh.material_override = book._material(_stone("tread"))
 	mesh.visibility_range_end = 300.0
 	node.add_child(mesh)
 
@@ -1295,6 +1304,7 @@ func build_plinths(book: Node3D, ground: Callable) -> void:
 	for lot in lots:
 		if CUTS.has(lot.code):
 			continue
+		_stone_city = str(lot.city)
 		var yard := _yard(lot)
 		lot["yard"] = yard
 		# the rect: -u (left), +u, -v (back), +v (front) past the walls
@@ -1320,10 +1330,10 @@ func build_plinths(book: Node3D, ground: Callable) -> void:
 		var bottom := foot - 0.8
 		var yaw := rad_to_deg(atan2(lot.f.x, lot.f.y))
 		var mid: Vector2 = lot.c + lot.s * ((u0 + u1) * 0.5) + lot.f * ((v0 + v1) * 0.5)
-		book._stair_block(node, Vector3(mid.x, (top + bottom) * 0.5, mid.y), Vector3(u1 - u0, top - bottom, v1 - v0), yaw, "masonry")
+		book._stair_block(node, Vector3(mid.x, (top + bottom) * 0.5, mid.y), Vector3(u1 - u0, top - bottom, v1 - v0), yaw, _stone("masonry"))
 		if lot.shack:
 			# the yard's dressed edge
-			book._stair_block(node, Vector3(mid.x, top - 0.05, mid.y), Vector3(u1 - u0 + 0.06, 0.12, v1 - v0 + 0.06), yaw, "tread", false)
+			book._stair_block(node, Vector3(mid.x, top - 0.05, mid.y), Vector3(u1 - u0 + 0.06, 0.12, v1 - v0 + 0.06), yaw, _stone("tread"), false)
 			# paved: dressed slabs with open joints, one mesh a yard (Codex 925dd80 031: the platform's top
 			# read as a flat grey-green face)
 			_paving(book, node, lot, u0, u1, v0, v1, top + 0.02)
@@ -1336,6 +1346,7 @@ func build_plinths(book: Node3D, ground: Callable) -> void:
 	for lot in lots:
 		if CUTS.has(lot.code):
 			continue
+		_stone_city = str(lot.city)
 		var out: float = lot.d * 0.5 + float(lot.get("yard", [0, 0, 0, PLINTH_LEDGE])[3])
 		var door: Vector2 = lot.c + lot.f * (lot.d * 0.5 + 0.3)
 		var level: float = lot.level - 0.02
@@ -1355,7 +1366,7 @@ func build_plinths(book: Node3D, ground: Callable) -> void:
 				var e: Vector2 = landing + lot.f * (LANDING * a) + lot.s * (STOOP_WIDTH * q)
 				low = minf(low, float(ground.call(e.x, e.y)))
 		if low < level - 0.05:
-			book._stair_block(node, Vector3(landing.x, (level + low - 1.2) * 0.5, landing.y), Vector3(STOOP_WIDTH, level - low + 1.2, LANDING), yaw, "masonry")
+			book._stair_block(node, Vector3(landing.x, (level + low - 1.2) * 0.5, landing.y), Vector3(STOOP_WIDTH, level - low + 1.2, LANDING), yaw, _stone("masonry"))
 			steps += 1
 		var probe := 3.0
 		var left := float(ground.call((landing - lot.s * probe).x, (landing - lot.s * probe).y))
@@ -1371,6 +1382,7 @@ func build_plinths(book: Node3D, ground: Callable) -> void:
 	var collars := 0
 	for item in _collars:
 		var lot: Dictionary = item[0]
+		_stone_city = str(lot.city)   # Codex 578 SC03-COLLAR-SCOPE: the loop before left the last lot's city
 		var hole: Rect2 = item[1]
 		var voids: Array = item[2]
 		var depth: float = CUTS[lot.code]
@@ -1416,13 +1428,13 @@ func build_plinths(book: Node3D, ground: Callable) -> void:
 						top = minf(top, float(t[2]) - 0.05)
 				var bottom: float = lot.level - depth
 				var c: Vector2 = r.get_center()
-				book._stair_block(node, Vector3(c.x, (top + bottom) * 0.5, c.y), Vector3(r.size.x, top - bottom, r.size.y), 0.0, "masonry")
+				book._stair_block(node, Vector3(c.x, (top + bottom) * 0.5, c.y), Vector3(r.size.x, top - bottom, r.size.y), 0.0, _stone("masonry"))
 				collars += 1
 		# the sunken yard's floor
 		if AREAWAYS.has(lot.code):
 			var yard: Rect2 = voids[1]
 			var floor_y: float = lot.level - float(LOWER[lot.code])
 			var c: Vector2 = yard.get_center()
-			book._stair_block(node, Vector3(c.x, floor_y - 0.2, c.y), Vector3(yard.size.x, 0.4, yard.size.y), 0.0, "masonry")
+			book._stair_block(node, Vector3(c.x, floor_y - 0.2, c.y), Vector3(yard.size.x, 0.4, yard.size.y), 0.0, _stone("masonry"))
 			collars += 1
 	print("SNOW_PLINTHS count=%d stoop_steps=%d cut_collars=%d" % [count, steps, collars])

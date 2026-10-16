@@ -101,6 +101,11 @@ const WOOD := "res://assets/environment/village-house-materials-v1/fine_grained_
 const TEXTURED := {
 	"masonry": [MASONRY, Color(0.78, 0.77, 0.72), 0.45],
 	"tread": [MASONRY, Color(0.95, 0.93, 0.88), 0.9],
+	# the snow city's stone (Codex 576 SC03: the warm masonry beside its brown timber read as planks;
+	# a cool grey at the same scale keeps the joints and parts stone from wood) - its walls, door stairs,
+	# yards and flights; the tread/coping the same family, lighter
+	"snow_masonry": [MASONRY, Color(0.64, 0.76, 0.92), 0.45],
+	"snow_tread": [MASONRY, Color(0.80, 0.87, 0.97), 0.9],
 	"wood": [WOOD, Color(0.62, 0.52, 0.42), 0.8],
 }
 
@@ -457,6 +462,9 @@ func build_stairs(stairs: Array) -> void:
 		node.name = str(flight.id)
 		add_child(node)
 		var all: Array = flight.steps
+		var snow := str(flight.id).begins_with("snow_")
+		var mas := "snow_masonry" if snow else "masonry"
+		var trd := "snow_tread" if snow else "tread"
 		for n in all.size():
 			var st: Array = all[n]
 			var at := Vector2(float(st[0]) - HALF, float(st[1]) - HALF)
@@ -487,12 +495,12 @@ func build_stairs(stairs: Array) -> void:
 				continue
 			var height := maxf(top - (low - SINK), 0.3)
 			var tread := depth < 0.6
-			_stair_block(node, Vector3(at.x, top - height * 0.5, at.y), Vector3(width, height, depth), yaw, "masonry", not tread)
+			_stair_block(node, Vector3(at.x, top - height * 0.5, at.y), Vector3(width, height, depth), yaw, mas, not tread)
 			# a dressed-stone tread over the masonry body: its nosing reads the steps from the side
 			# 4/8 mm over the body's top and alternating, so no two faces share a plane (Codex a406d48:
 			# stripes on the top treads of B and C, where a tread and its landing lie at one level)
 			var lift := 0.004 * (1 + n % 2)
-			_stair_block(node, Vector3(at.x, top - 0.06 + lift, at.y), Vector3(width + 0.06, 0.12, depth + 0.02), yaw, "tread", false)
+			_stair_block(node, Vector3(at.x, top - 0.06 + lift, at.y), Vector3(width + 0.06, 0.12, depth + 0.02), yaw, trd, false)
 			if tread:
 				# Walking surface: a 32 deg slab from each tread's back edge at the step above to its front
 				# edge on the tread itself - so a flight meets its landings flush at both ends (Codex
@@ -515,7 +523,13 @@ func build_stairs(stairs: Array) -> void:
 					var beyond: Vector3 = basis * Vector3(sx * (width * 0.5 + 0.4), 0, 0)
 					if ground(at.x + beyond.x, at.y + beyond.z) > top - 0.15:
 						continue
-					_tilted_block(node, Vector3(at.x + side.x, top + rise * 0.5 + CHEEK.y * 0.5 - CHEEK.z, at.y + side.z), Vector3(CHEEK.x, CHEEK.y, (depth - 0.02) / cos(pitch) + 0.06), slab, "tread", false)
+					_tilted_block(node, Vector3(at.x + side.x, top + rise * 0.5 + CHEEK.y * 0.5 - CHEEK.z, at.y + side.z), Vector3(CHEEK.x, CHEEK.y, (depth - 0.02) / cos(pitch) + 0.06), slab, trd, false)
+					# with the cheek, down to the block's footing: a solid side wall in the cheek's plane - the snow
+					# city's flights for now (Codex 578: W1 and the smugglers' flights need their own route check)
+					# (Codex 575 STAIR-CHEEK-01 day052/054/056: where the ground falls away beside a flight
+					# the blocks' stepped ends still showed under the 0.5 m cheek)
+					if snow:
+						_side_wall(node, at, basis, sx * (width * 0.5 - 0.06), depth, top, rise, low - SINK, mas)
 				if rise > 0.02:
 					_stair_collider(node, Vector3(at.x, top + rise * 0.5 - 0.03, at.y), Vector3(width, 0.06, (depth - 0.02) / cos(pitch) + 0.04), slab)
 				else:
@@ -628,6 +642,50 @@ func _tilted_block(parent: Node3D, centre: Vector3, size: Vector3, turn: Basis, 
 	boxes += 1
 	if solid:
 		_stair_collider(parent, centre, size, turn)
+
+## One tread's side wall (build_stairs): CHEEK.x thick at `x` across the flight, from 1 cm under the
+## cheek's top on the slope (top + CHEEK.y - CHEEK.z at the tread's low edge, + rise at its high edge) down
+## to `bottom`; the neighbours' walls meet it, so a flight's open side reads as one masonry wall over the
+## steps' profile. Visual only.
+func _side_wall(parent: Node3D, at: Vector2, basis: Basis, x: float, depth: float, top: float, rise: float, bottom: float, colour := "masonry") -> void:
+	var lo_top := top + CHEEK.y - CHEEK.z - 0.01
+	var hi_top := lo_top + rise
+	if lo_top - bottom < 0.05 and hi_top - bottom < 0.05:
+		return
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var c := Vector3(at.x, 0, at.y)
+	var pt := func(px: float, pz: float, y: float) -> Vector3:
+		return c + basis * Vector3(px, 0, pz) + Vector3(0, y, 0)
+	var h := CHEEK.x * 0.5
+	var d := depth * 0.5 + 0.01
+	# corners: inner/outer (i/o) x low/high edge (l/h: +z is the tread's low edge) x top/bottom (t/b)
+	var v := {}
+	for side in [["i", x - h], ["o", x + h]]:
+		for edge in [["l", d, lo_top], ["h", -d, hi_top]]:
+			v[side[0] + edge[0] + "t"] = pt.call(side[1], edge[1], edge[2])
+			v[side[0] + edge[0] + "b"] = pt.call(side[1], edge[1], bottom)
+	var mid: Vector3 = c + basis * Vector3(x, 0, 0) + Vector3(0, (lo_top + bottom) * 0.5, 0)
+	for q in [["olb", "ohb", "oht", "olt"], ["ilb", "ilt", "iht", "ihb"], ["ilt", "olt", "oht", "iht"], ["ilb", "olb", "olt", "ilt"], ["ihb", "iht", "oht", "ohb"]]:
+		var a: Vector3 = v[q[0]]
+		var b: Vector3 = v[q[1]]
+		var cc: Vector3 = v[q[2]]
+		var dd: Vector3 = v[q[3]]
+		var normal := (b - a).cross(dd - a).normalized()
+		if normal.dot((a + b + cc + dd) * 0.25 - mid) < 0.0:
+			var tmp := b
+			b = dd
+			dd = tmp
+			normal = -normal
+		for p in [a, cc, b, a, dd, cc]:
+			st.set_normal(normal)
+			st.add_vertex(p)
+	var mesh := MeshInstance3D.new()
+	mesh.mesh = st.commit()
+	mesh.material_override = _material(colour)
+	mesh.visibility_range_end = 300.0
+	parent.add_child(mesh)
+
 
 func _stair_collider(parent: Node3D, centre: Vector3, size: Vector3, basis: Basis) -> void:
 	var body := StaticBody3D.new()
