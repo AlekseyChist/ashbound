@@ -87,7 +87,9 @@ FACES=[(0,1,3,2),(4,6,7,5),(0,4,5,1),(2,3,7,6),(0,2,6,4),(1,5,7,3)]
 def roof_piece(name,x0,x1,y0,y1,top,thick,material):
     vertices=[(x,y,top-y*.012+dz) for x in (x0,x1) for y in (y0,y1) for dz in (-thick,0)]
     return C.mesh(name,vertices,FACES,material)
-box('ceiling',(0,0,3.12),(13,7,.16),WOOD)
+# inset into the walls' thickness (as Codex 477 DA-ROOF-JOINT-01 on the archery pavilion: a ceiling as large
+# as the walls' outer faces lay in them - a black band under the roof)
+box('ceiling',(0,0,3.12),(12.6,6.6,.16),WOOD)
 roof_piece('flat lime roof',-6.8,6.8,-3.8,3.8,3.6,.15,LIME)
 roof_piece('flat roof-colonly',-6.8,6.8,-3.8,3.8,3.6,.15,LIME).hide_render=True
 # Parapet (eaves max 0.3 beyond walls); rear open over the two drains.
