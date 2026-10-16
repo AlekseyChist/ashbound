@@ -88,6 +88,7 @@ var cave_mouths: Node3D
 var camera_obstacles: Node = null
 var camera_visibility: Node = null
 var w1_lanterns: Node3D = null
+var desert_range: Node3D = null
 var road_mask: Image
 var world_colors: PackedColorArray
 ## GRASS-WORLD-01: road and river pieces near the grass, bucketed by 32 m cells (scene frame).
@@ -1094,6 +1095,10 @@ func _build_water_and_sites() -> void:
 	w1_lanterns = W1Lanterns.new()
 	world_root.add_child(w1_lanterns)
 	w1_lanterns.build(self)
+	# DA-FIELD01 (Codex 485): the desert's longbow range by its plan line - sill, stakes, the fire-sign cliff
+	desert_range = preload("res://scripts/world/world_desert_range.gd").new()
+	world_root.add_child(desert_range)
+	desert_range.build(self)
 	snow_lots.build_plinths(book, world_ground)
 	snow_lots.build_lane_walls(book, world_ground)
 	# SNOW-G03: the slum's stone stair-street (world_snow_lots.STAIR_STREETS)

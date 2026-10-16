@@ -74,6 +74,14 @@ func _dress_desert() -> void:
 			var pts: PackedVector2Array = street[0]
 			for i in pts.size() - 1:
 				_street_segs.append([pts[i], pts[i + 1], float(street[1]) * 0.5])
+		# DA-FIELD01 (Codex 485): nothing random on the longbow range - its strip, run on 10 m past its end
+		# over the fire-sign boulder
+		_field_segs.clear()
+		for field in world.snow_lots.fields:
+			var fp: PackedVector2Array = field[0]
+			for i in fp.size() - 1:
+				var tail := (fp[i + 1] - fp[i]).normalized() * 10.0 if i == fp.size() - 2 else Vector2.ZERO
+				_field_segs.append([fp[i], fp[i + 1] + tail, float(field[1]) * 0.5])
 	var rng := RandomNumberGenerator.new()
 	rng.seed = SEED
 	var meshes: Array[Mesh] = []
@@ -103,6 +111,8 @@ func _dress_desert() -> void:
 				# its outline and the hero's width (its centre alone on sand let the hull reach the way)
 				if float(item[4]) > 0.0 and _blocks_way(map, _reach_of(k, meshes[k]) * scale + WAY_CLEAR):
 					continue
+				if _on_field(map, (_reach_of(k, meshes[k]) if float(item[4]) > 0.0 else 1.0) * scale + WAY_CLEAR):
+					continue
 				var at := _add(batches, meshes[k], item[0], map, scale, yaw, float(item[3]))
 				counts[item[0]] += 1
 				if float(item[4]) > 0.0:
@@ -126,6 +136,15 @@ var _mouths: Array = []
 var _hulls := {}
 var _reaches := {}
 var _street_segs: Array = []
+var _field_segs: Array = []
+
+
+func _on_field(map: Vector2, reach: float) -> bool:
+	for seg in _field_segs:
+		var near := Geometry2D.get_closest_point_to_segment(map, seg[0], seg[1])
+		if map.distance_to(near) <= float(seg[2]) + reach:
+			return true
+	return false
 ## The hero's capsule radius 0.28 and a little more: the clear way kept beside a solid rock.
 const WAY_CLEAR := 0.4
 

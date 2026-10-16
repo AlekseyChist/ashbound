@@ -133,6 +133,8 @@ var _treads: Array = []
 var _ends: Array = []
 ## The book's streets (plan lines of kind street): [points (map frame), width].
 var streets: Array = []
+## The plans' fields (lines of kind field: the desert's longbow range), the same form.
+var fields: Array = []
 ## Each door stair's walking line, code -> points (world frame): the door, (a landing,) the stair's end.
 var stoop_paths := {}
 ## Graded streets: [points (world frame), cumulative distance at each point, the profile every
@@ -267,6 +269,11 @@ func _read_plan(path: String, city: String, levels: Dictionary) -> void:
 	if not plan is Dictionary:
 		return
 	for line in plan.get("lines", []):
+		if str(line.kind) == "field":
+			var field_pts := PackedVector2Array()
+			for q in line.pts:
+				field_pts.append(Vector2(float(q[0]), float(q[1])))
+			fields.append([field_pts, float(line.width)])
 		if str(line.kind) == "street":
 			var pts := PackedVector2Array()
 			for q in line.pts:
