@@ -36,6 +36,9 @@ const ATTACK_SPEED_SCALE := 0.25
 const JUMP_HEIGHT := 0.45
 var _jump_requested := false
 var _in_jump := false
+## A rounded capsule can lose the floor flag for one edge-contact tick. Allow one
+## snap retry after that tick so a reachable floor does not leave us in free fall.
+var _step_down_pending := false
 ## STEP-01 (owner 29 Sep: "small obstacles like this - the hero climbs onto them and down by himself,
 ## jumping looks unnatural; no animation needed"): a ledge up to STEP_MAX is stepped onto while
 ## walking, and the floor snap keeps him on the ground stepping down the same height.
@@ -195,8 +198,21 @@ func _physics_process(delta: float) -> void:
 		velocity.x = move_toward(velocity.x, target_velocity.x, accel)
 		velocity.z = move_toward(velocity.z, target_velocity.z, accel)
 
+	var was_grounded := is_on_floor()
+	var before_step_y := global_position.y
 	_step_up(delta)
+	var stepped_up := global_position.y > before_step_y + 0.002
 	move_and_slide()
+	# Automatic floor snap only runs while grounded. After the capsule's curved
+	# foot first meets a ledge with a steep normal, the next query can already
+	# reach ordinary floor, but automatic snap no longer runs. Retry once, using
+	# the engine's unchanged snap distance/angle; never pull a jump or a step-up
+	# back down, and never keep retrying through a real fall.
+	if not _in_jump and velocity.y <= 0.0 and not stepped_up \
+			and (was_grounded or _step_down_pending):
+		apply_floor_snap()
+	_step_down_pending = was_grounded and not is_on_floor() and not _in_jump \
+		and velocity.y <= 0.0 and not stepped_up
 
 	# Таймеры атаки/кулдауна (кулдаун тикает независимо от атаки).
 	# Контакт не шлём, если ввод заблокирован (отмена могла произойти
