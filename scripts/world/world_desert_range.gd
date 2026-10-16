@@ -19,6 +19,10 @@ const HALF := 1000.0
 const CLIFF_HALF_DEPTH := 1.2 * 3.4
 const SIGN_SIZE := 2.2
 const SIGN_HEIGHT := 2.0
+## A render layer of the target boulder's own (layer 20; no other node in the project uses one past 1): the
+## sign's decal paints only it (Codex 493 DA-FIELD01-DECAL01: on the shared layer 1 it painted the hero
+## walking up to the stone).
+const SIGN_LAYER := 1 << 19
 
 var world: Node3D
 var start := Vector2.ZERO          # map frame
@@ -158,6 +162,7 @@ func _cliff() -> void:
 	add_child(cliff)
 	for m in cliff.find_children("*", "MeshInstance3D", true, false):
 		(m as MeshInstance3D).create_trimesh_collision()
+		(m as MeshInstance3D).layers |= SIGN_LAYER
 
 
 ## The fire sign: once the cliff's colliders are in, a ray from the start's side finds its real face at
@@ -183,7 +188,7 @@ func _sign_after_physics() -> void:
 	sign_decal.name = "FireSign"
 	sign_decal.size = Vector3(SIGN_SIZE, 1.4, SIGN_SIZE)
 	sign_decal.texture_albedo = _sign_texture()
-	sign_decal.cull_mask = 1
+	sign_decal.cull_mask = SIGN_LAYER
 	add_child(sign_decal)
 	# the decal paints along its -Y: -Y along the range into the rock, so the sign faces the start
 	# (Codex 485: about east, 2.2 deg south) whatever the rock's bumps; 1.4 m deep to lie over them
