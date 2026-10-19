@@ -958,3 +958,28 @@ msgstr "Дорога за сторожевой башней ведёт к лес
 
 msgid "ASK_WAY_HERE"
 msgstr "Ты уже на месте. Если хочешь продолжить поручение, заговори со мной ещё раз и выбери «По делу»."
+
+# TITLE-MENU-01: the start screen.
+msgid "TITLE_CONTINUE"
+msgstr "Продолжить"
+
+msgid "TITLE_NEW_GAME"
+msgstr "Новая игра"
+
+msgid "TITLE_QUIT"
+msgstr "Выход"
+
+msgid "TITLE_BACK"
+msgstr "Назад"
+
+msgid "TITLE_CANCEL"
+msgstr "Отмена"
+
+msgid "TITLE_NEW_GAME_CONFIRM"
+msgstr "Начать новую игру? Текущий прогресс будет потерян, настройки сохранятся."
+
+msgid "TITLE_LOADING"
+msgstr "Загрузка…"
+
+msgid "TITLE_VERSION"
+msgstr "Версия"

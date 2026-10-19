@@ -900,3 +900,28 @@ msgstr ""
 
 msgid "ASK_WAY_HERE"
 msgstr ""
+
+# TITLE-MENU-01: the start screen.
+msgid "TITLE_CONTINUE"
+msgstr ""
+
+msgid "TITLE_NEW_GAME"
+msgstr ""
+
+msgid "TITLE_QUIT"
+msgstr ""
+
+msgid "TITLE_BACK"
+msgstr ""
+
+msgid "TITLE_CANCEL"
+msgstr ""
+
+msgid "TITLE_NEW_GAME_CONFIRM"
+msgstr ""
+
+msgid "TITLE_LOADING"
+msgstr ""
+
+msgid "TITLE_VERSION"
+msgstr ""
