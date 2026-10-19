@@ -957,3 +957,28 @@ msgstr "The road past the watchtower leads to the forest inn. Follow the trail t
 
 msgid "ASK_WAY_HERE"
 msgstr "You are in the right place. To continue the task, speak to me again and choose About the job."
+
+# TITLE-MENU-01: the start screen.
+msgid "TITLE_CONTINUE"
+msgstr "Continue"
+
+msgid "TITLE_NEW_GAME"
+msgstr "New game"
+
+msgid "TITLE_QUIT"
+msgstr "Quit"
+
+msgid "TITLE_BACK"
+msgstr "Back"
+
+msgid "TITLE_CANCEL"
+msgstr "Cancel"
+
+msgid "TITLE_NEW_GAME_CONFIRM"
+msgstr "Start a new game? The current progress will be lost; settings stay."
+
+msgid "TITLE_LOADING"
+msgstr "Loading…"
+
+msgid "TITLE_VERSION"
+msgstr "Version"

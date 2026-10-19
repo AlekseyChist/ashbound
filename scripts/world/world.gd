@@ -37,6 +37,7 @@ const INN_KEEPER_AT := Vector3(4.6, 0.36, -1.5)
 const INN_KEEPER_TALK: QuestData = preload("res://data/quests/forest_inn_keeper.tres")
 const INN_TALK_RADIUS := 2.8
 const Pad = preload("res://scripts/world/world_settlement_pad.gd")
+const TitleMenu = preload("res://scripts/world/title_menu.gd")
 
 const VERSION := "0.36.28"
 const WORLD_LAYOUT := "res://assets/world/graybox-v1/layout.json"
@@ -118,9 +119,13 @@ var choices: CanvasLayer
 const DRINK_PRICE := 1
 ## DEBUG-MAP-01: Settings -> Debug -> Map.
 var debug_map: CanvasLayer
+## TITLE-MENU-01: the start screen over the paused world.
+var title: CanvasLayer
 
 
 func _ready() -> void:
+	# New game clears the progress before the village, the lesson and the save read it.
+	var new_game := TitleMenu.consume_new_game_mark()
 	super._ready()
 	trail_dressing = preload("res://scripts/world/world_trail_dressing.gd").new()
 	trail_dressing.name = "TrailDressing"
@@ -174,6 +179,7 @@ func _ready() -> void:
 	add_child(debug_map)
 	debug_map.configure(self)
 	_start_save.call_deferred()
+	_open_title.call_deferred(new_game)
 	lesson.sync_pack.call_deferred()
 	_update_prompt()
 	DisplayServer.window_set_title("AshBound — World %s" % VERSION)
@@ -1082,6 +1088,16 @@ func _start_save() -> void:
 	save.name = "WorldSave"
 	add_child(save)
 	save.initialize(self)
+
+
+## TITLE-MENU-01: only when the world is the running scene (not in checks), after the save loaded.
+func _open_title(skip: bool) -> void:
+	if skip or get_tree().current_scene != self or OS.get_cmdline_user_args().has("--no-title"):
+		return
+	title = TitleMenu.new()
+	title.name = "TitleMenu"
+	add_child(title)
+	title.open(self)
 
 
 ## Where an inn stands (world frame): centre, yaw and the level of its pad (the trail end).
